@@ -28,7 +28,9 @@
     <h2>LLM 设置</h2>
     <div class="row">
       <div class="card" style="flex:1;min-width:320px">
-        <h3>本地（Ollama）</h3>
+        <h3>本地（Ollama）
+          <span :style="{color: llmLamp('local').color}">●</span>
+          <span class="muted">{{ llmLamp('local').text }}</span></h3>
         <p><input v-model="settingsForm.local.base_url" placeholder="根地址，如 http://127.0.0.1:11434（带不带 /v1、误粘 /api/tags 均可）" style="width:70%">
            <button @click="fetchOllamaModels" :disabled="loadingModels">
              {{ loadingModels ? '获取中…' : '获取模型' }}</button>
@@ -48,7 +50,9 @@
         <p><label class="muted"><input type="checkbox" v-model="showThink"> 显示推理模型（含 think）</label></p>
       </div>
       <div class="card" style="flex:1;min-width:320px">
-        <h3>线上 API</h3>
+        <h3>线上 API
+          <span :style="{color: llmLamp('online').color}">●</span>
+          <span class="muted">{{ llmLamp('online').text }}</span></h3>
         <p><input v-model="settingsForm.online.base_url" placeholder="base_url（OpenAI 兼容）" style="width:90%"></p>
         <p><input type="password" v-model="settingsForm.online.api_key" placeholder="api_key" style="width:90%"></p>
         <p><input v-model="settingsForm.online.model" placeholder="模型名" style="width:90%"></p>
@@ -255,6 +259,8 @@ createApp({
       clearInterval(this.pollTimer); this.pollTimer = null;
       this.stopLogsPolling(); this.project = null;
       this.view = 'settings'; this.checkComfy();
+      this.llmTestResult = {local: null, online: null};
+      this.llmTest('local'); this.llmTest('online');
       const s = await (await fetch('/api/settings')).json();
       this.settingsForm = {
         local: { ...s.llm_providers.local }, online: { ...s.llm_providers.online },
@@ -263,9 +269,21 @@ createApp({
         t2i_tm: s.template_map?.t2i || '',
       };
     },
+    llmLamp(provider) {
+      const r = this.llmTestResult[provider];
+      if (this.llmTesting === provider) return {color: '#8b949e', text: '检测中…'};
+      if (r === null) return {color: '#8b949e', text: ''};
+      if (r.unconfigured) return {color: '#8b949e', text: '未配置'};
+      return r.ok ? {color: '#4ade80', text: '在线'}
+                  : {color: '#f87171', text: '离线'};
+    },
     async llmTest(provider) {
       this.llmTesting = provider;
       const p = this.settingsForm[provider] || {};
+      if (!(p.base_url || '').trim() || !(p.model || '').trim()) {
+        this.llmTestResult[provider] = {ok: false, unconfigured: true, detail: 'base_url 或模型名为空'};
+        this.llmTesting = ''; return;
+      }
       try {
         const r = await fetch('/api/settings/llm-test', {
           method: 'POST', headers: {'Content-Type': 'application/json'},
