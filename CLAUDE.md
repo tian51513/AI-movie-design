@@ -2,7 +2,8 @@
 
 - 架构边界：`comic_studio/engine/` 禁止 import fastapi/starlette/uvicorn（未来抽取为 ComfyUI 节点）
 - 测试：pytest，TDD（先失败测试后实现）；运行 `pytest -q`
-- 安装：`source .venv/bin/activate - 安装：`pip install -e ".[dev]"`- 安装：`pip install -e ".[dev]"` pip install -e ".[dev]"`（WSL PEP 668 管控，须经 venv；免激活用 `.venv/bin/pip`）
+- 安装：WSL 用 `.venv`、Windows 原生用 `.venv-win`（二进制不可混装）；激活后 `pip install -e ".[dev]"`
+- 跨环境：DB 存相对 data 根的 POSIX 路径（engine/paths.py），WSL 与 Windows 可共享同一 data/
 - 启动：`uvicorn comic_studio.web.app:app --port 8190`（app 提供 `create_app(db_path)` 工厂）
 - 数据：默认 `./data`（SQLite + library + projects），不入 git
 - 文档：每个里程碑同步更新 README.md / CLAUDE.md / docs/superpowers/specs/ 状态
