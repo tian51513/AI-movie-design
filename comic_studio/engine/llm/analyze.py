@@ -1,0 +1,79 @@
+# comic_studio/engine/llm/analyze.py
+"""分析编排：分块 → 抽取 → 合并 → 入库（spec §5 created→analyzed）。"""
+import json
+from pathlib import Path
+from typing import Callable
+
+from ..assets import persist_assets
+from ..db import Database
+from ..projects import get_project, set_stage
+from ..settings import get_setting
+from .provider import LLMClient, Usage, ask_validated, client_for_task, log_llm_call
+from .schemas import AssetsAnalysis
+from .text import split_chunks
+
+EXTRACT_SYSTEM = """你是小说改编漫剧的资产分析师。从给定的小说文本中提取：
+1. 出场角色（characters）：name（原文姓名）、role（主角/配角/路人，默认配角）、
+   appearance（外貌固化描述：性别年龄、发色发型、瞳色、体型、标志性服装与配饰——
+   必须可直接转化为绘画参考，不含性格心理；原文信息不足时按合理默认补全并保持一致）、
+   tags（如 ["主角"]）
+2. 必要场景（scenes）：name、description（环境、光线、时代风格、氛围）
+3. 关键道具（props）：name、description（外观、材质、尺寸）
+只提取对画面呈现有意义的条目；路人一般不建角色。
+只输出一个 JSON 对象：{"characters":[{"name","role","appearance","tags"}],
+"scenes":[{"name","description","tags"}],"props":[{"name","description","tags"}]}"""
+
+MERGE_SYSTEM = """合并多段小说文本的资产分析结果。规则：
+- 同名（或明显同一人的别名，如"萧炎/炎少爷"）合并为一条，appearance 取信息最丰富的描述并可融合细节；
+- 同一场景不同叫法合并；tags 取并集；
+- 保留所有不同条目，不丢项。
+输出与输入相同结构的 JSON：{"characters":[...],"scenes":[...],"props":[...]}，
+其中每条角色含 name/role/appearance/tags，场景与道具含 name/description/tags。"""
+
+ClientFactory = Callable[[str], LLMClient]
+
+
+def make_client_factory(db: Database) -> ClientFactory:
+    """默认工厂：闭包持有 db，按任务名路由（spec §9.1）。
+    独立成函数是为了让测试 monkeypatch analyze.client_for_task 能生效——
+    默认参数在定义时绑定，模块属性查找在调用时发生。"""
+    return lambda task: client_for_task(db, task)
+
+
+def merge_analyses(client: LLMClient, results: list[AssetsAnalysis]) -> AssetsAnalysis:
+    payload = json.dumps(
+        {"characters": [c.model_dump() for r in results for c in r.characters],
+         "scenes": [s.model_dump() for r in results for s in r.scenes],
+         "props": [p.model_dump() for r in results for p in r.props]},
+        ensure_ascii=False)
+    merged, _ = ask_validated(client, MERGE_SYSTEM, payload, AssetsAnalysis)
+    return merged
+
+
+def analyze_project(db: Database, data_dir: Path, project_id: int,
+                    client_factory: ClientFactory | None = None,
+                    max_chars: int = 8000) -> list[int]:
+    if client_factory is None:
+        client_factory = make_client_factory(db)
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise ValueError(f"项目不存在: {project_id}")
+    text = Path(proj["novel_path"]).read_text(encoding="utf-8")
+    chunks = split_chunks(text, max_chars=max_chars)
+    extract_client = client_factory("extract_assets")
+    provider_name = get_setting(db, "llm_routing")["extract_assets"]
+    results: list[AssetsAnalysis] = []
+    for chunk in chunks:
+        result, usage = ask_validated(extract_client, EXTRACT_SYSTEM, chunk, AssetsAnalysis)
+        results.append(result)
+        log_llm_call(db, "extract_assets", provider_name, extract_client.model, usage)
+    if not results:
+        final = AssetsAnalysis(characters=[], scenes=[], props=[])
+    elif len(results) == 1:
+        final = results[0]
+    else:
+        final = merge_analyses(extract_client, results)
+        log_llm_call(db, "extract_assets", provider_name, extract_client.model, Usage(0, 0))
+    ids = persist_assets(db, data_dir, project_id, final)
+    set_stage(db, project_id, "analyzed")
+    return ids
