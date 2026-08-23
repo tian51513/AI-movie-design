@@ -261,7 +261,7 @@ createApp({
       this.stopLogsPolling(); this.project = null;
       this.view = 'settings'; this.checkComfy();
       this.llmTestResult = {local: null, online: null};
-      this.llmTest('local', false); this.llmTest('online', false);
+      this.llmTestManual = {local: false, online: false};
       const s = await (await fetch('/api/settings')).json();
       this.settingsForm = {
         local: { ...s.llm_providers.local }, online: { ...s.llm_providers.online },
@@ -269,6 +269,7 @@ createApp({
         comfy: { ...s.comfy },
         t2i_tm: s.template_map?.t2i || '',
       };
+      this.llmTest('local', false); this.llmTest('online', false);  // 表单就绪后再自动检测
     },
     llmLamp(provider) {
       const r = this.llmTestResult[provider];
