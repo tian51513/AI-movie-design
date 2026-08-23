@@ -13,6 +13,10 @@ class ComfyUnreachable(ComfyError):
     pass
 
 
+class ComfyStalled(ComfyError):
+    pass
+
+
 class ComfyClient:
     def __init__(self, base_url: str, timeout: float = 30):
         self.base_url = base_url.rstrip("/")
@@ -49,3 +53,39 @@ class ComfyClient:
         with self._client() as c:
             c.post(f"{self.base_url}/free",
                    json={"unload_models": unload_models, "free_memory": True})
+
+    def wait_and_collect(self, prompt_id: str, stall_seconds: float = 300,
+                         poll_interval: float = 1.0, on_interrupt=None) -> list[dict]:
+        import time
+        deadline = time.monotonic() + stall_seconds
+        while True:
+            with self._client() as c:
+                resp = c.get(f"{self.base_url}/history/{prompt_id}")
+                resp.raise_for_status()
+                hist = resp.json()
+            entry = hist.get(prompt_id)
+            if entry is not None:
+                status = (entry.get("status") or {}).get("status_str", "")
+                if status == "error":
+                    msgs = "; ".join(str(x) for x in (entry.get("status") or {}).get("messages", []))
+                    raise ComfyError(f"ComfyUI 执行失败: {msgs}")
+                images: list[dict] = []
+                for node_out in (entry.get("outputs") or {}).values():
+                    images.extend(node_out.get("images", []))
+                return images
+            if time.monotonic() > deadline:
+                if on_interrupt:
+                    on_interrupt()
+                with self._client() as c:
+                    c.post(f"{self.base_url}/interrupt")
+                raise ComfyStalled(
+                    f"ComfyUI {prompt_id} 超过 {stall_seconds}s 无进展，已发送 interrupt")
+            time.sleep(poll_interval)
+
+    def download(self, filename: str, subfolder: str, type_: str, dest: Path) -> None:
+        with self._client() as c:
+            resp = c.get(f"{self.base_url}/view",
+                         params={"filename": filename, "subfolder": subfolder, "type": type_})
+            resp.raise_for_status()
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(resp.content)
