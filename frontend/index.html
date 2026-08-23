@@ -122,6 +122,14 @@
               title="点击修改画风（改后重新生成资产参考图生效）"
               @click="editStyle">{{ project.style.slice(0, 12) }}…</span>
         <span v-else class="pill" style="cursor:pointer" @click="editStyle">+ 指定画风</span></h2>
+    <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button @click="switchDetailMode('assets')"
+              :style="detailMode==='assets' ? 'background:#16a34a' : ''">资产（{{ assets.length }}）</button>
+      <button @click="switchDetailMode('shots')"
+              :style="detailMode==='shots' ? 'background:#16a34a' : ''">分镜（{{ shots.length }}）</button>
+    </p>
+    <!-- 资产模式 -->
+    <template v-if="detailMode==='assets'">
     <p>
       <button @click="startAnalyze" :disabled="analyzeState.status==='running'">
         {{ analyzeState.status==='running' ? '分析中…' : 'LLM 分析资产' }}</button>
@@ -165,6 +173,47 @@
       <span class="muted" :title="failedTooltip()">运行 {{queue.running}} · 排队 {{queue.pending}} · 失败 {{queue.failed}}
         · ComfyUI <span :style="{color: queue.comfy_ok?'#4ade80':'#f87171'}">●</span></span>
     </p>
+    </template>
+    <!-- 分镜模式 -->
+    <template v-if="detailMode==='shots'">
+    <p v-if="project.stage==='assets_ready' || project.stage==='storyboard_ready'">
+      <button @click="startSplit" :disabled="splitRunning">{{ splitRunning ? '拆解中…' : '拆分分镜' }}</button>
+      <span class="muted" v-if="splitRunning">正在拆解分镜，请稍候…</span>
+    </p>
+    <p v-if="shots.length" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button @click="genAllPrompts">批量生成提示词</button>
+      <button v-if="allShotsReady" @click="passGate2" style="background:#16a34a">✓ 确认分镜（过门2）</button>
+    </p>
+    <div v-if="shots.length === 0 && !splitRunning" class="muted" style="padding:20px 0">暂无分镜——点击上方「拆分分镜」开始</div>
+    <div v-for="s in shots" :key="s.id" class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <b>#{{ s.seq }}</b>
+        <span class="pill" :style="{border: '1px solid ' + shotStatusColor(s), color: shotStatusColor(s)}">{{ shotStatusLabel(s) }}</span>
+        <span v-if="s.status==='stale'" style="color:#fb923c;font-size:13px">● 资产已更新</span>
+        <span class="pill">{{ s.shot_type }}</span>
+        <span class="pill">{{ s.camera }}</span>
+        <span class="pill">{{ s.duration }}s</span>
+        <select v-model="s.workflow_type" @change="saveShot(s, {workflow_type: s.workflow_type})" style="font-size:12px;padding:2px 4px">
+          <option value="ref2va">ref2va</option><option value="fl2v">fl2v</option><option value="t2v">t2v</option>
+        </select>
+        <span style="flex:1"></span>
+        <button v-if="!s.prompt || s.status==='stale'" @click="regenPrompt(s, !!s.prompt)" style="font-size:12px;padding:3px 8px">
+          {{ s.status==='stale' ? '重生提示词' : '生成提示词' }}</button>
+      </div>
+      <p><textarea v-model="s.description" rows="2" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px" @blur="saveShot(s, {description: s.description})"></textarea></p>
+      <div v-if="s.ledger" style="font-size:12px;margin:6px 0">
+        <div v-for="(ids, cat) in s.ledger" :key="cat" class="muted" style="margin:2px 0">
+          <b>{{ ledgerLabel(cat) }}：</b><span class="pill" v-for="aid in ids" :key="aid" style="margin:2px 2px 2px 0">{{ assetName(aid) }}</span>
+        </div>
+      </div>
+      <div v-if="s.prompt" style="margin-top:6px">
+        <a href="#" @click.prevent="toggleShotPrompt(s)" style="color:#60a5fa;font-size:13px">{{ expandedShot===s.id ? '收起提示词' : '展开提示词' }}</a>
+        <div v-if="expandedShot===s.id" style="margin-top:4px">
+          <textarea v-model="s.prompt" rows="4" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px" @blur="saveShot(s, {prompt: s.prompt})"></textarea>
+        </div>
+      </div>
+    </div>
+    </template>
     <h3>执行日志（{{ logs.length }}）</h3>
     <div id="logbox" style="background:#0d1117;border:1px solid #2c3540;border-radius:8px;padding:10px;max-height:320px;overflow-y:auto;font-family:ui-monospace,monospace;font-size:13px;line-height:1.7">
       <div v-for="l in logs" :key="l.id">

@@ -40,12 +40,16 @@ function data() {
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
+    detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null,
   };
 }
 
 /* ===== computed ===== */
 const computed = {
   allHaveViews() { return this.assets.length && this.assets.every(a => (this.views[a.id]||[]).length); },
+  allShotsReady() { return this.shots.length > 0 && this.shots.every(s => s.status === 'ready'); },
+  assetName(id) { const a = this.assets.find(x => x.id === id); return a ? a.name : id; },
+  ledgerLabel(cat) { return { must_appear: '必须出现', must_keep: '必须保持', may_change: '允许变化', forbidden: '禁止' }[cat] || cat; },
   shownAssets() {
     return this.activeKind === '全部' ? this.assets
                                       : this.assets.filter(a => a.kind === this.activeKind);
@@ -231,6 +235,20 @@ const methods = {
         if ((wasBusy && !busy) || done > this._doneSeen) { await this.loadDetail(); }
         this._doneSeen = done; wasBusy = busy;
       } catch (e) { /* 队列瞬时失败不影响日志流 */ }
+      // 分镜模式轮询
+      if (this.detailMode === 'shots' && this.project) {
+        try {
+          if (this.splitRunning) {
+            const st = await (await fetch(`/api/projects/${this.project.id}/split-storyboards/status`)).json();
+            if (st.status === 'done' || st.status === 'failed') {
+              this.splitRunning = false;
+              if (st.status === 'done') await this.loadShots();
+            }
+          } else {
+            await this.loadShots();
+          }
+        } catch (e) { /* shots 轮询失败不影响日志流 */ }
+      }
     };
     this._doneSeen = 0; tick(); this.logsTimer = setInterval(tick, 1000);
   },
@@ -239,7 +257,51 @@ const methods = {
 
   // ===== 灯箱 =====
 
-  // ===== 分镜（Phase 3 后续任务填充） =====
+  // ===== 分镜 =====
+  async switchDetailMode(mode) {
+    this.detailMode = mode;
+    if (mode === 'shots' && this.project) await this.loadShots();
+  },
+  async loadShots() {
+    this.shots = await (await fetch(`/api/projects/${this.project.id}/shots`)).json();
+  },
+  async startSplit() {
+    if (this.shots.length && !confirm('已存在分镜，重新拆解将覆盖（提示词会丢失）。继续？')) return;
+    const r = await fetch(`/api/projects/${this.project.id}/split-storyboards`, {method:'POST'});
+    if (!r.ok) { alert(await r.text()); return; }
+    this.splitRunning = true;
+  },
+  async regenPrompt(s, force=false) {
+    const r = await fetch(`/api/shots/${s.id}/regen-prompt`,
+      {method:'POST', headers:{'Content-Type':'application/json'},
+       body: JSON.stringify({force})});
+    if (!r.ok) alert(await r.text());
+  },
+  async genAllPrompts() {
+    const r = await fetch(`/api/projects/${this.project.id}/generate-prompts`, {method:'POST'});
+    alert(r.ok ? `已入队 ${(await r.json()).enqueued} 镜` : await r.text());
+  },
+  async saveShot(s, fields) {
+    const r = await fetch(`/api/shots/${s.id}`, {method:'PATCH',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify(fields)});
+    if (r.ok) Object.assign(s, await r.json()); else alert(await r.text());
+  },
+  async passGate2() {
+    const r = await fetch(`/api/projects/${this.project.id}/gate2`, {method:'POST'});
+    if (r.ok) await this.loadDetail(); else alert(await r.text());
+  },
+  async toggleShotPrompt(s) {
+    if (this.expandedShot === s.id) { this.expandedShot = null; return; }
+    this.expandedShot = s.id;
+  },
+  shotStatusColor(s) {
+    if (s.status === 'ready') return '#4ade80';
+    if (s.status === 'stale') return '#fb923c';
+    return '#f87171';
+  },
+  shotStatusLabel(s) {
+    return { pending: '待生成', ready: '就绪', stale: '资产已更新' }[s.status] || s.status;
+  },
 
   stageName(s) { return { created: '已创建', analyzed: '已分析', assets_ready: '资产就绪',
     storyboard_ready: '分镜就绪', rendering: '渲染中', rendered: '已渲染', merged: '已合成' }[s] || s; },
