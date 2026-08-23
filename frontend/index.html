@@ -224,6 +224,10 @@ createApp({
   async mounted() { await this.refresh(); },
   computed: {
     allHaveViews() { return this.assets.length && this.assets.every(a => (this.views[a.id]||[]).length); },
+    shownAssets() {
+      return this.activeKind === '全部' ? this.assets
+                                        : this.assets.filter(a => a.kind === this.activeKind);
+    },
     displayOllamaModels() {
       return this.showThink ? this.ollamaModels
         : this.ollamaModels.filter(m => !m.toLowerCase().includes("think"));
@@ -356,10 +360,6 @@ createApp({
     async genAllRefs() {
       const r = await fetch(`/api/projects/${this.project.id}/generate-refs`, {method:'POST'});
       alert(r.ok ? `已入队 ${(await r.json()).enqueued} 个资产` : await r.text());
-    },
-    get shownAssets() {
-      return this.activeKind === '全部' ? this.assets
-                                      : this.assets.filter(a => a.kind === this.activeKind);
     },
     assetBusy(a) {
       return (this.queue.jobs || []).some(
