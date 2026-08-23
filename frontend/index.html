@@ -49,9 +49,12 @@
         <p><input v-model="settingsForm.online.model" placeholder="模型名" style="width:90%"></p>
       </div>
     </div>
-    <h3>ComfyUI</h3>
+    <h3>ComfyUI
+      <span :style="{color: comfyStatus===null?'#8b949e':(comfyStatus?'#4ade80':'#f87171')}">●</span>
+      <span class="muted">{{ comfyStatus===null ? '检测中…' : (comfyStatus ? '在线' : '离线') }}</span>
+    </h3>
     <p><input v-model="settingsForm.comfy.base_url" placeholder="如 http://127.0.0.1:8188" style="width:60%">
-       <span class="muted">ComfyUI Desktop 启动后即可连</span></p>
+       <button @click="checkComfy">测试连接</button></p>
     <h3>工作流模板映射</h3>
     <p><label class="muted">t2i 模板 ID：</label><input v-model="settingsForm.t2i_tm" placeholder="t2i_ref" style="width:40%">
        <span class="muted">默认 t2i_ref，添加新模板后在设置页改映射</span></p>
@@ -138,6 +141,7 @@ createApp({
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '' }, saving: false,
     ollamaModels: [], showThink: false, loadingModels: false,
+    comfyStatus: null,
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
@@ -197,7 +201,7 @@ createApp({
     async openSettings() {
       clearInterval(this.pollTimer); this.pollTimer = null;
       this.stopLogsPolling(); this.project = null;
-      this.view = 'settings';
+      this.view = 'settings'; this.checkComfy();
       const s = await (await fetch('/api/settings')).json();
       this.settingsForm = {
         local: { ...s.llm_providers.local }, online: { ...s.llm_providers.online },
@@ -205,6 +209,11 @@ createApp({
         comfy: { ...s.comfy },
         t2i_tm: s.template_map?.t2i || '',
       };
+    },
+    async checkComfy() {
+      this.comfyStatus = null;
+      try { this.comfyStatus = (await (await fetch('/api/comfy/status')).json()).ok; }
+      catch (e) { this.comfyStatus = false; }
     },
     async fetchOllamaModels() {
       this.loadingModels = true;
