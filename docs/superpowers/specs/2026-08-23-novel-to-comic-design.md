@@ -40,7 +40,7 @@
 | 语言 | Python 3.11+ | 与 ComfyUI 生态一致 |
 | Web | FastAPI + uvicorn | 原生 async，SSE 推进度 |
 | 数据库 | SQLite（stdlib，WAL） | 单机单用户；jobs 表兼作持久化队列 |
-| 前端 | Vue 3 CDN 版，无构建步骤 | 免 node 工具链 |
+| 前端 | Vue 3 官方产物本地 vendor（无构建步骤、无运行时 CDN 依赖） | 免 node 工具链，规避 CDN 供应链风险，可离线运行 |
 | LLM 客户端 | openai SDK | 一套通吃本地 Ollama 与线上端点，切 base_url |
 | ComfyUI 客户端 | httpx + websockets | /upload/image、/prompt、/history、WebSocket |
 | FFmpeg | imageio-ffmpeg 自带静态二进制 | 零安装动作 |
