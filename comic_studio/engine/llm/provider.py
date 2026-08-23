@@ -82,3 +82,28 @@ def ask_validated(client: LLMClient, system: str, user: str,
             messages += [{"role": "assistant", "content": text},
                          {"role": "user", "content": f"JSON 不符合要求的结构，错误如下，请修正后重新输出完整 JSON：\n{e}"}]
     raise LLMError(f"{max_attempts} 次尝试均未通过 {schema_cls.__name__} 校验: {last}")
+
+# 追加到 comic_studio/engine/llm/provider.py 末尾
+from ..db import Database          # noqa: E402（放末尾避免环：db 不依赖本模块，顶部导入亦可）
+from ..settings import get_setting  # noqa: E402
+
+
+def client_for_task(db: Database, task: str) -> "LLMClient":
+    routing = get_setting(db, "llm_routing")
+    providers = get_setting(db, "llm_providers")
+    name = routing.get(task)
+    if not name or name not in providers:
+        raise LLMError(f"任务 {task} 的路由 {name!r} 不在 llm_providers 中")
+    p = providers[name]
+    if not p.get("base_url"):
+        raise LLMError(f"线上 LLM 未配置：settings.llm_providers.{name}.base_url 为空")
+    return LLMClient(base_url=p["base_url"], api_key=p.get("api_key") or "none",
+                     model=p["model"])
+
+
+def log_llm_call(db: Database, task: str, provider: str, model: str, usage: Usage) -> None:
+    conn = db.connect()
+    conn.execute(
+        "INSERT INTO llm_calls (task, provider, model, prompt_tokens, completion_tokens) "
+        "VALUES (?,?,?,?,?)", (task, provider, model, usage.prompt_tokens, usage.completion_tokens))
+    conn.commit()
