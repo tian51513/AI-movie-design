@@ -39,6 +39,7 @@ class WorkflowTemplate:
     outputs: list
     requires: list
     dir: Path
+    inject_images: list = field(default_factory=list)
 
     def api_json(self) -> dict:
         import json
@@ -64,7 +65,8 @@ def load_manifest(path: Path) -> WorkflowTemplate:
         inject_params={k: InjectPoint(**v) for k, v in (inj.get("params") or {}).items()},
         outputs=[OutputSpec(**o) for o in data["outputs"]],
         requires=list(data.get("requires") or []),
-        dir=path.parent)
+        dir=path.parent,
+        inject_images=list(inj.get("images") or []))
 
 
 def scan_templates(root: Path) -> dict:

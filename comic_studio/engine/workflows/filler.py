@@ -1,0 +1,34 @@
+# comic_studio/engine/workflows/filler.py
+"""注入填充器：模板 + 值 → 可提交的 API 工作流 + 待上传清单（spec §6.1）。"""
+import copy
+
+
+def fill_workflow(template, *, prompt: str, params: dict,
+                   images: list | None, output_ctx: dict):
+    wf = copy.deepcopy(template.api_json())
+
+    def set_input(node: str, field_name: str, value):
+        wf[str(node)]["inputs"][field_name] = value
+
+    set_input(template.inject_prompt.node, template.inject_prompt.field, prompt)
+    for key, point in template.inject_params.items():
+        value = params.get(key)
+        if value is None:
+            continue
+        if key == "seed":
+            value = int(value)
+        set_input(point.node, point.field, value)
+
+    uploads: list[dict] = []
+    for spec in template.inject_images:
+        matched = next((im for im in (images or []) if im["slot"] == spec["slot"]), None)
+        if matched is None:
+            continue
+        name = f"cs__{output_ctx['project']}__{output_ctx['asset']}__{spec['slot']}.png"
+        set_input(spec["node"], spec["field"], name)
+        uploads.append({"path": matched["path"], "name": name})
+
+    for out in template.outputs:
+        prefix = out.filename_prefix.format(**output_ctx)
+        set_input(out.node, "filename_prefix", prefix)
+    return wf, uploads
