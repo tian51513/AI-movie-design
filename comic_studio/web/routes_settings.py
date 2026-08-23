@@ -23,10 +23,14 @@ class ComfyConfig(BaseModel):
     base_url: str = ""
 
 
+TEMPLATE_MAP_KEYS = {"character_views", "t2i", "ref2va", "fl2v", "t2v"}
+
+
 class SettingsUpdate(BaseModel):
     llm_providers: dict[str, ProviderConfig] | None = None
     llm_routing: dict[str, str] | None = None
     comfy: ComfyConfig | None = None
+    template_map: dict[str, str | None] | None = None
 
 
 @router.get("")
@@ -35,6 +39,7 @@ def read(request: Request):
         "llm_providers": get_setting(request.app.state.db, "llm_providers"),
         "llm_routing": get_setting(request.app.state.db, "llm_routing"),
         "comfy": get_setting(request.app.state.db, "comfy"),
+        "template_map": get_setting(request.app.state.db, "template_map"),
     }
 
 
@@ -63,6 +68,13 @@ def update(request: Request, body: SettingsUpdate):
         merged = get_setting(db, "comfy")
         merged.update(body.comfy.model_dump())
         set_setting(db, "comfy", merged)
+    if body.template_map is not None:
+        bad = set(body.template_map) - TEMPLATE_MAP_KEYS
+        if bad:
+            raise HTTPException(422, f"未知 template_map 键: {sorted(bad)}，只允许 {sorted(TEMPLATE_MAP_KEYS)}")
+        merged = get_setting(db, "template_map")
+        merged.update(body.template_map)
+        set_setting(db, "template_map", merged)
     return {"status": "ok"}
 
 

@@ -6,7 +6,7 @@ from comic_studio.web.app import create_app
 
 
 def _client(tmp_path):
-    return TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data"))
+    return TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data", start_workers=False))
 
 
 def test_logs_404_unknown_project(tmp_path):

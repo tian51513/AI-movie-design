@@ -28,3 +28,4 @@
 - `comic_studio/engine/jobs.py` — 队列原语（enqueue/claim 互斥/retry_or_fail/requeue_on_restart）
 - `templates/workflows/` — 模板目录（README 有导出指南）
 - 测试反模式提醒：ComfyUI 相关测试一律用 tests/comfy_mock.py 的 comfy_server，不连真实 ComfyUI
+- 测试反模式提醒：API 测试一律 create_app(start_workers=False)

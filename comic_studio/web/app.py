@@ -12,7 +12,8 @@ _FRONTEND = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
 
 
 def create_app(db_path: str | Path = "./data/studio.db",
-               data_dir: str | Path = "./data") -> FastAPI:
+               data_dir: str | Path = "./data",
+               start_workers: bool = True) -> FastAPI:
     db_path, data_dir = Path(db_path), Path(data_dir)
     db = Database(db_path)
 
@@ -22,15 +23,18 @@ def create_app(db_path: str | Path = "./data/studio.db",
         # 重启后 BackgroundTasks 已消亡，running job 不可能合法存在
         from ..engine.jobs import requeue_on_restart
         requeued = requeue_on_restart(db, ("gen_ref",))
-        from ..engine import genref  # 触发 @register 注册
-        from ..engine.queue.worker import start_workers, stop_workers
-        from ..engine.settings import get_setting
-        workers, worker_stop = start_workers(
-            db.path, str(data_dir),
-            get_setting(db, "comfy")["base_url"],
-            int(get_setting(db, "workers") or 1))
-        yield
-        stop_workers(workers, worker_stop)
+        if start_workers:
+            from ..engine import genref  # 触发 @register 注册
+            from ..engine.queue.worker import start_workers as _spawn_workers, stop_workers
+            from ..engine.settings import get_setting
+            workers, worker_stop = _spawn_workers(
+                db.path, str(data_dir), None,
+                int(get_setting(db, "workers") or 1),
+                comfy_from_settings=True)
+            yield
+            stop_workers(workers, worker_stop)
+        else:
+            yield
 
     app = FastAPI(title="comic_studio", lifespan=lifespan)
     app.state.db = db

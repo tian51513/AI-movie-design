@@ -64,7 +64,8 @@ def claim_next_job(db, handler_types: tuple):
     return get_job(db, row["id"])
 
 
-def retry_or_fail(db, job_id: int, error: str, max_attempts: int = 3) -> str:
+def retry_or_fail(db, job_id: int, error: str, max_attempts: int = 3,
+                   consume_attempt: bool = True) -> str:
     conn = db.connect()
     job = get_job(db, job_id)
     if job["attempts"] < max_attempts:

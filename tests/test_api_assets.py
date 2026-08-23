@@ -18,7 +18,7 @@ class FakeLLM:
 
 
 def test_assets_endpoint(tmp_path, monkeypatch):
-    app = create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data")
+    app = create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data", start_workers=False)
     monkeypatch.setattr("comic_studio.engine.llm.analyze.client_for_task",
                         lambda db, task: FakeLLM())
     with TestClient(app) as c:
@@ -36,7 +36,7 @@ def test_assets_endpoint(tmp_path, monkeypatch):
 
 
 def test_frontend_served(tmp_path):
-    app = create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data")
+    app = create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data", start_workers=False)
     with TestClient(app) as c:
         resp = c.get("/")
         assert resp.status_code == 200

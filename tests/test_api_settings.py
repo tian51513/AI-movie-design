@@ -12,7 +12,7 @@ ROUTING_DEFAULTS = {
 
 
 def _client(tmp_path):
-    return TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data"))
+    return TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data", start_workers=False))
 
 
 def test_get_returns_effective_defaults(tmp_path):
@@ -68,3 +68,21 @@ def test_put_comfy_base_url(tmp_path):
         resp = c.put("/api/settings", json={"comfy": {"base_url": "http://192.168.3.1:8188"}})
         assert resp.status_code == 200
         assert c.get("/api/settings").json()["comfy"]["base_url"] == "http://192.168.3.1:8188"
+
+
+def test_put_template_map_roundtrip(tmp_path):
+    """PUT template_map {t2i: x} 能 roundtrip 读回。"""
+    with _client(tmp_path) as c:
+        resp = c.put("/api/settings", json={"template_map": {"t2i": "my_custom"}})
+        assert resp.status_code == 200
+        body = c.get("/api/settings").json()
+        assert body["template_map"]["t2i"] == "my_custom"
+        # 其他键保留默认
+        assert body["template_map"]["character_views"] == "character_views"
+
+
+def test_put_template_map_rejects_unknown_key(tmp_path):
+    """template_map 未知键返回 422。"""
+    with _client(tmp_path) as c:
+        resp = c.put("/api/settings", json={"template_map": {"bad_key": "x"}})
+        assert resp.status_code == 422
