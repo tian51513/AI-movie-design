@@ -1,0 +1,28 @@
+[project]
+name = "comic-studio"
+version = "0.1.0"
+description = "小说转漫剧工作站：LLM 分析 + ComfyUI 生成 + FFmpeg 合成"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "httpx>=0.27",
+    "websockets>=12.0",
+    "openai>=1.40",
+    "pydantic>=2.7",
+    "python-multipart>=0.0.9",
+    "imageio-ffmpeg>=0.5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["comic_studio"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
