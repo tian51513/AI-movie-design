@@ -36,7 +36,7 @@
              {{ loadingModels ? '获取中…' : '获取模型' }}</button>
            <button @click="llmTest('local')" :disabled="llmTesting==='local'">
              {{ llmTesting==='local' ? '测试中…' : '测试' }}</button>
-           <span v-if="llmTestResult.local !== null"
+           <span v-if="llmTestManual.local && llmTestResult.local !== null"
                  :style="{color: llmTestResult.local?.ok ? '#4ade80' : '#f87171'}">
              {{ llmTestResult.local?.ok ? '✓ ' + (llmTestResult.local?.detail || 'OK') : '✗ ' + llmTestResult.local?.detail }}</span></p>
         <p v-if="ollamaModels.length">
@@ -58,7 +58,7 @@
         <p><input v-model="settingsForm.online.model" placeholder="模型名" style="width:90%"></p>
         <p><button @click="llmTest('online')" :disabled="llmTesting==='online'">
              {{ llmTesting==='online' ? '测试中…' : '测试连接' }}</button>
-           <span v-if="llmTestResult.online !== null"
+           <span v-if="llmTestManual.online && llmTestResult.online !== null"
                  :style="{color: llmTestResult.online?.ok ? '#4ade80' : '#f87171'}">
              {{ llmTestResult.online?.ok ? '✓ ' + (llmTestResult.online?.detail || 'OK') : '✗ ' + llmTestResult.online?.detail }}</span></p>
       </div>
@@ -197,6 +197,7 @@ createApp({
     settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '' }, saving: false,
     ollamaModels: [], showThink: false, loadingModels: false,
     comfyStatus: null, llmTesting: '', llmTestResult: {local: null, online: null},
+    llmTestManual: {local: false, online: false},
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
@@ -260,7 +261,7 @@ createApp({
       this.stopLogsPolling(); this.project = null;
       this.view = 'settings'; this.checkComfy();
       this.llmTestResult = {local: null, online: null};
-      this.llmTest('local'); this.llmTest('online');
+      this.llmTest('local', false); this.llmTest('online', false);
       const s = await (await fetch('/api/settings')).json();
       this.settingsForm = {
         local: { ...s.llm_providers.local }, online: { ...s.llm_providers.online },
@@ -277,8 +278,9 @@ createApp({
       return r.ok ? {color: '#4ade80', text: '在线'}
                   : {color: '#f87171', text: '离线'};
     },
-    async llmTest(provider) {
+    async llmTest(provider, manual = true) {
       this.llmTesting = provider;
+      this.llmTestManual[provider] = !!manual;
       const p = this.settingsForm[provider] || {};
       if (!(p.base_url || '').trim() || !(p.model || '').trim()) {
         this.llmTestResult[provider] = {ok: false, unconfigured: true, detail: 'base_url 或模型名为空'};
