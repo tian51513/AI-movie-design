@@ -87,6 +87,30 @@ def test_handle_gen_ref_end_to_end_with_mock(tmp_path, monkeypatch):
     assert "提交" in msgs and "参考图" in msgs
 
 
+def test_regen_marks_stale(tmp_path, monkeypatch):
+    db, pid = _setup(tmp_path, monkeypatch)
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.shots import persist_shots, list_shots
+    from types import SimpleNamespace as NS
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="萧炎", appearance="黑发少年", tags=[])],
+                      scenes=[], props=[]))
+    asset_id = list_project_assets(db, pid)[0]["id"]
+    persist_shots(db, pid, [NS(text_span="", description="x", shot_type="",
+        camera={}, duration=5.0, workflow_type="ref2va", ledger={},
+        character_ids=[asset_id], scene_ids=[], prop_ids=[], depends_on=None)])
+    jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset_id,
+                      resource="gpu_comfy", payload={"asset_id": asset_id})
+    with comfy_server("ok") as m:
+        from comic_studio.engine.comfy.client import ComfyClient
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+    assert list_shots(db, pid)[0]["status"] == "stale"
+    # 验证 warn 日志
+    from comic_studio.engine.logbus import fetch_logs
+    msgs = [r["message"] for r in fetch_logs(db, pid)]
+    assert any("stale" in m and "萧炎" in m for m in msgs)
+
+
 def test_style_goes_after_suffix_and_dedup(tmp_path):
     from comic_studio.engine.genref import build_gen_prompt
     row = {"kind": "character", "name": "直葉", "appearance_json": '{"detail": "黑发少女。"}',

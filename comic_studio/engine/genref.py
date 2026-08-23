@@ -71,3 +71,9 @@ def handle_gen_ref(db, data_dir, job, comfy):
     emit_log(db, "comfy", "info", f"资产「{asset['name']}」参考图已生成并落盘",
              project_id=job["project_id"], job_id=job["id"],
              data={"path": f"{asset['library_dir']}/views/sheet.png"})
+    from .shots import mark_stale_for_asset
+    n = mark_stale_for_asset(db, asset["id"])
+    if n:
+        emit_log(db, "storyboard", "warn",
+                 f"资产「{asset['name']}」参考图已更新：{n} 个引用它的分镜标记为 stale",
+                 project_id=job["project_id"], job_id=job["id"])
