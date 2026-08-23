@@ -12,12 +12,26 @@
 - [ ] Phase 3：分镜拆解 + H3 提示词生成（门 2）
 - [ ] Phase 4：逐镜渲染；Phase 5：FFmpeg 合成
 
-## 快速开始
+## 快速开始（WSL / Debian 系，PEP 668 管控环境）
 
 ```bash
+# 1. 创建并激活虚拟环境（首次；仓库自带的 .venv 是隐藏目录，已存在则跳过创建）
+python3 -m venv .venv
+source .venv/bin/activate    # 注意必须用 source；把 activate 当脚本直接执行对当前 shell 无效
+
+# 2. 安装依赖（激活后 pip 即 venv 内的 pip，不再触发 externally-managed 报错）
 pip install -e ".[dev]"
+
+# 3. 启动
 uvicorn comic_studio.web.app:app --port 8190
 # 浏览器打开 http://localhost:8190
+```
+
+不想激活 venv 的话，全程用 `.venv/bin/` 前缀也可以：
+
+```bash
+.venv/bin/pip install -e ".[dev]"
+.venv/bin/uvicorn comic_studio.web.app:app --port 8190
 ```
 
 LLM 默认走本地 Ollama（`http://localhost:11434/v1`，模型 `qwen3:14b`，可用
@@ -27,7 +41,8 @@ API——在 `settings` 表配置 `llm_providers.online`（base_url / api_key / 
 ## 开发
 
 ```bash
-pytest -q          # 全量测试
+source .venv/bin/activate
+pytest -q          # 全量测试（或直接 .venv/bin/pytest -q）
 ```
 
 架构约定见 `CLAUDE.md`。
