@@ -94,11 +94,9 @@ data/
 │   ├── scenes/<id>/…
 │   └── props/<id>/…
 └── projects/<slug>/
-    ├── project.json               # 画幅、章节信息、当前阶段、类型→模板映射覆盖
+    ├── project.json               # 画幅、章节信息、当前阶段、类型→模板映射覆盖（Plan 2/3 落盘；P1 阶段信息在 SQLite）
     ├── novel.txt
-    ├── analysis/                  # LLM 产出 JSON（版本化）
-    │   ├── characters.json / scenes.json / props.json
-    │   └── storyboards.json
+    ├── analysis/                  # LLM 产出 JSON 落盘（Plan 2/3 交付；P1 分析结果存 SQLite assets 表）
     ├── shots/<NNN>/
     │   ├── shot.json              # 绑定资产/提示词/需求台账/状态/模板覆盖
     │   ├── prompt.txt             # 视频提示词（人工可改，改后锁定）
