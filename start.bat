@@ -1,7 +1,13 @@
 @echo off
 rem Windows 快捷启动：首次自动建 .venv-win 并装依赖，热重载
 cd /d %~dp0
-if not exist .venv-win python -m venv .venv-win
-if not exist .venv-win\Scripts\uvicorn.exe .venv-win\Scripts\pip install -e ".[dev]"
+where python >/dev/null 2>/dev/null || (echo [错误] 找不到 python，请安装 python.org 官方版 & pause & exit /b 1)
+if not exist .venv-win (
+  echo 首次运行：创建虚拟环境并安装依赖（几分钟）...
+  python -m venv .venv-win 2>/dev/null || py -3 -m venv .venv-win
+  if not exist .venv-win (echo [错误] venv 创建失败——当前 Python 缺 venv 模块，请安装 python.org 完整版 & pause & exit /b 1)
+  .venv-win\Scripts\pip install -e ".[dev]" || (echo [错误] 依赖安装失败 & pause & exit /b 1)
+)
 echo → http://localhost:8190
 .venv-win\Scripts\uvicorn comic_studio.web.app:app --port 8190 --reload
+pause
