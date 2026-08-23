@@ -18,3 +18,13 @@
 - `comic_studio/web/` — app 工厂 + routes_projects/routes_analyze/routes_assets
 - `frontend/index.html` — Vue3 单页（本地 vendor，无 CDN）
 - 测试反模式提醒：LLM 相关测试一律注入 FakeClient（替换 raw_chat），不触网
+
+## 模块地图（Phase 2）
+
+- `comic_studio/engine/comfy/client.py` — ComfyClient（健康/上传/提交/轮询/下载/释放/失速interrupt）
+- `comic_studio/engine/workflows/` — registry（manifest 扫描/类型映射）+ filler（注入纯函数）
+- `comic_studio/engine/queue/worker.py` — worker 线程 + @register 处理器注册表
+- `comic_studio/engine/genref.py` — gen_ref 处理器（@register("gen_ref")）
+- `comic_studio/engine/jobs.py` — 队列原语（enqueue/claim 互斥/retry_or_fail/requeue_on_restart）
+- `templates/workflows/` — 模板目录（README 有导出指南）
+- 测试反模式提醒：ComfyUI 相关测试一律用 tests/comfy_mock.py 的 comfy_server，不连真实 ComfyUI

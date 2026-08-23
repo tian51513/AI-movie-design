@@ -1,7 +1,7 @@
 # 小说转漫剧工作站（comic_studio）设计文档
 
 - 日期：2026-08-23
-- 状态：已与用户逐节确认；Phase 1（基础与分析管线）已实现，Phase 2-5 待实施
+- 状态：已与用户逐节确认；Phase 2（队列 + ComfyUI + 参考图）已实现，Phase 3-5 待实施
 - 原始需求：`原始需求.txt`
 
 ## 1. 背景与目标
@@ -167,7 +167,7 @@ requires: [ComfyUI-GGUF, kjnodes]
 
 | 模板 id | 类型 | 来源工作流（workflows 目录下） | 转换动作 |
 |---|---|---|---|
-| character_views | character_views | `minimax/▶▷MiniMaxH3辅助四视图生成流-k2.json`（Krea2+QuadView，15 节点） | UI 里 Export (API) |
+| character_views | character_views | `minimax/▶▷MiniMaxH3辅助四视图生成流-k2.json`（Krea2+QuadView，15 节点） | UI 里 Export (API)（P2 用 t2i 多视角提示词法，Krea2 模板为可选升级） |
 | t2i_ref | t2i | `小枫/小枫-文生图工作流.json`（7 节点全标准） | UI 导出；场景/道具/关键帧共用 |
 | h3_ref2va ★主力 | ref2va | `minimax/minimax_ref2va_gguf_workflow.json` | UI 导出（注入面最干净） |
 | h3_fl2v | fl2v | `minimax/minimax_fl2v_gguf_workflow.json` | UI 导出（**子图需展平**） |
@@ -186,7 +186,7 @@ requires: [ComfyUI-GGUF, kjnodes]
 
 - 提交前 `/system_stats` 健康检查；不可达 → 端点标 Down、任务回队、UI 状态灯
 - 图片先上传后引用（§6.1）
-- 监控：WebSocket 进度事件；**无假超时**，失速检测 = N 分钟无事件 → 查 `/history` → 确认卡死才 `/interrupt`
+- 监控：WebSocket 进度事件；**无假超时**，失速检测 = N 分钟无事件 → 查 `/history` → 确认卡死才 `/interrupt`（P2 实现为 /history 轮询 + 失速检测，WS 进度条排 P4）
 - 节点错误：`/history` 错误明细（哪个节点、什么错）落 `jobs.error`，UI 可查
 
 ## 8. 任务队列与调度
