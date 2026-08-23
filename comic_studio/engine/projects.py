@@ -5,6 +5,7 @@ import sqlite3
 from pathlib import Path
 
 from .db import Database
+from .paths import rel_to_data
 
 STAGES = ("created", "analyzed", "assets_ready", "storyboard_ready",
           "rendering", "rendered", "merged")
@@ -28,7 +29,7 @@ def create_project(db: Database, data_dir: Path, name: str,
     novel_path.write_text(novel_text, encoding="utf-8")
     conn.execute(
         "INSERT INTO projects (slug, name, aspect_ratio, novel_path) VALUES (?,?,?,?)",
-        (slug, name.strip(), aspect_ratio, str(novel_path)))
+        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path)))
     conn.commit()
     return get_project(db, conn.execute("SELECT last_insert_rowid() id").fetchone()["id"])
 

@@ -39,3 +39,12 @@ def test_set_stage_validates(tmp_path):
     with pytest.raises(ValueError):
         set_stage(db, row["id"], "nonexistent_stage")
     assert len(list_projects(db)) == 1
+
+
+def test_novel_path_stored_relative_for_portability(tmp_path):
+    """WSL ↔ Windows 共享 data/：DB 必须存相对路径（spec 跨环境约定）。"""
+    from comic_studio.engine.paths import data_to_abs
+    db = _db(tmp_path)
+    row = create_project(db, tmp_path / "data", "跨端剧", "9:16", "正文")
+    assert row["novel_path"] == "projects/跨端剧/novel.txt"          # 相对、POSIX 分隔
+    assert data_to_abs(tmp_path / "data", row["novel_path"]).read_text(encoding="utf-8") == "正文"

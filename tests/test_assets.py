@@ -77,3 +77,15 @@ def test_reanalyze_links_not_duplicates(tmp_path):
     persist_assets(db, tmp_path / "data", proj["id"], _analysis())  # 同名重分析
     rows = list_project_assets(db, proj["id"])
     assert len(rows) == 3  # 同项目同名不重复入库
+
+
+def test_library_dir_stored_relative_for_portability(tmp_path):
+    from comic_studio.engine.paths import data_to_abs
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "t")
+    persist_assets(db, tmp_path / "data", proj["id"], _analysis())
+    rows = list_project_assets(db, proj["id"])
+    for r in rows:
+        assert not r["library_dir"].startswith(("/", "\\")) and ":" not in r["library_dir"]
+        assert r["library_dir"] == f"library/{r['kind']}s/{r['id']}"
+        assert (data_to_abs(tmp_path / "data", r["library_dir"]) / "meta.json").exists()

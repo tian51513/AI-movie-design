@@ -5,6 +5,7 @@ import sqlite3
 from pathlib import Path
 
 from .db import Database
+from .paths import rel_to_data
 
 _KINDS = ("character", "scene", "prop")
 
@@ -40,7 +41,7 @@ def persist_assets(db: Database, data_dir: Path, project_id: int, analysis) -> l
                     "detail": _detail(item, kind),
                     "tags": list(getattr(item, "tags", []) or []),
                 }, ensure_ascii=False, indent=2), encoding="utf-8")
-                conn.execute("UPDATE assets SET library_dir=? WHERE id=?", (str(lib_dir), asset_id))
+                conn.execute("UPDATE assets SET library_dir=? WHERE id=?", (rel_to_data(data_dir, lib_dir), asset_id))
                 conn.execute("INSERT OR IGNORE INTO project_assets (project_id, asset_id) VALUES (?,?)",
                              (project_id, asset_id))
                 ids.append(asset_id)

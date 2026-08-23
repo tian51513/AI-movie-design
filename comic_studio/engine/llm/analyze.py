@@ -6,6 +6,7 @@ from typing import Callable
 
 from ..assets import persist_assets
 from ..db import Database
+from ..paths import data_to_abs
 from ..projects import get_project, set_stage
 from ..settings import get_setting
 from .provider import LLMClient, Usage, ask_validated, client_for_task, log_llm_call
@@ -58,7 +59,7 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
     proj = get_project(db, project_id)
     if proj is None:
         raise ValueError(f"项目不存在: {project_id}")
-    text = Path(proj["novel_path"]).read_text(encoding="utf-8")
+    text = data_to_abs(data_dir, proj["novel_path"]).read_text(encoding="utf-8")
     chunks = split_chunks(text, max_chars=max_chars)
     extract_client = client_factory("extract_assets")
     provider_name = get_setting(db, "llm_routing")["extract_assets"]

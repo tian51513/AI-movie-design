@@ -12,37 +12,45 @@
 - [ ] Phase 3：分镜拆解 + H3 提示词生成（门 2）
 - [ ] Phase 4：逐镜渲染；Phase 5：FFmpeg 合成
 
-## 快速开始（WSL / Debian 系，PEP 668 管控环境）
+## 快速开始
+
+两套环境共享同一份 `data/` 目录与代码；**各自建各自的 venv**（Linux 与 Windows 的二进制不能混装）：
+WSL 用 `.venv`，Windows 原生用 `.venv-win`（均已 git-ignore）。
+
+### WSL（Linux）
 
 ```bash
-# 1. 创建并激活虚拟环境（首次；仓库自带的 .venv 是隐藏目录，已存在则跳过创建）
-python3 -m venv .venv
-source .venv/bin/activate    # 注意必须用 source；把 activate 当脚本直接执行对当前 shell 无效
-
-# 2. 安装依赖（激活后 pip 即 venv 内的 pip，不再触发 externally-managed 报错）
+python3 -m venv .venv            # 首次；已存在则跳过
+source .venv/bin/activate        # 必须用 source；直接执行 activate 对当前 shell 无效
 pip install -e ".[dev]"
-
-# 3. 启动
 uvicorn comic_studio.web.app:app --port 8190
-# 浏览器打开 http://localhost:8190
 ```
 
-不想激活 venv 的话，全程用 `.venv/bin/` 前缀也可以：
+不想激活可全程前缀：`.venv/bin/pip ...` / `.venv/bin/uvicorn ...` / `.venv/bin/pytest -q`
 
-```bash
-.venv/bin/pip install -e ".[dev]"
-.venv/bin/uvicorn comic_studio.web.app:app --port 8190
+### Windows 原生（PowerShell / CMD）
+
+```bat
+python -m venv .venv-win
+.venv-win\Scripts\activate
+pip install -e ".[dev]"
+uvicorn comic_studio.web.app:app --port 8190
 ```
 
-LLM 默认走本地 Ollama（`http://localhost:11434/v1`，模型 `qwen3:14b`，可用
-`ollama pull qwen3:14b` 拉取）。分析（extract_assets）默认本地；后续分镜任务默认线上
-API——在 `settings` 表配置 `llm_providers.online`（base_url / api_key / model）。
+### 网络说明（WSL ↔ Windows 侧服务）
+
+ComfyUI Desktop 与 Ollama 装在 Windows 侧，本应用默认用 `localhost:8188` / `localhost:11434` 访问：
+
+- **mirrored 网络模式**（本机已启用，`.wslconfig` 中 `networkingMode=mirrored`）：localhost 双向直通，两环境通用，无需配置
+- **NAT 模式**（其他机器默认）：WSL 内 localhost 到不了 Windows 侧——把 settings 中相应 base_url 换成 Windows 主机 IP（WSL 里 `ip route show default` 的网关地址），并让 Ollama 监听 `0.0.0.0`（设置环境变量 `OLLAMA_HOST=0.0.0.0` 后重启）
+
+浏览器打开 `http://localhost:8190`。LLM 默认走本地 Ollama（`qwen3:14b`，
+`ollama pull qwen3:14b` 拉取）；后续分镜任务默认线上 API——在 `settings` 表配置
+`llm_providers.online`（base_url / api_key / model）。
 
 ## 开发
 
-```bash
-source .venv/bin/activate
-pytest -q          # 全量测试（或直接 .venv/bin/pytest -q）
-```
+WSL：`source .venv/bin/activate && pytest -q`（或直接 `.venv/bin/pytest -q`）
+Windows：`.venv-win` 的 Scripts 激活后 `pytest -q`
 
 架构约定见 `CLAUDE.md`。
