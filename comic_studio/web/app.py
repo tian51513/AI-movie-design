@@ -22,6 +22,7 @@ def create_app(db_path: str | Path = "./data/studio.db",
         # 重启后 BackgroundTasks 已消亡，running job 不可能合法存在
         from ..engine.jobs import requeue_on_restart
         requeued = requeue_on_restart(db, ("gen_ref",))
+        from ..engine import genref  # 触发 @register 注册
         from ..engine.queue.worker import start_workers, stop_workers
         from ..engine.settings import get_setting
         workers, worker_stop = start_workers(
