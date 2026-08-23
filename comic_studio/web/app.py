@@ -52,6 +52,8 @@ def create_app(db_path: str | Path = "./data/studio.db",
     vendor_dir = _FRONTEND.parent / "vendor"
     if vendor_dir.is_dir():
         app.mount("/vendor", StaticFiles(directory=vendor_dir), name="vendor")
+    if _FRONTEND.parent.is_dir():
+        app.mount("/static", StaticFiles(directory=_FRONTEND.parent), name="static")
 
     from .routes_assets import router as assets_router
     app.include_router(assets_router)
