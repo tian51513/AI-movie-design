@@ -31,7 +31,7 @@ class ComfyClient:
                 resp = c.get(f"{self.base_url}/system_stats")
                 resp.raise_for_status()
                 return resp.json()
-        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.HTTPStatusError) as e:
+        except (httpx.ConnectError, httpx.ConnectTimeout) as e:
             raise ComfyUnreachable(f"ComfyUI 不可达 {self.base_url}: {e}") from e
 
     def upload_image(self, path: Path, name: str) -> None:

@@ -8,8 +8,9 @@ from comfy_mock import comfy_server
 def test_health_and_unreachable():
     with comfy_server("ok") as m:
         assert ComfyClient(m.base_url).health()["system"]["os"] == "mock"
+    # Use invalid port to trigger connection refused (ConnectError)
     with pytest.raises(ComfyUnreachable):
-        ComfyClient("http://127.0.0.1:1").health()
+        ComfyClient("http://127.0.0.1:65535", timeout=1.0).health()
 
 
 def test_upload_submit_free():
