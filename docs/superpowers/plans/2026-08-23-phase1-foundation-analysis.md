@@ -1994,7 +1994,7 @@ def listing(request: Request, project_id: int):
     </div>
   </main>
   <main v-else>
-    <p><a href="#" @click.prevent="project=null">← 返回</a></p>
+    <p><a href="#" @click.prevent="back">← 返回</a></p>
     <h2>{{ project.name }} <span class="pill">{{ project.aspect_ratio }}</span>
         <span class="pill">{{ stageName(project.stage) }}</span></h2>
     <p>
@@ -2031,7 +2031,9 @@ createApp({
       this.creating = false; this.newName = ''; this.newFile = null;
       await this.refresh();
     },
+    back() { clearInterval(this.pollTimer); this.pollTimer = null; this.project = null; },
     async open(p) {
+      clearInterval(this.pollTimer); this.pollTimer = null;  // 重入防护：清掉旧轮询
       this.project = p; await this.loadDetail();
     },
     async loadDetail() {
