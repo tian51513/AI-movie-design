@@ -46,3 +46,20 @@ def test_fetch_strips_trailing_v1_and_slashes():
     assert _ollama_root("http://localhost:11434/v1") == "http://localhost:11434"
     assert _ollama_root("http://localhost:11434/v1/") == "http://localhost:11434"
     assert _ollama_root("http://192.168.3.1:11434") == "http://192.168.3.1:11434"
+
+
+def test_ollama_models_rejects_cross_site_browser_request(tmp_path, monkeypatch):
+    monkeypatch.setattr("comic_studio.web.routes_settings._fetch_ollama_models",
+                        lambda root: ["qwen3:14b"])
+    with _client(tmp_path) as c:
+        resp = c.get("/api/settings/ollama-models",
+                     params={"base_url": "http://localhost:11434/v1"},
+                     headers={"Sec-Fetch-Site": "cross-site"})
+        assert resp.status_code == 403
+        # same-origin 与无头（curl）放行
+        ok1 = c.get("/api/settings/ollama-models",
+                    params={"base_url": "http://localhost:11434/v1"},
+                    headers={"Sec-Fetch-Site": "same-origin"})
+        ok2 = c.get("/api/settings/ollama-models",
+                    params={"base_url": "http://localhost:11434/v1"})
+        assert ok1.status_code == 200 and ok2.status_code == 200

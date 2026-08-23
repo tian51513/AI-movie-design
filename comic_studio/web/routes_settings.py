@@ -71,7 +71,12 @@ def _fetch_ollama_models(root_url: str) -> list[str]:
 
 
 @router.get("/ollama-models")
-def ollama_models(base_url: str = Query(...)):
+def ollama_models(base_url: str = Query(...), request: Request = None):
+    # 防浏览器跨站盲发（SSRF 向量）：浏览器会带 Sec-Fetch-Site，same-origin 放行；
+    # cross-site 拒绝；非浏览器客户端（curl 等）无此头，不受影响（NAT 模式查局域网 Ollama 仍可用）
+    sec_fetch_site = request.headers.get("sec-fetch-site") if request else None
+    if sec_fetch_site == "cross-site":
+        raise HTTPException(403, "拒绝跨站请求")
     try:
         models = _fetch_ollama_models(_ollama_root(base_url))
     except Exception as e:
