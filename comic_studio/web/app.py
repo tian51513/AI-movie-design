@@ -35,6 +35,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
             return FileResponse(_FRONTEND)
         return "comic_studio frontend 尚未创建（Task 14）"
 
+    from .routes_projects import router as projects_router
+    app.include_router(projects_router)
+
     return app
 
 
