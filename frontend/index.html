@@ -49,6 +49,9 @@
         <p><input v-model="settingsForm.online.model" placeholder="模型名" style="width:90%"></p>
       </div>
     </div>
+    <h3>ComfyUI</h3>
+    <p><input v-model="settingsForm.comfy.base_url" placeholder="如 http://127.0.0.1:8188" style="width:60%">
+       <span class="muted">ComfyUI Desktop 启动后即可连</span></p>
     <h3>任务路由</h3>
     <p v-for="(label, task) in taskLabels" :key="task">
       {{ label }}：
@@ -112,7 +115,7 @@ createApp({
     view: 'projects', projects: [], project: null, assets: [],
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     analyzeState: { status: '', error: null }, pollTimer: null,
-    settingsForm: { local: {}, online: {}, routing: {} }, saving: false,
+    settingsForm: { local: {}, online: {}, routing: {}, comfy: {} }, saving: false,
     ollamaModels: [], showThink: false, loadingModels: false,
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
@@ -170,6 +173,7 @@ createApp({
       this.settingsForm = {
         local: { ...s.llm_providers.local }, online: { ...s.llm_providers.online },
         routing: { ...s.llm_routing },
+        comfy: { ...s.comfy },
       };
     },
     async fetchOllamaModels() {
@@ -196,6 +200,7 @@ createApp({
                     model: this.settingsForm.online.model || '' },
         },
         llm_routing: { ...this.settingsForm.routing },
+        comfy: { base_url: this.settingsForm.comfy.base_url || '' },
       };
       const resp = await fetch('/api/settings', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },

@@ -27,6 +27,7 @@ DEFAULT_SETTINGS = {
         "split_storyboards": "online",
         "gen_video_prompt": "online",
     },
+    "comfy": {"base_url": "http://127.0.0.1:8188"},
 }
 
 

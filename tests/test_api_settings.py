@@ -61,3 +61,10 @@ def test_put_rejects_malformed_provider(tmp_path):
     with _client(tmp_path) as c:
         resp = c.put("/api/settings", json={"llm_providers": {"local": {"base_url": 123}}})
         assert resp.status_code == 422
+
+
+def test_put_comfy_base_url(tmp_path):
+    with _client(tmp_path) as c:
+        resp = c.put("/api/settings", json={"comfy": {"base_url": "http://192.168.3.1:8188"}})
+        assert resp.status_code == 200
+        assert c.get("/api/settings").json()["comfy"]["base_url"] == "http://192.168.3.1:8188"

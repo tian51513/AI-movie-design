@@ -19,9 +19,14 @@ class ProviderConfig(BaseModel):
     model: str = ""
 
 
+class ComfyConfig(BaseModel):
+    base_url: str = ""
+
+
 class SettingsUpdate(BaseModel):
     llm_providers: dict[str, ProviderConfig] | None = None
     llm_routing: dict[str, str] | None = None
+    comfy: ComfyConfig | None = None
 
 
 @router.get("")
@@ -29,6 +34,7 @@ def read(request: Request):
     return {
         "llm_providers": get_setting(request.app.state.db, "llm_providers"),
         "llm_routing": get_setting(request.app.state.db, "llm_routing"),
+        "comfy": get_setting(request.app.state.db, "comfy"),
     }
 
 
@@ -53,6 +59,10 @@ def update(request: Request, body: SettingsUpdate):
         merged = get_setting(db, "llm_routing")
         merged.update(body.llm_routing)
         set_setting(db, "llm_routing", merged)
+    if body.comfy is not None:
+        merged = get_setting(db, "comfy")
+        merged.update(body.comfy.model_dump())
+        set_setting(db, "comfy", merged)
     return {"status": "ok"}
 
 

@@ -48,3 +48,8 @@ def test_unknown_key_raises(tmp_path):
     db = _db(tmp_path)
     with pytest.raises(KeyError):
         get_setting(db, "nope")
+
+
+def test_comfy_setting_default(tmp_path):
+    db = _db(tmp_path)
+    assert get_setting(db, "comfy") == {"base_url": "http://127.0.0.1:8188"}
