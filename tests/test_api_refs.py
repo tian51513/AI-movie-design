@@ -73,3 +73,24 @@ def test_generate_refs_batch_only_missing(tmp_path):
         (views / "sheet.png").write_bytes(b"\x89PNG")
         r = c.post(f"/api/projects/{pid}/generate-refs")
         assert r.status_code == 202 and r.json()["enqueued"] == 1
+
+
+def test_generate_refs_batch_dedup(tmp_path):
+    """批量接口不得为已在队列（pending/running）的资产重复入队。"""
+    with _client(tmp_path) as c:
+        pid = _mk_project(c)
+        rows = _seed(tmp_path, c, c.app, pid)
+        assert c.post(f"/api/projects/{pid}/generate-refs").json()["enqueued"] == 2
+        # 再次点击：全部已在队列 → 0；期间给一个资产手动加图 → 只该资产不入队
+        assert c.post(f"/api/projects/{pid}/generate-refs").json()["enqueued"] == 0
+        from comic_studio.engine.paths import data_to_abs
+        views = data_to_abs(tmp_path / "data", rows[0]["library_dir"]) / "views"
+        views.mkdir(parents=True, exist_ok=True)
+        (views / "sheet.png").write_bytes(b"\x89PNG")
+        # 第一批跑完（done）后，有图的不入队、无图的入队
+        from comic_studio.engine.jobs import get_job
+        conn = c.app.state.db.connect()
+        conn.execute("UPDATE jobs SET status='done' WHERE status IN ('pending','running')")
+        conn.commit()
+        r = c.post(f"/api/projects/{pid}/generate-refs").json()
+        assert r["enqueued"] == 1  # 只有缺图的那个

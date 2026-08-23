@@ -44,10 +44,13 @@ def gen_batch(request: Request, project_id: int):
     db = request.app.state.db
     if get_project(db, project_id) is None:
         raise HTTPException(404, "项目不存在")
+    queued = {r["asset_id"] for r in db.connect().execute(
+        "SELECT DISTINCT asset_id FROM jobs WHERE type='gen_ref' "
+        "AND asset_id IS NOT NULL AND status IN ('pending','running')")}
     n = 0
     for a in list_project_assets(db, project_id):
         views = data_to_abs(request.app.state.data_dir, a["library_dir"]) / "views"
-        if _has_views(views):
+        if _has_views(views) or a["id"] in queued:
             continue
         enqueue_job(db, "gen_ref", project_id=project_id, asset_id=a["id"],
                     resource="gpu_comfy", payload={"asset_id": a["id"]})
