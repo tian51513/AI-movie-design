@@ -63,7 +63,9 @@ def ask_json(client: LLMClient, system: str, user: str, max_attempts: int = 3) -
 
 
 def ask_validated(client: LLMClient, system: str, user: str,
-                  schema_cls: type[T], max_attempts: int = 3) -> tuple[T, Usage]:
+                  schema_cls: type[T], max_attempts: int = 3,
+                  on_retry=None) -> tuple[T, Usage]:
+    """on_retry(reason: str)：每次失败重试前回调（日志埋点用），不影响重试逻辑。"""
     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     last: str = ""
     for _ in range(max_attempts):
@@ -72,6 +74,7 @@ def ask_validated(client: LLMClient, system: str, user: str,
             data = parse_json_text(text)
         except LLMError as e:
             last = str(e)
+            if on_retry: on_retry("JSON 解析失败")
             messages += [{"role": "assistant", "content": text},
                          {"role": "user", "content": f"输出不是合法 JSON（{e}），请只输出一个合法 JSON 对象。"}]
             continue
@@ -79,6 +82,7 @@ def ask_validated(client: LLMClient, system: str, user: str,
             return schema_cls.model_validate(data), usage
         except ValidationError as e:
             last = str(e)
+            if on_retry: on_retry(f"{schema_cls.__name__} 校验失败")
             messages += [{"role": "assistant", "content": text},
                          {"role": "user", "content": f"JSON 不符合要求的结构，错误如下，请修正后重新输出完整 JSON：\n{e}"}]
     raise LLMError(f"{max_attempts} 次尝试均未通过 {schema_cls.__name__} 校验: {last}")

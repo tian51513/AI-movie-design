@@ -94,6 +94,15 @@
         <b>{{ a.name }}</b> <span class="muted">{{ a.detail }}</span>
         <span class="pill" v-for="t in a.tags" :key="t">{{ t }}</span></li></ul>
     </div>
+    <h3>执行日志（{{ logs.length }}）</h3>
+    <div id="logbox" style="background:#0d1117;border:1px solid #2c3540;border-radius:8px;padding:10px;max-height:320px;overflow-y:auto;font-family:ui-monospace,monospace;font-size:13px;line-height:1.7">
+      <div v-for="l in logs" :key="l.id">
+        <span class="muted">{{ l.time.slice(5, 19) }}</span>
+        <span class="pill">{{ l.source }}</span>
+        <span :style="{color: logColor(l.level)}">{{ l.message }}</span>
+      </div>
+      <div v-if="!logs.length" class="muted">暂无日志——分析等活动产生后此处实时滚动显示</div>
+    </div>
   </main>
 </div>
 <script>
@@ -105,6 +114,7 @@ createApp({
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {} }, saving: false,
     ollamaModels: [], showThink: false, loadingModels: false,
+    logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
   }),
@@ -127,13 +137,34 @@ createApp({
       this.creating = false; this.newName = ''; this.newFile = null;
       await this.refresh();
     },
-    back() { clearInterval(this.pollTimer); this.pollTimer = null; this.project = null; this.view = 'projects'; },
+    back() { clearInterval(this.pollTimer); this.pollTimer = null;
+      this.stopLogsPolling(); this.project = null; this.view = 'projects'; },
     async open(p) {
       clearInterval(this.pollTimer); this.pollTimer = null;  // 重入防护：清掉旧轮询
-      this.view = 'detail'; this.project = p; await this.loadDetail();
+      this.logs = []; this.lastLogId = 0;
+      this.view = 'detail'; this.project = p;
+      await this.loadDetail(); this.startLogsPolling();
     },
+    startLogsPolling() {
+      this.stopLogsPolling();
+      const tick = async () => {
+        const r = await fetch(`/api/projects/${this.project.id}/logs?after=${this.lastLogId}`);
+        if (!r.ok || !this.project) return;
+        const body = await r.json();
+        if (body.logs.length) {
+          const box = document.getElementById('logbox');
+          const atBottom = !box || (box.scrollHeight - box.scrollTop - box.clientHeight < 40);
+          this.logs.push(...body.logs); this.lastLogId = body.last_id;
+          if (atBottom && box) box.scrollTop = box.scrollHeight;
+        }
+      };
+      tick(); this.logsTimer = setInterval(tick, 1000);
+    },
+    stopLogsPolling() { clearInterval(this.logsTimer); this.logsTimer = null; },
+    logColor(level) { return { info: '#9ca3af', warn: '#facc15', error: '#f87171' }[level] || '#eee'; },
     async openSettings() {
-      clearInterval(this.pollTimer); this.pollTimer = null; this.project = null;
+      clearInterval(this.pollTimer); this.pollTimer = null;
+      this.stopLogsPolling(); this.project = null;
       this.view = 'settings';
       const s = await (await fetch('/api/settings')).json();
       this.settingsForm = {

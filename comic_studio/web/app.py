@@ -50,6 +50,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
     from .routes_settings import router as settings_router
     app.include_router(settings_router)
 
+    from .routes_logs import router as logs_router
+    app.include_router(logs_router)
+
     from .routes_projects import router as projects_router
     app.include_router(projects_router)
 

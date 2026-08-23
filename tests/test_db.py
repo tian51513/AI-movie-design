@@ -17,7 +17,7 @@ def test_migrate_creates_all_tables(tmp_path):
     tables = {r["name"] for r in conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table'")}
     expected = {"schema_version", "projects", "assets", "project_assets",
-                "shots", "jobs", "endpoints", "settings", "llm_calls"}
+                "shots", "jobs", "endpoints", "settings", "llm_calls", "logs"}
     assert expected <= tables
 
 

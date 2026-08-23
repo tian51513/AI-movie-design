@@ -4,6 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 
 from ..engine import jobs
 from ..engine.llm.analyze import analyze_project
+from ..engine.logbus import emit as emit_log
 from ..engine.projects import get_project
 
 router = APIRouter(prefix="/api/projects/{project_id}/analyze", tags=["analyze"])
@@ -14,6 +15,8 @@ def _run_analysis(db, data_dir, project_id: int, job_id: int) -> None:
         analyze_project(db, data_dir, project_id)
         jobs.finish_job(db, job_id, None)
     except Exception as e:  # job 层兜底，错误明细进库（spec §11）
+        emit_log(db, "analyze", "error", f"分析失败：{type(e).__name__}: {e}",
+                 project_id=project_id, job_id=job_id)
         jobs.finish_job(db, job_id, f"{type(e).__name__}: {e}")
 
 

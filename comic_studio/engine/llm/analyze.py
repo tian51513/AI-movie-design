@@ -1,11 +1,13 @@
 # comic_studio/engine/llm/analyze.py
 """分析编排：分块 → 抽取 → 合并 → 入库（spec §5 created→analyzed）。"""
 import json
+import time
 from pathlib import Path
 from typing import Callable
 
 from ..assets import persist_assets
 from ..db import Database
+from ..logbus import emit as emit_log
 from ..paths import data_to_abs
 from ..projects import get_project, set_stage
 from ..settings import get_setting
@@ -61,11 +63,23 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
         raise ValueError(f"项目不存在: {project_id}")
     text = data_to_abs(data_dir, proj["novel_path"]).read_text(encoding="utf-8")
     chunks = split_chunks(text, max_chars=max_chars)
+    emit_log(db, "analyze", "info", f"开始分析：{len(chunks)} 个文本块（共 {len(text)} 字）",
+             project_id=project_id)
     extract_client = client_factory("extract_assets")
     provider_name = get_setting(db, "llm_routing")["extract_assets"]
     results: list[AssetsAnalysis] = []
-    for chunk in chunks:
-        result, usage = ask_validated(extract_client, EXTRACT_SYSTEM, chunk, AssetsAnalysis)
+    for i, chunk in enumerate(chunks, 1):
+        emit_log(db, "analyze", "info", f"分块 {i}/{len(chunks)} 开始（{len(chunk)} 字）",
+                 project_id=project_id)
+        t0 = time.monotonic()
+        result, usage = ask_validated(
+            extract_client, EXTRACT_SYSTEM, chunk, AssetsAnalysis,
+            on_retry=lambda reason: emit_log(db, "llm", "warn", f"校验重试：{reason}",
+                                             project_id=project_id))
+        emit_log(db, "llm", "info",
+                 f"extract_assets 完成 · {extract_client.model} · "
+                 f"{usage.prompt_tokens}+{usage.completion_tokens} tok · {time.monotonic()-t0:.1f}s",
+                 project_id=project_id)
         results.append(result)
         log_llm_call(db, "extract_assets", provider_name, extract_client.model, usage)
     if not results:
@@ -74,7 +88,12 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
         final = results[0]
     else:
         final, merge_usage = merge_analyses(extract_client, results)
+        emit_log(db, "analyze", "info", f"合并 {len(results)} 块分析结果", project_id=project_id)
         log_llm_call(db, "extract_assets", provider_name, extract_client.model, merge_usage)
     ids = persist_assets(db, data_dir, project_id, final)
+    emit_log(db, "analyze", "info",
+             f"入库 {len(final.characters)} 角色 / {len(final.scenes)} 场景 / {len(final.props)} 道具",
+             project_id=project_id)
     set_stage(db, project_id, "analyzed")
+    emit_log(db, "system", "info", "阶段流转 created → analyzed", project_id=project_id)
     return ids

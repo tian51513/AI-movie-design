@@ -79,3 +79,19 @@ def test_merge_llm_call_logs_real_usage(tmp_path):
     for r in rows:
         assert r["prompt_tokens"] == 1
         assert r["completion_tokens"] == 2
+
+
+def test_analysis_emits_structured_logs(tmp_path):
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.logbus import fetch_logs
+    db = Database(tmp_path / "s.db"); db.migrate()
+    proj = create_project(db, tmp_path / "data", "日志剧", "9:16", "一段短文本")
+    analyze_project(db, tmp_path / "data", proj["id"],
+                    client_factory=lambda t: FakeClient([CHUNK1]))
+    msgs = [(r["source"], r["level"], r["message"]) for r in fetch_logs(db, proj["id"])]
+    texts = " | ".join(m for _, _, m in msgs)
+    assert ("analyze", "info", texts.count("分块 1/1 开始")) == ("analyze", "info", 1)
+    assert "extract_assets 完成 · fake ·" in texts
+    assert "入库 1 角色 / 0 场景 / 0 道具" in texts
+    assert "阶段流转 created → analyzed" in texts
+    assert all(r["project_id"] == proj["id"] for r in fetch_logs(db, proj["id"]))

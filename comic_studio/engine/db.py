@@ -94,6 +94,17 @@ MIGRATIONS: list[str] = [
         completion_tokens INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );""",
+    # 9 logs（执行日志总线：分析/LLM/ComfyUI/合成/系统统一埋点）
+    """CREATE TABLE logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+        project_id INTEGER REFERENCES projects(id),
+        job_id INTEGER REFERENCES jobs(id),
+        source TEXT NOT NULL,
+        level TEXT NOT NULL CHECK (level IN ('info','warn','error')),
+        message TEXT NOT NULL,
+        data_json TEXT NOT NULL DEFAULT '{}'
+    );""",
 ]
 
 
