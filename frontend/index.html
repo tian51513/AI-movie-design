@@ -29,8 +29,15 @@
     <div class="row">
       <div class="card" style="flex:1;min-width:320px">
         <h3>本地（Ollama）</h3>
-        <p><input v-model="settingsForm.local.base_url" placeholder="base_url" style="width:90%"></p>
-        <p><input v-model="settingsForm.local.model" placeholder="模型名，如 qwen3:14b" style="width:90%"></p>
+        <p><input v-model="settingsForm.local.base_url" placeholder="base_url" style="width:70%">
+           <button @click="fetchOllamaModels" :disabled="loadingModels">
+             {{ loadingModels ? '获取中…' : '获取模型' }}</button></p>
+        <p><input v-model="settingsForm.local.model" list="ollama-models"
+                  placeholder="模型名（可下拉选择或手输）" style="width:90%">
+           <datalist id="ollama-models">
+             <option v-for="m in displayOllamaModels" :key="m" :value="m"></option>
+           </datalist></p>
+        <p><label class="muted"><input type="checkbox" v-model="showThink"> 显示推理模型（含 think）</label></p>
       </div>
       <div class="card" style="flex:1;min-width:320px">
         <h3>线上 API</h3>
@@ -94,10 +101,17 @@ createApp({
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {} }, saving: false,
+    ollamaModels: [], showThink: false, loadingModels: false,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
   }),
   async mounted() { await this.refresh(); },
+  computed: {
+    displayOllamaModels() {
+      return this.showThink ? this.ollamaModels
+        : this.ollamaModels.filter(m => !m.toLowerCase().includes("think"));
+    },
+  },
   methods: {
     async refresh() { this.projects = await (await fetch('/api/projects')).json(); },
     async createProject() {
@@ -124,9 +138,21 @@ createApp({
         routing: { ...s.llm_routing },
       };
     },
+    async fetchOllamaModels() {
+      this.loadingModels = true;
+      try {
+        const resp = await fetch('/api/settings/ollama-models?base_url=' +
+          encodeURIComponent(this.settingsForm.local.base_url || ''));
+        if (!resp.ok) {
+          alert('获取失败：' + (await resp.json()).detail);
+          this.loadingModels = false; return;
+        }
+        this.ollamaModels = (await resp.json()).models;
+      } catch (e) { alert('获取失败：' + e); }
+      this.loadingModels = false;
+    },
     async saveSettings() {
-      this.saving = true;
-      const payload = {
+      this.saving = true;      const payload = {
         llm_providers: {
           local: { base_url: this.settingsForm.local.base_url || '',
                    api_key: this.settingsForm.local.api_key || 'ollama',

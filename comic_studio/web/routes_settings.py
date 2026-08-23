@@ -1,5 +1,6 @@
 """LLM 设置接口：查看/编辑 provider 与任务路由（spec §9.1 可配置路由的 Web 面）。"""
-from fastapi import APIRouter, HTTPException, Request
+import httpx
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from ..engine.settings import get_setting, set_setting
@@ -51,3 +52,28 @@ def update(request: Request, body: SettingsUpdate):
         merged.update(body.llm_routing)
         set_setting(db, "llm_routing", merged)
     return {"status": "ok"}
+
+
+def _ollama_root(base_url: str) -> str:
+    """OpenAI 兼容 base_url（…/v1）→ Ollama 原生 API 根（…）。"""
+    root = base_url.strip().rstrip("/")
+    if root.endswith("/v1"):
+        root = root[: -len("/v1")]
+    return root
+
+
+def _fetch_ollama_models(root_url: str) -> list[str]:
+    """调 Ollama /api/tags 取模型名清单（网络在此，测试注入点）。"""
+    with httpx.Client(timeout=5) as client:
+        resp = client.get(f"{root_url}/api/tags")
+        resp.raise_for_status()
+        return [m["name"] for m in resp.json().get("models", [])]
+
+
+@router.get("/ollama-models")
+def ollama_models(base_url: str = Query(...)):
+    try:
+        models = _fetch_ollama_models(_ollama_root(base_url))
+    except Exception as e:
+        raise HTTPException(502, f"Ollama 不可达或响应异常（{e}）；确认 Ollama 正在运行且地址正确")
+    return {"models": models}
