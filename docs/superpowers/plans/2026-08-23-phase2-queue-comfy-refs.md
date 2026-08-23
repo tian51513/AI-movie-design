@@ -1483,12 +1483,12 @@ def test_views_listing_and_gate1(tmp_path):
         # gate1 缺图 → 422
         assert c.post(f"/api/projects/{pid}/gate1").status_code == 422
         assert {m["name"] for m in r.json()} == set()  # 无图
-        # 手工放一张 sheet.png
+        # 手工给全部资产放 sheet.png（gate1 要求每个资产都有图）
         from comic_studio.engine.paths import data_to_abs
-        lib = rows[0]["library_dir"]
-        views = data_to_abs(tmp_path / "data", lib) / "views"
-        views.mkdir(parents=True, exist_ok=True)
-        (views / "sheet.png").write_bytes(b"\x89PNG")
+        for row in rows:
+            views = data_to_abs(tmp_path / "data", row["library_dir"]) / "views"
+            views.mkdir(parents=True, exist_ok=True)
+            (views / "sheet.png").write_bytes(b"\x89PNG")
         r = c.get(f"/api/assets/{aid}/views").json()
         assert r and r[0]["name"] == "sheet" and "/library/" in r[0]["url"]
         assert c.post(f"/api/projects/{pid}/gate1").status_code == 200
@@ -1546,6 +1546,13 @@ router = APIRouter(tags=["refs"])
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
+def _has_views(views_dir: Path) -> bool:
+    """目录内是否存在任一图片（注意：any(views.glob(...) for ...) 生成器恒真，须展平）。"""
+    if not views_dir.is_dir():
+        return False
+    return any(f for ext in IMAGE_EXTS for f in views_dir.glob(f"*{ext}"))
+
+
 @router.post("/api/assets/{asset_id}/gen", status_code=202)
 def gen_asset(request: Request, asset_id: int):
     db = request.app.state.db
@@ -1571,7 +1578,7 @@ def gen_batch(request: Request, project_id: int):
     n = 0
     for a in list_project_assets(db, project_id):
         views = data_to_abs(request.app.state.data_dir, a["library_dir"]) / "views"
-        if any(views.glob(f"*{e}") for e in IMAGE_EXTS):
+        if _has_views(views):
             continue
         enqueue_job(db, "gen_ref", project_id=project_id, asset_id=a["id"],
                     resource="gpu_comfy", payload={"asset_id": a["id"]})
@@ -1631,7 +1638,7 @@ def gate1(request: Request, project_id: int):
     missing = []
     for a in list_project_assets(db, project_id):
         vd = data_to_abs(request.app.state.data_dir, a["library_dir"]) / "views"
-        if not any(vd.glob(f"*{e}") for e in IMAGE_EXTS):
+        if not _has_views(vd):
             missing.append(a["name"])
     if missing:
         raise HTTPException(422, f"以下资产还没有参考图: {missing}")
