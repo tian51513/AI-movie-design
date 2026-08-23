@@ -61,4 +61,4 @@ def handle_gen_ref(db, data_dir, job, comfy):
                    images[0].get("type", "output"), dest)
     emit_log(db, "comfy", "info", f"资产「{asset['name']}」参考图已生成并落盘",
              project_id=job["project_id"], job_id=job["id"],
-             data={"path": str(dest.relative_to(data_dir))})
+             data={"path": f"{asset['library_dir']}/views/sheet.png"})
