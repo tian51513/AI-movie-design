@@ -1,0 +1,21 @@
+id: zimage_i2i
+type: i2i
+name: Z-Image Turbo 图生图精化（P3 重生用，denoise 0.75）
+file: zimage_i2i.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '28'
+    field: value
+  params:
+    seed:
+      node: '4'
+      field: seed
+  images:
+  - node: '23'
+    field: image
+    slot: base
+outputs:
+- node: '10'
+  filename_prefix: cs/{project}/{asset}
+requires: []

@@ -20,7 +20,9 @@
 
 | 模板 id | 类型 | 来源 | 状态 |
 |---|---|---|---|
-| t2i_ref | t2i | 小枫-文生图 | **已映射，P2 参考图生产用** |
+| zimage_t2i | t2i | z-image文生图 | **主力（已映射 t2i）** |
+| zimage_i2i | i2i | 小枫-Z-image[文+图] | 注册未映射（P3 以图重生精化，denoise 0.75） |
+| t2i_ref | t2i | 小枫-文生图（majicmix） | 备选——设置页可切回 |
 | character_views | character_views | ▶▷Krea2四视图 | 注册未映射（需 seed 图，P3 升级） |
 | h3_ref2va | ref2va | 多参全能生视频 | P4 主力，注册未映射 |
 | h3_fl2v | fl2v | 首尾帧生视频 | P4，注册未映射 |

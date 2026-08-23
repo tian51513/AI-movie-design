@@ -1,0 +1,17 @@
+id: zimage_t2i
+type: t2i
+name: Z-Image Turbo 文生图（主力）
+file: zimage_t2i.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '57:27'
+    field: text
+  params:
+    seed:
+      node: '57:3'
+      field: seed
+outputs:
+- node: '9'
+  filename_prefix: cs/{project}/{asset}
+requires: []
