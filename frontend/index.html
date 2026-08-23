@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>comic_studio · 漫剧工坊</title>
+<script src="/vendor/vue.global.prod.js"></script>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; background: #111; color: #eee; }
+  header { padding: 12px 20px; background: #1d2530; border-bottom: 1px solid #333; }
+  main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .card { background: #1a1f27; border: 1px solid #2c3540; border-radius: 8px; padding: 14px; min-width: 220px; }
+  button { background: #3b82f6; color: white; border: 0; border-radius: 6px; padding: 6px 14px; cursor: pointer; }
+  button:disabled { background: #374151; cursor: not-allowed; }
+  input, select { background: #0d1117; color: #eee; border: 1px solid #2c3540; border-radius: 6px; padding: 6px; }
+  .muted { color: #8b949e; font-size: 13px; }
+  .pill { display: inline-block; background: #2c3540; border-radius: 10px; padding: 1px 8px; font-size: 12px; margin-left: 6px; }
+  h2 { margin: 18px 0 8px; }
+  ul { padding-left: 18px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header><b>漫剧工坊</b> <span class="muted">comic_studio</span></header>
+  <main v-if="!project">
+    <h2>项目</h2>
+    <div class="row">
+      <div class="card" v-for="p in projects" :key="p.id" @click="open(p)" style="cursor:pointer">
+        <b>{{ p.name }}</b>
+        <div class="muted">{{ p.aspect_ratio }} · {{ stageName(p.stage) }}</div>
+      </div>
+      <div class="card">
+        <form @submit.prevent="createProject">
+          <p><input v-model="newName" placeholder="漫剧名称" required></p>
+          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
+          <p><input type="file" accept=".txt" @change="f => newFile = f.target.files[0]" required></p>
+          <p><button :disabled="creating">{{ creating ? '创建中…' : '创建项目' }}</button></p>
+        </form>
+      </div>
+    </div>
+  </main>
+  <main v-else>
+    <p><a href="#" @click.prevent="project=null">← 返回</a></p>
+    <h2>{{ project.name }} <span class="pill">{{ project.aspect_ratio }}</span>
+        <span class="pill">{{ stageName(project.stage) }}</span></h2>
+    <p>
+      <button @click="startAnalyze" :disabled="analyzeState.status==='running'">
+        {{ analyzeState.status==='running' ? '分析中…' : 'LLM 分析资产' }}</button>
+      <span v-if="analyzeState.status==='failed'" style="color:#f87171">
+        失败：{{ analyzeState.error }}</span>
+    </p>
+    <div v-for="kind in ['character','scene','prop']" :key="kind">
+      <h3>{{ kindName(kind) }}（{{ assets.filter(a=>a.kind===kind).length }}）</h3>
+      <ul><li v-for="a in assets.filter(a=>a.kind===kind)" :key="a.id">
+        <b>{{ a.name }}</b> <span class="muted">{{ a.detail }}</span>
+        <span class="pill" v-for="t in a.tags" :key="t">{{ t }}</span></li></ul>
+    </div>
+  </main>
+</div>
+<script>
+const { createApp } = Vue;
+createApp({
+  data: () => ({
+    projects: [], project: null, assets: [],
+    newName: '', newRatio: '9:16', newFile: null, creating: false,
+    analyzeState: { status: '', error: null }, pollTimer: null,
+  }),
+  async mounted() { await this.refresh(); },
+  methods: {
+    async refresh() { this.projects = await (await fetch('/api/projects')).json(); },
+    async createProject() {
+      this.creating = true;
+      const fd = new FormData();
+      fd.append('name', this.newName); fd.append('aspect_ratio', this.newRatio);
+      fd.append('novel', this.newFile);
+      await fetch('/api/projects', { method: 'POST', body: fd });
+      this.creating = false; this.newName = ''; this.newFile = null;
+      await this.refresh();
+    },
+    async open(p) {
+      this.project = p; await this.loadDetail();
+    },
+    async loadDetail() {
+      this.project = await (await fetch(`/api/projects/${this.project.id}`)).json();
+      this.assets = await (await fetch(`/api/projects/${this.project.id}/assets`)).json();
+      const s = await fetch(`/api/projects/${this.project.id}/analyze/status`);
+      if (s.ok) this.analyzeState = await s.json();
+    },
+    async startAnalyze() {
+      const r = await fetch(`/api/projects/${this.project.id}/analyze`, { method: 'POST' });
+      if (r.status === 202) {
+        this.analyzeState = { status: 'running', error: null };
+        this.pollTimer = setInterval(async () => {
+          await this.loadDetail();
+          if (this.analyzeState.status !== 'running') {
+            clearInterval(this.pollTimer);
+          }
+        }, 2000);
+      } else { alert(await r.text()); }
+    },
+    stageName(s) { return { created: '已创建', analyzed: '已分析', assets_ready: '资产就绪',
+      storyboard_ready: '分镜就绪', rendering: '渲染中', rendered: '已渲染', merged: '已合成' }[s] || s; },
+    kindName(k) { return { character: '角色', scene: '场景', prop: '道具' }[k]; },
+  },
+}).mount('#app');
+</script>
+</body>
+</html>

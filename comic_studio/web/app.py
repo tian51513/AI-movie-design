@@ -29,11 +29,17 @@ def create_app(db_path: str | Path = "./data/studio.db",
     def health():
         return {"status": "ok"}
 
-    @app.get("/", response_class=PlainTextResponse)
+    @app.get("/")
     def index():
-        if _FRONTEND.exists():
-            return FileResponse(_FRONTEND)
-        return "comic_studio frontend 尚未创建（Task 14）"
+        return FileResponse(_FRONTEND)
+
+    from fastapi.staticfiles import StaticFiles
+    vendor_dir = _FRONTEND.parent / "vendor"
+    if vendor_dir.is_dir():
+        app.mount("/vendor", StaticFiles(directory=vendor_dir), name="vendor")
+
+    from .routes_assets import router as assets_router
+    app.include_router(assets_router)
 
     from .routes_projects import router as projects_router
     app.include_router(projects_router)
