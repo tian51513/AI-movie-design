@@ -64,6 +64,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
     from .routes_logs import router as logs_router
     app.include_router(logs_router)
 
+    from .routes_shots import router as shots_router
+    app.include_router(shots_router)
+
     from .routes_comfy import router as comfy_router
     app.include_router(comfy_router)
 
