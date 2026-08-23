@@ -52,7 +52,7 @@ def test_build_gen_prompt_by_kind(tmp_path, monkeypatch):
     from comic_studio.engine.assets import list_project_assets
     rows = {r["kind"]: r for r in list_project_assets(db, pid)}
     p_char, _ = build_gen_prompt(rows["character"])
-    assert "萧炎" in p_char and "三视图" in p_char
+    assert "萧炎" in p_char and "三视图" in p_char and "禁止视角重复" in p_char
     p_scene, _ = build_gen_prompt(rows["scene"])
     assert "场景概念" in p_scene and "无人物" in p_scene
     # 项目级风格段注入（公共参数）
@@ -93,5 +93,5 @@ def test_style_goes_after_suffix_and_dedup(tmp_path):
            "source_project": 1, "id": 2}
     p, _ = build_gen_prompt(row, style="真人电影，电影质感。")
     assert "。。" not in p
-    assert p.index("白色背景") < p.index("真人电影")  # 风格段在设定图套话之后
-    assert p.endswith("真人电影，电影质感")
+    assert p.index("白色干净背景") < p.index("真人电影")  # 风格段在设定图套话之后
+    assert "真人电影，电影质感。严格三视图布局" in p  # 风格后结构再强调

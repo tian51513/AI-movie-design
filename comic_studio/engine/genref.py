@@ -12,7 +12,8 @@ from .workflows.registry import resolve_template
 
 KIND_LABEL = {"character": "角色", "scene": "场景", "prop": "道具"}
 KIND_SUFFIX = {
-    "character": "，角色设定图，三视图：正面、侧面、背面，全身，白色背景",
+    "character": "，角色三视图设定图：同一画面中从左到右依次为 正面全身、左侧全身、背面全身，"
+                 "三个视角必须明显不同且各占三分之一，全身像，白色干净背景",
     "scene": "，场景概念设定图，环境全景，无人物",
     "prop": "，道具设定图，白色背景，居中特写",
 }
@@ -27,7 +28,9 @@ def build_gen_prompt(asset_row, style: str = ""):
     prompt = base + KIND_SUFFIX.get(asset_row["kind"], "")
     style = style.strip().rstrip("。；;，,").strip()
     if style:
-        prompt += "。" + style   # 风格段收尾：压过前面的设定图套话，主导整体画风
+        prompt += "。" + style   # 风格段：主导整体画风
+    if asset_row["kind"] == "character":
+        prompt += "。严格三视图布局：正面、左侧、背面各一个，禁止视角重复"  # 结构收尾再强调
     ctx = {"project": f"p{asset_row['source_project']}", "asset": str(asset_row["id"])}
     return prompt, ctx
 
