@@ -32,11 +32,14 @@
         <p><input v-model="settingsForm.local.base_url" placeholder="根地址，如 http://127.0.0.1:11434（带不带 /v1、误粘 /api/tags 均可）" style="width:70%">
            <button @click="fetchOllamaModels" :disabled="loadingModels">
              {{ loadingModels ? '获取中…' : '获取模型' }}</button></p>
-        <p><input v-model="settingsForm.local.model" list="ollama-models"
-                  placeholder="模型名（可下拉选择或手输）" style="width:90%">
-           <datalist id="ollama-models">
-             <option v-for="m in displayOllamaModels" :key="m" :value="m"></option>
-           </datalist></p>
+        <p v-if="ollamaModels.length">
+           <select v-model="settingsForm.local.model" style="width:90%">
+             <option v-if="settingsForm.local.model && !displayOllamaModels.includes(settingsForm.local.model)"
+                     :value="settingsForm.local.model">{{ settingsForm.local.model }}（清单外，保留）</option>
+             <option v-for="m in displayOllamaModels" :key="m" :value="m">{{ m }}</option>
+           </select></p>
+        <p v-else><input v-model="settingsForm.local.model"
+                  placeholder="模型名（点上方获取模型后变下拉）" style="width:90%"></p>
         <p><label class="muted"><input type="checkbox" v-model="showThink"> 显示推理模型（含 think）</label></p>
       </div>
       <div class="card" style="flex:1;min-width:320px">
