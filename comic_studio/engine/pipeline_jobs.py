@@ -11,7 +11,7 @@ from .settings import get_setting
 def enqueue_llm_job(db, jtype, project_id, shot_id=None, payload=None):
     routing = get_setting(db, "llm_routing").get(jtype)
     resource = "gpu_llm_local" if routing == "local" else None
-    return enqueue_job(db, jtype, project_id=project_id,
+    return enqueue_job(db, jtype, project_id=project_id, shot_id=shot_id,
                        resource=resource, payload=payload)
 
 

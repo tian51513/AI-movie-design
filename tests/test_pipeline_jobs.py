@@ -21,6 +21,18 @@ def test_enqueue_resource_follows_routing(tmp_path):
     assert get_job(db, j2)["resource"] == "gpu_llm_local"
 
 
+def test_enqueue_shot_id_persisted(tmp_path):
+    from comic_studio.engine.shots import persist_shots
+    db = _db(tmp_path); pid = create_project(db, tmp_path / "d", "p", "9:16", "t")["id"]
+    draft = NS(text_span="原文", description="镜头描述", shot_type="对话",
+              camera={}, duration=5.0, workflow_type="ref2va",
+              ledger={}, character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)
+    sid = persist_shots(db, pid, [draft])[0]
+    jid = enqueue_llm_job(db, "gen_prompt", project_id=pid, shot_id=sid,
+                           payload={"shot_id": sid})
+    assert get_job(db, jid)["shot_id"] == sid
+
+
 def test_handlers_registered():
     from comic_studio.engine.queue.worker import HANDLERS
     import comic_studio.engine.pipeline_jobs  # noqa: F401 注册触发

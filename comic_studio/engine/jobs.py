@@ -30,14 +30,14 @@ def latest_job(db: Database, project_id: int, jtype: str):
         (project_id, jtype)).fetchone()
 
 
-def enqueue_job(db, jtype, project_id=None, asset_id=None,
+def enqueue_job(db, jtype, project_id=None, asset_id=None, shot_id=None,
                 resource=None, payload=None) -> int:
     import json
     conn = db.connect()
     cur = conn.execute(
-        "INSERT INTO jobs (project_id, asset_id, type, resource, payload_json, status) "
-        "VALUES (?,?,?,?,?, 'pending')",
-        (project_id, asset_id, jtype, resource,
+        "INSERT INTO jobs (project_id, shot_id, asset_id, type, resource, payload_json, status) "
+        "VALUES (?,?,?,?,?,?, 'pending')",
+        (project_id, shot_id, asset_id, jtype, resource,
          json.dumps(payload or {}, ensure_ascii=False)))
     conn.commit()
     return cur.lastrowid
