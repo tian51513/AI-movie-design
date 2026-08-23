@@ -29,7 +29,7 @@
     <div class="row">
       <div class="card" style="flex:1;min-width:320px">
         <h3>本地（Ollama）</h3>
-        <p><input v-model="settingsForm.local.base_url" placeholder="base_url" style="width:70%">
+        <p><input v-model="settingsForm.local.base_url" placeholder="根地址，如 http://127.0.0.1:11434（带不带 /v1、误粘 /api/tags 均可）" style="width:70%">
            <button @click="fetchOllamaModels" :disabled="loadingModels">
              {{ loadingModels ? '获取中…' : '获取模型' }}</button></p>
         <p><input v-model="settingsForm.local.model" list="ollama-models"

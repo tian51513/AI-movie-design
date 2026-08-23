@@ -48,6 +48,15 @@ def test_fetch_strips_trailing_v1_and_slashes():
     assert _ollama_root("http://192.168.3.1:11434") == "http://192.168.3.1:11434"
 
 
+def test_ollama_root_tolerates_pasted_paths_and_no_scheme():
+    from comic_studio.web.routes_settings import _ollama_root
+    assert _ollama_root("http://127.0.0.1:11434/api/tags") == "http://127.0.0.1:11434"
+    assert _ollama_root("http://127.0.0.1:11434/api") == "http://127.0.0.1:11434"
+    assert _ollama_root("http://127.0.0.1:11434/v1/chat/completions") == "http://127.0.0.1:11434"
+    assert _ollama_root("127.0.0.1:11434") == "http://127.0.0.1:11434"
+    assert _ollama_root("localhost:11434/v1") == "http://localhost:11434"
+
+
 def test_ollama_models_rejects_cross_site_browser_request(tmp_path, monkeypatch):
     monkeypatch.setattr("comic_studio.web.routes_settings._fetch_ollama_models",
                         lambda root: ["qwen3:14b"])

@@ -1,4 +1,6 @@
 """LLM 设置接口：查看/编辑 provider 与任务路由（spec §9.1 可配置路由的 Web 面）。"""
+import re
+
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
@@ -55,11 +57,15 @@ def update(request: Request, body: SettingsUpdate):
 
 
 def _ollama_root(base_url: str) -> str:
-    """OpenAI 兼容 base_url（…/v1）→ Ollama 原生 API 根（…）。"""
-    root = base_url.strip().rstrip("/")
-    if root.endswith("/v1"):
-        root = root[: -len("/v1")]
-    return root
+    """任意常见写法 → Ollama 原生 API 根。
+    容忍：缺 scheme、末尾斜杠、/v1、/v1/chat/completions、/api、/api/tags 等后缀。"""
+    u = base_url.strip()
+    if not re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", u):
+        u = "http://" + u
+    m = re.search(r"/(v1|api)(/|$)", u)
+    if m:
+        u = u[:m.start()]
+    return u.rstrip("/")
 
 
 def _fetch_ollama_models(root_url: str) -> list[str]:
@@ -77,8 +83,10 @@ def ollama_models(base_url: str = Query(...), request: Request = None):
     sec_fetch_site = request.headers.get("sec-fetch-site") if request else None
     if sec_fetch_site == "cross-site":
         raise HTTPException(403, "拒绝跨站请求")
+    root = _ollama_root(base_url)
     try:
-        models = _fetch_ollama_models(_ollama_root(base_url))
+        models = _fetch_ollama_models(root)
     except Exception as e:
-        raise HTTPException(502, f"Ollama 不可达或响应异常（{e}）；确认 Ollama 正在运行且地址正确")
+        raise HTTPException(502, f"Ollama 不可达或响应异常（请求了 {root}/api/tags）：{e}；"
+                                 "确认 Ollama 正在运行且地址正确")
     return {"models": models}
