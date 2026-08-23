@@ -18,11 +18,14 @@ KIND_SUFFIX = {
 }
 
 
-def build_gen_prompt(asset_row, data_dir=None):
+def build_gen_prompt(asset_row, style: str = ""):
+    """style：项目级画风描述（公共参数），非空时作为风格段注入。"""
     detail = json.loads(asset_row["appearance_json"]).get("detail", "")
     base = KIND_LABEL[asset_row["kind"]] + "：" + asset_row["name"]
     if detail:
         base += "。" + detail
+    if style.strip():
+        base += "。" + style.strip()
     prompt = base + KIND_SUFFIX.get(asset_row["kind"], "")
     ctx = {"project": f"p{asset_row['source_project']}", "asset": str(asset_row["id"])}
     return prompt, ctx
@@ -35,7 +38,9 @@ def handle_gen_ref(db, data_dir, job, comfy):
     if asset is None:
         raise ValueError(f"资产不存在: {payload['asset_id']}")
     tmpl = resolve_template(db, "t2i")  # 裁决 B：v1 统一 t2i 模板
-    prompt, ctx = build_gen_prompt(asset)
+    from .projects import get_project
+    proj = get_project(db, asset["source_project"])
+    prompt, ctx = build_gen_prompt(asset, style=(proj["style"] if proj else ""))
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
         params={"seed": payload.get("seed") or random.randint(0, 2**31 - 1)},

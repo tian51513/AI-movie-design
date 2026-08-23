@@ -80,6 +80,12 @@
         <form @submit.prevent="createProject">
           <p><input v-model="newName" placeholder="漫剧名称" required></p>
           <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
+        <p><select v-model="newStyleKey">
+             <option value="">不指定（默认）</option>
+             <option value="动漫">动漫</option><option value="写实">写实</option>
+             <option value="国风仙侠">国风仙侠</option><option value="3D">3D</option>
+             <option value="自定义">自定义…</option></select></p>
+        <p v-if="newStyleKey==='自定义'"><input v-model="newStyleText" placeholder="自定义画风描述" style="width:90%"></p>
           <p><input type="file" accept=".txt" @change="f => newFile = f.target.files[0]" required></p>
           <p><button :disabled="creating">{{ creating ? '创建中…' : '创建项目' }}</button></p>
         </form>
@@ -90,7 +96,11 @@
     <p><a href="#" @click.prevent="back">← 返回</a></p>
 
     <h2>{{ project.name }} <span class="pill">{{ project.aspect_ratio }}</span>
-        <span class="pill">{{ stageName(project.stage) }}</span></h2>
+        <span class="pill">{{ stageName(project.stage) }}</span>
+        <span v-if="project.style" class="pill" style="cursor:pointer"
+              title="点击修改画风（改后重新生成资产参考图生效）"
+              @click="editStyle">{{ project.style.slice(0, 12) }}…</span>
+        <span v-else class="pill" style="cursor:pointer" @click="editStyle">+ 指定画风</span></h2>
     <p>
       <button @click="startAnalyze" :disabled="analyzeState.status==='running'">
         {{ analyzeState.status==='running' ? '分析中…' : 'LLM 分析资产' }}</button>
@@ -134,11 +144,18 @@
 </div>
 <script>
 const { createApp } = Vue;
+const STYLE_PRESETS = {
+  '动漫': '日系动漫风格，干净线稿，赛璐璐上色，高饱和度，番剧质感',
+  '写实': '写实风格，电影质感，真实皮肤与材质细节，自然光照',
+  '国风仙侠': '国风仙侠风格，飘逸衣袂，古典配色，仙气氛围',
+  '3D': '3D渲染风格，卡通造型，柔和全局光照，精致材质',
+};
 createApp({
   data: () => ({
     view: 'projects', projects: [], project: null, assets: [],
     views: {}, queue: {running:0, pending:0, failed:0, comfy_ok:false},
     newName: '', newRatio: '9:16', newFile: null, creating: false,
+    newStyleKey: '', newStyleText: '',
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '' }, saving: false,
     ollamaModels: [], showThink: false, loadingModels: false,
@@ -161,6 +178,7 @@ createApp({
       this.creating = true;
       const fd = new FormData();
       fd.append('name', this.newName); fd.append('aspect_ratio', this.newRatio);
+      fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : STYLE_PRESETS[this.newStyleKey] || '');
       fd.append('novel', this.newFile);
       const resp = await fetch('/api/projects', { method: 'POST', body: fd });
       if (!resp.ok) { alert(await resp.text()); }
@@ -281,6 +299,15 @@ createApp({
           }
         }, 2000);
       } else { alert(await r.text()); }
+    },
+    async editStyle() {
+      const v = prompt('画风描述（留空则不指定，生成时由模型自由发挥）：',
+        this.project.style || '');
+      if (v === null) return;
+      const r = await fetch(`/api/projects/${this.project.id}`, {
+        method: 'PATCH', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({style: v})});
+      if (r.ok) { await this.loadDetail(); } else { alert(await r.text()); }
     },
     stageName(s) { return { created: '已创建', analyzed: '已分析', assets_ready: '资产就绪',
       storyboard_ready: '分镜就绪', rendering: '渲染中', rendered: '已渲染', merged: '已合成' }[s] || s; },

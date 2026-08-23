@@ -16,7 +16,7 @@ def slugify(name: str) -> str:
 
 
 def create_project(db: Database, data_dir: Path, name: str,
-                   aspect_ratio: str, novel_text: str) -> sqlite3.Row:
+                   aspect_ratio: str, novel_text: str, style: str = "") -> sqlite3.Row:
     assert aspect_ratio in ("9:16", "16:9")
     conn = db.connect()
     base = slugify(name) or "project"
@@ -28,8 +28,8 @@ def create_project(db: Database, data_dir: Path, name: str,
     novel_path = project_dir / "novel.txt"
     novel_path.write_text(novel_text, encoding="utf-8")
     conn.execute(
-        "INSERT INTO projects (slug, name, aspect_ratio, novel_path) VALUES (?,?,?,?)",
-        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path)))
+        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style) VALUES (?,?,?,?,?)",
+        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip()))
     conn.commit()
     return get_project(db, conn.execute("SELECT last_insert_rowid() id").fetchone()["id"])
 

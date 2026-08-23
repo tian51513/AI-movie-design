@@ -6,7 +6,7 @@ from ..engine.projects import create_project, get_project, list_projects
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
-_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at")
+_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style")
 
 
 def _public(row) -> dict:
@@ -15,7 +15,8 @@ def _public(row) -> dict:
 
 @router.post("", status_code=201)
 def create(request: Request, name: str = Form(...),
-           aspect_ratio: str = Form(...), novel: UploadFile = File(...)):
+           aspect_ratio: str = Form(...), novel: UploadFile = File(...),
+           style: str = Form("")):
     if aspect_ratio not in ("9:16", "16:9"):
         raise HTTPException(422, "aspect_ratio 只能是 9:16 或 16:9")
     try:
@@ -23,7 +24,7 @@ def create(request: Request, name: str = Form(...),
     except UnicodeDecodeError:
         raise HTTPException(422, "小说文件需为 UTF-8 编码（请转换后重新上传）")
     row = create_project(request.app.state.db, request.app.state.data_dir,
-                         name, aspect_ratio, text)
+                         name, aspect_ratio, text, style=style)
     return _public(row)
 
 
@@ -38,3 +39,21 @@ def detail(request: Request, project_id: int):
     if row is None:
         raise HTTPException(404, "项目不存在")
     return _public(row)
+
+
+@router.patch("/{project_id}")
+def patch_style(request: Request, project_id: int, body: dict):
+    from pydantic import BaseModel
+
+    class StylePatch(BaseModel):
+        style: str = ""
+
+    patch = StylePatch.model_validate(body)
+    db = request.app.state.db
+    row = get_project(db, project_id)
+    if row is None:
+        raise HTTPException(404, "项目不存在")
+    conn = db.connect()
+    conn.execute("UPDATE projects SET style=? WHERE id=?", (patch.style.strip(), project_id))
+    conn.commit()
+    return _public(get_project(db, project_id))

@@ -52,3 +52,28 @@ def test_gbk_upload_rejected_422(tmp_path):
                        files={"novel": ("f.txt", io.BytesIO(gbk_bytes), "text/plain")})
         assert resp.status_code == 422
         assert "UTF-8" in resp.text
+
+
+def test_style_create_patch_roundtrip(tmp_path):
+    with _client(tmp_path) as c:
+        r = _upload(c).json()
+        assert "style" in r  # 默认空串
+        pid = r["id"]
+        # 创建后改风格
+        p = c.patch(f"/api/projects/{pid}", json={"style": "日系动漫风格，赛璐璐上色"})
+        assert p.status_code == 200
+        assert c.get(f"/api/projects/{pid}").json()["style"] == "日系动漫风格，赛璐璐上色"
+        assert c.patch(f"/api/projects/{pid}", json={"style": ""}).json()["style"] == ""
+        assert c.patch("/api/projects/999", json={"style": "x"}).status_code == 404
+
+
+def test_create_with_style(tmp_path):
+    with _client(tmp_path) as c:
+        r = _upload(c, name="风格剧").json()
+        # 带风格创建（multipart 直传）
+        import io
+        resp = c.post("/api/projects",
+                      data={"name": "动漫剧", "aspect_ratio": "16:9", "style": "日系动漫风格"},
+                      files={"novel": ("n.txt", io.BytesIO("文".encode()), "text/plain")})
+        assert resp.status_code == 201
+        assert resp.json()["style"] == "日系动漫风格"

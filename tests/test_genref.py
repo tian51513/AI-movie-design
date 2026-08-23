@@ -51,10 +51,13 @@ def test_build_gen_prompt_by_kind(tmp_path, monkeypatch):
                       props=[]))
     from comic_studio.engine.assets import list_project_assets
     rows = {r["kind"]: r for r in list_project_assets(db, pid)}
-    p_char, _ = build_gen_prompt(rows["character"], tmp_path / "data")
+    p_char, _ = build_gen_prompt(rows["character"])
     assert "萧炎" in p_char and "三视图" in p_char
-    p_scene, _ = build_gen_prompt(rows["scene"], tmp_path / "data")
+    p_scene, _ = build_gen_prompt(rows["scene"])
     assert "场景概念" in p_scene and "无人物" in p_scene
+    # 项目级风格段注入（公共参数）
+    p_styled, _ = build_gen_prompt(rows["character"], style="日系动漫风格，赛璐璐上色")
+    assert "日系动漫风格" in p_styled and p_styled.index("日系动漫") < p_styled.index("三视图")
 
 
 def test_handle_gen_ref_end_to_end_with_mock(tmp_path, monkeypatch):
