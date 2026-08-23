@@ -1,0 +1,107 @@
+{
+  "11": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "10:8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "保存图像"
+    }
+  },
+  "12": {
+    "inputs": {
+      "ckpt_name": "sd1.5\\rundiffusionXL_beta.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Checkpoint加载器（简易）"
+    }
+  },
+  "10:6": {
+    "inputs": {
+      "text": "masterpiece, best quality, 4k, photorealistic, cinematic lighting, film grain, anamorphic lens, shallow depth of field,\n1girl, Asuka Langley Soryu, bright red plugsuit, red combat battle suit, sharp facial features, solemn serious expression, standing on wreckage ground,\ngiant EVA‑02 squatting behind her, one arm torn off, broken armor, exposed mechanical pipelines, dented metal plating, scratch and wear on mecha surface,\nbackground vast brilliant starry sky, glowing countless stars, colorful cosmic nebula, deep dark outer space,\nwide low‑angle shot, epic dramatic atmosphere, high contrast lighting, realistic metal texture, mechanical detail, huge scale difference between girl and giant mecha, sexy, pussy, small tits",
+      "clip": [
+        "12",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "10:3": {
+    "inputs": {
+      "seed": 977185791981899,
+      "steps": 25,
+      "cfg": 7.5,
+      "sampler_name": "dpm_2",
+      "scheduler": "karras",
+      "denoise": 1,
+      "model": [
+        "12",
+        0
+      ],
+      "positive": [
+        "10:6",
+        0
+      ],
+      "negative": [
+        "10:7",
+        0
+      ],
+      "latent_image": [
+        "10:5",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "K采样器"
+    }
+  },
+  "10:5": {
+    "inputs": {
+      "width": 720,
+      "height": 1080,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "空Latent图像"
+    }
+  },
+  "10:7": {
+    "inputs": {
+      "text": "(worst quality, low quality, normal quality), blurry, cartoon, anime, illustration, painting, sketch, deformed, extra limbs, missing limbs on human, ugly, watermark, text, logo, soft cel‑shading, flat colors, bright daylight, overexposed",
+      "clip": [
+        "12",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "10:8": {
+    "inputs": {
+      "samples": [
+        "10:3",
+        0
+      ],
+      "vae": [
+        "12",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE解码"
+    }
+  }
+}

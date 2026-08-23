@@ -1,0 +1,12 @@
+id: demo_t2i
+type: demo
+name: 演示模板（不参与映射，验证注册表与面板流转）
+file: demo_t2i.api.json
+prompt_format: "{kind_label}：{name}。{detail}"
+inject:
+  prompt: {node: "6", field: "text"}
+  params:
+    seed: {node: "3", field: "seed"}
+outputs:
+  - {node: "9", filename_prefix: "cs/{project}/{asset}"}
+requires: []

@@ -1,0 +1,194 @@
+{
+  "1": {
+    "inputs": {
+      "unet_name": "Minimax_H3\\minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "MiniMax H3 UNET"
+    }
+  },
+  "2": {
+    "inputs": {
+      "clip_name": "qwen3vl_32b_h3_ultra_uncensored_heretic_int8_convrot.safetensors",
+      "type": "minimax",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "CLIP (minimax / Qwen3-VL)"
+    }
+  },
+  "3": {
+    "inputs": {
+      "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Video VAE"
+    }
+  },
+  "4": {
+    "inputs": {
+      "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Audio VAE"
+    }
+  },
+  "6": {
+    "inputs": {
+      "fps": [
+        "12",
+        2
+      ],
+      "bit_depth": 8,
+      "images": [
+        "12",
+        0
+      ],
+      "audio": [
+        "12",
+        1
+      ]
+    },
+    "class_type": "CreateVideo",
+    "_meta": {
+      "title": "创建视频"
+    }
+  },
+  "7": {
+    "inputs": {
+      "filename_prefix": "video/MiniMaxH3_Director_t2v",
+      "format": "auto",
+      "codec": "auto",
+      "video": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "SaveVideo",
+    "_meta": {
+      "title": "保存视频"
+    }
+  },
+  "8": {
+    "inputs": {
+      "source": [
+        "12",
+        5
+      ]
+    },
+    "class_type": "PreviewAny",
+    "_meta": {
+      "title": "Director 运行报告"
+    }
+  },
+  "12": {
+    "inputs": {
+      "task_type": "r2v — 参考主体生视频(Reference to Video)",
+      "global_prompt": "",
+      "bd_grp_sample": "采样设置",
+      "cfg": 1,
+      "seed": 666,
+      "frame_rate": 24,
+      "width": 576,
+      "height": 736,
+      "ref_max_size": 736,
+      "total_frames": 498,
+      "timeline_data": "{\"version\":5,\"editMode\":\"segment\",\"totalFrames\":498,\"frameRate\":24,\"video\":{\"fileName\":\"\",\"videoFile\":\"\",\"subfolder\":\"\",\"type\":\"input\",\"frames\":[],\"frameMap\":[],\"sourceFrameCount\":248,\"deletedSourceRanges\":[]},\"videoClips\":[],\"global\":{\"taskType\":\"r2v — 参考主体生视频(Reference to Video)\",\"prompt\":\"\",\"refs\":[{\"index\":0,\"imageFile\":\"Kingpouge_31.jpg\",\"fileName\":\"\",\"type\":\"input\",\"subfolder\":\"\"},{\"index\":1,\"imageFile\":\"Kingpouge_25.jpg\",\"fileName\":\"\",\"type\":\"input\",\"subfolder\":\"\"},{\"index\":2,\"imageFile\":\"Kingpouge_21.jpg\",\"fileName\":\"\",\"type\":\"input\",\"subfolder\":\"\"},{\"index\":3,\"imageFile\":\"Kingpouge_36.jpg\",\"fileName\":\"\",\"type\":\"input\",\"subfolder\":\"\"},{\"index\":4,\"imageFile\":\"Kingpouge_47.jpg\",\"fileName\":\"\",\"type\":\"input\",\"subfolder\":\"\"},{\"index\":5,\"imageFile\":\"Kingpouge_32.jpg\",\"fileName\":\"\",\"type\":\"input\",\"subfolder\":\"\"}],\"referenceVideo\":{\"videoFile\":\"\",\"fileName\":\"\",\"type\":\"input\",\"subfolder\":\"\"},\"continuousReference\":false,\"genImage\":{\"imageFile\":\"\"},\"sourceWidth\":768,\"sourceHeight\":1024,\"refAudios\":[],\"refVideos\":[],\"commonEnabled\":true,\"commonCollapsed\":true},\"output\":{\"mode\":\"fixed\",\"aspectRatio\":\"3:4 (竖版标准)\",\"megapixels\":0.4,\"multiple\":32,\"longEdge\":736,\"width\":576,\"height\":736,\"maxExportFrames\":0,\"exportMode\":\"all\",\"audioMode\":\"generate\",\"continuityEnabled\":false,\"continuityOverlapFrames\":5},\"runSelectEnabled\":false,\"runSelection\":[],\"segments\":[{\"id\":\"mt3x6g4jvrkyr\",\"start\":0,\"length\":498,\"frameCount\":498,\"durationSec\":20.7,\"prompt\":\" <Picture 7> 和<Picture 8> 分别对应这次大尺度写真拍摄的女一和女二。<Picture 1> <Picture 2> <Picture 3>  <Picture 4> <Picture 5> <Picture 6> 分别是这次写真拍摄参考动作与场景。\",\"negativePrompt\":\"\",\"taskType\":\"\",\"refs\":[{\"index\":6,\"imageFile\":\"Kingpouge_09.jpg\",\"fileName\":\"\",\"type\":\"input\",\"subfolder\":\"\"},{\"index\":7,\"imageFile\":\"Kingpouge_12.jpg\",\"fileName\":\"\",\"type\":\"input\",\"subfolder\":\"\"}],\"refAudios\":[],\"refVideos\":[],\"genImage\":{\"imageFile\":\"\",\"fileName\":\"\"},\"continuityFromPrev\":false}],\"timelineMode\":\"prompt_batch\",\"width\":576,\"height\":736,\"refMaxSize\":736,\"gen\":{\"defaultFrameCount\":124},\"keyframes\":[{\"id\":\"msdtx3zi62ktv_s\",\"imageFile\":\"Yuka05.jpg\",\"width\":887,\"height\":1275,\"start\":0,\"length\":181,\"frameCount\":181,\"durationSec\":15,\"prompt\":\"两个萝莉在拍色情大尺度写真\",\"negativePrompt\":\"bad video\",\"isStartFrame\":true,\"isEndFrame\":false},{\"id\":\"msdtx3zi62ktv_e\",\"imageFile\":\"Yuka06.jpg\",\"width\":1600,\"height\":1125,\"start\":181,\"length\":181,\"frameCount\":181,\"durationSec\":15,\"prompt\":\"\",\"negativePrompt\":\"bad video\",\"isStartFrame\":false,\"isEndFrame\":true},{\"id\":\"msdtx87njf33g_s\",\"imageFile\":\"Yuka08.jpg\",\"width\":888,\"height\":1278,\"start\":362,\"length\":181,\"frameCount\":181,\"durationSec\":15,\"prompt\":\"两个萝莉在拍色情写真时玩闹，互相自慰\",\"negativePrompt\":\"bad video\",\"isStartFrame\":true,\"isEndFrame\":false},{\"id\":\"msdtx87njf33g_e\",\"imageFile\":\"Yuka09.jpg\",\"width\":1411,\"height\":1057,\"start\":543,\"length\":181,\"frameCount\":181,\"durationSec\":15,\"prompt\":\"\",\"negativePrompt\":\"bad video\",\"isStartFrame\":false,\"isEndFrame\":true},{\"id\":\"msdtwxyuscavj_s\",\"imageFile\":\"Yuka49.jpg\",\"width\":812,\"height\":1146,\"start\":724,\"length\":181,\"frameCount\":181,\"durationSec\":15,\"prompt\":\"小萝莉拍色情写真\",\"negativePrompt\":\"bad video\",\"isStartFrame\":true,\"isEndFrame\":false},{\"id\":\"msdtwxyuscavj_e\",\"imageFile\":\"Yuka50.jpg\",\"width\":810,\"height\":1146,\"start\":905,\"length\":181,\"frameCount\":181,\"durationSec\":15,\"prompt\":\"\",\"negativePrompt\":\"bad video\",\"isStartFrame\":false,\"isEndFrame\":true},{\"id\":\"msdx1e2eigp2x_s\",\"imageFile\":\"Yuka26.jpg\",\"width\":814,\"height\":1151,\"start\":1086,\"length\":181,\"frameCount\":181,\"durationSec\":15,\"prompt\":\"小萝莉拍色情写真\",\"negativePrompt\":\"bad video\",\"isStartFrame\":true,\"isEndFrame\":false},{\"id\":\"msdx1e2eigp2x_e\",\"imageFile\":\"Yuka27.jpg\",\"width\":808,\"height\":1152,\"start\":1267,\"length\":181,\"frameCount\":181,\"durationSec\":15,\"prompt\":\"\",\"negativePrompt\":\"bad video\",\"isStartFrame\":false,\"isEndFrame\":true},{\"id\":\"mt1jbv84b039e_s\",\"imageFile\":\"Yuka46.jpg\",\"width\":808,\"height\":1146,\"start\":1448,\"length\":181,\"frameCount\":181,\"durationSec\":15,\"prompt\":\"小萝莉拍色情写真\",\"negativePrompt\":\"bad video\",\"isStartFrame\":true,\"isEndFrame\":false},{\"id\":\"mt1jbv84b039e_e\",\"imageFile\":\"Yuka47.jpg\",\"width\":812,\"height\":1146,\"start\":1629,\"length\":181,\"frameCount\":181,\"durationSec\":15,\"prompt\":\"\",\"negativePrompt\":\"bad video\",\"isStartFrame\":false,\"isEndFrame\":true}],\"durationSec\":75,\"shots\":[{\"id\":\"msdtx3zi62ktv\",\"durationSec\":15,\"prompt\":\"两个萝莉在拍色情大尺度写真\",\"negativePrompt\":\"bad video\",\"startImage\":{\"imageFile\":\"Yuka05.jpg\",\"width\":887,\"height\":1275},\"endImage\":{\"imageFile\":\"Yuka06.jpg\",\"width\":1600,\"height\":1125}},{\"id\":\"msdtx87njf33g\",\"durationSec\":15,\"prompt\":\"两个萝莉在拍色情写真时玩闹，互相自慰\",\"negativePrompt\":\"bad video\",\"startImage\":{\"imageFile\":\"Yuka08.jpg\",\"width\":888,\"height\":1278},\"endImage\":{\"imageFile\":\"Yuka09.jpg\",\"width\":1411,\"height\":1057}},{\"id\":\"msdtwxyuscavj\",\"durationSec\":15,\"prompt\":\"小萝莉拍色情写真\",\"negativePrompt\":\"bad video\",\"startImage\":{\"imageFile\":\"Yuka49.jpg\",\"width\":812,\"height\":1146},\"endImage\":{\"imageFile\":\"Yuka50.jpg\",\"width\":810,\"height\":1146}},{\"id\":\"msdx1e2eigp2x\",\"durationSec\":15,\"prompt\":\"小萝莉拍色情写真\",\"negativePrompt\":\"bad video\",\"startImage\":{\"imageFile\":\"Yuka26.jpg\",\"width\":814,\"height\":1151},\"endImage\":{\"imageFile\":\"Yuka27.jpg\",\"width\":808,\"height\":1152}},{\"id\":\"mt1jbv84b039e\",\"durationSec\":15,\"prompt\":\"小萝莉拍色情写真\",\"negativePrompt\":\"bad video\",\"startImage\":{\"imageFile\":\"Yuka46.jpg\",\"width\":808,\"height\":1146},\"endImage\":{\"imageFile\":\"Yuka47.jpg\",\"width\":812,\"height\":1146}}],\"liveTaePreview\":true}",
+      "bd_grp_advanced": "高级采样",
+      "steps": 20,
+      "sampler": "res_multistep",
+      "scheduler": "simple",
+      "shift_video": 12,
+      "shift_audio": 3,
+      "bd_grp_perf": "性能",
+      "clear_vram_between_segments": true,
+      "export_source_images": "Ollama",
+      "minimax_director_ui": "",
+      "model": [
+        "20",
+        0
+      ],
+      "video_vae": [
+        "3",
+        0
+      ],
+      "audio_vae": [
+        "4",
+        0
+      ],
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "MiniMaxH3Director",
+    "_meta": {
+      "title": "MiniMaxH3Director"
+    }
+  },
+  "15": {
+    "inputs": {
+      "lora_name": "minimax_h3\\h3-真实感 LoRA .safetensors",
+      "strength_model": 0.75,
+      "model": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoRA加载器（仅模型）"
+    }
+  },
+  "16": {
+    "inputs": {
+      "lora_name": "minimax_h3\\minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy.safetensors",
+      "strength_model": 0.75,
+      "model": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoRA加载器（仅模型）"
+    }
+  },
+  "20": {
+    "inputs": {
+      "processing_control_value": 0.085,
+      "processing_percent_1": 0.1,
+      "processing_percent_2": 0.9,
+      "mcs": 2,
+      "device": "auto",
+      "mode": "4-step LoRA",
+      "model": [
+        "21",
+        0
+      ]
+    },
+    "class_type": "TESpeedMiniMaxH3",
+    "_meta": {
+      "title": "TE-Speed-MiniMaxH3"
+    }
+  },
+  "21": {
+    "inputs": {
+      "sage_attention": "auto",
+      "allow_compile": false,
+      "model": [
+        "16",
+        0
+      ]
+    },
+    "class_type": "PathchSageAttentionKJ",
+    "_meta": {
+      "title": "SAGE注意力补丁KJ"
+    }
+  }
+}
