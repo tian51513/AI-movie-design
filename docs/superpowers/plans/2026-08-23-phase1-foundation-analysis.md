@@ -584,7 +584,7 @@ git commit -m "feat: projects 仓库（目录布局、slug 去重、stage 校验
 
 **Interfaces:**
 - Consumes: Task 2 的 `Database`
-- Produces: `persist_assets(db, data_dir: Path, project_id: int, analysis: "AssetsAnalysis") -> list[int]`（逐条插 `assets` + 建 `library/<kind>s/<id>/views/` + 写 `meta.json` + 插 `project_assets`，返回 asset id 列表）；`list_project_assets(db, project_id) -> list[sqlite3.Row]`；`get_asset(db, asset_id) -> sqlite3.Row | None`。`meta.json` 结构 `{"name", "kind", "appearance", "tags"}`。
+- Produces: `persist_assets(db, data_dir: Path, project_id: int, analysis: "AssetsAnalysis") -> list[int]`（逐条插 `assets` + 建 `library/<kind>s/<id>/views/` + 写 `meta.json` + 插 `project_assets`，返回 asset id 列表）；`list_project_assets(db, project_id) -> list[sqlite3.Row]`；`get_asset(db, asset_id) -> sqlite3.Row | None`。`meta.json` 结构 `{"name", "kind", "detail", "tags"}`（detail = 角色外貌 / 场景道具描述，与 DB `appearance_json.detail` 及 Task 14 路由一致）。
 - 说明：`AssetsAnalysis` 是 Task 6 的 pydantic 模型；本任务用鸭子类型（`.characters/.scenes/.props`，元素有 `.name/.appearance/.description/.tags`），测试里用 `SimpleNamespace` 代替，任务间不硬耦合。
 
 - [ ] **Step 1: 写失败测试**
