@@ -1,0 +1,21 @@
+id: h3_t2v
+type: t2v
+name: MiniMax H3 文生视频（P4 可选）
+file: h3_t2v.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '9'
+    field: prompt
+  params:
+    seed:
+      node: '12'
+      field: seed
+    duration:
+      node: '16'
+      field: value
+outputs:
+- node: '20'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- ComfyUI-GGUF

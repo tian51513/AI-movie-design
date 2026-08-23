@@ -1,0 +1,23 @@
+id: h3_i2v
+type: i2v
+name: MiniMax H3 图生视频（首帧）
+file: h3_i2v.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '55'
+    field: prompt
+  params:
+    duration:
+      node: '59'
+      field: value
+  images:
+  - node: '53'
+    field: image
+    slot: first
+outputs:
+- node: '63'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- ComfyUI-GGUF
+- comfyui-kjnodes

@@ -13,7 +13,7 @@ DEFAULT_SETTINGS = {
         "t2i": "t2i_ref",
         "ref2va": "h3_ref2va",
         "fl2v": "h3_fl2v",
-        "t2v": None,
+        "t2v": "h3_t2v",
     },
     "llm_providers": {
         "local": {"base_url": "http://localhost:11434/v1", "api_key": "ollama",

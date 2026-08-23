@@ -1,0 +1,29 @@
+id: h3_fl2v
+type: fl2v
+name: MiniMax H3 首尾帧生视频（P4）
+file: h3_fl2v.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '64'
+    field: prompt
+  params:
+    seed:
+      node: '51'
+      field: seed
+    duration:
+      node: '60'
+      field: value
+  images:
+  - node: '47'
+    field: image
+    slot: first
+  - node: '48'
+    field: image
+    slot: last
+outputs:
+- node: '68'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- ComfyUI-GGUF
+- comfyui-kjnodes

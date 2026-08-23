@@ -1,0 +1,29 @@
+id: character_views
+type: character_views
+name: Krea2 四视图（需 seed 图，P3 升级用）
+file: character_views.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '24'
+    field: prompt
+  params:
+    seed:
+      node: '14'
+      field: seed
+    width:
+      node: '7'
+      field: width
+    height:
+      node: '7'
+      field: height
+  images:
+  - node: '17'
+    field: image
+    slot: body
+outputs:
+- node: '5'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- comfyui-krea2edit
+- comfyui-kjnodes

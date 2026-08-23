@@ -1,0 +1,29 @@
+id: h3_ref2va
+type: ref2va
+name: MiniMax H3 多参考生视频（P4 主力）
+file: h3_ref2va.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '110'
+    field: prompt
+  params:
+    seed:
+      node: '105'
+      field: seed
+    duration:
+      node: '109'
+      field: value
+  images:
+  - node: '96'
+    field: image
+    slot: ref0
+  - node: '97'
+    field: image
+    slot: ref1
+outputs:
+- node: '114'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- ComfyUI-GGUF
+- comfyui-kjnodes

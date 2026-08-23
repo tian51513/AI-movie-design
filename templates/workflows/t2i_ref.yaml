@@ -1,0 +1,23 @@
+id: t2i_ref
+type: t2i
+name: 文生图参考（小枫/majicmix）
+file: t2i_ref.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '10:6'
+    field: text
+  params:
+    seed:
+      node: '10:3'
+      field: seed
+    width:
+      node: '10:5'
+      field: width
+    height:
+      node: '10:5'
+      field: height
+outputs:
+- node: '11'
+  filename_prefix: cs/{project}/{asset}
+requires: []
