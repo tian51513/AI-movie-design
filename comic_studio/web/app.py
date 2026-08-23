@@ -20,11 +20,8 @@ def create_app(db_path: str | Path = "./data/studio.db",
     async def lifespan(app: FastAPI):
         db.migrate()
         # 重启后 BackgroundTasks 已消亡，running job 不可能合法存在
-        conn = db.connect()
-        conn.execute(
-            "UPDATE jobs SET status='failed', error='interrupted by restart', "
-            "finished_at=datetime('now') WHERE status='running'")
-        conn.commit()
+        from ..engine.jobs import requeue_on_restart
+        requeued = requeue_on_restart(db, ("gen_ref",))
         yield
 
     app = FastAPI(title="comic_studio", lifespan=lifespan)

@@ -23,19 +23,18 @@ def test_migrations_applied_on_startup(tmp_path):
 
 
 def test_restart_cancels_running_jobs(tmp_path):
-    """重启后 running job 应被标记为 failed（BackgroundTasks 随进程消亡）。"""
+    """重启后 analyze running→failed，gen_ref running→pending（requeue）。"""
     db_path = tmp_path / "t.db"
     data_dir = tmp_path / "data"
-    # 第一个 app 生命周期：手动插入一个 running job
     app1 = create_app(db_path=db_path, data_dir=data_dir)
     with TestClient(app1):
         db = app1.state.db
         create_project(db, data_dir, "p", "9:16", "x")
-        jid = create_job(db, project_id=1, jtype="analyze")
-        assert get_job(db, jid)["status"] == "running"
-    # 第二个 app 生命周期（模拟重启）：running job 应变为 failed
+        jid_a = create_job(db, project_id=1, jtype="analyze")
+        jid_g = create_job(db, project_id=1, jtype="gen_ref")
+        assert get_job(db, jid_a)["status"] == "running"
+        assert get_job(db, jid_g)["status"] == "running"
     app2 = create_app(db_path=db_path, data_dir=data_dir)
     with TestClient(app2):
-        job = get_job(app2.state.db, jid)
-        assert job["status"] == "failed"
-        assert "interrupted by restart" in job["error"]
+        assert get_job(app2.state.db, jid_a)["status"] == "failed"
+        assert get_job(app2.state.db, jid_g)["status"] == "pending"
