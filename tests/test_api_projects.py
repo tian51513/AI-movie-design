@@ -41,3 +41,14 @@ def test_invalid_ratio_rejected(tmp_path):
     with _client(tmp_path) as c:
         resp = _upload(c, ratio="4:3")
         assert resp.status_code == 422
+
+
+def test_gbk_upload_rejected_422(tmp_path):
+    """GBK 编码文件应返回 422 而非 500。"""
+    with _client(tmp_path) as c:
+        gbk_bytes = "中文".encode("gbk")
+        resp = c.post("/api/projects",
+                       data={"name": "g", "aspect_ratio": "9:16"},
+                       files={"novel": ("f.txt", io.BytesIO(gbk_bytes), "text/plain")})
+        assert resp.status_code == 422
+        assert "UTF-8" in resp.text

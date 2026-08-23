@@ -73,7 +73,8 @@ createApp({
       const fd = new FormData();
       fd.append('name', this.newName); fd.append('aspect_ratio', this.newRatio);
       fd.append('novel', this.newFile);
-      await fetch('/api/projects', { method: 'POST', body: fd });
+      const resp = await fetch('/api/projects', { method: 'POST', body: fd });
+      if (!resp.ok) { alert(await resp.text()); }
       this.creating = false; this.newName = ''; this.newFile = null;
       await this.refresh();
     },

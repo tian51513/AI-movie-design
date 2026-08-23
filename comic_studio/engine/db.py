@@ -123,4 +123,4 @@ class Database:
             if i > current:
                 conn.executescript(sql)
                 conn.execute("INSERT INTO schema_version (version) VALUES (?)", (i,))
-        conn.commit()
+                conn.commit()

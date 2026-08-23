@@ -40,14 +40,14 @@ def make_client_factory(db: Database) -> ClientFactory:
     return lambda task: client_for_task(db, task)
 
 
-def merge_analyses(client: LLMClient, results: list[AssetsAnalysis]) -> AssetsAnalysis:
+def merge_analyses(client: LLMClient, results: list[AssetsAnalysis]) -> tuple[AssetsAnalysis, Usage]:
     payload = json.dumps(
         {"characters": [c.model_dump() for r in results for c in r.characters],
          "scenes": [s.model_dump() for r in results for s in r.scenes],
          "props": [p.model_dump() for r in results for p in r.props]},
         ensure_ascii=False)
-    merged, _ = ask_validated(client, MERGE_SYSTEM, payload, AssetsAnalysis)
-    return merged
+    merged, usage = ask_validated(client, MERGE_SYSTEM, payload, AssetsAnalysis)
+    return merged, usage
 
 
 def analyze_project(db: Database, data_dir: Path, project_id: int,
@@ -72,8 +72,8 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
     elif len(results) == 1:
         final = results[0]
     else:
-        final = merge_analyses(extract_client, results)
-        log_llm_call(db, "extract_assets", provider_name, extract_client.model, Usage(0, 0))
+        final, merge_usage = merge_analyses(extract_client, results)
+        log_llm_call(db, "extract_assets", provider_name, extract_client.model, merge_usage)
     ids = persist_assets(db, data_dir, project_id, final)
     set_stage(db, project_id, "analyzed")
     return ids

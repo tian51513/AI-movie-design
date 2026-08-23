@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse
 
 from ..engine.db import Database
 
@@ -19,6 +19,12 @@ def create_app(db_path: str | Path = "./data/studio.db",
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         db.migrate()
+        # 重启后 BackgroundTasks 已消亡，running job 不可能合法存在
+        conn = db.connect()
+        conn.execute(
+            "UPDATE jobs SET status='failed', error='interrupted by restart', "
+            "finished_at=datetime('now') WHERE status='running'")
+        conn.commit()
         yield
 
     app = FastAPI(title="comic_studio", lifespan=lifespan)

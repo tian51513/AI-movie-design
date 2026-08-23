@@ -63,3 +63,19 @@ def test_llm_calls_logged(tmp_path):
                     client_factory=lambda t: FakeClient([CHUNK1]))
     n = db.connect().execute("SELECT COUNT(*) c FROM llm_calls").fetchone()["c"]
     assert n == 1
+
+
+def test_merge_llm_call_logs_real_usage(tmp_path):
+    """合并步骤的 llm_calls 应记录真实 usage 而非 0/0。"""
+    db = _db(tmp_path)
+    long_text = "\n\n".join(["甲" * 50, "乙" * 50])
+    proj = create_project(db, tmp_path / "data", "p", "9:16", long_text)
+    fake = FakeClient([CHUNK1, CHUNK2, MERGED])
+    analyze_project(db, tmp_path / "data", proj["id"],
+                    client_factory=lambda t: fake, max_chars=60)
+    rows = db.connect().execute(
+        "SELECT prompt_tokens, completion_tokens FROM llm_calls ORDER BY id").fetchall()
+    assert len(rows) == 3  # 2 extract + 1 merge
+    for r in rows:
+        assert r["prompt_tokens"] == 1
+        assert r["completion_tokens"] == 2

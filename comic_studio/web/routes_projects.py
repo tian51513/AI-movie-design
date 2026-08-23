@@ -18,7 +18,10 @@ def create(request: Request, name: str = Form(...),
            aspect_ratio: str = Form(...), novel: UploadFile = File(...)):
     if aspect_ratio not in ("9:16", "16:9"):
         raise HTTPException(422, "aspect_ratio 只能是 9:16 或 16:9")
-    text = novel.file.read().decode("utf-8")
+    try:
+        text = novel.file.read().decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(422, "小说文件需为 UTF-8 编码（请转换后重新上传）")
     row = create_project(request.app.state.db, request.app.state.data_dir,
                          name, aspect_ratio, text)
     return _public(row)

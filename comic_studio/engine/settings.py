@@ -7,7 +7,6 @@ from .db import Database
 
 DEFAULT_SETTINGS = {
     "workers": 1,
-    "data_dir": "./data",
     # 类型→模板映射（spec §6.3）；t2v 可选，默认 None
     "template_map": {
         "character_views": "character_views",
@@ -31,13 +30,28 @@ DEFAULT_SETTINGS = {
 }
 
 
+def _deep_merge(base: dict, override: dict) -> dict:
+    """递归合并：dict 递归合并，标量/列表以 override 为准。"""
+    result = copy.deepcopy(base)
+    for k, v in override.items():
+        if k in result and isinstance(result[k], dict) and isinstance(v, dict):
+            result[k] = _deep_merge(result[k], v)
+        else:
+            result[k] = copy.deepcopy(v)
+    return result
+
+
 def get_setting(db: Database, key: str):
     if key not in DEFAULT_SETTINGS:
         raise KeyError(key)
     row = db.connect().execute("SELECT value_json FROM settings WHERE key=?", (key,)).fetchone()
     if row is None:
         return copy.deepcopy(DEFAULT_SETTINGS[key])
-    return json.loads(row["value_json"])
+    stored = json.loads(row["value_json"])
+    default = DEFAULT_SETTINGS[key]
+    if isinstance(default, dict) and isinstance(stored, dict):
+        return _deep_merge(default, stored)
+    return stored
 
 
 def set_setting(db: Database, key: str, value) -> None:

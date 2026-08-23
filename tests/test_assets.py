@@ -33,6 +33,43 @@ def test_persist_creates_rows_dirs_links(tmp_path):
         assert (tmp_path / "data" / "library" / f"{r['kind']}s" / str(r["id"]) / "views").is_dir()
 
 
+def test_persist_rolls_back_on_mid_loop_failure(tmp_path):
+    """persist_assets 中途失败应回滚所有未提交的 INSERT。"""
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "t")
+
+    class BrokenTags:
+        name = "坏角色"
+        role = "配角"
+        appearance = "x"
+        @property
+        def tags(self):
+            raise RuntimeError("模拟持久化失败")
+
+    analysis = NS(
+        characters=[NS(name="好角色", role="主角", appearance="黑发少年", tags=["主角"]), BrokenTags()],
+        scenes=[],
+        props=[],
+    )
+    import pytest
+    with pytest.raises(RuntimeError, match="模拟持久化失败"):
+        persist_assets(db, tmp_path / "data", proj["id"], analysis)
+
+    # finish_job 调用 conn.commit()，如果 persist_assets 留下了未提交 INSERT
+    # 它们会被一起提交——所以用 fresh connection 验证
+    from comic_studio.engine.jobs import finish_job, create_job
+    jid = create_job(db, proj["id"], "analyze")
+    finish_job(db, jid, "test")  # 触发同线程 conn.commit()
+
+    # 用独立连接检查：不应该有任何 asset 行
+    import sqlite3
+    raw = sqlite3.connect(tmp_path / "s.db")
+    count = raw.execute("SELECT COUNT(*) FROM assets WHERE source_project=?",
+                        (proj["id"],)).fetchone()[0]
+    raw.close()
+    assert count == 0
+
+
 def test_reanalyze_links_not_duplicates(tmp_path):
     db = _db(tmp_path)
     proj = create_project(db, tmp_path / "data", "p", "9:16", "t")
