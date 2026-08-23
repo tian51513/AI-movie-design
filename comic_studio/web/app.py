@@ -22,9 +22,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
         db.migrate()
         # 重启后 BackgroundTasks 已消亡，running job 不可能合法存在
         from ..engine.jobs import requeue_on_restart
-        requeued = requeue_on_restart(db, ("gen_ref",))
+        requeued = requeue_on_restart(db, ("gen_ref", "split_storyboards", "gen_prompt"))
         if start_workers:
-            from ..engine import genref  # 触发 @register 注册
+            from ..engine import genref, pipeline_jobs  # 注册触发
             from ..engine.queue.worker import start_workers as _spawn_workers, stop_workers
             from ..engine.settings import get_setting
             workers, worker_stop = _spawn_workers(
