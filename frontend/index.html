@@ -82,8 +82,15 @@
           <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
         <p><select v-model="newStyleKey">
              <option value="">不指定（默认）</option>
-             <option value="动漫">动漫</option><option value="写实">写实</option>
-             <option value="国风仙侠">国风仙侠</option><option value="3D">3D</option>
+             <optgroup label="通用">
+               <option>动漫</option><option>写实</option>
+               <option>国风仙侠</option><option>3D</option></optgroup>
+             <optgroup label="常规剧情向">
+               <option>剧情PV</option><option>宣传PV</option><option>动画</option>
+               <option>情感PV</option><option>风景PV</option><option>时尚写真</option>
+               <option>短剧PV</option><option>文艺</option><option>科幻</option>
+               <option>古风</option><option>未来科技</option><option>悬疑</option>
+               <option>喜剧</option><option>舞台剧</option></optgroup>
              <option value="自定义">自定义…</option></select></p>
         <p v-if="newStyleKey==='自定义'"><input v-model="newStyleText" placeholder="自定义画风描述" style="width:90%"></p>
           <p><input type="file" accept=".txt" @change="f => newFile = f.target.files[0]" required></p>
@@ -145,10 +152,26 @@
 <script>
 const { createApp } = Vue;
 const STYLE_PRESETS = {
+  // 通用
   '动漫': '日系动漫风格，干净线稿，赛璐璐上色，高饱和度，番剧质感',
   '写实': '写实风格，电影质感，真实皮肤与材质细节，自然光照',
   '国风仙侠': '国风仙侠风格，飘逸衣袂，古典配色，仙气氛围',
   '3D': '3D渲染风格，卡通造型，柔和全局光照，精致材质',
+  // 常规剧情向
+  '剧情PV': '剧情PV风格，叙事构图，角色互动，场景切换流畅，情绪递进',
+  '宣传PV': '宣传PV风格，强视觉冲击，品牌质感，节奏明快，高对比配色',
+  '动画': '卡通动画风格，夸张造型，明快色彩，插画质感',
+  '情感PV': '情感PV风格，柔和光影，人物情绪特写，氛围渲染，浅景深',
+  '风景PV': '风景PV风格，自然风光，广角构图，黄金时刻光线，旅行宣传片质感',
+  '时尚写真': '时尚写真风格，人物造型精致，服饰搭配讲究，棚拍布光设计',
+  '短剧PV': '短剧PV风格，剧情张力，角色冲突，反转节奏，紧凑剪辑感',
+  '文艺': '文艺电影风格，胶片颗粒质感，朦胧氛围，留白构图，自然色调',
+  '科幻': '科幻风格，赛博朋克视觉，霓虹光效，未来都市，冷色调高对比',
+  '古风': '古风风格，传统服饰，水墨意境，古典美学，绢本设色质感',
+  '未来科技': '未来科技风格，机械感，全息光影特效，金属材质，蓝色光晕',
+  '悬疑': '悬疑风格，低调布光，阴影构图，镜头语言克制，情绪张力紧绷',
+  '喜剧': '喜剧风格，夸张肢体动作，幽默表情特写，明快节奏，高饱和色彩',
+  '舞台剧': '舞台剧风格，舞台布光，戏剧化表演，动态构图，剧场质感',
 };
 createApp({
   data: () => ({
