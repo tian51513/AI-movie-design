@@ -1,8 +1,13 @@
 # comic_studio/engine/llm/storyboard.py
 """分镜拆解：schema、提示词、编排（spec §9.2，台账/绑定/workflow_type 建议）。"""
 import json
+import re
+import time
+from pathlib import Path
+from typing import Callable
 
 from pydantic import BaseModel, Field, field_validator
+from types import SimpleNamespace
 
 SPLIT_SYSTEM = """你是小说改编漫剧的分镜师。把给定的小说文本拆成连续的分镜（shot）序列，供后续 AI 视频生成使用。
 
@@ -55,12 +60,11 @@ class ChunkStoryboard(BaseModel):
 def build_split_user_prompt(chunk_text: str, assets_rows) -> str:
     roster = {"character": [], "scene": [], "prop": []}
     for r in assets_rows:
-        # Handle both dict and SimpleNamespace access
-        appearance_json = getattr(r, "appearance_json", None) or r.get("appearance_json")
+        appearance_json = r["appearance_json"] if hasattr(r, '__getitem__') else r.appearance_json
         detail = json.loads(appearance_json).get("detail", "")[:30]
-        kind = getattr(r, "kind", None) or r.get("kind")
-        rid = getattr(r, "id", None) or r.get("id")
-        name = getattr(r, "name", None) or r.get("name")
+        kind = r["kind"] if hasattr(r, '__getitem__') else r.kind
+        rid = r["id"] if hasattr(r, '__getitem__') else r.id
+        name = r["name"] if hasattr(r, '__getitem__') else r.name
         roster[kind].append(f"id={rid} {name}（{detail}）")
     lines = ["可用资产名册（只允许绑定以下 id）："]
     for kind, label in (("character", "角色"), ("scene", "场景"), ("prop", "道具")):
@@ -70,3 +74,77 @@ def build_split_user_prompt(chunk_text: str, assets_rows) -> str:
     lines.append("小说文本：")
     lines.append(chunk_text)
     return "\n".join(lines)
+
+from ..assets import list_project_assets
+from ..logbus import emit as emit_log
+from ..projects import get_project
+from ..settings import get_setting
+from ..shots import persist_shots
+from .provider import ask_validated, client_for_task
+from .text import split_chunks
+
+class ContentBoundaryError(Exception):
+    """输入或生成内容命中未成年性内容硬界线（项目级，跳过并显式报错）。"""
+
+_MINOR_SEXUAL = re.compile(r"(萝莉|幼女|女童|男童).{0,12}(性|色情|裸|吻|床|情欲)|(性|色情|裸|情欲).{0,12}(萝莉|幼女|女童)|校服.{0,8}(情欲|性爱|裸)")
+
+
+def _content_guard(text: str) -> None:
+    if _MINOR_SEXUAL.search(text):
+        raise ContentBoundaryError("内容命中项目硬界线（涉及未成年人的性内容），该段已跳过并停止处理")
+
+
+ClientFactory = Callable[[str], object]
+
+
+def make_split_factory(db):
+    from .analyze import make_client_factory
+    return make_client_factory(db)
+
+
+def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=8000):
+    if client_factory is None:
+        client_factory = make_split_factory(db)
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise ValueError(f"项目不存在: {project_id}")
+    text = Path(proj["novel_path"]).read_text(encoding="utf-8")
+    _content_guard(text)
+    chunks = split_chunks(text, max_chars=max_chars)
+    assets = list_project_assets(db, project_id)
+    emit_log(db, "storyboard", "info",
+             f"开始分镜拆解：{len(chunks)} 块（共 {len(text)} 字，{len(assets)} 个资产入名册）",
+             project_id=project_id)
+    client = client_factory("split_storyboards")
+    provider = get_setting(db, "llm_routing")["split_storyboards"]
+    staged, link_first_of_block = [], []   # link_first_of_block[i] = i 块首镜在 staged 中的下标（需链上一块末镜）
+    for i, chunk in enumerate(chunks, 1):
+        emit_log(db, "storyboard", "info", f"分块 {i}/{len(chunks)} 拆解中（{len(chunk)} 字）",
+                 project_id=project_id)
+        t0 = time.monotonic()
+        result, usage = ask_validated(client, SPLIT_SYSTEM,
+                                      build_split_user_prompt(chunk, assets),
+                                      ChunkStoryboard)
+        emit_log(db, "llm", "info",
+                 f"split_storyboards 完成 · {getattr(client, 'model', '?')} · "
+                 f"{usage.prompt_tokens}+{usage.completion_tokens} tok · {time.monotonic()-t0:.1f}s · "
+                 f"{len(result.shots)} 镜", project_id=project_id)
+        for d in result.shots:
+            _content_guard(d.description + " " + d.text_span)
+        if result.shots[0].continue_prev and staged:
+            link_first_of_block.append(len(staged))
+        staged.extend(SimpleNamespace(
+            text_span=d.text_span, description=d.description, shot_type=d.shot_type,
+            camera=d.camera, duration=d.duration, workflow_type=d.workflow_type,
+            ledger={"must_appear": d.must_appear, "must_keep": d.must_keep,
+                    "may_change": d.may_change, "must_avoid": d.must_avoid},
+            character_ids=d.character_ids, scene_ids=d.scene_ids, prop_ids=d.prop_ids,
+            depends_on=None) for d in result.shots)
+    ids = persist_shots(db, project_id, staged)
+    conn = db.connect()
+    for idx in link_first_of_block:   # 跨块衔接：本块首镜 depends_on 上一块末镜
+        conn.execute("UPDATE shots SET depends_on=? WHERE id=?", (ids[idx - 1], ids[idx]))
+    conn.commit()
+    emit_log(db, "storyboard", "info", f"分镜落库 {len(ids)} 镜（已替换旧分镜）",
+             project_id=project_id)
+    return ids
