@@ -111,7 +111,7 @@
       <button @click="genAllRefs">批量生成参考图</button>
       <button v-if="allHaveViews" @click="passGate1" style="background:#16a34a">
         ✓ 确认资产（过门1）</button>
-      <span class="muted">运行 {{queue.running}} · 排队 {{queue.pending}} · 失败 {{queue.failed}}
+      <span class="muted" :title="failedTooltip">运行 {{queue.running}} · 排队 {{queue.pending}} · 失败 {{queue.failed}}
         · ComfyUI <span :style="{color: queue.comfy_ok?'#4ade80':'#f87171'}">●</span></span>
     </p>
     <h3>执行日志（{{ logs.length }}）</h3>
@@ -169,17 +169,23 @@ createApp({
     },
     startLogsPolling() {
       this.stopLogsPolling();
+      let wasBusy = false;
       const tick = async () => {
         const r = await fetch(`/api/projects/${this.project.id}/logs?after=${this.lastLogId}`);
         if (!r.ok || !this.project) return;
         const body = await r.json();
-        this.queue = await (await fetch(`/api/projects/${this.project.id}/queue`)).json();
         if (body.logs.length) {
           const box = document.getElementById('logbox');
           const atBottom = !box || (box.scrollHeight - box.scrollTop - box.clientHeight < 40);
           this.logs.push(...body.logs); this.lastLogId = body.last_id;
           if (atBottom && box) box.scrollTop = box.scrollHeight;
         }
+        try {
+          this.queue = await (await fetch(`/api/projects/${this.project.id}/queue`)).json();
+          const busy = this.queue.running > 0 || this.queue.pending > 0;
+          if (wasBusy && !busy) { await this.loadDetail(); }
+          wasBusy = busy;
+        } catch (e) { /* 队列瞬时失败不影响日志流 */ }
       };
       tick(); this.logsTimer = setInterval(tick, 1000);
     },
@@ -240,6 +246,7 @@ createApp({
       const r = await fetch(`/api/projects/${this.project.id}/gate1`, {method:'POST'});
       if (r.ok) { await this.loadDetail(); } else { alert(await r.text()); }
     },
+    failedTooltip() { return (this.queue.jobs||[]).filter(j=>j.status==='failed').map(j=>`#${j.id}: ${j.error||''}`).join('\n') || '无失败任务'; },
     async loadDetail() {
       this.project = await (await fetch(`/api/projects/${this.project.id}`)).json();
       this.assets = await (await fetch(`/api/projects/${this.project.id}/assets`)).json();
