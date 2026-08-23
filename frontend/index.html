@@ -170,10 +170,10 @@
       <button @click="genAllRefs">批量生成参考图</button>
       <button v-if="allHaveViews" @click="passGate1" style="background:#16a34a">
         ✓ 确认资产（过门1）</button>
-      <span class="muted" :title="failedTooltip()">运行 {{queue.running}} · 排队 {{queue.pending}} · 失败 {{queue.failed}}
-        · ComfyUI <span :style="{color: queue.comfy_ok?'#4ade80':'#f87171'}">●</span></span>
     </p>
     </template>
+    <p><span class="muted" :title="failedTooltip()">运行 {{queue.running}} · 排队 {{queue.pending}} · 失败 {{queue.failed}}
+        · ComfyUI <span :style="{color: queue.comfy_ok?'#4ade80':'#f87171'}">●</span></span></p>
     <!-- 分镜模式 -->
     <template v-if="detailMode==='shots'">
     <p v-if="project.stage==='assets_ready' || project.stage==='storyboard_ready'">

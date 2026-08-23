@@ -48,8 +48,6 @@ function data() {
 const computed = {
   allHaveViews() { return this.assets.length && this.assets.every(a => (this.views[a.id]||[]).length); },
   allShotsReady() { return this.shots.length > 0 && this.shots.every(s => s.status === 'ready'); },
-  assetName(id) { const a = this.assets.find(x => x.id === id); return a ? a.name : id; },
-  ledgerLabel(cat) { return { must_appear: '必须出现', must_keep: '必须保持', may_change: '允许变化', forbidden: '禁止' }[cat] || cat; },
   shownAssets() {
     return this.activeKind === '全部' ? this.assets
                                       : this.assets.filter(a => a.kind === this.activeKind);
@@ -78,10 +76,12 @@ const methods = {
 
   // ===== 详情：导航与资产 =====
   back() { clearInterval(this.pollTimer); this.pollTimer = null;
-    this.stopLogsPolling(); this.project = null; this.view = 'projects'; },
+    this.stopLogsPolling(); this.project = null; this.view = 'projects';
+    this.splitRunning = false; },
   async open(p) {
     clearInterval(this.pollTimer); this.pollTimer = null;  // 重入防护：清掉旧轮询
     this.logs = []; this.lastLogId = 0;
+    this.detailMode = 'assets'; this.shots = []; this.splitRunning = false; this.expandedShot = null;
     this.view = 'detail'; this.project = p;
     await this.loadDetail(); this.startLogsPolling();
   },
@@ -258,6 +258,8 @@ const methods = {
   // ===== 灯箱 =====
 
   // ===== 分镜 =====
+  assetName(id) { const a = this.assets.find(x => x.id === id); return a ? a.name : id; },
+  ledgerLabel(cat) { return { must_appear: '必须出现', must_keep: '必须保持', may_change: '允许变化', forbidden: '禁止' }[cat] || cat; },
   async switchDetailMode(mode) {
     this.detailMode = mode;
     if (mode === 'shots' && this.project) await this.loadShots();
