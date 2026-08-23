@@ -128,22 +128,35 @@
       <span v-if="analyzeState.status==='failed'" style="color:#f87171">
         失败：{{ analyzeState.error }}</span>
     </p>
-    <div v-for="kind in ['character','scene','prop']" :key="kind">
-      <h3>{{ kindName(kind) }}（{{ assets.filter(a=>a.kind===kind).length }}）</h3>
-      <div class="row">
-        <div class="card" v-for="a in assets.filter(a=>a.kind===kind)" :key="a.id"
-             :title="a.detail" style="min-width:200px">
+    <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button v-for="k in ['全部','character','scene','prop']" :key="k"
+              @click="activeKind=k"
+              :style="activeKind===k ? 'background:#16a34a' : ''">
+        {{ k==='全部' ? '全部' : kindName(k) }}（{{ k==='全部' ? assets.length : assets.filter(a=>a.kind===k).length }}）</button>
+      <span class="muted">每行
+        <select v-model.number="perRow" style="width:52px">
+          <option :value="2">2</option><option :value="3">3</option><option :value="4">4</option>
+        </select> 个</span>
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(0,1fr));gap:12px"
+         :style="{gridTemplateColumns: 'repeat(' + perRow + ', minmax(0,1fr))'}">
+        <div class="card" v-for="a in shownAssets" :key="a.id"
+             :title="a.detail">
           <b>{{ a.name }}</b> <span class="pill" v-for="t in a.tags" :key="t">{{ t }}</span>
           <div class="muted" style="margin:4px 0">{{ a.detail }}</div>
-          <div v-for="v in (views[a.id]||[])" :key="v.name">
-            <img :src="v.url" loading="lazy"
-                 style="max-width:180px;border-radius:6px;border:1px solid #2c3540">
+          <div v-for="v in (views[a.id]||[])" :key="v.name" style="margin:4px 0">
+            <img v-if="v.type==='image'" :src="v.url" loading="lazy" @click="lightbox=v.url"
+                 style="max-width:100%;cursor:zoom-in;border-radius:6px;border:1px solid #2c3540">
+            <video v-else-if="v.type==='video'" :src="v.url" controls
+                   style="max-width:100%;border-radius:6px;border:1px solid #2c3540"></video>
+            <audio v-else-if="v.type==='audio'" :src="v.url" controls style="width:100%"></audio>
           </div>
           <button v-if="project.stage==='analyzed' || project.stage==='assets_ready'"
                   @click="regenAsset(a)" style="margin-top:6px"
-                  title="用新的随机种子重新生成这张参考图（不改动资产文本）">重新生成图</button>
+                  :disabled="assetBusy(a)"
+                  :title="assetBusy(a) ? '该资产正在生成中' : '用新的随机种子重新生成这张参考图（不改动资产文本）'">
+            {{ assetBusy(a) ? '生成中…' : '重新生成图' }}</button>
         </div>
-      </div>
     </div>
     <p v-if="project.stage==='analyzed'">
       <button @click="genAllRefs">批量生成参考图</button>
@@ -162,6 +175,11 @@
       <div v-if="!logs.length" class="muted">暂无日志——分析等活动产生后此处实时滚动显示</div>
     </div>
   </main>
+  <div v-if="lightbox" @click="lightbox=null"
+       style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;
+              align-items:center;justify-content:center;z-index:99;cursor:zoom-out">
+    <img :src="lightbox" style="max-width:92vw;max-height:92vh">
+  </div>
 </div>
 <script>
 const { createApp } = Vue;
@@ -196,6 +214,7 @@ createApp({
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '' }, saving: false,
     ollamaModels: [], showThink: false, loadingModels: false,
+    activeKind: '全部', perRow: 2, lightbox: null,
     comfyStatus: null, llmTesting: '', llmTestResult: {local: null, online: null},
     llmTestManual: {local: false, online: false},
     logs: [], lastLogId: 0, logsTimer: null,
@@ -337,6 +356,15 @@ createApp({
     async genAllRefs() {
       const r = await fetch(`/api/projects/${this.project.id}/generate-refs`, {method:'POST'});
       alert(r.ok ? `已入队 ${(await r.json()).enqueued} 个资产` : await r.text());
+    },
+    get shownAssets() {
+      return this.activeKind === '全部' ? this.assets
+                                      : this.assets.filter(a => a.kind === this.activeKind);
+    },
+    assetBusy(a) {
+      return (this.queue.jobs || []).some(
+        j => j.type === 'gen_ref' && j.asset_id === a.id &&
+             (j.status === 'pending' || j.status === 'running'));
     },
     async regenAsset(a) {
       const r = await fetch(`/api/assets/${a.id}/gen`, {method:'POST'});

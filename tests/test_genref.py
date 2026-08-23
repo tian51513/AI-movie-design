@@ -57,7 +57,7 @@ def test_build_gen_prompt_by_kind(tmp_path, monkeypatch):
     assert "场景概念" in p_scene and "无人物" in p_scene
     # 项目级风格段注入（公共参数）
     p_styled, _ = build_gen_prompt(rows["character"], style="日系动漫风格，赛璐璐上色")
-    assert "日系动漫风格" in p_styled and p_styled.index("日系动漫") < p_styled.index("三视图")
+    assert "日系动漫风格" in p_styled and p_styled.index("日系动漫") > p_styled.index("白色背景")  # 风格段收尾主导画风
 
 
 def test_handle_gen_ref_end_to_end_with_mock(tmp_path, monkeypatch):
@@ -85,3 +85,13 @@ def test_handle_gen_ref_end_to_end_with_mock(tmp_path, monkeypatch):
     from comic_studio.engine.logbus import fetch_logs
     msgs = " | ".join(r["message"] for r in fetch_logs(db, pid))
     assert "提交" in msgs and "参考图" in msgs
+
+
+def test_style_goes_after_suffix_and_dedup(tmp_path):
+    from comic_studio.engine.genref import build_gen_prompt
+    row = {"kind": "character", "name": "直葉", "appearance_json": '{"detail": "黑发少女。"}',
+           "source_project": 1, "id": 2}
+    p, _ = build_gen_prompt(row, style="真人电影，电影质感。")
+    assert "。。" not in p
+    assert p.index("白色背景") < p.index("真人电影")  # 风格段在设定图套话之后
+    assert p.endswith("真人电影，电影质感")

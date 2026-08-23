@@ -44,7 +44,7 @@ def test_views_listing_and_gate1(tmp_path):
             views.mkdir(parents=True, exist_ok=True)
             (views / "sheet.png").write_bytes(b"\x89PNG")
         r = c.get(f"/api/assets/{aid}/views").json()
-        assert r and r[0]["name"] == "sheet" and "/library/" in r[0]["url"]
+        assert r and r[0]["name"] == "sheet" and "/library/" in r[0]["url"] and "?v=" in r[0]["url"]  # 版本号破缓存
         assert c.post(f"/api/projects/{pid}/gate1").status_code == 200
         assert c.get(f"/api/projects/{pid}").json()["stage"] == "assets_ready"
         assert c.post(f"/api/projects/{pid}/gate1").status_code == 409

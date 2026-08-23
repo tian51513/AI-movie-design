@@ -23,10 +23,11 @@ def build_gen_prompt(asset_row, style: str = ""):
     detail = json.loads(asset_row["appearance_json"]).get("detail", "")
     base = KIND_LABEL[asset_row["kind"]] + "：" + asset_row["name"]
     if detail:
-        base += "。" + detail
-    if style.strip():
-        base += "。" + style.strip()
+        base += "。" + detail.strip().rstrip("。；;，,")
     prompt = base + KIND_SUFFIX.get(asset_row["kind"], "")
+    style = style.strip().rstrip("。；;，,").strip()
+    if style:
+        prompt += "。" + style   # 风格段收尾：压过前面的设定图套话，主导整体画风
     ctx = {"project": f"p{asset_row['source_project']}", "asset": str(asset_row["id"])}
     return prompt, ctx
 

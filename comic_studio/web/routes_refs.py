@@ -13,6 +13,9 @@ from ..engine.settings import get_setting
 router = APIRouter(tags=["refs"])
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
+VIEW_MEDIA_TYPES = {".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
+                    ".mp4": "video", ".webm": "video", ".mov": "video",
+                    ".mp3": "audio", ".wav": "audio", ".ogg": "audio"}
 
 
 def _has_views(views_dir: Path) -> bool:
@@ -90,12 +93,13 @@ def views(request: Request, asset_id: int):
     out = []
     if views_dir.is_dir():
         for f in sorted(views_dir.iterdir()):
-            if f.suffix.lower() in IMAGE_EXTS:
+            if f.suffix.lower() in VIEW_MEDIA_TYPES:
                 # library_dir 形如 "library/characters/3"，静态挂载根即 library/，
                 # URL 需去掉前导 "library/" 避免 /library/library/...
                 rel = asset["library_dir"]
                 rel = rel[len("library/"):] if rel.startswith("library/") else rel
-                out.append({"name": f.stem, "url": f"/library/{rel}/views/{f.name}"})
+                out.append({"name": f.stem, "type": VIEW_MEDIA_TYPES[f.suffix.lower()],
+                            "url": f"/library/{rel}/views/{f.name}?v={int(f.stat().st_mtime)}"})
     return out
 
 
