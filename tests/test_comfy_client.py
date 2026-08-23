@@ -1,4 +1,5 @@
 # tests/test_comfy_client.py
+import os
 import pytest
 
 from comic_studio.engine.comfy.client import ComfyClient, ComfyUnreachable
@@ -8,9 +9,14 @@ from comfy_mock import comfy_server
 def test_health_and_unreachable():
     with comfy_server("ok") as m:
         assert ComfyClient(m.base_url).health()["system"]["os"] == "mock"
-    # Use invalid port to trigger connection refused (ConnectError)
-    with pytest.raises(ComfyUnreachable):
-        ComfyClient("http://127.0.0.1:65535", timeout=1.0).health()
+    # Bypass proxy for .invalid domains to ensure DNS failure
+    old_no_proxy = os.environ.get("no_proxy", "")
+    os.environ["no_proxy"] = ".invalid"
+    try:
+        with pytest.raises(ComfyUnreachable):
+            ComfyClient("http://nonexistent-host.invalid").health()
+    finally:
+        os.environ["no_proxy"] = old_no_proxy
 
 
 def test_upload_submit_free():
