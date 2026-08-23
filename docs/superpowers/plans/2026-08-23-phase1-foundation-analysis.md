@@ -1663,7 +1663,8 @@ def _db(tmp_path):
 
 def test_create_finish_roundtrip(tmp_path):
     db = _db(tmp_path)
-    jid = create_job(db, project_id=1, jtype="analyze")
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "t")  # FK：jobs.project_id 需真实项目
+    jid = create_job(db, project_id=proj["id"], jtype="analyze")
     assert get_job(db, jid)["status"] == "running"
     finish_job(db, jid, error=None)
     assert get_job(db, jid)["status"] == "done"
@@ -1680,6 +1681,7 @@ import io
 from fastapi.testclient import TestClient
 
 from comic_studio.web.app import create_app
+from comic_studio.engine.llm.provider import Usage
 
 GOOD = '{"characters":[{"name":"萧炎","appearance":"黑发少年"}],"scenes":[],"props":[]}'
 
@@ -1688,7 +1690,7 @@ class FakeLLM:
     model = "fake"
 
     def raw_chat(self, messages, temperature=0.3):
-        return GOOD, (1, 2)
+        return GOOD, Usage(1, 2)  # 必须是 Usage：log_llm_call 访问 .prompt_tokens
 
 
 def _upload(c):
@@ -1863,6 +1865,7 @@ import json
 from fastapi.testclient import TestClient
 
 from comic_studio.web.app import create_app
+from comic_studio.engine.llm.provider import Usage
 
 GOOD = '{"characters":[{"name":"萧炎","appearance":"黑发少年"}],"scenes":[],"props":[]}'
 
@@ -1871,7 +1874,7 @@ class FakeLLM:
     model = "fake"
 
     def raw_chat(self, messages, temperature=0.3):
-        return GOOD, (1, 2)
+        return GOOD, Usage(1, 2)  # 同 Task 13：log_llm_call 需要 Usage 属性访问
 
 
 def test_assets_endpoint(tmp_path, monkeypatch):
