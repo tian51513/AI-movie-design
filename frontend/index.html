@@ -21,8 +21,36 @@
 </head>
 <body>
 <div id="app">
-  <header><b>漫剧工坊</b> <span class="muted">comic_studio</span></header>
-  <main v-if="!project">
+  <header><b>漫剧工坊</b> <span class="muted">comic_studio</span>
+    <button style="float:right" @click="openSettings">设置</button></header>
+  <main v-if="view==='settings'">
+    <p><a href="#" @click.prevent="view='projects'">← 返回</a></p>
+    <h2>LLM 设置</h2>
+    <div class="row">
+      <div class="card" style="flex:1;min-width:320px">
+        <h3>本地（Ollama）</h3>
+        <p><input v-model="settingsForm.local.base_url" placeholder="base_url" style="width:90%"></p>
+        <p><input v-model="settingsForm.local.model" placeholder="模型名，如 qwen3:14b" style="width:90%"></p>
+      </div>
+      <div class="card" style="flex:1;min-width:320px">
+        <h3>线上 API</h3>
+        <p><input v-model="settingsForm.online.base_url" placeholder="base_url（OpenAI 兼容）" style="width:90%"></p>
+        <p><input type="password" v-model="settingsForm.online.api_key" placeholder="api_key" style="width:90%"></p>
+        <p><input v-model="settingsForm.online.model" placeholder="模型名" style="width:90%"></p>
+      </div>
+    </div>
+    <h3>任务路由</h3>
+    <p v-for="(label, task) in taskLabels" :key="task">
+      {{ label }}：
+      <select v-model="settingsForm.routing[task]">
+        <option value="local">本地 Ollama</option>
+        <option value="online">线上 API</option>
+      </select>
+    </p>
+    <p><button :disabled="saving" @click="saveSettings">{{ saving ? '保存中…' : '保存设置' }}</button>
+       <span class="muted">改模型/路由立即生效，无需重启</span></p>
+  </main>
+  <main v-else-if="view==='projects'">
     <h2>项目</h2>
     <div class="row">
       <div class="card" v-for="p in projects" :key="p.id" @click="open(p)" style="cursor:pointer">
@@ -41,6 +69,7 @@
   </main>
   <main v-else>
     <p><a href="#" @click.prevent="back">← 返回</a></p>
+
     <h2>{{ project.name }} <span class="pill">{{ project.aspect_ratio }}</span>
         <span class="pill">{{ stageName(project.stage) }}</span></h2>
     <p>
@@ -61,9 +90,12 @@
 const { createApp } = Vue;
 createApp({
   data: () => ({
-    projects: [], project: null, assets: [],
+    view: 'projects', projects: [], project: null, assets: [],
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     analyzeState: { status: '', error: null }, pollTimer: null,
+    settingsForm: { local: {}, online: {}, routing: {} }, saving: false,
+    taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
+      split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
   }),
   async mounted() { await this.refresh(); },
   methods: {
@@ -78,10 +110,38 @@ createApp({
       this.creating = false; this.newName = ''; this.newFile = null;
       await this.refresh();
     },
-    back() { clearInterval(this.pollTimer); this.pollTimer = null; this.project = null; },
+    back() { clearInterval(this.pollTimer); this.pollTimer = null; this.project = null; this.view = 'projects'; },
     async open(p) {
       clearInterval(this.pollTimer); this.pollTimer = null;  // 重入防护：清掉旧轮询
-      this.project = p; await this.loadDetail();
+      this.view = 'detail'; this.project = p; await this.loadDetail();
+    },
+    async openSettings() {
+      clearInterval(this.pollTimer); this.pollTimer = null; this.project = null;
+      this.view = 'settings';
+      const s = await (await fetch('/api/settings')).json();
+      this.settingsForm = {
+        local: { ...s.llm_providers.local }, online: { ...s.llm_providers.online },
+        routing: { ...s.llm_routing },
+      };
+    },
+    async saveSettings() {
+      this.saving = true;
+      const payload = {
+        llm_providers: {
+          local: { base_url: this.settingsForm.local.base_url || '',
+                   api_key: this.settingsForm.local.api_key || 'ollama',
+                   model: this.settingsForm.local.model || '' },
+          online: { base_url: this.settingsForm.online.base_url || '',
+                    api_key: this.settingsForm.online.api_key || '',
+                    model: this.settingsForm.online.model || '' },
+        },
+        llm_routing: { ...this.settingsForm.routing },
+      };
+      const resp = await fetch('/api/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload) });
+      this.saving = false;
+      if (resp.ok) { alert('已保存'); } else { alert('保存失败：' + (await resp.text())); }
     },
     async loadDetail() {
       this.project = await (await fetch(`/api/projects/${this.project.id}`)).json();
