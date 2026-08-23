@@ -1,0 +1,51 @@
+import pytest
+
+from comic_studio.engine.llm import provider
+from comic_studio.engine.llm.provider import (
+    LLMClient, LLMError, Usage, ask_json, ask_validated, parse_json_text)
+from comic_studio.engine.llm.schemas import AssetsAnalysis
+
+
+def _client(responses: list[str]) -> LLMClient:
+    c = LLMClient(base_url="http://x", api_key="k", model="m")
+    calls = {"n": 0}
+
+    def fake_raw_chat(messages, temperature=0.3):
+        i = min(calls["n"], len(responses) - 1)
+        calls["n"] += 1
+        return responses[i], Usage(10, 20)
+    c.raw_chat = fake_raw_chat
+    c.call_count = lambda: calls["n"]
+    return c
+
+
+def test_parse_json_plain_and_fenced():
+    assert parse_json_text('{"a": 1}') == {"a": 1}
+    assert parse_json_text('```json\n{"a": 2}\n```') == {"a": 2}
+    assert parse_json_text('前言 {"a": 3} 后记') == {"a": 3}
+
+
+def test_parse_json_garbage_raises():
+    with pytest.raises(LLMError):
+        parse_json_text("完全不是JSON")
+
+
+def test_ask_json_retries_then_succeeds():
+    c = _client(["不是json", '{"a": 1}'])
+    data, usage = ask_json(c, "sys", "usr")
+    assert data == {"a": 1} and usage.completion_tokens == 20
+    assert c.call_count() == 2
+
+
+def test_ask_validated_feeds_error_back():
+    good = '{"characters":[{"name":"萧炎","appearance":"黑发"}],"scenes":[],"props":[]}'
+    c = _client(["{}", good])  # 第一次缺 sections
+    result, _ = ask_validated(c, "s", "u", AssetsAnalysis)
+    assert result.characters[0].name == "萧炎"
+
+
+def test_ask_validated_gives_up_after_max():
+    c = _client(["{}"])  # 永远坏
+    with pytest.raises(LLMError):
+        ask_validated(c, "s", "u", AssetsAnalysis, max_attempts=2)
+    assert c.call_count() == 2
