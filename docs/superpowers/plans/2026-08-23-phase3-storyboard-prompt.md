@@ -628,6 +628,8 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=8
     emit_log(db, "storyboard", "info", f"分镜落库 {len(ids)} 镜（已替换旧分镜）",
              project_id=project_id)
     return ids
+```
+
 （`SimpleNamespace` 从 types 导入；`Callable` 从 typing 导入；模块顶部补 `import time` 与 `from types import SimpleNamespace`。）
 
 - [ ] **Step 4: 验证 + Commit**：`.venv/bin/pytest tests/test_storyboard_split.py -q` → 3 passed；全量绿
