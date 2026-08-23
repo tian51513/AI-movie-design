@@ -69,8 +69,13 @@ def retry_or_fail(db, job_id: int, error: str, max_attempts: int = 3,
     conn = db.connect()
     job = get_job(db, job_id)
     if job["attempts"] < max_attempts:
-        conn.execute("UPDATE jobs SET status='pending', error=? WHERE id=?",
-                     (error, job_id))
+        if not consume_attempt:
+            # 回退本次 claim 的 attempts+1：不可达等可重试等待不计入尝试预算
+            conn.execute("UPDATE jobs SET status='pending', error=?, attempts=attempts-1 WHERE id=?",
+                         (error, job_id))
+        else:
+            conn.execute("UPDATE jobs SET status='pending', error=? WHERE id=?",
+                         (error, job_id))
         conn.commit()
         return "pending"
     finish_job(db, job_id, error)

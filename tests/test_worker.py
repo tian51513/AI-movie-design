@@ -84,8 +84,8 @@ def test_comfy_from_settings_passes_comfyclient(tmp_path):
     assert isinstance(received[0], ComfyClient)
 
 
-def test_comfy_unreachable_no_consume_attempt(tmp_path):
-    """ComfyUnreachable 走 consume_attempt=False 退避路径，最终仍失败。"""
+def test_comfy_unreachable_waits_without_consuming(tmp_path):
+    """ComfyUnreachable → 任务保持 pending 等待 ComfyUI 恢复，不消耗尝试次数（spec §7）。"""
     db = Database(tmp_path / "s.db"); db.migrate()
     pid = create_project(db, tmp_path / "data", "p", "9:16", "t")["id"]
     calls = []
@@ -97,16 +97,14 @@ def test_comfy_unreachable_no_consume_attempt(tmp_path):
 
     stop = threading.Event()
     w = Worker(db.path, tmp_path / "data", None, stop, poll_interval=0.05,
-               handler_types=("unreach_job",), comfy_factory=None,
-               backoff_base=0)
+               handler_types=("unreach_job",), comfy_factory=None, backoff_base=0)
     w.start()
     jid = enqueue_job(db, "unreach_job", project_id=pid)
-    for _ in range(200):
-        if get_job(db, jid)["status"] == "failed":
-            break
+    for _ in range(100):  # 跑足够多轮（远超 3 次尝试预算）
         time.sleep(0.05)
     stop.set(); w.join(timeout=2)
     job = get_job(db, jid)
-    assert job["status"] == "failed"
+    assert job["status"] == "pending"      # 一直等待，不失败
+    assert job["attempts"] <= 1           # claim +1 被回退，尝试预算未消耗（0 或 1 取决于停止时机）
+    assert len(calls) > 3                  # 反复重试
     assert "ComfyUnreachable" in job["error"]
-    assert len(calls) == 3
