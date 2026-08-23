@@ -2,6 +2,8 @@
 import re
 
 import httpx
+
+from ..engine.llm.provider import LLMClient
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
@@ -112,3 +114,29 @@ def ollama_models(base_url: str = Query(...), request: Request = None):
         raise HTTPException(502, f"Ollama 不可达或响应异常（请求了 {root}/api/tags）：{e}；"
                                  "确认 Ollama 正在运行且地址正确")
     return {"models": models}
+
+
+class LLMTestBody(BaseModel):
+    provider: str
+    base_url: str
+    api_key: str = ""
+    model: str = ""
+
+
+@router.post("/llm-test")
+def llm_test(body: LLMTestBody, request: Request = None):
+    # 与 ollama-models 相同的跨站盲发守卫
+    if request and request.headers.get("sec-fetch-site") == "cross-site":
+        raise HTTPException(403, "拒绝跨站请求")
+    if body.provider not in ("local", "online"):
+        raise HTTPException(422, "provider 只能是 local 或 online")
+    if not (body.base_url.strip() and body.model.strip()):
+        return {"ok": False, "detail": "base_url 与模型名不能为空"}
+    try:
+        client = LLMClient(body.base_url.strip(), body.api_key.strip() or "none",
+                           body.model.strip(), timeout=15)
+        reply, _ = client.raw_chat(
+            [{"role": "user", "content": "连接测试，请只回复：OK"}], max_tokens=8)
+        return {"ok": True, "detail": (reply or "")[:50]}
+    except Exception as e:
+        return {"ok": False, "detail": f"{type(e).__name__}: {e}"[:200]}

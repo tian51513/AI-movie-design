@@ -25,9 +25,12 @@ class LLMClient:
         self._client = OpenAI(base_url=base_url, api_key=api_key, timeout=timeout)
         self.model = model
 
-    def raw_chat(self, messages: list[dict], temperature: float = 0.3) -> tuple[str, Usage]:
-        resp = self._client.chat.completions.create(
-            model=self.model, messages=messages, temperature=temperature)
+    def raw_chat(self, messages: list[dict], temperature: float = 0.3,
+                 max_tokens: int | None = None) -> tuple[str, Usage]:
+        kwargs = dict(model=self.model, messages=messages, temperature=temperature)
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
+        resp = self._client.chat.completions.create(**kwargs)
         text = resp.choices[0].message.content or ""
         usage = Usage(getattr(resp.usage, "prompt_tokens", 0) or 0,
                       getattr(resp.usage, "completion_tokens", 0) or 0)

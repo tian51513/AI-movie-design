@@ -31,7 +31,12 @@
         <h3>本地（Ollama）</h3>
         <p><input v-model="settingsForm.local.base_url" placeholder="根地址，如 http://127.0.0.1:11434（带不带 /v1、误粘 /api/tags 均可）" style="width:70%">
            <button @click="fetchOllamaModels" :disabled="loadingModels">
-             {{ loadingModels ? '获取中…' : '获取模型' }}</button></p>
+             {{ loadingModels ? '获取中…' : '获取模型' }}</button>
+           <button @click="llmTest('local')" :disabled="llmTesting==='local'">
+             {{ llmTesting==='local' ? '测试中…' : '测试' }}</button>
+           <span v-if="llmTestResult.local !== null"
+                 :style="{color: llmTestResult.local?.ok ? '#4ade80' : '#f87171'}">
+             {{ llmTestResult.local?.ok ? '✓ ' + (llmTestResult.local?.detail || 'OK') : '✗ ' + llmTestResult.local?.detail }}</span></p>
         <p v-if="ollamaModels.length">
            <select v-model="settingsForm.local.model" style="width:90%">
              <option v-if="settingsForm.local.model && !displayOllamaModels.includes(settingsForm.local.model)"
@@ -47,6 +52,11 @@
         <p><input v-model="settingsForm.online.base_url" placeholder="base_url（OpenAI 兼容）" style="width:90%"></p>
         <p><input type="password" v-model="settingsForm.online.api_key" placeholder="api_key" style="width:90%"></p>
         <p><input v-model="settingsForm.online.model" placeholder="模型名" style="width:90%"></p>
+        <p><button @click="llmTest('online')" :disabled="llmTesting==='online'">
+             {{ llmTesting==='online' ? '测试中…' : '测试连接' }}</button>
+           <span v-if="llmTestResult.online !== null"
+                 :style="{color: llmTestResult.online?.ok ? '#4ade80' : '#f87171'}">
+             {{ llmTestResult.online?.ok ? '✓ ' + (llmTestResult.online?.detail || 'OK') : '✗ ' + llmTestResult.online?.detail }}</span></p>
       </div>
     </div>
     <h3>ComfyUI
@@ -182,7 +192,7 @@ createApp({
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '' }, saving: false,
     ollamaModels: [], showThink: false, loadingModels: false,
-    comfyStatus: null,
+    comfyStatus: null, llmTesting: '', llmTestResult: {local: null, online: null},
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
@@ -252,6 +262,18 @@ createApp({
         comfy: { ...s.comfy },
         t2i_tm: s.template_map?.t2i || '',
       };
+    },
+    async llmTest(provider) {
+      this.llmTesting = provider;
+      const p = this.settingsForm[provider] || {};
+      try {
+        const r = await fetch('/api/settings/llm-test', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({provider, base_url: p.base_url || '',
+                                api_key: p.api_key || '', model: p.model || ''})});
+        this.llmTestResult[provider] = await r.json();
+      } catch (e) { this.llmTestResult[provider] = {ok: false, detail: String(e)}; }
+      this.llmTesting = '';
     },
     async checkComfy() {
       this.comfyStatus = null;
