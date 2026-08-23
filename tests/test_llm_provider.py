@@ -49,3 +49,23 @@ def test_ask_validated_gives_up_after_max():
     with pytest.raises(LLMError):
         ask_validated(c, "s", "u", AssetsAnalysis, max_attempts=2)
     assert c.call_count() == 2
+
+
+def test_raw_chat_handles_none_choices_and_usage():
+    """协议不匹配（如 Anthropic 端点）时 resp.choices/usage 可能为 None——不崩，返回空文本。"""
+    from comic_studio.engine.llm.provider import LLMClient
+
+    class FakeCompletions:
+        def create(self, **kw):
+            class R:  # 模拟 openai SDK 对非 OpenAI 响应的解析结果
+                choices = None
+                usage = None
+            return R()
+
+    class FakeClient:
+        chat = type("C", (), {"completions": FakeCompletions()})()
+
+    c = LLMClient("http://x", "k", "m")
+    c._client = FakeClient()
+    text, usage = c.raw_chat([{"role": "user", "content": "hi"}], max_tokens=8)
+    assert text == "" and usage.prompt_tokens == 0 and usage.completion_tokens == 0

@@ -31,9 +31,12 @@ class LLMClient:
         if max_tokens is not None:
             kwargs["max_tokens"] = max_tokens
         resp = self._client.chat.completions.create(**kwargs)
-        text = resp.choices[0].message.content or ""
-        usage = Usage(getattr(resp.usage, "prompt_tokens", 0) or 0,
-                      getattr(resp.usage, "completion_tokens", 0) or 0)
+        # 协议不匹配/异常响应时 choices/usage 可能为 None（如误连 Anthropic 端点）
+        choices = getattr(resp, "choices", None) or []
+        text = (choices[0].message.content or "") if choices else ""
+        u = getattr(resp, "usage", None)
+        usage = Usage(getattr(u, "prompt_tokens", 0) or 0,
+                      getattr(u, "completion_tokens", 0) or 0)
         return text, usage
 
 
