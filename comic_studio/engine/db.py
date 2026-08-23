@@ -94,8 +94,6 @@ MIGRATIONS: list[str] = [
         completion_tokens INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );""",
-    # 10 projects 加 style（项目级画风，公共参数参与全部资产生成）
-    """ALTER TABLE projects ADD COLUMN style TEXT NOT NULL DEFAULT '';""",
     # 9 logs（执行日志总线：分析/LLM/ComfyUI/合成/系统统一埋点）
     """CREATE TABLE logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -107,6 +105,8 @@ MIGRATIONS: list[str] = [
         message TEXT NOT NULL,
         data_json TEXT NOT NULL DEFAULT '{}'
     );""",
+    # 11 projects 加 style（项目级画风）——注：只能在末尾追加，历史库迁移位不可变
+    """ALTER TABLE projects ADD COLUMN style TEXT NOT NULL DEFAULT '';""",
 ]
 
 

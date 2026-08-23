@@ -43,3 +43,21 @@ def test_connect_is_thread_local(tmp_path):
     threading.Thread(target=lambda: holder.setdefault("c", db.connect())).start()
     import time; time.sleep(0.1)
     assert holder["c"] is not c1
+
+
+
+def test_migrate_from_any_partial_version(tmp_path, monkeypatch):
+    """回归：迁移列表只能末尾追加——从任意历史版本升级到最新都必须成功。
+
+    复现 2026-08-23 事故：style 迁移被插到列表中间，历史库（已应用到
+    旧的第 9 条）升级时位置错位 → "table logs already exists"。
+    """
+    from comic_studio.engine import db as dbmod
+    FULL = list(dbmod.MIGRATIONS)          # 循环前捕获完整列表
+    assert len(FULL) >= 10  # 9 基础表 + style 追加
+    for k in range(1, len(FULL)):
+        db = Database(tmp_path / f"s{k}.db")
+        monkeypatch.setattr(dbmod, "MIGRATIONS", FULL[:k])
+        db.migrate()                       # 模拟历史版本创建的库
+        monkeypatch.setattr(dbmod, "MIGRATIONS", FULL)
+        db.migrate()                       # 升级到完整列表 → 不得抛错
