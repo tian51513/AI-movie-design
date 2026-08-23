@@ -93,10 +93,27 @@
     </p>
     <div v-for="kind in ['character','scene','prop']" :key="kind">
       <h3>{{ kindName(kind) }}（{{ assets.filter(a=>a.kind===kind).length }}）</h3>
-      <ul><li v-for="a in assets.filter(a=>a.kind===kind)" :key="a.id">
-        <b>{{ a.name }}</b> <span class="muted">{{ a.detail }}</span>
-        <span class="pill" v-for="t in a.tags" :key="t">{{ t }}</span></li></ul>
+      <div class="row">
+        <div class="card" v-for="a in assets.filter(a=>a.kind===kind)" :key="a.id"
+             :title="a.detail" style="min-width:200px">
+          <b>{{ a.name }}</b> <span class="pill" v-for="t in a.tags" :key="t">{{ t }}</span>
+          <div class="muted" style="margin:4px 0">{{ a.detail }}</div>
+          <div v-for="v in (views[a.id]||[])" :key="v.name">
+            <img :src="v.url" loading="lazy"
+                 style="max-width:180px;border-radius:6px;border:1px solid #2c3540">
+          </div>
+          <button v-if="project.stage==='analyzed' || project.stage==='assets_ready'"
+                  @click="regenAsset(a)" style="margin-top:6px">重生</button>
+        </div>
+      </div>
     </div>
+    <p v-if="project.stage==='analyzed'">
+      <button @click="genAllRefs">批量生成参考图</button>
+      <button v-if="allHaveViews" @click="passGate1" style="background:#16a34a">
+        ✓ 确认资产（过门1）</button>
+      <span class="muted">运行 {{queue.running}} · 排队 {{queue.pending}} · 失败 {{queue.failed}}
+        · ComfyUI <span :style="{color: queue.comfy_ok?'#4ade80':'#f87171'}">●</span></span>
+    </p>
     <h3>执行日志（{{ logs.length }}）</h3>
     <div id="logbox" style="background:#0d1117;border:1px solid #2c3540;border-radius:8px;padding:10px;max-height:320px;overflow-y:auto;font-family:ui-monospace,monospace;font-size:13px;line-height:1.7">
       <div v-for="l in logs" :key="l.id">
@@ -113,6 +130,7 @@ const { createApp } = Vue;
 createApp({
   data: () => ({
     view: 'projects', projects: [], project: null, assets: [],
+    views: {}, queue: {running:0, pending:0, failed:0, comfy_ok:false},
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {}, comfy: {} }, saving: false,
@@ -123,6 +141,7 @@ createApp({
   }),
   async mounted() { await this.refresh(); },
   computed: {
+    allHaveViews() { return this.assets.length && this.assets.every(a => (this.views[a.id]||[]).length); },
     displayOllamaModels() {
       return this.showThink ? this.ollamaModels
         : this.ollamaModels.filter(m => !m.toLowerCase().includes("think"));
@@ -154,6 +173,7 @@ createApp({
         const r = await fetch(`/api/projects/${this.project.id}/logs?after=${this.lastLogId}`);
         if (!r.ok || !this.project) return;
         const body = await r.json();
+        this.queue = await (await fetch(`/api/projects/${this.project.id}/queue`)).json();
         if (body.logs.length) {
           const box = document.getElementById('logbox');
           const atBottom = !box || (box.scrollHeight - box.scrollTop - box.clientHeight < 40);
@@ -208,9 +228,22 @@ createApp({
       this.saving = false;
       if (resp.ok) { alert('已保存'); } else { alert('保存失败：' + (await resp.text())); }
     },
+    async genAllRefs() {
+      const r = await fetch(`/api/projects/${this.project.id}/generate-refs`, {method:'POST'});
+      alert(r.ok ? `已入队 ${(await r.json()).enqueued} 个资产` : await r.text());
+    },
+    async regenAsset(a) {
+      const r = await fetch(`/api/assets/${a.id}/gen`, {method:'POST'});
+      if (!r.ok) alert(await r.text());
+    },
+    async passGate1() {
+      const r = await fetch(`/api/projects/${this.project.id}/gate1`, {method:'POST'});
+      if (r.ok) { await this.loadDetail(); } else { alert(await r.text()); }
+    },
     async loadDetail() {
       this.project = await (await fetch(`/api/projects/${this.project.id}`)).json();
       this.assets = await (await fetch(`/api/projects/${this.project.id}/assets`)).json();
+      this.views = {}; (await Promise.all(this.assets.map(async a => [a.id, await (await fetch(`/api/assets/${a.id}/views`)).json()]))).forEach(([k,v]) => this.views[k]=v);
       const s = await fetch(`/api/projects/${this.project.id}/analyze/status`);
       if (s.ok) this.analyzeState = await s.json();
     },
