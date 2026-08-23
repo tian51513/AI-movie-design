@@ -64,6 +64,14 @@ def create_app(db_path: str | Path = "./data/studio.db",
     from .routes_analyze import router as analyze_router
     app.include_router(analyze_router)
 
+    from .routes_refs import router as refs_router
+    app.include_router(refs_router)
+
+    from fastapi.staticfiles import StaticFiles
+    lib_dir = Path(data_dir) / "library"
+    lib_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/library", StaticFiles(directory=lib_dir), name="library")
+
     return app
 
 
