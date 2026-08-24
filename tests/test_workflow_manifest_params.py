@@ -31,3 +31,9 @@ def test_video_templates_have_render_params():
         ar_node = params.get("aspect")
         if ar_node:
             assert isinstance(ar_node.node, str) and ar_node.node in api
+
+
+def test_ref2va_lora_strength_point():
+    reg = scan_templates(Path("templates/workflows"))
+    assert "lora_strength" in reg["h3_ref2va"].inject_params
+    assert reg["h3_ref2va"].inject_params["lora_strength"].node == "117"

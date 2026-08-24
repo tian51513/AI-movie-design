@@ -18,7 +18,7 @@ from comfy_mock import comfy_server
 def _setup(tmp_path, **proj_kw):
     db = Database(tmp_path / "s.db"); db.migrate()
     kw = dict(style="真人电影", video_megapixels=0.6, video_speed="高质量",
-              default_shot_duration=5.0)
+              default_shot_duration=5.0, lora_realism=0.6)
     kw.update(proj_kw)
     pid = create_project(db, tmp_path / "data", "渲染剧", "16:9", "林晨推门。", **kw)["id"]
     persist_assets(db, tmp_path / "data", pid,
@@ -78,6 +78,7 @@ def test_render_shot_end_to_end(tmp_path, monkeypatch):
         wf = m.prompts[0]["prompt"]
         assert wf["110"]["inputs"]["prompt"].startswith("林晨在庭院推门")
         assert wf["116"]["inputs"]["megapixels"] == 0.6
+        assert wf["117"]["inputs"]["strength_model"] == 0.6
     shot = get_shot(db, sid)
     assert shot["status"] == "rendered"
     assert shot["video_path"] == f"projects/渲染剧/shots/1/video.mp4"
@@ -182,3 +183,19 @@ def test_ref_slots_characters_priority(tmp_path):
     refs2 = collect_ref_images(db, get_shot(db, sid2))
     names2 = [get_asset(db, int(r["path"].split("/")[2]))["name"] for r in refs2]
     assert names2 == ["林晨", "庭院"]
+
+
+def test_wide_shot_megapixels_boost(tmp_path, monkeypatch):
+    """远景规避：远景镜自动升一档兆像素（上限 1.2）。"""
+    db, pid, assets = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(
+        character_ids=[assets["林晨"]["id"]], scene_ids=[],
+        camera={"景别": "远景", "机位": "平视", "运镜": "固定", "转场": "切"})])[0]
+    update_shot(db, sid, {"prompt": "远景测试"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    with comfy_server("ok", video=True) as m:
+        from comic_studio.engine.comfy.client import ComfyClient
+        render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        wf = m.prompts[0]["prompt"]
+        assert wf["116"]["inputs"]["megapixels"] == 1.0  # 0.6+0.4 升档

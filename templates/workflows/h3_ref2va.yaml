@@ -26,6 +26,9 @@ inject:
     steps:
       node: '101'
       field: steps
+    lora_strength:
+      node: '117'
+      field: strength_model
   images:
   - node: '96'
     field: image

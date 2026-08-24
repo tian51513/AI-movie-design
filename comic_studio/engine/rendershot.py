@@ -69,7 +69,12 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         "multiple": proj["video_multiple"],
         "steps": SPEED_STEPS[proj["video_speed"]],
         "duration": max(4, int(shot["duration"])),
+        "lora_strength": proj["lora_realism"],
     }
+    # 远景规避：远景/大全景自动升一档兆像素（上限 1.2）
+    camera = json.loads(shot["camera_json"] or "{}")
+    if camera.get("景别") in ("远景", "大全景"):
+        params["megapixels"] = min(1.2, float(proj["video_megapixels"]) + 0.4)
     aspect_val = ASPECT_ENUM.get(proj["aspect_ratio"])
     if aspect_val is not None:
         params["aspect"] = aspect_val
