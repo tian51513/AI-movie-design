@@ -79,7 +79,7 @@ def test_split_resolves_relative_novel_path(tmp_path, monkeypatch):
     import json as _json
     from comic_studio.engine.llm.storyboard import split_storyboards
     from comic_studio.engine.shots import list_shots
-    db, pid = _setup(tmp_path, monkeypatch)
+    db, pid = _setup(tmp_path)
     # 直接把库里的 novel_path 改成相对形式（模拟真实库），文件在 data/ 下
     conn = db.connect()
     row = conn.execute("SELECT novel_path FROM projects WHERE id=?", (pid,)).fetchone()
