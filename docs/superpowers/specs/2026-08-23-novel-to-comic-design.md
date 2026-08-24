@@ -1,7 +1,7 @@
 # 小说转漫剧工作站（comic_studio）设计文档
 
 - 日期：2026-08-23
-- 状态：已与用户逐节确认；Phase 3（分镜拆解 + H3 提示词生成）已实现，Phase 4-5 待实施
+- 状态：已与用户逐节确认；Phase 4（逐镜渲染）已实现，Phase 5（FFmpeg 合成）待实施
 - 原始需求：`原始需求.txt`
 
 ## 1. 背景与目标
@@ -170,7 +170,7 @@ requires: [ComfyUI-GGUF, kjnodes]
 | character_views | character_views | `minimax/▶▷MiniMaxH3辅助四视图生成流-k2.json`（Krea2+QuadView，15 节点） | UI 里 Export (API)（P2 用 t2i 多视角提示词法，Krea2 模板为可选升级） |
 | t2i_ref | t2i | `小枫/小枫-文生图工作流.json`（7 节点全标准） | UI 导出；场景/道具/关键帧共用 |
 | h3_ref2va ★主力 | ref2va | `minimax/minimax_ref2va_gguf_workflow.json` | UI 导出（注入面最干净） |
-| h3_fl2v | fl2v | `minimax/minimax_fl2v_gguf_workflow.json` | UI 导出（**子图需展平**） |
+| h3_fl2v | fl2v | `minimax/minimax_fl2v_gguf_workflow.json` | UI 导出（**子图需展平**；双帧输入留待关键帧功能） |
 | ltx_fl2v | fl2v | `ltx/LTX-2.3-Workflows/*_api.json` | **现成**，改注入点 |
 | t2v（可选） | t2v | H3 或 LTX t2v | 低优先，可缺省 |
 

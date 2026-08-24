@@ -37,3 +37,10 @@
 - `comic_studio/engine/llm/storyboard.py` — 分镜拆解（LLM 调用、章节分块、结果合并）
 - `comic_studio/engine/prompts/gen.py` — 分镜→H3 视频提示词适配器（vendor 技能规程 + mechanical 校验）
 - 测试反模式提醒：LLM 分镜/提示词测试注入 FakeClient，不触网
+
+## 模块地图（Phase 4）
+
+- `comic_studio/engine/video.py` — 渲染前端（batch_render、单镜重渲染、断点续跑对账）
+- `comic_studio/engine/rendershot.py` — gen_shot 处理器（@register("gen_shot")，模板注入/提交/轮询/落盘）
+- 测试反模式提醒：ComfyUI 渲染测试一律用 tests/comfy_mock.py 的 comfy_server，不连真实 ComfyUI
+- 注意：`/media` 挂载需确保渲染产物可落盘；WSL 与 Windows 路径映射按 engine/paths.py 统一处理
