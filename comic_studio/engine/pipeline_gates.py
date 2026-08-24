@@ -17,7 +17,9 @@ class GateStageError(ValueError):
     """阶段不符（HTTP 层映射 409；autopilot 视为留给下一轮）。"""
 
 
-def _has_views(views_dir) -> bool:
+def has_views(views_dir) -> bool:
+    """目录内存在任一图片文件（注意必须双层展开——any(glob(...) for e) 是生成器恒真，
+    2026-08-25 真机教训：autopilot 因此恒判「资产齐全」卡死过门1）。"""
     return views_dir.is_dir() and any(
         f for ext in IMAGE_EXTS for f in views_dir.glob(f"*{ext}"))
 
@@ -34,7 +36,7 @@ def gate_pass(db, data_dir, project_id: int, n: int, source: str = "确认") -> 
         raise GateStageError(f"阶段 {proj['stage']} 不能过门{n}（需 {need}）")
     if n == 1:
         missing = [a["name"] for a in list_project_assets(db, project_id)
-                   if not _has_views(data_to_abs(data_dir, a["library_dir"]) / "views")]
+                   if not has_views(data_to_abs(data_dir, a["library_dir"]) / "views")]
         if missing:
             raise ValueError(f"以下资产还没有参考图: {missing}")
     else:

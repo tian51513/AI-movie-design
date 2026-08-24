@@ -25,12 +25,13 @@ def _has_active_job(db, project_id, jtype) -> bool:
 
 
 def _all_assets_have_sheets(db, data_dir, project_id) -> bool:
+    from .pipeline_gates import has_views
     assets = list_project_assets(db, project_id)
     if not assets:
         return False
     for a in assets:
         views = data_to_abs(data_dir, a["library_dir"]) / "views"
-        if not any(views.glob(f"*{e}") for e in IMAGE_EXTS):
+        if not has_views(views):
             return False
     return True
 
@@ -115,9 +116,10 @@ def tick(db, data_dir, project_id) -> dict:
     elif action == "gen_refs":
         from .jobs import enqueue_job
         n = 0
+        from .pipeline_gates import has_views
         for a in list_project_assets(db, project_id):
             views = data_to_abs(data_dir, a["library_dir"]) / "views"
-            if any(views.glob(f"*{e}") for e in IMAGE_EXTS):
+            if has_views(views):
                 continue
             enqueue_job(db, "gen_ref", project_id=project_id, asset_id=a["id"],
                         resource="gpu_comfy", payload={"asset_id": a["id"]})

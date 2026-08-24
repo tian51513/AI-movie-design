@@ -114,3 +114,20 @@ def test_wait_after_failed_analyze(tmp_path):
     jobs.finish_job(db, jid, "boom")
     act = next_action(db, tmp_path / "data", pid)
     assert act["action"] == "wait" and "失败" in act["detail"]
+
+
+def test_assets_without_sheets_go_gen_refs(tmp_path):
+    """真机 bug（2026-08-25 验收）：any(glob(...) for e) 生成器恒真 → _all_assets_have_sheets
+    恒 True → 永远选 gate1 → gate_pass 正确拒绝 → 吞异常死循环卡「过门1」。"""
+    db, pid = _proj(tmp_path)
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="沈雪柔", appearance="黑发", tags=[])],
+                      scenes=[], props=[]))
+    set_stage(db, pid, "analyzed")
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "gen_refs"  # 无参考图：生成而非过门
+    tick(db, tmp_path / "data", pid)
+    row = db.connect().execute(
+        "SELECT COUNT(*) c FROM jobs WHERE project_id=? AND type='gen_ref'",
+        (pid,)).fetchone()
+    assert row["c"] == 1  # 真的入队了
