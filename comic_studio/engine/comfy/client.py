@@ -70,9 +70,14 @@ class ComfyClient:
                     msgs = "; ".join(str(x) for x in (entry.get("status") or {}).get("messages", []))
                     raise ComfyError(f"ComfyUI 执行失败: {msgs}")
                 images: list[dict] = []
+                video_exts = (".mp4", ".webm", ".mov", ".gif")
                 for node_out in (entry.get("outputs") or {}).values():
+                    # 新版 SaveVideo：视频在 images 键 + 节点级 animated:[True]；
+                    # 旧版/VHS：视频在 gifs 键。两者都识别，扩展名兜底。
+                    animated = any(node_out.get("animated") or [])
                     for img in node_out.get("images", []):
-                        images.append({**img, "_kind": "image"})
+                        is_video = animated or str(img.get("filename", "")).lower().endswith(video_exts)
+                        images.append({**img, "_kind": "video" if is_video else "image"})
                     for vid in node_out.get("gifs", []):
                         images.append({**vid, "_kind": "video"})
                 return images

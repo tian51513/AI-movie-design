@@ -48,3 +48,13 @@ def test_stall_triggers_interrupt():
             c.wait_and_collect("p1", stall_seconds=0.2, poll_interval=0.05,
                                on_interrupt=lambda: seen.append(1))
         assert m.interrupts == 1 and seen == [1]
+
+
+def test_wait_detects_animated_images_key_video():
+    """新版 ComfyUI SaveVideo：视频在 images 键 + animated:[True]。"""
+    with comfy_server("ok", animated_images=True) as m:
+        c = ComfyClient(m.base_url)
+        pid = c.submit({}, "c1")
+        items = c.wait_and_collect(pid, poll_interval=0.05)
+        assert items and items[0]["_kind"] == "video"
+        assert items[0]["filename"].endswith(".mp4")

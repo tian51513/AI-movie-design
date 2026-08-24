@@ -29,7 +29,7 @@ class MockComfy:
         return self._server.RequestHandlerClass.interrupts
 
 
-def _make_handler(mode: str, video: bool = False):
+def _make_handler(mode: str, video: bool = False, animated_images: bool = False):
     class H(BaseHTTPRequestHandler):
         uploads, prompts, frees, interrupts = [], [], 0, 0
         n = 0
@@ -61,6 +61,12 @@ def _make_handler(mode: str, video: bool = False):
                 if video:
                     self._json({pid: {"outputs": {"9": {"gifs": [
                         {"filename": "cs_x.mp4", "subfolder": "", "type": "output"}]}},
+                        "status": {"status_str": "success"}}})
+                elif animated_images:
+                    # 新版 SaveVideo：视频在 images 键 + 节点级 animated:[True]
+                    self._json({pid: {"outputs": {"114": {"images": [
+                        {"filename": "shot-1_00003_.mp4", "subfolder": "cs/demo", "type": "output"}],
+                        "animated": [True]}},
                         "status": {"status_str": "success"}}})
                 else:
                     self._json({pid: {"outputs": {"9": {"images": [
@@ -103,8 +109,8 @@ def _make_handler(mode: str, video: bool = False):
 
 
 @contextmanager
-def comfy_server(mode="ok", video=False):
-    server = ThreadingHTTPServer(("127.0.0.1", 0), _make_handler(mode, video))
+def comfy_server(mode="ok", video=False, animated_images=False):
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _make_handler(mode, video, animated_images))
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()
     try:
