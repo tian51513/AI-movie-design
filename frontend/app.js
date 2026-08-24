@@ -327,17 +327,45 @@ const methods = {
     if (sp === null) return;
     const du = prompt('默认分镜时长秒（1~15）：', p.default_shot_duration);
     if (du === null) return;
+    const md = prompt('提示词模式（A散文/B结构化/C构图/D多镜电影，默认D）：', p.prompt_mode || 'D');
+    if (md === null) return;
+    const lo = prompt('真实感LoRA强度（0=关，0~1，默认0.75）：', p.lora_realism);
+    if (lo === null) return;
     const r = await fetch(`/api/projects/${p.id}`, {
       method: 'PATCH', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({video_megapixels: Number(mp), video_speed: sp,
-                            default_shot_duration: Number(du)})});
+                            default_shot_duration: Number(du),
+                            prompt_mode: String(md).toUpperCase().trim()[0],
+                            lora_realism: Number(lo)})});
     if (r.ok) await this.loadDetail(); else alert(await r.text());
   },
   videoParamsLabel() {
     const p = this.project;
     if (!p) return '';
-    const speedMap = {'fast':'快速','standard':'标准','high':'高质量'};
-    return `${p.video_megapixels}MP · ${p.video_multiple}倍 · ${speedMap[p.video_speed]||p.video_speed} · 默认${p.default_shot_duration}s`;
+    return `${p.video_megapixels}MP · ${p.video_multiple}倍 · ${p.video_speed} · 默认${p.default_shot_duration}s · ${p.prompt_mode||'D'}模式 · LoRA${p.lora_realism}`;
+  },
+  async selectVersion(s, file) {
+    const r = await fetch(`/api/shots/${s.id}/version`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({file})});
+    if (r.ok) await this.loadShots(); else alert(await r.text());
+  },
+  renderBadge(s) {
+    const j = s.render_job;
+    if (!j) return '';
+    if (j.status === 'running') return `渲染中 · ${j.elapsed_s}s`;
+    if (j.status === 'done') return `完成 · ${j.elapsed_s}s`;
+    if (j.status === 'failed') return '渲染失败';
+    return '排队中';
+  },
+  async editAssetDetail(a) {
+    const v = prompt('外貌/服装描述（同步库与 meta；引用分镜会标 stale）：', a.detail || '');
+    if (v === null || !v.trim()) return;
+    const r = await fetch(`/api/assets/${a.id}`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({detail: v.trim()})});
+    if (r.ok) { alert('已更新。引用该资产的分镜已标 stale——请重生参考图与提示词'); await this.loadDetail(); }
+    else alert(await r.text());
   },
 
   stageName(s) { return { created: '已创建', analyzed: '已分析', assets_ready: '资产就绪',

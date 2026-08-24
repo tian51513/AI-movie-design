@@ -167,6 +167,9 @@
                   :disabled="assetBusy(a)"
                   :title="assetBusy(a) ? '该资产正在生成中' : '用新的随机种子重新生成这张参考图（不改动资产文本）'">
             {{ assetBusy(a) ? '生成中…' : '重新生成图' }}</button>
+          <button @click="editAssetDetail(a)"
+                  title="修正外貌/服装描述（同步资产库；引用此资产的分镜会标 stale）"
+                  style="margin-top:6px;margin-left:4px">编辑外貌</button>
         </div>
     </div>
     <p v-if="project.stage==='analyzed'">
@@ -226,6 +229,13 @@
       <div v-if="s.video_url" style="margin-top:8px">
         <video controls :src="s.video_url" style="max-width:100%;border-radius:6px;border:1px solid #2c3540"></video>
       </div>
+      <div v-if="s.versions && s.versions.length" style="margin-top:6px">
+        <a v-for="v in s.versions" :key="v" href="#" @click.prevent="selectVersion(s, v)"
+           class="pill" :style="v===s.selected ? 'background:#16a34a;color:#fff;cursor:pointer' : 'cursor:pointer'"
+           style="margin-right:6px;font-size:12px">{{ v.replace('video_','').replace('.mp4','') || '原始' }}</a>
+      </div>
+      <div v-if="renderBadge(s)" class="muted" style="margin-top:6px;font-size:12px"
+           :style="renderBadge(s)==='渲染失败' ? 'color:#f87171' : ''">⏱ {{ renderBadge(s) }}</div>
     </div>
     </template>
     <h3>执行日志（{{ logs.length }}）</h3>
