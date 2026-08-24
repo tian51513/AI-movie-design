@@ -89,3 +89,12 @@ def test_patch_video_params(tmp_path):
         body = c.get(f"/api/projects/{pid}").json()
         assert body["video_speed"] == "高质量" and body["video_megapixels"] == 1.0
         assert c.patch(f"/api/projects/{pid}", json={"video_speed": "极速"}).status_code == 422
+
+
+def test_patch_style_and_video_params_compose(tmp_path):
+    with _client(tmp_path) as c:
+        pid = _upload(c).json()["id"]
+        r = c.patch(f"/api/projects/{pid}", json={"style": "动漫风", "video_speed": "快速"})
+        assert r.status_code == 200
+        body = c.get(f"/api/projects/{pid}").json()
+        assert body["style"] == "动漫风" and body["video_speed"] == "快速"

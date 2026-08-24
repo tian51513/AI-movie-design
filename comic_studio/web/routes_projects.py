@@ -58,7 +58,14 @@ def patch_style(request: Request, project_id: int, body: dict):
     if row is None:
         raise HTTPException(404, "项目不存在")
 
-    # Handle video parameters
+    # Handle style parameter
+    if "style" in body:
+        patch = StylePatch.model_validate(body)
+        conn = db.connect()
+        conn.execute("UPDATE projects SET style=? WHERE id=?", (patch.style.strip(), project_id))
+        conn.commit()
+
+    # Handle video parameters (composable with style)
     if any(k in body for k in ("video_megapixels", "video_multiple", "video_speed", "default_shot_duration")):
         try:
             from ..engine.projects import update_video_params
@@ -71,16 +78,8 @@ def patch_style(request: Request, project_id: int, body: dict):
                 kwargs["video_speed"] = body["video_speed"]
             if "default_shot_duration" in body:
                 kwargs["default_shot_duration"] = body["default_shot_duration"]
-            return _public(update_video_params(db, project_id, **kwargs))
+            row = update_video_params(db, project_id, **kwargs)
         except ValueError as e:
             raise HTTPException(422, str(e))
 
-    # Handle style parameter (original logic)
-    if "style" in body:
-        patch = StylePatch.model_validate(body)
-        conn = db.connect()
-        conn.execute("UPDATE projects SET style=? WHERE id=?", (patch.style.strip(), project_id))
-        conn.commit()
-        return _public(get_project(db, project_id))
-
-    return _public(row)
+    return _public(get_project(db, project_id))
