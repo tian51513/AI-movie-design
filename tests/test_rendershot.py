@@ -218,3 +218,16 @@ def test_render_versions_increment(tmp_path, monkeypatch):
     from comic_studio.engine.rendershot import shot_versions
     vs = shot_versions(tmp_path / "data", "渲染剧", 1)
     assert vs == ["video_v1.mp4", "video_v2.mp4"]
+
+
+def test_version_sort_numeric_not_lexicographic(tmp_path):
+    """v10 必须排在 v2 之后（字符串序 bug 回归）。"""
+    from comic_studio.engine.rendershot import _shot_versions_in, _max_version_number
+    d = tmp_path / "shots" / "1"
+    d.mkdir(parents=True)
+    for n in [1, 2, 10]:
+        (d / f"video_v{n}.mp4").write_bytes(b"x")
+    (d / "video.mp4").write_bytes(b"x")
+    vs = _shot_versions_in(d)
+    assert vs == ["video.mp4", "video_v1.mp4", "video_v2.mp4", "video_v10.mp4"]
+    assert _max_version_number(vs) == 10

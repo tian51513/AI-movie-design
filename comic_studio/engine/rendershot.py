@@ -28,15 +28,25 @@ def pick_template_id(shot_row) -> str:
 
 
 def _shot_versions_in(shot_dir) -> list:
-    """列出镜头目录全部视频版本文件名（video*.mp4，含历史 video.mp4 / video_*.mp4）。"""
+    """列出镜头目录全部视频版本文件名（video*.mp4，含历史 video.mp4 / video_*.mp4）。
+    排序：video.mp4 最前；v{N} 按数字大小（防 v10 < v2 字符串序 bug）；其余按文件名。"""
     import re as _re
     d = Path(shot_dir)
     if not d.is_dir():
         return []
+
+    def sort_key(n: str):
+        if n == "video.mp4":
+            return (0, 0, "")
+        m = _re.fullmatch(r"video_v(\d+)\.mp4", n)
+        if m:
+            return (1, int(m.group(1)), "")
+        return (2, 0, n)
+
     return sorted(
         (f.name for f in d.iterdir()
          if f.is_file() and _re.fullmatch(r"video[\w.\-]*\.mp4", f.name)),
-        key=lambda n: (0, n) if n == "video.mp4" else (1, n))
+        key=sort_key)
 
 
 def _max_version_number(versions: list) -> int:
