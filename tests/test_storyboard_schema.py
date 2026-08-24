@@ -37,7 +37,8 @@ def test_duration_4_accepts():
 
 
 def test_system_prompt_pins_contract():
-    for token in ("workflow_type", "continue_prev", "must_appear", "character_ids", "fl2v"):
+    for token in ("workflow_type", "continue_prev", "must_appear", "character_ids", "fl2v",
+                  "远景", "中景"):
         assert token in SPLIT_SYSTEM
 
 
