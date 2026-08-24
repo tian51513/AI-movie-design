@@ -9,7 +9,7 @@
 - [x] LLM 资产分析：本地 Ollama / 线上 API 提取角色（含外貌固化）、场景、道具，入库全局资产库
 - [x] Web UI：项目列表/创建、分析进度轮询、资产浏览
 - [x] Phase 2：任务队列 + ComfyUI 模板 + 资产参考图生成（门 1）
-- [ ] Phase 3：分镜拆解 + H3 提示词生成（门 2）
+- [x] Phase 3：分镜拆解 + H3 提示词生成（门 2）
 - [ ] Phase 4：逐镜渲染；Phase 5：FFmpeg 合成
 
 ## 快速开始
@@ -71,3 +71,16 @@ Windows：`.venv-win` 的 Scripts 激活后 `pytest -q`
 4. 资产卡出现参考图缩略图；单个「重生」可换图（seed 随机）
 5. 全部有图后「确认资产（过门1）」→ stage=assets_ready
 6. 中途重启应用 → 未完成 job 自动重排继续
+
+### 分镜与提示词
+
+assets_ready 后进入分镜阶段：拆分分镜 → 检查/编辑分镜内容 → 批量生成 H3 提示词 → 确认门2（storyboard_ready）。
+
+### Phase 3 真机验收
+
+1. demo-SAO（assets_ready）→ 分镜 tab →「拆分分镜」→ 日志看 storyboard 分块进度
+2. 分镜列表出现（含台账/绑定/workflow_type 建议）；编辑描述与时长即时保存
+3. 「批量生成提示词」→ 逐镜 ready；点开看提示词质量（H3 规程特征）
+4. 单镜「重生提示词」（force）换一版；改绑定资产后重生对比
+5. 全就绪 →「✓ 确认分镜（过门2）」→ stage=storyboard_ready
+6. 资产重生一张参考图 → 对应分镜出现 stale 标记

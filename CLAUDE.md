@@ -29,3 +29,11 @@
 - `templates/workflows/` — 模板目录（README 有导出指南）
 - 测试反模式提醒：ComfyUI 相关测试一律用 tests/comfy_mock.py 的 comfy_server，不连真实 ComfyUI
 - 测试反模式提醒：API 测试一律 create_app(start_workers=False)
+
+## 模块地图（Phase 3）
+
+- `comic_studio/engine/shots.py` — 分镜仓库（persist/list/update/mark_stale_for_asset）
+- `comic_studio/engine/pipeline_jobs.py` — 阶段门禁状态机 + 分镜/提示词 batch 处理器
+- `comic_studio/engine/llm/storyboard.py` — 分镜拆解（LLM 调用、章节分块、结果合并）
+- `comic_studio/engine/prompts/gen.py` — 分镜→H3 视频提示词适配器（vendor 技能规程 + mechanical 校验）
+- 测试反模式提醒：LLM 分镜/提示词测试注入 FakeClient，不触网
