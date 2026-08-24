@@ -84,6 +84,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
     lib_dir.mkdir(parents=True, exist_ok=True)
     app.mount("/library", StaticFiles(directory=lib_dir), name="library")
 
+    Path(data_dir).mkdir(parents=True, exist_ok=True)
+    app.mount("/media", StaticFiles(directory=data_dir), name="media")
+
     return app
 
 

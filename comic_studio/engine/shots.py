@@ -23,12 +23,13 @@ def persist_shots(db: Database, project_id: int, drafts: list) -> list[int]:
         depends_on = getattr(d, "depends_on", None)
         cur = conn.execute(
             "INSERT INTO shots (project_id, seq, text_span, description, shot_type, "
-            "camera_json, duration, workflow_type, ledger_json, depends_on) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            "camera_json, duration, workflow_type, ledger_json, depends_on, prompt) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (project_id, seq, getattr(d, "text_span", ""), getattr(d, "description", ""),
              getattr(d, "shot_type", ""), json.dumps(getattr(d, "camera", {}) or {}, ensure_ascii=False),
              float(getattr(d, "duration", 5)), getattr(d, "workflow_type", "ref2va"),
-             json.dumps(ledger, ensure_ascii=False), depends_on))
+             json.dumps(ledger, ensure_ascii=False), depends_on,
+             getattr(d, "prompt", "")))
         shot_id = cur.lastrowid
         ids.append(shot_id)
         seq_to_id[seq] = shot_id
