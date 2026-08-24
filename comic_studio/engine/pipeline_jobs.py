@@ -38,9 +38,14 @@ def handle_gen_prompt(db, data_dir, job, comfy):
     if shot is None:
         raise ValueError("分镜已删除（重拆后旧任务）")
     backend = "ltx" if "ltx" in (shot["workflow_type"] or "") else "h3"
+    from .projects import get_project
+    proj = get_project(db, shot["project_id"])
+    mode = (proj["prompt_mode"] if proj is not None and "prompt_mode" in proj.keys()
+            else None)
     client = client_for_task(db, "gen_video_prompt")
     t0 = time.monotonic()
-    text = generate_video_prompt(db, payload["shot_id"], client, backend=backend)
+    text = generate_video_prompt(db, payload["shot_id"], client, backend=backend,
+                                 mode=mode)
     update_shot(db, payload["shot_id"], {"prompt": text, "status": "ready"})
     emit_log(db, "llm", "info",
              f"镜头 {shot['seq']} 提示词就绪（{backend}，{len(text)} 字，"

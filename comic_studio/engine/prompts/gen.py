@@ -74,12 +74,18 @@ def ledger_assets(shot_row) -> list[int]:
 
 
 def generate_video_prompt(db, shot_id, client, backend: str = "h3",
+                          mode: str | None = None,
                           max_attempts: int = 3) -> str:
+    from .modes import PROMPT_MODES, mode_spec
     shot = get_shot(db, shot_id)
     proj = get_project(db, shot["project_id"])
+    if mode is None:
+        mode = (proj["prompt_mode"]
+                if proj is not None and proj["prompt_mode"] in PROMPT_MODES else "D")
     assets_by_id = {a["id"]: a for a in list_project_assets(db, shot["project_id"])}
     ctx = build_shot_context(shot, assets_by_id, proj)
-    system = build_h3_system() if backend == "h3" else LTX_SYSTEM
+    system = (build_h3_system() + "\n\n---\n\n" + mode_spec(mode)
+              if backend == "h3" else LTX_SYSTEM)
     messages = [{"role": "system", "content": system},
                 {"role": "user", "content": ctx}]
     last_err = ""
