@@ -197,8 +197,10 @@
           <option value="ref2va">ref2va</option><option value="fl2v">fl2v</option><option value="t2v">t2v</option>
         </select>
         <span style="flex:1"></span>
-        <button v-if="!s.prompt || s.status==='stale'" @click="regenPrompt(s, !!s.prompt)" style="font-size:12px;padding:3px 8px">
-          {{ s.status==='stale' ? '重生提示词' : '生成提示词' }}</button>
+        <button @click="regenPrompt(s, !!s.prompt)"
+                :title="s.prompt ? '已有提示词时重生成会换一版（force）' : '为本镜生成视频提示词'"
+                style="font-size:12px;padding:3px 8px">
+          {{ s.prompt ? '重生提示词' : '生成提示词' }}</button>
       </div>
       <p><textarea v-model="s.description" rows="2" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px" @focus="editingShot=true" @blur="editingShot=false;saveShot(s, {description: s.description})"></textarea></p>
       <div v-if="s.ledger" style="font-size:12px;margin:6px 0">
