@@ -224,10 +224,7 @@ const methods = {
       if (!r.ok || !this.project) return;
       const body = await r.json();
       if (body.logs.length) {
-        const box = document.getElementById('logbox');
-        const atBottom = !box || (box.scrollHeight - box.scrollTop - box.clientHeight < 40);
-        this.logs.push(...body.logs); this.lastLogId = body.last_id;
-        if (atBottom && box) box.scrollTop = box.scrollHeight;
+        this.logs.unshift(...body.logs); this.lastLogId = body.last_id;  // 时间降序：最新在顶
       }
       try {
         this.queue = await (await fetch(`/api/projects/${this.project.id}/queue`)).json();
