@@ -41,6 +41,7 @@ function data() {
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
+    paramsOpen: false,
   };
 }
 
@@ -319,25 +320,19 @@ const methods = {
     const r = await fetch(`/api/projects/${this.project.id}/gate3`, {method: 'POST'});
     if (r.ok) await this.loadDetail(); else alert(await r.text());
   },
-  async editVideoParams() {
-    const p = this.project;
-    const mp = prompt('百万像素（0.2~2.0）：', p.video_megapixels);
-    if (mp === null) return;
-    const sp = prompt('质量档（快速/标准/高质量）：', p.video_speed);
-    if (sp === null) return;
-    const du = prompt('默认分镜时长秒（1~15）：', p.default_shot_duration);
-    if (du === null) return;
-    const md = prompt('提示词模式（A散文/B结构化/C构图/D多镜电影，默认D）：', p.prompt_mode || 'D');
-    if (md === null) return;
-    const lo = prompt('真实感LoRA强度（0=关，0~1，默认0.75）：', p.lora_realism);
-    if (lo === null) return;
-    const r = await fetch(`/api/projects/${p.id}`, {
+  async patchVideoParam(key, value) {
+    const r = await fetch(`/api/projects/${this.project.id}`, {
       method: 'PATCH', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({video_megapixels: Number(mp), video_speed: sp,
-                            default_shot_duration: Number(du),
-                            prompt_mode: String(md).toUpperCase().trim()[0],
-                            lora_realism: Number(lo)})});
-    if (r.ok) await this.loadDetail(); else alert(await r.text());
+      body: JSON.stringify({[key]: value})});
+    if (!r.ok) { alert(await r.text()); await this.loadDetail(); }
+  },
+  promptBadge(s) {
+    const j = s.prompt_job;
+    if (!j) return '';
+    if (j.status === 'running') return '提示词生成中…';
+    if (j.status === 'done') return '';
+    if (j.status === 'failed') return '提示词生成失败';
+    return '排队中';
   },
   videoParamsLabel() {
     const p = this.project;

@@ -16,11 +16,11 @@ from ..engine.projects import get_project
 router = APIRouter(tags=["shots"])
 
 
-def _render_job(db, shot_id):
+def _last_job(db, shot_id, jtype):
     row = db.connect().execute(
         "SELECT status, started_at, finished_at FROM jobs "
-        "WHERE shot_id=? AND type='gen_shot' ORDER BY id DESC LIMIT 1",
-        (shot_id,)).fetchone()
+        "WHERE shot_id=? AND type=? ORDER BY id DESC LIMIT 1",
+        (shot_id, jtype)).fetchone()
     if row is None:
         return None
     elapsed = None
@@ -43,7 +43,8 @@ def _shot_public(r, versions=None, db=None):
             "video_url": f"/media/{vp}" if vp else None,
             "versions": versions if versions is not None else [],
             "selected": vp.rsplit("/", 1)[-1] if vp else None,
-            "render_job": _render_job(db, r["id"]) if db is not None else None}
+            "render_job": _last_job(db, r["id"], "gen_shot") if db is not None else None,
+            "prompt_job": _last_job(db, r["id"], "gen_prompt") if db is not None else None}
 
 
 @router.post("/api/projects/{project_id}/split-storyboards", status_code=202)

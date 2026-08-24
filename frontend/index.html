@@ -123,8 +123,30 @@
               @click="editStyle">{{ project.style.slice(0, 12) }}…</span>
         <span v-else class="pill" style="cursor:pointer" @click="editStyle">+ 指定画风</span>
         <span v-if="project.video_megapixels" class="pill" style="cursor:pointer"
-              title="点击编辑视频参数"
-              @click="editVideoParams">{{ videoParamsLabel() }}</span></h2>
+              title="点击展开/收起视频参数面板"
+              @click="paramsOpen=!paramsOpen">{{ videoParamsLabel() }}</span></h2>
+    <div v-if="paramsOpen" class="card"
+         style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:8px 0;padding:10px 14px">
+      <label>兆像素
+        <select :value="project.video_megapixels" @change="patchVideoParam('video_megapixels', Number($event.target.value))">
+          <option v-for="m in [0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.5,1.8,2.0]" :value="m">{{ m }}MP</option>
+        </select></label>
+      <label>质量档
+        <select :value="project.video_speed" @change="patchVideoParam('video_speed', $event.target.value)">
+          <option>快速</option><option>标准</option><option>高质量</option></select></label>
+      <label>默认时长
+        <input type="number" min="1" max="15" :value="project.default_shot_duration"
+               @change="patchVideoParam('default_shot_duration', Number($event.target.value))" style="width:52px">s</label>
+      <label>提示词模式
+        <select :value="project.prompt_mode" @change="patchVideoParam('prompt_mode', $event.target.value)">
+          <option value="A">A 散文（快/单角色）</option>
+          <option value="B">B 结构化</option>
+          <option value="C">C 构图</option>
+          <option value="D">D 多镜电影（多角色推荐）</option></select></label>
+      <label>LoRA
+        <input type="number" min="0" max="1" step="0.05" :value="project.lora_realism"
+               @change="patchVideoParam('lora_realism', Number($event.target.value))" style="width:56px"></label>
+    </div>
     <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button @click="switchDetailMode('assets')"
               :style="detailMode==='assets' ? 'background:#16a34a' : ''">资产（{{ assets.length }}）</button>
@@ -206,9 +228,13 @@
         </select>
         <span style="flex:1"></span>
         <button @click="regenPrompt(s, !!s.prompt)"
+                :disabled="s.prompt_job && s.prompt_job.status==='running'"
                 :title="s.prompt ? '已有提示词时重生成会换一版（force）' : '为本镜生成视频提示词'"
                 style="font-size:12px;padding:3px 8px">
-          {{ s.prompt ? '重生提示词' : '生成提示词' }}</button>
+          {{ s.prompt_job && s.prompt_job.status==='running' ? '生成中…' : (s.prompt ? '重生提示词' : '生成提示词') }}</button>
+        <span v-if="promptBadge(s)"
+              :style="{color: promptBadge(s)==='提示词生成失败' ? '#f87171' : '#9ca3af'}"
+              style="font-size:12px">{{ promptBadge(s) }}</span>
         <button @click="renderShot(s)"
                 :style="s.video_url ? 'background:#f59e0b' : ''"
                 style="font-size:12px;padding:3px 8px">
