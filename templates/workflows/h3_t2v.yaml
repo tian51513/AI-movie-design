@@ -14,6 +14,18 @@ inject:
     duration:
       node: '16'
       field: value
+    aspect:
+      node: '6'
+      field: aspect_ratio
+    megapixels:
+      node: '6'
+      field: megapixels
+    multiple:
+      node: '6'
+      field: multiple
+    steps:
+      node: '15'
+      field: steps
 outputs:
 - node: '20'
   filename_prefix: cs/{project}/{asset}

@@ -11,6 +11,18 @@ inject:
     duration:
       node: '59'
       field: value
+    aspect:
+      node: '54'
+      field: aspect_ratio
+    megapixels:
+      node: '54'
+      field: megapixels
+    multiple:
+      node: '54'
+      field: multiple
+    steps:
+      node: '48'
+      field: steps
   images:
   - node: '53'
     field: image
