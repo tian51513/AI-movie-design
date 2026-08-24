@@ -71,7 +71,10 @@ class ComfyClient:
                     raise ComfyError(f"ComfyUI 执行失败: {msgs}")
                 images: list[dict] = []
                 for node_out in (entry.get("outputs") or {}).values():
-                    images.extend(node_out.get("images", []))
+                    for img in node_out.get("images", []):
+                        images.append({**img, "_kind": "image"})
+                    for vid in node_out.get("gifs", []):
+                        images.append({**vid, "_kind": "video"})
                 return images
             if time.monotonic() > deadline:
                 if on_interrupt:

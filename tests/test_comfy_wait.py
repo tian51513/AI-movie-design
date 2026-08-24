@@ -13,9 +13,22 @@ def test_wait_ok_and_download():
         c = ComfyClient(m.base_url)
         pid = c.submit({}, "c1")
         images = c.wait_and_collect(pid, poll_interval=0.05)
-        assert images == [{"filename": "cs_x.png", "subfolder": "", "type": "output"}]
+        assert images == [{"filename": "cs_x.png", "subfolder": "", "type": "output", "_kind": "image"}]
         dest = pathlib.Path(tempfile.mkstemp(suffix=".png")[1])
         c.download("cs_x.png", "", "output", dest)
+        assert dest.stat().st_size == 2
+        dest.unlink()
+
+
+def test_wait_collects_video_gifs():
+    with comfy_server("ok", video=True) as m:
+        c = ComfyClient(m.base_url)
+        pid = c.submit({}, "c1")
+        items = c.wait_and_collect(pid, poll_interval=0.05)
+        assert items == [{"filename": "cs_x.mp4", "subfolder": "",
+                          "type": "output", "_kind": "video"}]
+        dest = pathlib.Path(tempfile.mkstemp(suffix=".mp4")[1])
+        c.download("cs_x.mp4", "", "output", dest)
         assert dest.stat().st_size == 2
         dest.unlink()
 

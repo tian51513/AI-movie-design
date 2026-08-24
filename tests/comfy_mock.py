@@ -29,7 +29,7 @@ class MockComfy:
         return self._server.RequestHandlerClass.interrupts
 
 
-def _make_handler(mode: str):
+def _make_handler(mode: str, video: bool = False):
     class H(BaseHTTPRequestHandler):
         uploads, prompts, frees, interrupts = [], [], 0, 0
         n = 0
@@ -58,9 +58,14 @@ def _make_handler(mode: str):
                         "status_str": "error",
                         "messages": ["Prompt execution failed", "节点 6 报错: bad input"]}}})
                     return
-                self._json({pid: {"outputs": {"9": {"images": [
-                    {"filename": "cs_x.png", "subfolder": "", "type": "output"}]}},
-                    "status": {"status_str": "success"}}})
+                if video:
+                    self._json({pid: {"outputs": {"9": {"gifs": [
+                        {"filename": "cs_x.mp4", "subfolder": "", "type": "output"}]}},
+                        "status": {"status_str": "success"}}})
+                else:
+                    self._json({pid: {"outputs": {"9": {"images": [
+                        {"filename": "cs_x.png", "subfolder": "", "type": "output"}]}},
+                        "status": {"status_str": "success"}}})
             elif self.path.startswith("/view"):
                 self.send_response(200)
                 self.send_header("Content-Type", "image/png")
@@ -98,8 +103,8 @@ def _make_handler(mode: str):
 
 
 @contextmanager
-def comfy_server(mode="ok"):
-    server = ThreadingHTTPServer(("127.0.0.1", 0), _make_handler(mode))
+def comfy_server(mode="ok", video=False):
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _make_handler(mode, video))
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()
     try:
