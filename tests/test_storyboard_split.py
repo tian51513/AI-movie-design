@@ -7,6 +7,7 @@ from comic_studio.engine.llm.storyboard import ContentBoundaryError, split_story
 from comic_studio.engine.projects import create_project
 from comic_studio.engine.shots import list_shots
 from comic_studio.engine.llm.provider import Usage
+from comic_studio.engine.paths import data_to_abs
 
 CHUNK = """{{"shots":[{{
  "text_span":"推门","description":"{desc}","shot_type":"动作",
@@ -71,3 +72,24 @@ def test_content_boundary_blocks_and_reports(tmp_path):
     fake = FakeLLM([bad])
     with pytest.raises(ContentBoundaryError):
         split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
+
+
+def test_split_resolves_relative_novel_path(tmp_path, monkeypatch):
+    """回归：novel_path 是相对 data 根的存储格式（WSL↔Win 可移植），必须经 data_to_abs 解析。"""
+    import json as _json
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    from comic_studio.engine.shots import list_shots
+    db, pid = _setup(tmp_path, monkeypatch)
+    # 直接把库里的 novel_path 改成相对形式（模拟真实库），文件在 data/ 下
+    conn = db.connect()
+    row = conn.execute("SELECT novel_path FROM projects WHERE id=?", (pid,)).fetchone()
+    abs_novel = data_to_abs(tmp_path / "data", row["novel_path"])
+    abs_novel.parent.mkdir(parents=True, exist_ok=True)
+    abs_novel.write_text("林晨推门。", encoding="utf-8")
+    from comic_studio.engine.paths import rel_to_data
+    conn.execute("UPDATE projects SET novel_path=? WHERE id=?",
+                 (rel_to_data(tmp_path / "data", abs_novel), pid))
+    conn.commit()
+    fake = FakeLLM([CHUNK.format(desc="推门镜", cid=1)])
+    ids = split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
+    assert len(list_shots(db, pid)) == 1
