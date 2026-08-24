@@ -33,15 +33,23 @@ class SettingsUpdate(BaseModel):
     llm_routing: dict[str, str] | None = None
     comfy: ComfyConfig | None = None
     template_map: dict[str, str | None] | None = None
+    model_overrides: dict[str, dict[str, str]] | None = None
 
 
 @router.get("")
 def read(request: Request):
+    from ..engine.workflows import registry
+    try:
+        templates = sorted(registry.scan_templates(registry.TEMPLATE_ROOT))
+    except registry.ManifestError:
+        templates = []
     return {
         "llm_providers": get_setting(request.app.state.db, "llm_providers"),
         "llm_routing": get_setting(request.app.state.db, "llm_routing"),
         "comfy": get_setting(request.app.state.db, "comfy"),
         "template_map": get_setting(request.app.state.db, "template_map"),
+        "model_overrides": get_setting(request.app.state.db, "model_overrides") or {},
+        "model_templates": templates,
     }
 
 
@@ -77,7 +85,48 @@ def update(request: Request, body: SettingsUpdate):
         merged = get_setting(db, "template_map")
         merged.update(body.template_map)
         set_setting(db, "template_map", merged)
+    if body.model_overrides is not None:
+        from ..engine.workflows import registry
+        reg = registry.scan_templates(registry.TEMPLATE_ROOT)
+        bad_tmpl = set(body.model_overrides) - set(reg)
+        if bad_tmpl:
+            raise HTTPException(422, f"未知模板: {sorted(bad_tmpl)}，只允许 {sorted(reg)}")
+        merged = get_setting(db, "model_overrides") or {}
+        for tmpl_id, slots in body.model_overrides.items():
+            labels = {s.label for s in reg[tmpl_id].models}
+            bad_labels = set(slots) - labels
+            if bad_labels:
+                raise HTTPException(
+                    422, f"模板 {tmpl_id} 无模型槽位: {sorted(bad_labels)}，"
+                         f"可用 {sorted(labels)}")
+            merged.setdefault(tmpl_id, {}).update(slots)
+        set_setting(db, "model_overrides", merged)
     return {"status": "ok"}
+
+
+@router.get("/models/choices")
+def model_choices(template: str = Query(...), request: Request = None):
+    """枚举模板各模型槽位的可选文件（ComfyUI /object_info/{cls}）。"""
+    from ..engine.comfy.client import ComfyClient
+    from ..engine.workflows import registry
+    reg = registry.scan_templates(registry.TEMPLATE_ROOT)
+    if template not in reg:
+        raise HTTPException(404, f"模板不存在: {template}（已注册 {sorted(reg)}）")
+    base_url = (get_setting(request.app.state.db, "comfy") or {}).get("base_url")
+    if not base_url:
+        raise HTTPException(409, "未配置 ComfyUI 地址（设置页先填 comfy.base_url）")
+    comfy = ComfyClient(base_url)
+    out = []
+    for slot in reg[template].models:
+        try:
+            with comfy._client() as c:
+                info = c.get(f"{base_url}/object_info/{slot.cls}").json()
+            choices = info["input"]["required"][slot.field][0]
+        except Exception as exc:
+            raise HTTPException(502, f"ComfyUI 枚举失败（{slot.cls}.{slot.field}）：{exc}")
+        out.append({"label": slot.label, "cls": slot.cls, "field": slot.field,
+                    "choices": list(choices or [])})
+    return out
 
 
 def _ollama_root(base_url: str) -> str:

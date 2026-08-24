@@ -32,7 +32,9 @@ function data() {
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     newStyleKey: '', newStyleText: '',
     analyzeState: { status: '', error: null }, pollTimer: null,
-    settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '' }, saving: false,
+    settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '',
+                    model_overrides: {}, model_templates: [] }, saving: false,
+    moTemplate: '', modelChoices: [], moError: '',
     ollamaModels: [], showThink: false, loadingModels: false,
     activeKind: '全部', perRow: 2, lightbox: null,
     comfyStatus: null, llmTesting: '', llmTestResult: {local: null, online: null},
@@ -57,6 +59,11 @@ const computed = {
   displayOllamaModels() {
     return this.showThink ? this.ollamaModels
       : this.ollamaModels.filter(m => !m.toLowerCase().includes("think"));
+  },
+  currentMO() {
+    const mo = this.settingsForm.model_overrides;
+    if (!mo[this.moTemplate]) mo[this.moTemplate] = {};
+    return mo[this.moTemplate];
   },
 };
 
@@ -176,8 +183,27 @@ const methods = {
       routing: { ...s.llm_routing },
       comfy: { ...s.comfy },
       t2i_tm: s.template_map?.t2i || '',
+      model_overrides: JSON.parse(JSON.stringify(s.model_overrides || {})),
+      model_templates: s.model_templates || [],
     };
+    this.moTemplate = this.settingsForm.model_templates.includes('h3_ref2va')
+      ? 'h3_ref2va' : (this.settingsForm.model_templates[0] || '');
+    await this.loadModelChoices();
     this.llmTest('local', false); this.llmTest('online', false);  // 表单就绪后再自动检测
+  },
+  // ===== 模型切换 =====
+  async loadModelChoices() {
+    this.modelChoices = []; this.moError = '';
+    if (!this.moTemplate) return;
+    try {
+      const r = await fetch(`/api/settings/models/choices?template=${encodeURIComponent(this.moTemplate)}`);
+      if (!r.ok) { this.moError = '枚举失败：' + (await r.json()).detail; return; }
+      const slots = await r.json();
+      this.modelChoices = slots;
+      const mo = this.currentMO;
+      for (const slot of slots)
+        if (!(slot.label in mo)) mo[slot.label] = '';  // 缺省「模板默认」
+    } catch (e) { this.moError = '枚举失败：' + e; }
   },
   llmLamp(provider) {
     const r = this.llmTestResult[provider];
@@ -235,6 +261,7 @@ const methods = {
       llm_routing: { ...this.settingsForm.routing },
       comfy: { base_url: this.settingsForm.comfy.base_url || '' },
       template_map: { t2i: this.settingsForm.t2i_tm || null },
+      model_overrides: this.settingsForm.model_overrides,
     };
     const resp = await fetch('/api/settings', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },

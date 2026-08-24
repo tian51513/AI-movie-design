@@ -36,3 +36,10 @@ outputs:
 requires:
 - ComfyUI-GGUF
 - comfyui-kjnodes
+
+# 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
+models:
+- {label: unet, node: '52', field: unet_name, cls: UNETLoader}
+- {label: clip, node: '40', field: clip_name, cls: CLIPLoader}
+- {label: vae_audio, node: '46', field: vae_name, cls: VAELoader}
+- {label: vae_video, node: '45', field: vae_name, cls: VAELoader}

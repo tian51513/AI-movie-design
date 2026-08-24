@@ -9,6 +9,7 @@ from .logbus import emit as emit_log
 from .paths import data_to_abs
 from .projects import get_project
 from .queue.worker import register
+from .settings import get_setting
 from .shots import get_shot, update_shot
 from .video import extract_last_frame
 from .workflows import registry
@@ -133,8 +134,10 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
                   for r in raw_refs]
 
     output_ctx = {"project": proj["slug"], "asset": f"shot-{shot['seq']}"}
+    model_overrides = (get_setting(db, "model_overrides") or {}).get(template.id)
     wf, uploads = fill_workflow(template, prompt=prompt, params=params,
-                                images=images, output_ctx=output_ctx)
+                                images=images, output_ctx=output_ctx,
+                                model_overrides=model_overrides)
 
     # I1: 若模板声明图片槽但上传清单为空，快失败
     if template.inject_images and not uploads:

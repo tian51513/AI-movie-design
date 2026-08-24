@@ -4,13 +4,19 @@ import copy
 
 
 def fill_workflow(template, *, prompt: str, params: dict,
-                   images: list | None, output_ctx: dict):
+                   images: list | None, output_ctx: dict,
+                   model_overrides: dict | None = None):
     wf = copy.deepcopy(template.api_json())
 
     def set_input(node: str, field_name: str, value):
         wf[str(node)]["inputs"][field_name] = value
 
     set_input(template.inject_prompt.node, template.inject_prompt.field, prompt)
+    # 模型槽位覆盖（settings model_overrides，键=模板 id → {label: 文件名}）
+    for slot in template.models:
+        value = (model_overrides or {}).get(slot.label)
+        if value:
+            set_input(slot.node, slot.field, value)
     for key, point in template.inject_params.items():
         value = params.get(key)
         if value is None:

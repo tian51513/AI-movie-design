@@ -28,6 +28,15 @@ class OutputSpec:
 
 
 @dataclass
+class ModelSlot:
+    """模型加载槽位（计划5B 模型切换）：label 供 settings model_overrides 引用。"""
+    label: str
+    node: str
+    field: str
+    cls: str  # ComfyUI /object_info 的类名（枚举可选文件用）
+
+
+@dataclass
 class WorkflowTemplate:
     id: str
     type: str
@@ -40,6 +49,7 @@ class WorkflowTemplate:
     requires: list
     dir: Path
     inject_images: list = field(default_factory=list)
+    models: list = field(default_factory=list)
 
     def api_json(self) -> dict:
         import json
@@ -66,7 +76,8 @@ def load_manifest(path: Path) -> WorkflowTemplate:
         outputs=[OutputSpec(**o) for o in data["outputs"]],
         requires=list(data.get("requires") or []),
         dir=path.parent,
-        inject_images=list(inj.get("images") or []))
+        inject_images=list(inj.get("images") or []),
+        models=[ModelSlot(**m) for m in (data.get("models") or [])])
 
 
 def scan_templates(root: Path) -> dict:

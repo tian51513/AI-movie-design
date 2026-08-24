@@ -7,6 +7,7 @@ from .assets import get_asset
 from .logbus import emit as emit_log
 from .paths import data_to_abs
 from .queue.worker import register
+from .settings import get_setting
 from .workflows.filler import fill_workflow
 from .workflows.registry import resolve_template
 
@@ -48,7 +49,8 @@ def handle_gen_ref(db, data_dir, job, comfy):
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
         params={"seed": payload.get("seed") or random.randint(0, 2**31 - 1)},
-        images=None, output_ctx=ctx)
+        images=None, output_ctx=ctx,
+        model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))
     if comfy is None:
         raise RuntimeError("gen_ref 需要 ComfyUI 端点（settings.comfy.base_url）")
     for up in uploads:

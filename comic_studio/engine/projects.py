@@ -12,7 +12,8 @@ STAGES = ("created", "analyzed", "assets_ready", "storyboard_ready",
 
 
 def slugify(name: str) -> str:
-    return re.sub(r'[\\/:*?"<>|]', "_", name.strip())
+    s = re.sub(r'[\\/:*?"<>|]', "_", name.strip())
+    return re.sub(r"^\\.+", "_", s)  # 防路径穿越：项目名 ".." 等不得逃出 projects/
 
 
 def create_project(db: Database, data_dir: Path, name: str,
