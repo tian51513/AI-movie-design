@@ -47,6 +47,34 @@ def _try_reattach(db, data_dir, rows) -> int:
     return n
 
 
+def _autopilot_once(db, data_dir) -> int:
+    """巡检一轮：对所有 autopilot=1 项目执行 tick；单项目异常记日志不中断。"""
+    from ..engine.autopilot import tick
+    from ..engine.logbus import emit as emit_log
+    rows = db.connect().execute(
+        "SELECT id FROM projects WHERE autopilot=1").fetchall()
+    n = 0
+    for row in rows:
+        try:
+            tick(db, data_dir, row["id"])
+        except Exception as exc:
+            emit_log(db, "autopilot", "error",
+                     f"tick 失败 project#{row['id']}：{type(exc).__name__}: {exc}",
+                     project_id=row["id"])
+            continue
+        n += 1
+    return n
+
+
+def _autopilot_loop(db, data_dir, stop_event, interval: float = 3.0) -> None:
+    """autopilot 巡检线程主体（计划5B 任务2）：本地单用户，单线程扫表足够。"""
+    while not stop_event.wait(interval):
+        try:
+            _autopilot_once(db, data_dir)
+        except Exception:
+            pass  # _autopilot_once 已逐项目兜底；此处兜底巡检自身（如 DB 抖动）
+
+
 def create_app(db_path: str | Path = "./data/studio.db",
                data_dir: str | Path = "./data",
                start_workers: bool = True) -> FastAPI:
@@ -76,7 +104,12 @@ def create_app(db_path: str | Path = "./data/studio.db",
                 db.path, str(data_dir), None,
                 int(get_setting(db, "workers") or 1),
                 comfy_from_settings=True)
+            import threading
+            ap_stop = threading.Event()
+            threading.Thread(target=_autopilot_loop, args=(db, data_dir, ap_stop),
+                             daemon=True, name="autopilot-loop").start()
             yield
+            ap_stop.set()
             stop_workers(workers, worker_stop)
         else:
             yield

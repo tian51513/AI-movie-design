@@ -11,7 +11,7 @@ from .assets import list_project_assets
 from .llm.storyboard import split_storyboards
 from .logbus import emit as emit_log
 from .paths import data_to_abs
-from .projects import get_project, set_stage
+from .projects import get_project
 from .queue.worker import register
 from .settings import get_setting
 
@@ -99,23 +99,6 @@ def next_action(db, data_dir, project_id) -> dict:
     return {"action": "wait", "detail": f"未知阶段 {stage}"}
 
 
-def _pass_gate(db, data_dir, project_id, n: int) -> None:
-    """门禁自动通过——条件与手动 gate 端点一致，不满足时留给下一轮（wait 循环）。"""
-    proj = get_project(db, project_id)
-    stage = proj["stage"]
-    if n == 1 and stage == "analyzed" and _all_assets_have_sheets(db, data_dir, project_id):
-        set_stage(db, project_id, "assets_ready")
-        emit_log(db, "system", "info", "autopilot：门1 自动通过（analyzed → assets_ready）", project_id=project_id)
-    elif n == 2 and stage == "storyboard_ready" and _shots_missing_prompt(db, project_id) == 0:
-        set_stage(db, project_id, "storyboard_ready")
-        emit_log(db, "system", "info", "autopilot：门2 检查（storyboard_ready）", project_id=project_id)
-        # stage2 由 render 阶段在 all_shots 有 video 后 pass gate3——门2 在此模型中
-        # 通过条件为提示词齐全（gate2→stage 仍为 storyboard_ready 渲染入口，不需要 set）
-    elif n == 3 and stage == "storyboard_ready" and _all_shots_have_video(db, project_id):
-        set_stage(db, project_id, "rendered")
-        emit_log(db, "system", "info", "autopilot：门3 自动通过（storyboard_ready → rendered）", project_id=project_id)
-
-
 def tick(db, data_dir, project_id) -> dict:
     """执行一轮决策。返回 {"action": ...}（wait/None 时仅返回）。"""
     act = next_action(db, data_dir, project_id)
@@ -124,7 +107,7 @@ def tick(db, data_dir, project_id) -> dict:
     action = act["action"]
     if action == "analyze":
         from .pipeline_jobs import enqueue_llm_job
-        enqueue_llm_job(db, "split_storyboards", project_id=project_id, payload={"project_id": project_id})
+        enqueue_llm_job(db, "analyze", project_id=project_id, payload={"project_id": project_id})
     elif action == "gen_refs":
         from .jobs import enqueue_job
         n = 0
@@ -173,7 +156,11 @@ def tick(db, data_dir, project_id) -> dict:
         from .jobs import enqueue_job
         enqueue_job(db, "merge", project_id=project_id, payload={"project_id": project_id})
     elif action in ("gate1", "gate3"):
-        _pass_gate(db, data_dir, project_id, int(action[-1]))
+        from .pipeline_gates import gate_pass
+        try:
+            gate_pass(db, data_dir, project_id, int(action[-1]), source="自动通过")
+        except ValueError:
+            pass  # 决策后瞬间条件失效（竞态）——留给下一轮 wait 循环
     elif action == "gate2":
         emit_log(db, "autopilot", "info", "autopilot：门2 条件已满足（提示词齐全）", project_id=project_id)
     return act

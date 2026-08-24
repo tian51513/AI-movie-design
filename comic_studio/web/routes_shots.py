@@ -6,6 +6,7 @@ from fastapi import APIRouter, Body, HTTPException, Request
 
 from ..engine import jobs
 from ..engine.jobs import enqueue_job
+from ..engine.pipeline_gates import GATE_STAGES, GateStageError, gate_pass
 from ..engine.pipeline_jobs import enqueue_llm_job
 from ..engine.projects import get_project, set_stage
 from ..engine.shots import get_shot, list_shots, update_shot
@@ -163,22 +164,22 @@ def gen_batch(request: Request, project_id: int):
 
 @router.post("/api/projects/{project_id}/gate2")
 def gate2(request: Request, project_id: int):
+    return _gate_resp(request, project_id, 2)
+
+
+def _gate_resp(request: Request, project_id: int, n: int):
+    """门2/3 转调 engine.gate_pass；409=阶段不符 / 422=缺件 / 404=无项目。"""
     db = request.app.state.db
-    proj = get_project(db, project_id)
-    if proj is None:
+    if get_project(db, project_id) is None:
         raise HTTPException(404, "项目不存在")
-    if proj["stage"] != "assets_ready":
-        raise HTTPException(409, f"阶段 {proj['stage']} 不能过门2（需 assets_ready）")
-    shots = list_shots(db, project_id)
-    if not shots:
-        raise HTTPException(422, "尚无分镜，请先拆分镜")
-    missing = [s["seq"] for s in shots if not (s["prompt"] or "").strip()]
-    if missing:
-        raise HTTPException(422, f"缺提示词的镜头: {missing}")
-    set_stage(db, project_id, "storyboard_ready")
-    emit_log(db, "system", "info", "阶段流转 assets_ready → storyboard_ready（门2 确认）",
-             project_id=project_id)
-    return {"stage": "storyboard_ready"}
+    try:
+        gate_pass(db, request.app.state.data_dir, project_id, n)
+    except GateStageError as exc:
+        raise HTTPException(409, str(exc))
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    _, to = GATE_STAGES[n]
+    return {"stage": to}
 
 
 @router.post("/api/shots/{shot_id}/render", status_code=202)
@@ -236,19 +237,4 @@ def render_batch(request: Request, project_id: int):
 
 @router.post("/api/projects/{project_id}/gate3")
 def gate3(request: Request, project_id: int):
-    db = request.app.state.db
-    proj = get_project(db, project_id)
-    if proj is None:
-        raise HTTPException(404, "项目不存在")
-    if proj["stage"] != "storyboard_ready":
-        raise HTTPException(409, f"阶段 {proj['stage']} 不能过门3（需 storyboard_ready）")
-    shots = list_shots(db, project_id)
-    if not shots:
-        raise HTTPException(422, "尚无分镜，请先拆分镜")
-    missing = [s["seq"] for s in shots if not s["video_path"]]
-    if missing:
-        raise HTTPException(422, f"缺视频的镜头: {missing}")
-    set_stage(db, project_id, "rendered")
-    emit_log(db, "system", "info", "阶段流转 storyboard_ready → rendered（门3 确认）",
-             project_id=project_id)
-    return {"stage": "rendered"}
+    return _gate_resp(request, project_id, 3)

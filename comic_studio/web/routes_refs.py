@@ -7,7 +7,8 @@ from fastapi import APIRouter, HTTPException, Request
 from ..engine.assets import get_asset, list_project_assets
 from ..engine.jobs import enqueue_job
 from ..engine.paths import data_to_abs
-from ..engine.projects import get_project, set_stage
+from ..engine.pipeline_gates import GateStageError, gate_pass
+from ..engine.projects import get_project
 from ..engine.settings import get_setting
 
 router = APIRouter(tags=["refs"])
@@ -106,20 +107,12 @@ def views(request: Request, asset_id: int):
 @router.post("/api/projects/{project_id}/gate1")
 def gate1(request: Request, project_id: int):
     db = request.app.state.db
-    proj = get_project(db, project_id)
-    if proj is None:
+    if get_project(db, project_id) is None:
         raise HTTPException(404, "项目不存在")
-    if proj["stage"] != "analyzed":
-        raise HTTPException(409, f"阶段 {proj['stage']} 不能过门1（需 analyzed）")
-    missing = []
-    for a in list_project_assets(db, project_id):
-        vd = data_to_abs(request.app.state.data_dir, a["library_dir"]) / "views"
-        if not _has_views(vd):
-            missing.append(a["name"])
-    if missing:
-        raise HTTPException(422, f"以下资产还没有参考图: {missing}")
-    from ..engine.logbus import emit as emit_log
-    set_stage(db, project_id, "assets_ready")
-    emit_log(db, "system", "info", "阶段流转 analyzed → assets_ready（门1 确认）",
-             project_id=project_id)
+    try:
+        gate_pass(db, request.app.state.data_dir, project_id, 1)
+    except GateStageError as exc:
+        raise HTTPException(409, str(exc))
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
     return {"stage": "assets_ready"}

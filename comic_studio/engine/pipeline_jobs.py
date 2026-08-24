@@ -8,7 +8,7 @@ from .queue.worker import register
 from .settings import get_setting
 
 
-_ROUTE_KEY = {"gen_prompt": "gen_video_prompt"}  # job 类型 → llm_routing 键
+_ROUTE_KEY = {"gen_prompt": "gen_video_prompt", "analyze": "extract_assets"}  # job 类型 → llm_routing 键
 
 
 def enqueue_llm_job(db, jtype, project_id, shot_id=None, payload=None):
@@ -16,6 +16,16 @@ def enqueue_llm_job(db, jtype, project_id, shot_id=None, payload=None):
     resource = "gpu_llm_local" if routing == "local" else None
     return enqueue_job(db, jtype, project_id=project_id, shot_id=shot_id,
                        resource=resource, payload=payload)
+
+
+@register("analyze")
+def handle_analyze(db, data_dir, job, comfy):
+    """资产分析（created→analyzed）：autopilot 经队列跑，手动路径仍是 BackgroundTask。"""
+    from .llm.analyze import analyze_project
+    payload = json.loads(job["payload_json"] or "{}")
+    analyze_project(db, data_dir, payload.get("project_id", job["project_id"]))
+    emit_log(db, "analyze", "info", "资产分析完成",
+             project_id=job["project_id"], job_id=job["id"])
 
 
 @register("split_storyboards")

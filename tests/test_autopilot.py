@@ -73,3 +73,35 @@ def test_gen_prompts_when_missing(tmp_path):
         scene_ids=[], prop_ids=[], depends_on=None, prompt="有提示词")])
     # 门2 是检查型（提示词齐全即开始渲染，不转 stage）→ 下一步 render
     assert next_action(db, tmp_path / "data", pid)["action"] == "render"
+
+
+def test_tick_analyze_enqueues_analyze_job(tmp_path):
+    """analyze 动作入队 analyze 类型（经 worker 跑 analyze_project），
+    而非 split_storyboards——否则跳过分析卡死 created。"""
+    db = Database(tmp_path / "t.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "分析剧", "16:9", "正文")["id"]
+    act = tick(db, tmp_path / "data", pid)
+    assert act["action"] == "analyze"
+    row = db.connect().execute(
+        "SELECT type, status FROM jobs WHERE project_id=? ORDER BY id DESC LIMIT 1",
+        (pid,)).fetchone()
+    assert row["type"] == "analyze" and row["status"] == "pending"
+
+
+def test_autopilot_once_ticks_enabled_only(tmp_path):
+    """巡检单轮：只动 autopilot=1 的项目；tick 异常不冒泡（记日志继续）。"""
+    from comic_studio.web.app import _autopilot_once
+    db, pid = _proj(tmp_path)
+    conn = db.connect()
+    conn.execute("UPDATE projects SET autopilot=1 WHERE id=?", (pid,))
+    conn.commit()
+    assert _autopilot_once(db, tmp_path / "data") == 1
+    row = db.connect().execute(
+        "SELECT type FROM jobs WHERE project_id=? ORDER BY id DESC LIMIT 1",
+        (pid,)).fetchone()
+    assert row["type"] == "analyze"
+    # 关掉开关后不再产生新动作
+    conn.execute("UPDATE projects SET autopilot=0, stage='created' WHERE id=?", (pid,))
+    conn.execute("DELETE FROM jobs WHERE project_id=?", (pid,))
+    conn.commit()
+    assert _autopilot_once(db, tmp_path / "data") == 0
