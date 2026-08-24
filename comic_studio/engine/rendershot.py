@@ -8,7 +8,9 @@ from .assets import get_asset
 from .logbus import emit as emit_log
 from .paths import data_to_abs
 from .projects import get_project
+from .queue.worker import register
 from .shots import get_shot, update_shot
+from .video import extract_last_frame
 from .workflows import registry
 from .workflows.filler import fill_workflow
 
@@ -128,4 +130,57 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
              project_id=proj["id"], job_id=job_id,
              data={"path": rel_path})
 
+    return dest
+
+
+@register("gen_shot")
+def handle_gen_shot(db, data_dir, job, comfy):
+    """gen_shot worker handler：首帧链 + 渲染编排。"""
+    import json
+
+    payload = json.loads(job["payload_json"] or "{}")
+    shot_id = payload["shot_id"]
+    shot = get_shot(db, shot_id)
+
+    if shot is None:
+        raise ValueError("分镜已删除（gen_shot 任务）")
+
+    proj = get_project(db, shot["project_id"])
+    first_frame_png = None
+
+    # 首帧链：depends_on 非空时尝试提取前一镜最后一帧
+    if shot["depends_on"]:
+        prev_shot = get_shot(db, shot["depends_on"])
+        if prev_shot and prev_shot["video_path"]:
+            prev_video = data_to_abs(data_dir, prev_shot["video_path"])
+            if prev_video.exists():
+                first_png_path = data_to_abs(
+                    data_dir,
+                    f"projects/{proj['slug']}/shots/{shot['seq']}/first.png"
+                )
+                first_png_path.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    extract_last_frame(prev_video, first_png_path)
+                    first_frame_png = first_png_path
+                    emit_log(db, "comfy", "info",
+                             f"分镜 {shot['seq']} 使用首帧（来自镜 {prev_shot['seq']}）",
+                             project_id=proj["id"], job_id=job["id"])
+                except Exception:
+                    emit_log(db, "comfy", "warn",
+                             f"分镜 {shot['seq']} 提取首帧失败，降级常规路径",
+                             project_id=proj["id"], job_id=job["id"])
+            else:
+                emit_log(db, "comfy", "warn",
+                         f"分镜 {shot['seq']} 前镜视频不存在，降级常规路径",
+                         project_id=proj["id"], job_id=job["id"])
+        else:
+            emit_log(db, "comfy", "warn",
+                     f"分镜 {shot['seq']} 前镜无视频，降级常规路径",
+                     project_id=proj["id"], job_id=job["id"])
+
+    dest = render_shot(db, data_dir, shot_id, comfy, job_id=job["id"],
+                       first_frame_png=first_frame_png)
+    emit_log(db, "comfy", "info", f"分镜 {shot['seq']} gen_shot 完成",
+             project_id=proj["id"], job_id=job["id"],
+             data={"video_path": str(dest)})
     return dest

@@ -81,3 +81,34 @@ def test_render_shot_end_to_end(tmp_path, monkeypatch):
     shot = get_shot(db, sid)
     assert shot["status"] == "rendered"
     assert shot["video_path"] == f"projects/渲染剧/shots/1/video.mp4"
+
+
+def test_handle_gen_shot_registered_and_guard():
+    """Step 1: 验证 handler 注册与守卫（非空 shot 校验）"""
+    from comic_studio.engine.queue.worker import HANDLERS
+    import comic_studio.engine.rendershot  # noqa: F401
+    assert "gen_shot" in HANDLERS
+
+    import tempfile
+    import pathlib
+    import json
+    tmp = pathlib.Path(tempfile.mkdtemp())
+    db = Database(tmp / "g.db")
+    db.migrate()
+    pid = create_project(db, tmp / "d", "g", "9:16", "t")["id"]
+    # 手动插入 job（shot_id=999 不存在）以触发守卫
+    # 禁用外键约束以插入无效 job
+    conn = db.connect()
+    conn.execute("PRAGMA foreign_keys = OFF")
+    cur = conn.execute(
+        "INSERT INTO jobs (project_id, shot_id, type, resource, payload_json, status) "
+        "VALUES (?,?,?,?,?, 'pending')",
+        (pid, 999, "gen_shot", "gpu_comfy", json.dumps({"shot_id": 999}, ensure_ascii=False))
+    )
+    jid = cur.lastrowid
+    conn.commit()
+    conn.execute("PRAGMA foreign_keys = ON")
+    from comic_studio.engine.jobs import get_job
+    from comic_studio.engine.rendershot import handle_gen_shot
+    with pytest.raises(ValueError, match="分镜"):
+        handle_gen_shot(db, tmp / "d", get_job(db, jid), None)
