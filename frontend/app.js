@@ -41,7 +41,7 @@ function data() {
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
-    paramsOpen: false,
+    paramsOpen: false, merges: [],
   };
 }
 
@@ -84,6 +84,7 @@ const methods = {
     clearInterval(this.pollTimer); this.pollTimer = null;  // 重入防护：清掉旧轮询
     this.logs = []; this.lastLogId = 0;
     this.detailMode = 'assets'; this.shots = []; this.splitRunning = false; this.expandedShot = null;
+    this.merges = [];
     this.view = 'detail'; this.project = p;
     await this.loadDetail(); this.startLogsPolling();
   },
@@ -93,6 +94,32 @@ const methods = {
     this.views = {}; (await Promise.all(this.assets.map(async a => [a.id, await (await fetch(`/api/assets/${a.id}/views`)).json()]))).forEach(([k,v]) => this.views[k]=v);
     const s = await fetch(`/api/projects/${this.project.id}/analyze/status`);
     if (s.ok) this.analyzeState = await s.json();
+    if (this.project.stage === 'rendered' || this.project.stage === 'merged') await this.loadMerges();
+  },
+
+  // ===== autopilot 一键出片 =====
+  async setAutopilot(p, on) {
+    const r = await fetch(`/api/projects/${p.id}`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({autopilot: on})});
+    if (!r.ok) { alert(await r.text()); return; }
+    Object.assign(p, await r.json());
+    if (on) await this.refresh();  // 让列表立即显示「自动运行中」角标
+  },
+  autopilotActionLabel() {
+    const a = this.project.autopilot_action;
+    if (!a) return '自动运行中';
+    return { analyze: '分析资产', gen_refs: '生成参考图', gate1: '过门1', split: '拆分分镜',
+      gen_prompts: '生成提示词', gate2: '提示词检查', render: '批量渲染', gate3: '过门3',
+      merge: '合成成片', wait: '等待任务', done: '已完成' }[a.action] || a.action;
+  },
+  async startMerge() {
+    const r = await fetch(`/api/projects/${this.project.id}/merge`, {method: 'POST'});
+    if (!r.ok) alert(await r.text());
+  },
+  async loadMerges() {
+    try { this.merges = await (await fetch(`/api/projects/${this.project.id}/merges`)).json(); }
+    catch (e) { /* 目录未建时静默 */ }
   },
   async editStyle() {
     const v = prompt('画风描述（留空则不指定，生成时由模型自由发挥）：',
@@ -247,7 +274,15 @@ const methods = {
           } else {
             if (!this.editingShot) await this.loadShots();  // 编辑中跳过刷新，blur 后恢复
           }
+          if (this.project.stage === 'rendered' || this.project.stage === 'merged') {
+            await this.loadMerges();  // 合成完成 → 成片列表出现
+          }
         } catch (e) { /* shots 轮询失败不影响日志流 */ }
+      }
+      // autopilot：轻量刷新详情（角标动作/阶段），重载仍由队列 busy→idle 触发
+      if (this.project && this.project.autopilot && this.view === 'detail') {
+        try { this.project = await (await fetch(`/api/projects/${this.project.id}`)).json(); }
+        catch (e) { /* 瞬时失败忽略 */ }
       }
     };
     this._doneSeen = 0; tick(); this.logsTimer = setInterval(tick, 1000);
@@ -368,5 +403,12 @@ const methods = {
   kindName(k) { return { character: '角色', scene: '场景', prop: '道具' }[k]; },
 };
 
-createApp({ data, computed, methods, async mounted() { await this.refresh(); } })
+createApp({ data, computed, methods, async mounted() {
+    await this.refresh();
+    setInterval(async () => {  // 项目列表轮询：autopilot 角标/成片状态实时化
+      if (this.view === 'projects' && !this.creating) {
+        try { await this.refresh(); } catch (e) { /* 忽略瞬时失败 */ }
+      }
+    }, 4000);
+  } })
   .mount('#app');

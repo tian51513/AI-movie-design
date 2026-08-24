@@ -97,7 +97,8 @@ def create_app(db_path: str | Path = "./data/studio.db",
         # 重启后 BackgroundTasks 已消亡，running job 不可能合法存在
         requeued = requeue_on_restart(db, ("gen_ref", "split_storyboards", "gen_prompt", "gen_shot"))
         if start_workers:
-            from ..engine import genref, pipeline_jobs, rendershot  # 注册触发
+            from ..engine import genref, merge as merge_mod, pipeline_jobs, rendershot  # 注册触发
+            merge_mod.register_merge_handler()  # merge handler 延迟注册（避免环）
             from ..engine.queue.worker import start_workers as _spawn_workers, stop_workers
             from ..engine.settings import get_setting
             workers, worker_stop = _spawn_workers(
@@ -153,6 +154,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
 
     from .routes_projects import router as projects_router
     app.include_router(projects_router)
+
+    from .routes_merge import router as merge_router
+    app.include_router(merge_router)
 
     from .routes_analyze import router as analyze_router
     app.include_router(analyze_router)

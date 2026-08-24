@@ -88,7 +88,15 @@
     <div class="row">
       <div class="card" v-for="p in projects" :key="p.id" @click="open(p)" style="cursor:pointer">
         <b>{{ p.name }}</b>
-        <div class="muted">{{ p.aspect_ratio }} · {{ stageName(p.stage) }}</div>
+        <div class="muted">{{ p.aspect_ratio }} · {{ stageName(p.stage) }}
+          <span v-if="p.autopilot" class="pill" style="background:#7c2d12;color:#fdba74">⚡ 自动运行中</span></div>
+        <div style="margin-top:8px;text-align:right">
+          <button v-if="p.stage==='merged'" disabled title="全流程已完成">✓ 已成片</button>
+          <button v-else-if="p.autopilot" @click.stop="setAutopilot(p, false)"
+                  style="background:#dc2626">⏹ 停止自动</button>
+          <button v-else @click.stop="setAutopilot(p, true)" style="background:#16a34a"
+                  title="全自动：分析→参考图→门1→拆分镜→提示词→门2→渲染→门3→合成成片">🚀 一键出片</button>
+        </div>
       </div>
       <div class="card">
         <form @submit.prevent="createProject">
@@ -124,7 +132,11 @@
         <span v-else class="pill" style="cursor:pointer" @click="editStyle">+ 指定画风</span>
         <span v-if="project.video_megapixels" class="pill" style="cursor:pointer"
               title="点击展开/收起视频参数面板"
-              @click="paramsOpen=!paramsOpen">{{ videoParamsLabel() }}</span></h2>
+              @click="paramsOpen=!paramsOpen">{{ videoParamsLabel() }}</span>
+        <span v-if="project.autopilot" class="pill" style="background:#7c2d12;color:#fdba74"
+              :title="'autopilot 当前动作：' + (project.autopilot_action?.detail || '')">⚡ {{ autopilotActionLabel() }}</span>
+        <button v-if="project.autopilot" @click="setAutopilot(project, false)"
+                style="background:#dc2626;font-size:13px;padding:3px 10px">⏹ 停止自动</button></h2>
     <div v-if="paramsOpen" class="card"
          style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:8px 0;padding:10px 14px">
       <label>兆像素
@@ -156,7 +168,9 @@
     <!-- 资产模式 -->
     <template v-if="detailMode==='assets'">
     <p>
-      <button @click="startAnalyze" :disabled="analyzeState.status==='running'">
+      <button @click="startAnalyze"
+              :disabled="analyzeState.status==='running' || project.stage!=='created'"
+              :title="project.stage!=='created' ? `阶段 ${stageName(project.stage)} 无需分析` : 'LLM 抽取角色/场景/道具'">
         {{ analyzeState.status==='running' ? '分析中…' : 'LLM 分析资产' }}</button>
       <span v-if="analyzeState.status==='failed'" style="color:#f87171">
         失败：{{ analyzeState.error }}</span>
@@ -205,14 +219,20 @@
     <!-- 分镜模式 -->
     <template v-if="detailMode==='shots'">
     <p v-if="project.stage==='assets_ready' || project.stage==='storyboard_ready'">
-      <button @click="startSplit" :disabled="splitRunning">{{ splitRunning ? '拆解中…' : '拆分分镜' }}</button>
+      <button @click="startSplit" :disabled="splitRunning"
+              :title="project.stage==='storyboard_ready' ? '重新拆解将覆盖现有分镜（提示词会丢失）' : 'LLM 把章节拆成逐镜分镜'">
+        {{ splitRunning ? '拆解中…' : '拆分分镜' }}</button>
       <span class="muted" v-if="splitRunning">正在拆解分镜，请稍候…</span>
     </p>
     <p v-if="shots.length" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <button @click="genAllPrompts">批量生成提示词</button>
+      <button @click="genAllPrompts" :disabled="project.stage!=='storyboard_ready'"
+              :title="project.stage!=='storyboard_ready' ? `阶段 ${stageName(project.stage)} 不能生成提示词（需 分镜就绪）` : '为缺提示词的镜头批量入队'">
+        批量生成提示词</button>
       <button v-if="allShotsReady" @click="passGate2" style="background:#16a34a">✓ 确认分镜（过门2）</button>
       <button v-if="project.stage==='storyboard_ready'" @click="renderAll">批量渲染</button>
-      <button v-if="allShotsRendered" @click="passGate3" style="background:#16a34a">✓ 确认渲染（过门3）</button>
+      <button v-if="allShotsRendered" @click="passGate3" style="background:#16a34a">✓ 确认渲染（门3）</button>
+      <button v-if="project.stage==='rendered'" @click="startMerge"
+              style="background:#7c3aed">🎬 合成成片</button>
     </p>
     <div v-if="shots.length === 0 && !splitRunning" class="muted" style="padding:20px 0">暂无分镜——点击上方「拆分分镜」开始</div>
     <div v-for="s in shots" :key="s.id" class="card" style="margin-bottom:10px">
@@ -228,14 +248,19 @@
         </select>
         <span style="flex:1"></span>
         <button @click="regenPrompt(s, !!s.prompt)"
-                :disabled="s.prompt_job && s.prompt_job.status==='running'"
-                :title="s.prompt ? '已有提示词时重生成会换一版（force）' : '为本镜生成视频提示词'"
+                :disabled="(s.prompt_job && s.prompt_job.status==='running') || project.stage!=='storyboard_ready'"
+                :title="project.stage!=='storyboard_ready'
+                          ? `阶段 ${stageName(project.stage)} 不能生成提示词（需 分镜就绪）`
+                          : (s.prompt ? '已有提示词时重生成会换一版（force）' : '为本镜生成视频提示词')"
                 style="font-size:12px;padding:3px 8px">
           {{ s.prompt_job && s.prompt_job.status==='running' ? '生成中…' : (s.prompt ? '重生提示词' : '生成提示词') }}</button>
         <span v-if="promptBadge(s)"
               :style="{color: promptBadge(s)==='提示词生成失败' ? '#f87171' : '#9ca3af'}"
               style="font-size:12px">{{ promptBadge(s) }}</span>
         <button @click="renderShot(s)"
+                :disabled="project.stage!=='storyboard_ready' && !s.video_url"
+                :title="project.stage!=='storyboard_ready' && !s.video_url
+                          ? `阶段 ${stageName(project.stage)} 不能渲染（需 分镜就绪）` : ''"
                 :style="s.video_url ? 'background:#f59e0b' : ''"
                 style="font-size:12px;padding:3px 8px">
           {{ s.video_url ? '重渲染' : '渲染' }}</button>
@@ -264,6 +289,13 @@
            :style="renderBadge(s)==='渲染失败' ? 'color:#f87171' : ''">⏱ {{ renderBadge(s) }}</div>
     </div>
     </template>
+    <div v-if="merges.length" style="margin-top:14px">
+      <h3>成片（{{ merges.length }}）</h3>
+      <div v-for="m in merges" :key="m.file" class="card" style="margin-bottom:8px">
+        <b>{{ m.file }}</b>
+        <video controls :src="m.url" style="max-width:100%;border-radius:6px;margin-top:6px;border:1px solid #2c3540"></video>
+      </div>
+    </div>
     <h3>执行日志（{{ logs.length }}）</h3>
     <div id="logbox" style="background:#0d1117;border:1px solid #2c3540;border-radius:8px;padding:10px;max-height:320px;overflow-y:auto;font-family:ui-monospace,monospace;font-size:13px;line-height:1.7">
       <div v-for="l in logs" :key="l.id">

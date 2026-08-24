@@ -8,7 +8,7 @@ router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style",
                     "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
-                    "prompt_mode", "lora_realism")
+                    "prompt_mode", "lora_realism", "autopilot")
 
 
 def _public(row) -> dict:
@@ -46,7 +46,12 @@ def detail(request: Request, project_id: int):
     row = get_project(request.app.state.db, project_id)
     if row is None:
         raise HTTPException(404, "项目不存在")
-    return _public(row)
+    out = _public(row)
+    if row["autopilot"]:
+        from ..engine.autopilot import next_action
+        out["autopilot_action"] = next_action(
+            request.app.state.db, request.app.state.data_dir, project_id)
+    return out
 
 
 @router.patch("/{project_id}")
@@ -66,6 +71,13 @@ def patch_style(request: Request, project_id: int, body: dict):
         patch = StylePatch.model_validate(body)
         conn = db.connect()
         conn.execute("UPDATE projects SET style=? WHERE id=?", (patch.style.strip(), project_id))
+        conn.commit()
+
+    # Handle autopilot switch (一键出片)
+    if "autopilot" in body:
+        on = 1 if body["autopilot"] else 0
+        conn = db.connect()
+        conn.execute("UPDATE projects SET autopilot=? WHERE id=?", (on, project_id))
         conn.commit()
 
     # Handle video parameters (composable with style)
