@@ -108,7 +108,8 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=8
     proj = get_project(db, project_id)
     if proj is None:
         raise ValueError(f"项目不存在: {project_id}")
-    text = Path(proj["novel_path"]).read_text(encoding="utf-8")
+    from ..paths import data_to_abs
+    text = data_to_abs(data_dir, proj["novel_path"]).read_text(encoding="utf-8")
     _content_guard(text)
     chunks = split_chunks(text, max_chars=max_chars)
     assets = list_project_assets(db, project_id)
