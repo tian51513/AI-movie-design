@@ -53,7 +53,8 @@ def get_shot(db: Database, shot_id: int) -> sqlite3.Row | None:
 
 
 _UPDATE_WHITELIST = {"description", "shot_type", "camera_json", "duration",
-                     "workflow_type", "ledger_json", "prompt", "status"}
+                     "workflow_type", "ledger_json", "prompt", "status",
+                     "video_path"}
 
 
 def update_shot(db: Database, shot_id: int, fields: dict) -> None:
