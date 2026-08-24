@@ -7,3 +7,4 @@ data/
 .superpowers/
 .venv-win/
 templates/workflows/_raw/
+projects/
