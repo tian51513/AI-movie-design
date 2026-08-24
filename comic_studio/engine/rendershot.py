@@ -168,19 +168,50 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     if video is None:
         raise RuntimeError("ComfyUI 未返回视频输出")
 
+    return _download_video_result(db, data_dir, comfy, shot, proj, video,
+                                  job_id=job_id)
+
+
+def _download_video_result(db, data_dir, comfy, shot, proj, video,
+                           job_id=None) -> Path:
+    """产物下载落盘段（render_shot 与 reattach 共用）：版本递增落盘 + 状态回写。"""
     shot_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}")
     versions = _shot_versions_in(shot_dir)
     next_n = _max_version_number(versions) + 1
     rel_path = f"projects/{proj['slug']}/shots/{shot['seq']}/video_v{next_n}.mp4"
     dest = data_to_abs(data_dir, rel_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
     comfy.download(video["filename"], video.get("subfolder", ""),
                    video.get("type", "output"), dest)
 
-    update_shot(db, shot_id, {"status": "rendered", "video_path": rel_path})
+    update_shot(db, shot["id"], {"status": "rendered", "video_path": rel_path})
     emit_log(db, "comfy", "info", f"分镜 {shot['seq']} 视频已落盘",
              project_id=proj["id"], job_id=job_id,
              data={"path": rel_path})
+    return dest
 
+
+def reattach(db, data_dir, job_row, comfy) -> Path | None:
+    """断点对账（spec §5）：running job 按 comfy_prompt_id 查 /history，
+    ComfyUI 已完成 → 直接下载落盘不重渲；未完成/无视频产物 → None（交回 requeue）。"""
+    if job_row["shot_id"] is None:
+        return None
+    shot = get_shot(db, job_row["shot_id"])
+    if shot is None:
+        return None
+    proj = get_project(db, shot["project_id"])
+    results = comfy.history_result(job_row["comfy_prompt_id"])
+    if results is None:
+        return None
+    video = next((r for r in results if r.get("_kind") == "video"), None)
+    if video is None:
+        return None
+    dest = _download_video_result(db, data_dir, comfy, shot, proj, video,
+                                  job_id=job_row["id"])
+    emit_log(db, "comfy", "info",
+             f"分镜 {shot['seq']} 断点对账：ComfyUI 已完成，未重渲",
+             project_id=proj["id"], job_id=job_row["id"],
+             data={"prompt_id": job_row["comfy_prompt_id"]})
     return dest
 
 

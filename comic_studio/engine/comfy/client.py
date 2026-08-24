@@ -54,33 +54,40 @@ class ComfyClient:
             c.post(f"{self.base_url}/free",
                    json={"unload_models": unload_models, "free_memory": True})
 
+    def history_result(self, prompt_id: str) -> list[dict] | None:
+        """查 /history/{id}：已完结 → 产物列表（error 状态 raise）；不在 history → None。"""
+        with self._client() as c:
+            resp = c.get(f"{self.base_url}/history/{prompt_id}")
+            resp.raise_for_status()
+            hist = resp.json()
+        entry = hist.get(prompt_id)
+        if entry is None:
+            return None
+        status = (entry.get("status") or {}).get("status_str", "")
+        if status == "error":
+            msgs = "; ".join(str(x) for x in (entry.get("status") or {}).get("messages", []))
+            raise ComfyError(f"ComfyUI 执行失败: {msgs}")
+        outputs: list[dict] = []
+        video_exts = (".mp4", ".webm", ".mov", ".gif")
+        for node_out in (entry.get("outputs") or {}).values():
+            # 新版 SaveVideo：视频在 images 键 + 节点级 animated:[True]；
+            # 旧版/VHS：视频在 gifs 键。两者都识别，扩展名兜底。
+            animated = any(node_out.get("animated") or [])
+            for img in node_out.get("images", []):
+                is_video = animated or str(img.get("filename", "")).lower().endswith(video_exts)
+                outputs.append({**img, "_kind": "video" if is_video else "image"})
+            for vid in node_out.get("gifs", []):
+                outputs.append({**vid, "_kind": "video"})
+        return outputs
+
     def wait_and_collect(self, prompt_id: str, stall_seconds: float = 300,
                          poll_interval: float = 1.0, on_interrupt=None) -> list[dict]:
         import time
         deadline = time.monotonic() + stall_seconds
         while True:
-            with self._client() as c:
-                resp = c.get(f"{self.base_url}/history/{prompt_id}")
-                resp.raise_for_status()
-                hist = resp.json()
-            entry = hist.get(prompt_id)
-            if entry is not None:
-                status = (entry.get("status") or {}).get("status_str", "")
-                if status == "error":
-                    msgs = "; ".join(str(x) for x in (entry.get("status") or {}).get("messages", []))
-                    raise ComfyError(f"ComfyUI 执行失败: {msgs}")
-                images: list[dict] = []
-                video_exts = (".mp4", ".webm", ".mov", ".gif")
-                for node_out in (entry.get("outputs") or {}).values():
-                    # 新版 SaveVideo：视频在 images 键 + 节点级 animated:[True]；
-                    # 旧版/VHS：视频在 gifs 键。两者都识别，扩展名兜底。
-                    animated = any(node_out.get("animated") or [])
-                    for img in node_out.get("images", []):
-                        is_video = animated or str(img.get("filename", "")).lower().endswith(video_exts)
-                        images.append({**img, "_kind": "video" if is_video else "image"})
-                    for vid in node_out.get("gifs", []):
-                        images.append({**vid, "_kind": "video"})
-                return images
+            results = self.history_result(prompt_id)
+            if results is not None:
+                return results
             if time.monotonic() > deadline:
                 if on_interrupt:
                     on_interrupt()

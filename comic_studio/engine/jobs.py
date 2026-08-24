@@ -113,3 +113,13 @@ def requeue_on_restart(db, requeue_types: tuple) -> int:
         f"finished_at=datetime('now') WHERE status='running'")
     conn.commit()
     return cur.rowcount
+
+
+def collect_reattach_candidates(db, jtype="gen_shot") -> list:
+    """断点对账（spec §5）：收集 running 且带 comfy_prompt_id 的 job 行。
+
+    注意：须在 requeue_on_restart 之前调用——requeue 会把 running 改 pending。
+    """
+    return db.connect().execute(
+        "SELECT * FROM jobs WHERE status='running' AND type=? AND comfy_prompt_id IS NOT NULL",
+        (jtype,)).fetchall()

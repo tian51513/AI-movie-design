@@ -11,6 +11,42 @@ from ..engine.db import Database
 _FRONTEND = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
 
 
+def _try_reattach(db, data_dir, rows) -> int:
+    """启动期断点对账（spec §5）：running gen_shot 逐条查 ComfyUI /history，
+    已完成 → reattach 落盘+标 done；不可达/未完成 → 不动（留给 requeue 重渲）。"""
+    if not rows:
+        return 0
+    from ..engine.comfy.client import ComfyClient
+    from ..engine.jobs import finish_job
+    from ..engine.logbus import emit as emit_log
+    from ..engine.rendershot import reattach
+    from ..engine.settings import get_setting
+
+    base_url = (get_setting(db, "comfy") or {}).get("base_url")
+    if not base_url:
+        return 0
+    comfy = ComfyClient(base_url)
+    try:
+        comfy.health()
+    except Exception as exc:
+        emit_log(db, "comfy", "warn", f"断点对账跳过：ComfyUI 不可达（{exc}）")
+        return 0
+    n = 0
+    for row in rows:
+        try:
+            dest = reattach(db, data_dir, row, comfy)
+        except Exception as exc:  # 单条失败不影响其余对账
+            emit_log(db, "comfy", "warn",
+                     f"断点对账失败 job#{row['id']}：{exc}",
+                     project_id=row["project_id"], job_id=row["id"])
+            continue
+        if dest is None:
+            continue
+        finish_job(db, row["id"], None)
+        n += 1
+    return n
+
+
 def create_app(db_path: str | Path = "./data/studio.db",
                data_dir: str | Path = "./data",
                start_workers: bool = True) -> FastAPI:
@@ -20,8 +56,17 @@ def create_app(db_path: str | Path = "./data/studio.db",
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         db.migrate()
+        # 断点对账（spec §5）：先收集可对账的 gen_shot，再 requeue。
+        # ComfyUI 可达且 /history 显示已完成 → 直接下载落盘不重渲；否则照常 requeue。
+        from ..engine.jobs import collect_reattach_candidates, requeue_on_restart
+        reattach_rows = collect_reattach_candidates(db, "gen_shot")
+        reattached = _try_reattach(db, data_dir, reattach_rows)
+        # 断点对账（spec §5）：先收集可对账的 gen_shot，再 requeue。
+        # ComfyUI 可达且 /history 显示已完成 → 直接下载落盘不重渲；否则照常 requeue。
+        from ..engine.jobs import collect_reattach_candidates, requeue_on_restart
+        reattach_rows = collect_reattach_candidates(db, "gen_shot")
+        reattached = _try_reattach(db, data_dir, reattach_rows)
         # 重启后 BackgroundTasks 已消亡，running job 不可能合法存在
-        from ..engine.jobs import requeue_on_restart
         requeued = requeue_on_restart(db, ("gen_ref", "split_storyboards", "gen_prompt", "gen_shot"))
         if start_workers:
             from ..engine import genref, pipeline_jobs, rendershot  # 注册触发
