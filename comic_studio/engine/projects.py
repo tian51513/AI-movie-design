@@ -18,7 +18,8 @@ def slugify(name: str) -> str:
 def create_project(db: Database, data_dir: Path, name: str,
                    aspect_ratio: str, novel_text: str, style: str = "",
                    video_megapixels: float = 0.4, video_multiple: int = 32,
-                   video_speed: str = "标准", default_shot_duration: float = 5.0) -> sqlite3.Row:
+                   video_speed: str = "标准", default_shot_duration: float = 5.0,
+                   prompt_mode: str = "D", lora_realism: float = 0.75) -> sqlite3.Row:
     assert aspect_ratio in ("9:16", "16:9")
     conn = db.connect()
     base = slugify(name) or "project"
@@ -30,8 +31,8 @@ def create_project(db: Database, data_dir: Path, name: str,
     novel_path = project_dir / "novel.txt"
     novel_path.write_text(novel_text, encoding="utf-8")
     conn.execute(
-        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, video_megapixels, video_multiple, video_speed, default_shot_duration) VALUES (?,?,?,?,?,?,?,?,?)",
-        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), video_megapixels, video_multiple, video_speed, default_shot_duration))
+        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism))
     conn.commit()
     return get_project(db, conn.execute("SELECT last_insert_rowid() id").fetchone()["id"])
 
@@ -55,7 +56,8 @@ def set_stage(db: Database, project_id: int, stage: str) -> None:
 
 def update_video_params(db: Database, project_id: int, *, video_megapixels: float | None = None,
                         video_multiple: int | None = None, video_speed: str | None = None,
-                        default_shot_duration: float | None = None) -> sqlite3.Row:
+                        default_shot_duration: float | None = None,
+                        prompt_mode: str | None = None, lora_realism: float | None = None) -> sqlite3.Row:
     """更新项目视频参数。仅非 None 参数会更新；非法值抛 ValueError。"""
     updates = {}
     if video_megapixels is not None:
@@ -74,6 +76,14 @@ def update_video_params(db: Database, project_id: int, *, video_megapixels: floa
         if not (1 <= default_shot_duration <= 15):
             raise ValueError("default_shot_duration 必须在 1~15 范围内")
         updates["default_shot_duration"] = default_shot_duration
+    if prompt_mode is not None:
+        if prompt_mode not in ("A", "B", "C", "D"):
+            raise ValueError("prompt_mode 必须为 'A'、'B'、'C' 或 'D'")
+        updates["prompt_mode"] = prompt_mode
+    if lora_realism is not None:
+        if not (0 <= lora_realism <= 1.0):
+            raise ValueError("lora_realism 必须在 0~1.0 范围内")
+        updates["lora_realism"] = lora_realism
 
     if not updates:
         return get_project(db, project_id)

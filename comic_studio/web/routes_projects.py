@@ -7,7 +7,8 @@ from ..engine.projects import create_project, get_project, list_projects
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style",
-                    "video_megapixels", "video_multiple", "video_speed", "default_shot_duration")
+                    "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
+                    "prompt_mode", "lora_realism")
 
 
 def _public(row) -> dict:
@@ -19,7 +20,8 @@ def create(request: Request, name: str = Form(...),
            aspect_ratio: str = Form(...), novel: UploadFile = File(...),
            style: str = Form(""), video_megapixels: float = Form(0.4),
            video_multiple: int = Form(32), video_speed: str = Form("标准"),
-           default_shot_duration: float = Form(5.0)):
+           default_shot_duration: float = Form(5.0),
+           prompt_mode: str = Form("D"), lora_realism: float = Form(0.75)):
     if aspect_ratio not in ("9:16", "16:9"):
         raise HTTPException(422, "aspect_ratio 只能是 9:16 或 16:9")
     try:
@@ -29,7 +31,8 @@ def create(request: Request, name: str = Form(...),
     row = create_project(request.app.state.db, request.app.state.data_dir,
                          name, aspect_ratio, text, style=style,
                          video_megapixels=video_megapixels, video_multiple=video_multiple,
-                         video_speed=video_speed, default_shot_duration=default_shot_duration)
+                         video_speed=video_speed, default_shot_duration=default_shot_duration,
+                         prompt_mode=prompt_mode, lora_realism=lora_realism)
     return _public(row)
 
 
@@ -66,7 +69,7 @@ def patch_style(request: Request, project_id: int, body: dict):
         conn.commit()
 
     # Handle video parameters (composable with style)
-    if any(k in body for k in ("video_megapixels", "video_multiple", "video_speed", "default_shot_duration")):
+    if any(k in body for k in ("video_megapixels", "video_multiple", "video_speed", "default_shot_duration", "prompt_mode", "lora_realism")):
         try:
             from ..engine.projects import update_video_params
             kwargs = {}
@@ -78,6 +81,10 @@ def patch_style(request: Request, project_id: int, body: dict):
                 kwargs["video_speed"] = body["video_speed"]
             if "default_shot_duration" in body:
                 kwargs["default_shot_duration"] = body["default_shot_duration"]
+            if "prompt_mode" in body:
+                kwargs["prompt_mode"] = body["prompt_mode"]
+            if "lora_realism" in body:
+                kwargs["lora_realism"] = body["lora_realism"]
             row = update_video_params(db, project_id, **kwargs)
         except ValueError as e:
             raise HTTPException(422, str(e))

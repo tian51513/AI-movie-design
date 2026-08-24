@@ -112,6 +112,9 @@ MIGRATIONS: list[str] = [
     """ALTER TABLE projects ADD COLUMN video_multiple INTEGER NOT NULL DEFAULT 32;""",
     """ALTER TABLE projects ADD COLUMN video_speed TEXT NOT NULL DEFAULT '标准';""",
     """ALTER TABLE projects ADD COLUMN default_shot_duration REAL NOT NULL DEFAULT 5;""",
+    # 16-17 projects 加提示词模式与真实感LoRA强度
+    """ALTER TABLE projects ADD COLUMN prompt_mode TEXT NOT NULL DEFAULT 'D';""",
+    """ALTER TABLE projects ADD COLUMN lora_realism REAL NOT NULL DEFAULT 0.75;""",
 ]
 
 

@@ -73,3 +73,17 @@ def test_update_video_params_validation(tmp_path):
         update_video_params(db, row["id"], video_multiple=24)
     with pytest.raises(ValueError):
         update_video_params(db, row["id"], default_shot_duration=0)
+
+
+def test_prompt_mode_and_lora_columns(tmp_path):
+    import pytest
+    db = _db(tmp_path)
+    row = create_project(db, tmp_path / "data", "模式剧", "16:9", "t",
+                         prompt_mode="C", lora_realism=0.6)
+    assert row["prompt_mode"] == "C" and row["lora_realism"] == 0.6
+    with pytest.raises(ValueError):
+        update_video_params(db, row["id"], prompt_mode="E")
+    with pytest.raises(ValueError):
+        update_video_params(db, row["id"], lora_realism=1.5)
+    upd = update_video_params(db, row["id"], prompt_mode="A", lora_realism=0)
+    assert upd["prompt_mode"] == "A" and upd["lora_realism"] == 0

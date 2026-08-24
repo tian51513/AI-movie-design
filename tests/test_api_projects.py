@@ -98,3 +98,11 @@ def test_patch_style_and_video_params_compose(tmp_path):
         assert r.status_code == 200
         body = c.get(f"/api/projects/{pid}").json()
         assert body["style"] == "动漫风" and body["video_speed"] == "快速"
+
+
+def test_patch_prompt_mode(tmp_path):
+    with _client(tmp_path) as c:
+        pid = _upload(c).json()["id"]
+        r = c.patch(f"/api/projects/{pid}", json={"prompt_mode": "C"})
+        assert r.status_code == 200 and r.json()["prompt_mode"] == "C"
+        assert c.patch(f"/api/projects/{pid}", json={"prompt_mode": "X"}).status_code == 422
