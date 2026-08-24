@@ -115,7 +115,10 @@ const methods = {
     if (on) await this.refresh();  // 让列表立即显示「自动运行中」角标
   },
   autopilotActionLabel() {
-    const a = this.project.autopilot_action;
+    const a = this.project && this.project.autopilot_action;
+    return this.actionLabel(a);
+  },
+  actionLabel(a) {
     if (!a) return '自动运行中';
     return { analyze: '分析资产', gen_refs: '生成参考图', gate1: '过门1', split: '拆分分镜',
       gen_prompts: '生成提示词', gate2: '提示词检查', render: '批量渲染', gate3: '过门3',

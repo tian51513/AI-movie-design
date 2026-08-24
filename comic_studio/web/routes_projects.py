@@ -38,7 +38,15 @@ def create(request: Request, name: str = Form(...),
 
 @router.get("")
 def listing(request: Request):
-    return [_public(r) for r in list_projects(request.app.state.db)]
+    out = []
+    for r in list_projects(request.app.state.db):
+        item = _public(r)
+        if r["autopilot"]:
+            from ..engine.autopilot import next_action
+            item["autopilot_action"] = next_action(
+                request.app.state.db, request.app.state.data_dir, r["id"])
+        out.append(item)
+    return out
 
 
 @router.get("/{project_id}")

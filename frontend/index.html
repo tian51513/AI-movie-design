@@ -108,7 +108,8 @@
       <div class="card" v-for="p in projects" :key="p.id" @click="open(p)" style="cursor:pointer">
         <b>{{ p.name }}</b>
         <div class="muted">{{ p.aspect_ratio }} · {{ stageName(p.stage) }}
-          <span v-if="p.autopilot" class="pill" style="background:#7c2d12;color:#fdba74">⚡ 自动运行中</span></div>
+          <span v-if="p.autopilot" class="pill" style="background:#7c2d12;color:#fdba74"
+                :title="'autopilot：' + (p.autopilot_action?.detail || '')">⚡ {{ actionLabel(p.autopilot_action) }}</span></div>
         <div style="margin-top:8px;text-align:right">
           <button v-if="p.stage==='merged'" disabled title="全流程已完成">✓ 已成片</button>
           <button v-else-if="p.autopilot" @click.stop="setAutopilot(p, false)"

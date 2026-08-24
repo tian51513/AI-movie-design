@@ -21,7 +21,8 @@ EXTRACT_SYSTEM = """你是小说改编漫剧的资产分析师。从给定的小
    必须可直接转化为绘画参考，不含性格心理；原文信息不足时按合理默认补全并保持一致）、
    tags（如 ["主角"]）
 2. 必要场景（scenes）：name、description（环境、光线、时代风格、氛围）
-3. 关键道具（props）：name、description（外观、材质、尺寸）
+3. 关键道具（props）：name、description（外观、材质、尺寸、时代与文化风格——
+   如肚兜/罗裳等须写明"中式古风"及形制细节，避免生成模型误读为现代物品）
 只提取对画面呈现有意义的条目；路人一般不建角色。
 只输出一个 JSON 对象：{"characters":[{"name","role","appearance","tags"}],
 "scenes":[{"name","description","tags"}],"props":[{"name","description","tags"}]}"""
