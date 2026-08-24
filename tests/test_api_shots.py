@@ -65,6 +65,22 @@ def test_gate2_requires_all_prompts(tmp_path):
         assert c.post(f"/api/projects/{pid}/gate2").status_code == 409
 
 
+def test_patch_shot_duration_validation(tmp_path):
+    """附带2: duration 非法值返回 422。"""
+    with _client(tmp_path) as c:
+        pid = _mk(c)
+        from comic_studio.engine.projects import set_stage
+        set_stage(c.app.state.db, pid, "assets_ready")
+        ids = persist_shots(c.app.state.db, pid, [_shot()])
+        sid = ids[0]
+        r0 = c.patch(f"/api/shots/{sid}", json={"duration": ""})
+        assert r0.status_code == 422
+        r1 = c.patch(f"/api/shots/{sid}", json={"duration": 0})
+        assert r1.status_code == 422
+        r2 = c.patch(f"/api/shots/{sid}", json={"duration": 16})
+        assert r2.status_code == 422
+
+
 def test_regen_prompt_force_semantics(tmp_path):
     with _client(tmp_path) as c:
         pid = _mk(c)

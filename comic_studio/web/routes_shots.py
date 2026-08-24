@@ -10,6 +10,7 @@ from ..engine.pipeline_jobs import enqueue_llm_job
 from ..engine.projects import get_project, set_stage
 from ..engine.shots import get_shot, list_shots, update_shot
 from ..engine.logbus import emit as emit_log
+from ..engine.rendershot import pick_template_id
 
 router = APIRouter(tags=["shots"])
 
@@ -63,7 +64,12 @@ def patch_shot(request: Request, shot_id: int, body: dict = Body(...)):
     fields = {}
     if "camera" in body:
         fields["camera_json"] = json.dumps(body["camera"], ensure_ascii=False)
-    for k in ("description", "shot_type", "workflow_type", "duration"):
+    if "duration" in body:
+        v = body["duration"]
+        if not isinstance(v, (int, float)) or v < 1 or v > 15:
+            raise HTTPException(422, "duration 须为 1~15 的数字")
+        fields["duration"] = v
+    for k in ("description", "shot_type", "workflow_type"):
         if k in body:
             fields[k] = body[k]
     if "prompt" in body:
@@ -152,7 +158,8 @@ def render_shot(request: Request, shot_id: int, body: dict | None = Body(default
         raise HTTPException(409, "该镜头渲染已在队列")
     jid = enqueue_job(db, "gen_shot", project_id=shot["project_id"],
                       shot_id=shot_id, resource="gpu_comfy",
-                      payload={"shot_id": shot_id})
+                      payload={"shot_id": shot_id,
+                               "template": pick_template_id(shot)})
     return {"job_id": jid}
 
 
@@ -176,7 +183,8 @@ def render_batch(request: Request, project_id: int):
         if s["video_path"] or s["id"] in queued:
             continue
         enqueue_job(db, "gen_shot", project_id=project_id, shot_id=s["id"],
-                    resource="gpu_comfy", payload={"shot_id": s["id"]})
+                    resource="gpu_comfy", payload={"shot_id": s["id"],
+                                            "template": pick_template_id(s)})
         n += 1
     result = {"enqueued": n}
     if skipped:

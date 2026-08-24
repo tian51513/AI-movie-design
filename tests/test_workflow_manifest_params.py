@@ -4,6 +4,21 @@ from pathlib import Path
 from comic_studio.engine.workflows.registry import scan_templates
 
 
+def test_h3_i2v_has_seed_param():
+    """I2: h3_i2v yaml params 应含 seed（节点 51 rgthree Seed）。"""
+    reg = scan_templates(Path("templates/workflows"))
+    assert "seed" in reg["h3_i2v"].inject_params, "h3_i2v 缺 seed 参数"
+    sp = reg["h3_i2v"].inject_params["seed"]
+    assert sp.node == "51" and sp.field == "seed"
+
+
+def test_all_video_templates_have_multiple():
+    """I2+T4: 三模板均须含 multiple 参数。"""
+    reg = scan_templates(Path("templates/workflows"))
+    for tid in ("h3_ref2va", "h3_i2v", "h3_t2v"):
+        assert "multiple" in reg[tid].inject_params, f"{tid} 缺 multiple"
+
+
 def test_video_templates_have_render_params():
     reg = scan_templates(Path("templates/workflows"))
     for tid in ("h3_ref2va", "h3_i2v", "h3_t2v"):

@@ -83,6 +83,48 @@ def test_render_shot_end_to_end(tmp_path, monkeypatch):
     assert shot["video_path"] == f"projects/渲染剧/shots/1/video.mp4"
 
 
+def test_render_shot_raises_when_image_slots_empty_ref2va(tmp_path, monkeypatch):
+    """I1: ref2va 镜绑定资产但两资产都无 sheet → collect_ref_images 返回 [] → raise."""
+    db, pid, assets = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(
+        character_ids=[assets["林晨"]["id"]],
+        scene_ids=[assets["庭院"]["id"]])])[0]
+    update_shot(db, sid, {"prompt": "林晨推门。"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    monkeypatch.setattr("comic_studio.engine.rendershot.collect_ref_images", lambda db, s: [])
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok", video=True) as m:
+        with pytest.raises(ValueError, match="未提供"):
+            render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+
+
+def test_render_shot_raises_when_fl2v_no_first_frame(tmp_path, monkeypatch):
+    """I1: fl2v 无首帧无绑定资产 → h3_i2v 需要 slot first 但 uploads 空 → raise."""
+    db, pid, assets = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(workflow_type="fl2v", character_ids=[])])[0]
+    update_shot(db, sid, {"prompt": "推门。"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok", video=True) as m:
+        with pytest.raises(ValueError, match="未提供"):
+            render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+
+
+def test_render_shot_t2v_no_image_check(tmp_path, monkeypatch):
+    """I1: t2v 无 inject_images → 不受影响."""
+    db, pid, _ = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(workflow_type="t2v", character_ids=[])])[0]
+    update_shot(db, sid, {"prompt": "天空。"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok", video=True) as m:
+        out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        assert out.exists()
+
+
 def test_handle_gen_shot_registered_and_guard():
     """Step 1: 验证 handler 注册与守卫（非空 shot 校验）"""
     from comic_studio.engine.queue.worker import HANDLERS

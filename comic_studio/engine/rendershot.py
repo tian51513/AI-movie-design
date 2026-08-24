@@ -94,6 +94,12 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     wf, uploads = fill_workflow(template, prompt=prompt, params=params,
                                 images=images, output_ctx=output_ctx)
 
+    # I1: 若模板声明图片槽但上传清单为空，快失败
+    if template.inject_images and not uploads:
+        raise ValueError(
+            f"模板 {template.id} 需要图片输入但未提供"
+            f"（镜头 {shot['seq']} 的资产无参考图或衔接首帧缺失）")
+
     for up in uploads:
         comfy.upload_image(Path(up["path"]), up["name"])
 

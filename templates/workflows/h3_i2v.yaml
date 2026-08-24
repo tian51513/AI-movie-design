@@ -23,6 +23,9 @@ inject:
     steps:
       node: '48'
       field: steps
+    seed:
+      node: '51'
+      field: seed
   images:
   - node: '53'
     field: image
