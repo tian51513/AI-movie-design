@@ -53,6 +53,25 @@ def test_render_endpoints_and_gate3(tmp_path):
         assert c.get(f"/api/projects/{pid}").json()["stage"] == "rendered"
 
 
+def test_render_job_progress_fields(tmp_path):
+    with _client(tmp_path) as c:
+        pid = c.post("/api/projects", data={"name": "进度剧", "aspect_ratio": "16:9"},
+                     files={"novel": ("n.txt", io.BytesIO("文".encode()), "text/plain")}).json()["id"]
+        from comic_studio.engine.projects import set_stage
+        set_stage(c.app.state.db, pid, "storyboard_ready")
+        ids = persist_shots(c.app.state.db, pid, [_shot()])
+        assert c.get(f"/api/projects/{pid}/shots").json()[0]["render_job"] is None
+        from comic_studio.engine.jobs import create_job
+        create_job(c.app.state.db, project_id=pid, jtype="gen_shot")
+        conn = c.app.state.db.connect()
+        jid = conn.execute("SELECT last_insert_rowid() id").fetchone()["id"]
+        conn.execute("UPDATE jobs SET shot_id=?, status='running', "
+                     "started_at=datetime('now','-30 seconds') WHERE id=?", (ids[0], jid))
+        conn.commit()
+        rj = c.get(f"/api/projects/{pid}/shots").json()[0]["render_job"]
+        assert rj["status"] == "running" and rj["elapsed_s"] >= 29
+
+
 def test_media_serves_video_url(tmp_path):
     with _client(tmp_path) as c:
         (tmp_path / "data" / "projects" / "x" / "shots" / "1").mkdir(parents=True)

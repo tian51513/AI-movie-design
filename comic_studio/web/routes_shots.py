@@ -16,7 +16,24 @@ from ..engine.projects import get_project
 router = APIRouter(tags=["shots"])
 
 
-def _shot_public(r, versions=None):
+def _render_job(db, shot_id):
+    row = db.connect().execute(
+        "SELECT status, started_at, finished_at FROM jobs "
+        "WHERE shot_id=? AND type='gen_shot' ORDER BY id DESC LIMIT 1",
+        (shot_id,)).fetchone()
+    if row is None:
+        return None
+    elapsed = None
+    if row["started_at"]:
+        end = row["finished_at"] or "now"
+        end = "datetime('now')" if end == "now" else f"'{end}'"
+        q = f"SELECT CAST((julianday({end}) - julianday('{row['started_at']}')) * 86400 AS INTEGER) e"
+        elapsed = db.connect().execute(q).fetchone()["e"]
+    return {"status": row["status"], "started_at": row["started_at"],
+            "finished_at": row["finished_at"], "elapsed_s": elapsed}
+
+
+def _shot_public(r, versions=None, db=None):
     vp = r["video_path"]
     return {"id": r["id"], "seq": r["seq"], "description": r["description"],
             "shot_type": r["shot_type"], "camera": json.loads(r["camera_json"] or "{}"),
@@ -25,7 +42,8 @@ def _shot_public(r, versions=None):
             "status": r["status"], "depends_on": r["depends_on"],
             "video_url": f"/media/{vp}" if vp else None,
             "versions": versions if versions is not None else [],
-            "selected": vp.rsplit("/", 1)[-1] if vp else None}
+            "selected": vp.rsplit("/", 1)[-1] if vp else None,
+            "render_job": _render_job(db, r["id"]) if db is not None else None}
 
 
 @router.post("/api/projects/{project_id}/split-storyboards", status_code=202)
@@ -58,7 +76,8 @@ def listing(request: Request, project_id: int):
     if proj is None:
         raise HTTPException(404, "项目不存在")
     return [_shot_public(
-        r, versions=shot_versions(request.app.state.data_dir, proj["slug"], r["seq"]))
+        r, versions=shot_versions(request.app.state.data_dir, proj["slug"], r["seq"]),
+        db=request.app.state.db)
         for r in list_shots(request.app.state.db, project_id)]
 
 
