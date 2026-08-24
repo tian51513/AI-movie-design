@@ -48,6 +48,7 @@ function data() {
 const computed = {
   allHaveViews() { return this.assets.length && this.assets.every(a => (this.views[a.id]||[]).length); },
   allShotsReady() { return this.shots.length > 0 && this.shots.every(s => s.status === 'ready'); },
+  allShotsRendered() { return this.shots.length > 0 && this.shots.every(s => !!s.video_url); },
   shownAssets() {
     return this.activeKind === '全部' ? this.assets
                                       : this.assets.filter(a => a.kind === this.activeKind);
@@ -341,7 +342,6 @@ const methods = {
     const speedMap = {'fast':'快速','standard':'标准','high':'高质量'};
     return `${p.video_megapixels}MP · ${p.video_multiple}倍 · ${speedMap[p.video_speed]||p.video_speed} · 默认${p.default_shot_duration}s`;
   },
-  allShotsRendered() { return this.shots.length > 0 && this.shots.every(s => s.video_url); },
 
   stageName(s) { return { created: '已创建', analyzed: '已分析', assets_ready: '资产就绪',
     storyboard_ready: '分镜就绪', rendering: '渲染中', rendered: '已渲染', merged: '已合成' }[s] || s; },
