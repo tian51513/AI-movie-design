@@ -131,3 +131,19 @@ def test_assets_without_sheets_go_gen_refs(tmp_path):
         "SELECT COUNT(*) c FROM jobs WHERE project_id=? AND type='gen_ref'",
         (pid,)).fetchone()
     assert row["c"] == 1  # 真的入队了
+
+
+def test_assets_ready_bridge_after_split(tmp_path):
+    """真机 bug（2026-08-25 项目4）：assets_ready 拆完分镜后无桥接 → 无限重拆。
+    有分镜缺提示词 → gen_prompts；齐全 → gate2 过门 → storyboard_ready。"""
+    from comic_studio.engine.projects import set_stage
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "assets_ready")
+    sid = persist_shots(db, pid, [NS(text_span="", description="x", shot_type="",
+        camera={}, duration=5.0, workflow_type="t2v", ledger={},
+        character_ids=[], scene_ids=[], prop_ids=[], depends_on=None, prompt="")])[0]
+    assert next_action(db, tmp_path / "data", pid)["action"] == "gen_prompts"
+    update_shot(db, sid, {"prompt": "提示词"})
+    assert next_action(db, tmp_path / "data", pid)["action"] == "gate2"
+    tick(db, tmp_path / "data", pid)
+    assert get_project(db, pid)["stage"] == "storyboard_ready"

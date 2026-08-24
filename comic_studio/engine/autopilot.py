@@ -77,7 +77,19 @@ def next_action(db, data_dir, project_id) -> dict:
     if stage == "assets_ready":
         if _has_active_job(db, project_id, "split_storyboards"):
             return {"action": "wait", "detail": "分镜拆解中"}
-        return {"action": "split", "detail": "开始分镜拆解"}
+        has_shots = db.connect().execute(
+            "SELECT 1 FROM shots WHERE project_id=? LIMIT 1",
+            (project_id,)).fetchone() is not None
+        if not has_shots:
+            return {"action": "split", "detail": "开始分镜拆解"}
+        # 桥接（2026-08-25 真机：拆完无桥接会无限重拆烧 token）：
+        # 拆完 → 补提示词 → 齐全 → gate2（assets_ready → storyboard_ready）
+        missing = _shots_missing_prompt(db, project_id)
+        if missing > 0:
+            if _has_active_job(db, project_id, "gen_prompt"):
+                return {"action": "wait", "detail": "提示词生成中"}
+            return {"action": "gen_prompts", "detail": f"缺 {missing} 条提示词"}
+        return {"action": "gate2", "detail": "提示词齐全，过门2"}
     if stage == "storyboard_ready":
         total = db.connect().execute("SELECT COUNT(*) c FROM shots WHERE project_id=?",
                                      (project_id,)).fetchone()["c"]
@@ -161,14 +173,12 @@ def tick(db, data_dir, project_id) -> dict:
     elif action == "merge":
         from .jobs import enqueue_job
         enqueue_job(db, "merge", project_id=project_id, payload={"project_id": project_id})
-    elif action in ("gate1", "gate3"):
+    elif action.startswith("gate"):
         from .pipeline_gates import gate_pass
         try:
             gate_pass(db, data_dir, project_id, int(action[-1]), source="自动通过")
         except ValueError:
             pass  # 决策后瞬间条件失效（竞态）——留给下一轮 wait 循环
-    elif action == "gate2":
-        emit_log(db, "autopilot", "info", "autopilot：门2 条件已满足（提示词齐全）", project_id=project_id)
     return act
 
 
