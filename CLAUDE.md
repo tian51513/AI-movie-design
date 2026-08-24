@@ -44,3 +44,10 @@
 - `comic_studio/engine/rendershot.py` — gen_shot 处理器（@register("gen_shot")，模板注入/提交/轮询/落盘）
 - 测试反模式提醒：ComfyUI 渲染测试一律用 tests/comfy_mock.py 的 comfy_server，不连真实 ComfyUI
 - 注意：`/media` 挂载需确保渲染产物可落盘；WSL 与 Windows 路径映射按 engine/paths.py 统一处理
+
+## 模块地图（Phase 5A）
+
+- `comic_studio/engine/prompts/modes.py` — 四模式提示词格式规范（A散文/B结构化/C构图/D多镜电影，默认D；2026-08-24 实验教训全固化）
+- `comic_studio/web/routes_assets_edit.py` — 资产外貌编辑（服装修正入口 + stale 联动）
+- `engine/rendershot.py` 扩展 — lora_strength 注入（项目 lora_realism）、远景升兆像素、多版本 video_v{N} 落盘、shot_versions 辅助
+- 注意：提示词生成读项目 prompt_mode；重生提示词与渲染按镜头当前 prompt

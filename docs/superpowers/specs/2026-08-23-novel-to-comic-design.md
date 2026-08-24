@@ -1,7 +1,7 @@
 # 小说转漫剧工作站（comic_studio）设计文档
 
 - 日期：2026-08-23
-- 状态：已与用户逐节确认；Phase 4（逐镜渲染）已实现，Phase 5（FFmpeg 合成）待实施
+- 状态：已与用户逐节确认；Phase 5A（四模式提示词与渲染体验）已实现，Phase 5B（一键出片与合成）待实施
 - 原始需求：`原始需求.txt`
 
 ## 1. 背景与目标
@@ -231,11 +231,13 @@ openai SDK 统一（Ollama `localhost:11434/v1` / 线上端点，配置切换）
 
 输出强制 JSON schema（pydantic 校验），失败带错误重试；章节文本按场景切块拆分镜后合并编号；`llm_calls` 记账。
 
-### 9.2 视频提示词生成（minimax-h3-video-prompt 技能落地）
+### 9.2 视频提示词生成（minimax-h3-video-prompt 技能落地；5A 扩为四模式）
+
+> **5A 注记（2026-08-24）**：实测 A/B/C/D 四版实验后扩为项目级四模式系统——A 散文单镜（快）、B 结构化简洁、C 结构化高密度构图、D 结构化多镜电影递进（**默认**）。实验教训全固化进 engine/prompts/modes.py 规范；重生提示词与渲染按项目当前模式。
 
 ```
 shot.json → [H3 适配器]
-   system = vendored SKILL.md 规程（适配为非交互管线版）+ capability-map + official-rules
+   system = vendored SKILL.md 规程（适配为非交互管线版）+ capability-map + official-rules + mode_spec(mode)
    user   = 分镜上下文（描述、台账字段、绑定资产的外貌固化文本、画幅、时长）
  → validate_h3_prompt.py 机械校验（字符数/时长/素材数）
  → 不过 → 带错误重生成（≤2 次）→ 仍不过标 needs_review（门禁处用户可见）
