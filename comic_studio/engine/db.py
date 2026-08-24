@@ -107,6 +107,11 @@ MIGRATIONS: list[str] = [
     );""",
     # 11 projects 加 style（项目级画风）——注：只能在末尾追加，历史库迁移位不可变
     """ALTER TABLE projects ADD COLUMN style TEXT NOT NULL DEFAULT '';""",
+    # 12-15 projects 加视频参数（百万像素/倍数/质量档/默认时长）
+    """ALTER TABLE projects ADD COLUMN video_megapixels REAL NOT NULL DEFAULT 0.4;""",
+    """ALTER TABLE projects ADD COLUMN video_multiple INTEGER NOT NULL DEFAULT 32;""",
+    """ALTER TABLE projects ADD COLUMN video_speed TEXT NOT NULL DEFAULT '标准';""",
+    """ALTER TABLE projects ADD COLUMN default_shot_duration REAL NOT NULL DEFAULT 5;""",
 ]
 
 

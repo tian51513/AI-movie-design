@@ -77,3 +77,15 @@ def test_create_with_style(tmp_path):
                       files={"novel": ("n.txt", io.BytesIO("文".encode()), "text/plain")})
         assert resp.status_code == 201
         assert resp.json()["style"] == "日系动漫风格"
+
+
+def test_patch_video_params(tmp_path):
+    with _client(tmp_path) as c:
+        pid = _upload(c).json()["id"]
+        r = c.patch(f"/api/projects/{pid}", json={
+            "video_megapixels": 1.0, "video_multiple": 32,
+            "video_speed": "高质量", "default_shot_duration": 6})
+        assert r.status_code == 200
+        body = c.get(f"/api/projects/{pid}").json()
+        assert body["video_speed"] == "高质量" and body["video_megapixels"] == 1.0
+        assert c.patch(f"/api/projects/{pid}", json={"video_speed": "极速"}).status_code == 422

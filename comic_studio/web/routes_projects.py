@@ -6,7 +6,8 @@ from ..engine.projects import create_project, get_project, list_projects
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
-_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style")
+_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style",
+                    "video_megapixels", "video_multiple", "video_speed", "default_shot_duration")
 
 
 def _public(row) -> dict:
@@ -16,7 +17,9 @@ def _public(row) -> dict:
 @router.post("", status_code=201)
 def create(request: Request, name: str = Form(...),
            aspect_ratio: str = Form(...), novel: UploadFile = File(...),
-           style: str = Form("")):
+           style: str = Form(""), video_megapixels: float = Form(0.4),
+           video_multiple: int = Form(32), video_speed: str = Form("标准"),
+           default_shot_duration: float = Form(5.0)):
     if aspect_ratio not in ("9:16", "16:9"):
         raise HTTPException(422, "aspect_ratio 只能是 9:16 或 16:9")
     try:
@@ -24,7 +27,9 @@ def create(request: Request, name: str = Form(...),
     except UnicodeDecodeError:
         raise HTTPException(422, "小说文件需为 UTF-8 编码（请转换后重新上传）")
     row = create_project(request.app.state.db, request.app.state.data_dir,
-                         name, aspect_ratio, text, style=style)
+                         name, aspect_ratio, text, style=style,
+                         video_megapixels=video_megapixels, video_multiple=video_multiple,
+                         video_speed=video_speed, default_shot_duration=default_shot_duration)
     return _public(row)
 
 
@@ -48,12 +53,34 @@ def patch_style(request: Request, project_id: int, body: dict):
     class StylePatch(BaseModel):
         style: str = ""
 
-    patch = StylePatch.model_validate(body)
     db = request.app.state.db
     row = get_project(db, project_id)
     if row is None:
         raise HTTPException(404, "项目不存在")
-    conn = db.connect()
-    conn.execute("UPDATE projects SET style=? WHERE id=?", (patch.style.strip(), project_id))
-    conn.commit()
-    return _public(get_project(db, project_id))
+
+    # Handle video parameters
+    if any(k in body for k in ("video_megapixels", "video_multiple", "video_speed", "default_shot_duration")):
+        try:
+            from ..engine.projects import update_video_params
+            kwargs = {}
+            if "video_megapixels" in body:
+                kwargs["video_megapixels"] = body["video_megapixels"]
+            if "video_multiple" in body:
+                kwargs["video_multiple"] = body["video_multiple"]
+            if "video_speed" in body:
+                kwargs["video_speed"] = body["video_speed"]
+            if "default_shot_duration" in body:
+                kwargs["default_shot_duration"] = body["default_shot_duration"]
+            return _public(update_video_params(db, project_id, **kwargs))
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+
+    # Handle style parameter (original logic)
+    if "style" in body:
+        patch = StylePatch.model_validate(body)
+        conn = db.connect()
+        conn.execute("UPDATE projects SET style=? WHERE id=?", (patch.style.strip(), project_id))
+        conn.commit()
+        return _public(get_project(db, project_id))
+
+    return _public(row)
