@@ -51,8 +51,9 @@ class ComfyClient:
 
     def free(self, unload_models: bool = True) -> None:
         with self._client() as c:
-            c.post(f"{self.base_url}/free",
-                   json={"unload_models": unload_models, "free_memory": True})
+            resp = c.post(f"{self.base_url}/free",
+                          json={"unload_models": unload_models, "free_memory": True})
+            resp.raise_for_status()  # 代理/坏地址可能回 5xx 而非连接错误——必须校验
 
     def history_result(self, prompt_id: str) -> list[dict] | None:
         """查 /history/{id}：已完结 → 产物列表（error 状态 raise）；不在 history → None。"""

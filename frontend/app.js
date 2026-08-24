@@ -38,6 +38,7 @@ function data() {
     ollamaModels: [], showThink: false, loadingModels: false,
     activeKind: '全部', perRow: 2, lightbox: null,
     comfyStatus: null, llmTesting: '', llmTestResult: {local: null, online: null},
+    freeingComfy: false,
     llmTestManual: {local: false, online: false},
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
@@ -234,6 +235,16 @@ const methods = {
     this.comfyStatus = null;
     try { this.comfyStatus = (await (await fetch('/api/comfy/status')).json()).ok; }
     catch (e) { this.comfyStatus = false; }
+  },
+  async freeComfy() {
+    this.freeingComfy = true;
+    try {
+      const r = await fetch('/api/comfy/free', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({unload_models: true})});
+      alert(r.ok ? '已请求 ComfyUI 卸载模型并清理显存/内存' : '清理失败：' + (await r.json()).detail);
+    } catch (e) { alert('清理失败：' + e); }
+    this.freeingComfy = false;
   },
   async fetchOllamaModels() {
     this.loadingModels = true;

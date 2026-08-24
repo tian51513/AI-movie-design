@@ -68,7 +68,10 @@
       <span class="muted">{{ comfyStatus===null ? '检测中…' : (comfyStatus ? '在线' : '离线') }}</span>
     </h3>
     <p><input v-model="settingsForm.comfy.base_url" placeholder="如 http://127.0.0.1:8188" style="width:60%">
-       <button @click="checkComfy">测试连接</button></p>
+       <button @click="checkComfy">测试连接</button>
+       <button @click="freeComfy" :disabled="freeingComfy" style="background:#7c3aed"
+               title="卸载模型并清理 ComfyUI 显存/内存（渲完想腾显存时用；平时不清理反而更快）">
+         {{ freeingComfy ? '清理中…' : '清理显存' }}</button></p>
     <h3>工作流模板映射</h3>
     <p><label class="muted">t2i 模板 ID：</label><input v-model="settingsForm.t2i_tm" placeholder="t2i_ref" style="width:40%">
        <span class="muted">默认 t2i_ref，添加新模板后在设置页改映射</span></p>
