@@ -52,7 +52,8 @@ def test_split_multi_chunk_links_continue_prev(tmp_path):
     from comic_studio.engine.projects import get_project
     # 重设 novel 为长文（直接覆盖文件）
     import pathlib
-    novel = pathlib.Path(get_project(db, pid)["novel_path"])
+    from comic_studio.engine.paths import data_to_abs
+    novel = data_to_abs(tmp_path / "data", get_project(db, pid)["novel_path"])
     novel.parent.mkdir(parents=True, exist_ok=True)
     novel.write_text(long, encoding="utf-8")
     fake = FakeLLM([
