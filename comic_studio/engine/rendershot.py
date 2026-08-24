@@ -27,6 +27,34 @@ def pick_template_id(shot_row) -> str:
     return "h3_ref2va"
 
 
+def _shot_versions_in(shot_dir) -> list:
+    """列出镜头目录全部视频版本文件名（video*.mp4，含历史 video.mp4 / video_*.mp4）。"""
+    import re as _re
+    d = Path(shot_dir)
+    if not d.is_dir():
+        return []
+    return sorted(
+        (f.name for f in d.iterdir()
+         if f.is_file() and _re.fullmatch(r"video[\w.\-]*\.mp4", f.name)),
+        key=lambda n: (0, n) if n == "video.mp4" else (1, n))
+
+
+def _max_version_number(versions: list) -> int:
+    import re as _re
+    best = 0
+    for name in versions:
+        m = _re.search(r"video_v(\d+)\.mp4", name)
+        if m:
+            best = max(best, int(m.group(1)))
+    return best
+
+
+def shot_versions(data_dir, slug: str, seq: int) -> list:
+    """对外辅助：项目 slug + 镜头序号 → 版本文件名列表（video.mp4 最前，其余自然排序）。"""
+    shot_dir = Path(data_dir) / "projects" / slug / "shots" / str(seq)
+    return _shot_versions_in(shot_dir)
+
+
 def collect_ref_images(db, shot_row) -> list[dict]:
     """角色优先占满参考槽（人物一致性 > 场景还原），场景/道具仅在有空槽时补位。
     C 版实验教训：第二角色无参考图 + 同款服装 → 模型身份融合（2026-08-24 实测）。"""
@@ -130,7 +158,10 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     if video is None:
         raise RuntimeError("ComfyUI 未返回视频输出")
 
-    rel_path = f"projects/{proj['slug']}/shots/{shot['seq']}/video.mp4"
+    shot_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}")
+    versions = _shot_versions_in(shot_dir)
+    next_n = _max_version_number(versions) + 1
+    rel_path = f"projects/{proj['slug']}/shots/{shot['seq']}/video_v{next_n}.mp4"
     dest = data_to_abs(data_dir, rel_path)
     comfy.download(video["filename"], video.get("subfolder", ""),
                    video.get("type", "output"), dest)

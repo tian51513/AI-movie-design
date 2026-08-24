@@ -81,7 +81,7 @@ def test_render_shot_end_to_end(tmp_path, monkeypatch):
         assert wf["117"]["inputs"]["strength_model"] == 0.6
     shot = get_shot(db, sid)
     assert shot["status"] == "rendered"
-    assert shot["video_path"] == f"projects/渲染剧/shots/1/video.mp4"
+    assert shot["video_path"] == f"projects/渲染剧/shots/1/video_v1.mp4"
 
 
 def test_render_shot_raises_when_image_slots_empty_ref2va(tmp_path, monkeypatch):
@@ -199,3 +199,22 @@ def test_wide_shot_megapixels_boost(tmp_path, monkeypatch):
         render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
         wf = m.prompts[0]["prompt"]
         assert wf["116"]["inputs"]["megapixels"] == 1.0  # 0.6+0.4 升档
+
+
+def test_render_versions_increment(tmp_path, monkeypatch):
+    """多版本：连续渲染产出 video_v1 / video_v2，video_path 指向最新。"""
+    db, pid, assets = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(
+        character_ids=[assets["林晨"]["id"]], scene_ids=[])])[0]
+    update_shot(db, sid, {"prompt": "第一版"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    with comfy_server("ok", video=True) as m:
+        from comic_studio.engine.comfy.client import ComfyClient
+        out1 = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        out2 = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+    assert out1.name == "video_v1.mp4" and out2.name == "video_v2.mp4"
+    assert get_shot(db, sid)["video_path"].endswith("video_v2.mp4")
+    from comic_studio.engine.rendershot import shot_versions
+    vs = shot_versions(tmp_path / "data", "渲染剧", 1)
+    assert vs == ["video_v1.mp4", "video_v2.mp4"]

@@ -10,19 +10,22 @@ from ..engine.pipeline_jobs import enqueue_llm_job
 from ..engine.projects import get_project, set_stage
 from ..engine.shots import get_shot, list_shots, update_shot
 from ..engine.logbus import emit as emit_log
-from ..engine.rendershot import pick_template_id
+from ..engine.rendershot import pick_template_id, shot_versions
+from ..engine.projects import get_project
 
 router = APIRouter(tags=["shots"])
 
 
-def _shot_public(r):
+def _shot_public(r, versions=None):
     vp = r["video_path"]
     return {"id": r["id"], "seq": r["seq"], "description": r["description"],
             "shot_type": r["shot_type"], "camera": json.loads(r["camera_json"] or "{}"),
             "ledger": json.loads(r["ledger_json"] or "{}"), "duration": r["duration"],
             "workflow_type": r["workflow_type"], "prompt": r["prompt"],
             "status": r["status"], "depends_on": r["depends_on"],
-            "video_url": f"/media/{vp}" if vp else None}
+            "video_url": f"/media/{vp}" if vp else None,
+            "versions": versions if versions is not None else [],
+            "selected": vp.rsplit("/", 1)[-1] if vp else None}
 
 
 @router.post("/api/projects/{project_id}/split-storyboards", status_code=202)
@@ -51,9 +54,28 @@ def split_status(request: Request, project_id: int):
 
 @router.get("/api/projects/{project_id}/shots")
 def listing(request: Request, project_id: int):
-    if get_project(request.app.state.db, project_id) is None:
+    proj = get_project(request.app.state.db, project_id)
+    if proj is None:
         raise HTTPException(404, "项目不存在")
-    return [_shot_public(r) for r in list_shots(request.app.state.db, project_id)]
+    return [_shot_public(
+        r, versions=shot_versions(request.app.state.data_dir, proj["slug"], r["seq"]))
+        for r in list_shots(request.app.state.db, project_id)]
+
+
+@router.post("/api/shots/{shot_id}/version", status_code=200)
+def select_version(request: Request, shot_id: int, body: dict = Body(...)):
+    db = request.app.state.db
+    shot = get_shot(db, shot_id)
+    if shot is None:
+        raise HTTPException(404, "分镜不存在")
+    proj = get_project(db, shot["project_id"])
+    versions = shot_versions(request.app.state.data_dir, proj["slug"], shot["seq"])
+    file = str(body.get("file", ""))
+    if file not in versions:
+        raise HTTPException(422, f"版本不存在: {file}，可选 {versions}")
+    rel = f"projects/{proj['slug']}/shots/{shot['seq']}/{file}"
+    update_shot(db, shot_id, {"video_path": rel})
+    return _shot_public(get_shot(db, shot_id), versions=versions)
 
 
 @router.patch("/api/shots/{shot_id}")

@@ -60,3 +60,25 @@ def test_media_serves_video_url(tmp_path):
         v.write_bytes(b"\x00\x00")
         r = c.get("/media/projects/x/shots/1/video.mp4")
         assert r.status_code == 200 and len(r.content) == 2
+
+
+def test_versions_listing_and_select(tmp_path):
+    with _client(tmp_path) as c:
+        pid = c.post("/api/projects", data={"name": "版本剧", "aspect_ratio": "16:9"},
+                     files={"novel": ("n.txt", io.BytesIO("文".encode()), "text/plain")}).json()["id"]
+        from comic_studio.engine.projects import set_stage
+        set_stage(c.app.state.db, pid, "storyboard_ready")
+        ids = persist_shots(c.app.state.db, pid, [_shot()])
+        shot_dir = tmp_path / "data" / "projects" / "版本剧" / "shots" / "1"
+        shot_dir.mkdir(parents=True)
+        (shot_dir / "video_v1.mp4").write_bytes(b"1")
+        (shot_dir / "video_v2.mp4").write_bytes(b"2")
+        update_shot(c.app.state.db, ids[0],
+                    {"video_path": "projects/版本剧/shots/1/video_v2.mp4", "status": "rendered"})
+        body = c.get(f"/api/projects/{pid}/shots").json()[0]
+        assert body["versions"] == ["video_v1.mp4", "video_v2.mp4"]
+        assert body["selected"] == "video_v2.mp4"
+        r = c.post(f"/api/shots/{ids[0]}/version", json={"file": "video_v1.mp4"})
+        assert r.status_code == 200 and r.json()["selected"] == "video_v1.mp4"
+        assert c.get(f"/api/projects/{pid}/shots").json()[0]["video_url"].endswith("video_v1.mp4")
+        assert c.post(f"/api/shots/{ids[0]}/version", json={"file": "video_v9.mp4"}).status_code == 422
