@@ -121,7 +121,10 @@
         <span v-if="project.style" class="pill" style="cursor:pointer"
               title="点击修改画风（改后重新生成资产参考图生效）"
               @click="editStyle">{{ project.style.slice(0, 12) }}…</span>
-        <span v-else class="pill" style="cursor:pointer" @click="editStyle">+ 指定画风</span></h2>
+        <span v-else class="pill" style="cursor:pointer" @click="editStyle">+ 指定画风</span>
+        <span v-if="project.video_megapixels" class="pill" style="cursor:pointer"
+              title="点击编辑视频参数"
+              @click="editVideoParams">{{ videoParamsLabel() }}</span></h2>
     <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button @click="switchDetailMode('assets')"
               :style="detailMode==='assets' ? 'background:#16a34a' : ''">资产（{{ assets.length }}）</button>
@@ -183,6 +186,8 @@
     <p v-if="shots.length" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button @click="genAllPrompts">批量生成提示词</button>
       <button v-if="allShotsReady" @click="passGate2" style="background:#16a34a">✓ 确认分镜（过门2）</button>
+      <button v-if="project.stage==='storyboard_ready'" @click="renderAll">批量渲染</button>
+      <button v-if="allShotsRendered" @click="passGate3" style="background:#16a34a">✓ 确认渲染（过门3）</button>
     </p>
     <div v-if="shots.length === 0 && !splitRunning" class="muted" style="padding:20px 0">暂无分镜——点击上方「拆分分镜」开始</div>
     <div v-for="s in shots" :key="s.id" class="card" style="margin-bottom:10px">
@@ -192,7 +197,7 @@
         <span v-if="s.status==='stale'" style="color:#fb923c;font-size:13px">● 资产已更新</span>
         <span class="pill">{{ s.shot_type }}</span>
         <span class="pill">{{ s.camera }}</span>
-        <span class="pill">{{ s.duration }}s</span>
+        <span class="pill" style="padding:0"><input type="number" v-model.number="s.duration" min="1" max="15" @change="saveShot(s, {duration: s.duration})" style="width:48px;font-size:12px;padding:2px 4px;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;text-align:center">s</span>
         <select v-model="s.workflow_type" @change="saveShot(s, {workflow_type: s.workflow_type})" style="font-size:12px;padding:2px 4px">
           <option value="ref2va">ref2va</option><option value="fl2v">fl2v</option><option value="t2v">t2v</option>
         </select>
@@ -201,6 +206,10 @@
                 :title="s.prompt ? '已有提示词时重生成会换一版（force）' : '为本镜生成视频提示词'"
                 style="font-size:12px;padding:3px 8px">
           {{ s.prompt ? '重生提示词' : '生成提示词' }}</button>
+        <button @click="renderShot(s)"
+                :style="s.video_url ? 'background:#f59e0b' : ''"
+                style="font-size:12px;padding:3px 8px">
+          {{ s.video_url ? '重渲染' : '渲染' }}</button>
       </div>
       <p><textarea v-model="s.description" rows="2" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px" @focus="editingShot=true" @blur="editingShot=false;saveShot(s, {description: s.description})"></textarea></p>
       <div v-if="s.ledger" style="font-size:12px;margin:6px 0">
@@ -213,6 +222,9 @@
         <div v-if="expandedShot===s.id" style="margin-top:4px">
           <textarea v-model="s.prompt" rows="4" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px" @focus="editingShot=true" @blur="editingShot=false;saveShot(s, {prompt: s.prompt})"></textarea>
         </div>
+      </div>
+      <div v-if="s.video_url" style="margin-top:8px">
+        <video controls :src="s.video_url" style="max-width:100%;border-radius:6px;border:1px solid #2c3540"></video>
       </div>
     </div>
     </template>

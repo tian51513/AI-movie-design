@@ -305,6 +305,43 @@ const methods = {
   shotStatusLabel(s) {
     return { pending: '待生成', ready: '就绪', stale: '资产已更新' }[s.status] || s.status;
   },
+  async renderShot(s) {
+    const r = await fetch(`/api/shots/${s.id}/render`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({force: !!s.video_url})});
+    if (!r.ok) alert(await r.text());
+  },
+  async renderAll() {
+    const r = await fetch(`/api/projects/${this.project.id}/render`, {method: 'POST'});
+    if (r.ok) { const b = await r.json();
+      alert(`入队 ${b.enqueued} 镜` + (b.skipped_no_prompt ? `（${b.skipped_no_prompt} 镜缺提示词已跳过）` : '')); }
+    else alert(await r.text());
+  },
+  async passGate3() {
+    const r = await fetch(`/api/projects/${this.project.id}/gate3`, {method: 'POST'});
+    if (r.ok) await this.loadDetail(); else alert(await r.text());
+  },
+  async editVideoParams() {
+    const p = this.project;
+    const mp = prompt('百万像素（0.2~2.0）：', p.video_megapixels);
+    if (mp === null) return;
+    const sp = prompt('质量档（快速/标准/高质量）：', p.video_speed);
+    if (sp === null) return;
+    const du = prompt('默认分镜时长秒（1~15）：', p.default_shot_duration);
+    if (du === null) return;
+    const r = await fetch(`/api/projects/${p.id}`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({video_megapixels: Number(mp), video_speed: sp,
+                            default_shot_duration: Number(du)})});
+    if (r.ok) await this.loadDetail(); else alert(await r.text());
+  },
+  videoParamsLabel() {
+    const p = this.project;
+    if (!p) return '';
+    const speedMap = {'fast':'快速','standard':'标准','high':'高质量'};
+    return `${p.video_megapixels}MP · ${p.video_multiple}倍 · ${speedMap[p.video_speed]||p.video_speed} · 默认${p.default_shot_duration}s`;
+  },
+  allShotsRendered() { return this.shots.length > 0 && this.shots.every(s => s.video_url); },
 
   stageName(s) { return { created: '已创建', analyzed: '已分析', assets_ready: '资产就绪',
     storyboard_ready: '分镜就绪', rendering: '渲染中', rendered: '已渲染', merged: '已合成' }[s] || s; },
