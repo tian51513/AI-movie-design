@@ -51,3 +51,14 @@
 - `comic_studio/web/routes_assets_edit.py` — 资产外貌编辑（服装修正入口 + stale 联动）
 - `engine/rendershot.py` 扩展 — lora_strength 注入（项目 lora_realism）、远景升兆像素、多版本 video_v{N} 落盘、shot_versions 辅助
 - 注意：提示词生成读项目 prompt_mode；重生提示词与渲染按镜头当前 prompt
+
+## 模块地图（Phase 5B）
+
+- `comic_studio/engine/autopilot.py` — 一键出片决策引擎（next_action 纯决策 / tick 执行；幂等续跑）
+- `comic_studio/engine/pipeline_gates.py` — 门1/2/3 统一 engine 实现（routes 与 autopilot 共用；GateStageError=409）
+- `comic_studio/engine/merge.py` — FFmpeg 合成（ffmpeg_bin/probe/normalize/concat/merge_project + @register("merge")）
+- `comic_studio/engine/rendershot.py` 扩展 — reattach 断点对账（comfy history_result 已完成直接落盘）+ _download_video_result 共用段
+- `comic_studio/web/routes_merge.py` — POST merge（rendered 守卫/去重）、GET merges 扫 output
+- `comic_studio/web/app.py` — lifespan：断点对账（先 reattach 后 requeue）+ autopilot 巡检线程（3 秒扫 autopilot=1）
+- 工作流模型切换：manifest `models:` 槽位（registry.ModelSlot）→ settings `model_overrides`（键=模板 id）→ filler 注入；choices 从 ComfyUI /object_info 枚举
+- 注意：merge handler 经 `register_merge_handler()` 延迟注册（app lifespan 调用）；`analyze` 是队列 job 类型（autopilot 用），手动分析仍是 BackgroundTask
