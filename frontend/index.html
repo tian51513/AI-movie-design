@@ -200,16 +200,16 @@
         <button v-if="!s.prompt || s.status==='stale'" @click="regenPrompt(s, !!s.prompt)" style="font-size:12px;padding:3px 8px">
           {{ s.status==='stale' ? '重生提示词' : '生成提示词' }}</button>
       </div>
-      <p><textarea v-model="s.description" rows="2" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px" @blur="saveShot(s, {description: s.description})"></textarea></p>
+      <p><textarea v-model="s.description" rows="2" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px" @focus="editingShot=true" @blur="editingShot=false;saveShot(s, {description: s.description})"></textarea></p>
       <div v-if="s.ledger" style="font-size:12px;margin:6px 0">
-        <div v-for="(ids, cat) in s.ledger" :key="cat" class="muted" style="margin:2px 0">
+        <div v-for="(ids, cat) in s.ledger" :key="cat" v-if="cat!=='assets'" class="muted" style="margin:2px 0">
           <b>{{ ledgerLabel(cat) }}：</b><span class="pill" v-for="aid in ids" :key="aid" style="margin:2px 2px 2px 0">{{ assetName(aid) }}</span>
         </div>
       </div>
       <div v-if="s.prompt" style="margin-top:6px">
         <a href="#" @click.prevent="toggleShotPrompt(s)" style="color:#60a5fa;font-size:13px">{{ expandedShot===s.id ? '收起提示词' : '展开提示词' }}</a>
         <div v-if="expandedShot===s.id" style="margin-top:4px">
-          <textarea v-model="s.prompt" rows="4" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px" @blur="saveShot(s, {prompt: s.prompt})"></textarea>
+          <textarea v-model="s.prompt" rows="4" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px" @focus="editingShot=true" @blur="editingShot=false;saveShot(s, {prompt: s.prompt})"></textarea>
         </div>
       </div>
     </div>

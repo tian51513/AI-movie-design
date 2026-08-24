@@ -40,7 +40,7 @@ function data() {
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
-    detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null,
+    detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
   };
 }
 
@@ -242,10 +242,11 @@ const methods = {
             const st = await (await fetch(`/api/projects/${this.project.id}/split-storyboards/status`)).json();
             if (st.status === 'done' || st.status === 'failed') {
               this.splitRunning = false;
-              if (st.status === 'done') await this.loadShots();
+              if (st.status === 'done') { await this.loadShots(); }
+              else { alert('分镜拆解失败：' + (st.error||'')); }
             }
           } else {
-            await this.loadShots();
+            if (!this.editingShot) await this.loadShots();  // 编辑中跳过刷新，blur 后恢复
           }
         } catch (e) { /* shots 轮询失败不影响日志流 */ }
       }
@@ -259,7 +260,7 @@ const methods = {
 
   // ===== 分镜 =====
   assetName(id) { const a = this.assets.find(x => x.id === id); return a ? a.name : id; },
-  ledgerLabel(cat) { return { must_appear: '必须出现', must_keep: '必须保持', may_change: '允许变化', forbidden: '禁止' }[cat] || cat; },
+  ledgerLabel(cat) { return { must_appear: '必须出现', must_keep: '必须保持', may_change: '允许变化', must_avoid: '禁止' }[cat] || cat; },
   async switchDetailMode(mode) {
     this.detailMode = mode;
     if (mode === 'shots' && this.project) await this.loadShots();
@@ -286,7 +287,7 @@ const methods = {
   async saveShot(s, fields) {
     const r = await fetch(`/api/shots/${s.id}`, {method:'PATCH',
       headers:{'Content-Type':'application/json'}, body: JSON.stringify(fields)});
-    if (r.ok) Object.assign(s, await r.json()); else alert(await r.text());
+    if (r.ok) { Object.assign(s, await r.json()); await this.loadShots(); } else alert(await r.text());
   },
   async passGate2() {
     const r = await fetch(`/api/projects/${this.project.id}/gate2`, {method:'POST'});
