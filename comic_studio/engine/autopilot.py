@@ -62,6 +62,10 @@ def next_action(db, data_dir, project_id) -> dict:
     if stage == "created":
         if _has_active_job(db, project_id, "analyze"):
             return {"action": "wait", "detail": "分析进行中"}
+        last = jobs_mod.latest_job(db, project_id, "analyze")
+        if last is not None and last["status"] == "failed":
+            # 失败不无限重烧（2026-08-25 真机：上下文爆掉后 autopilot 秒级重跑烧 token）
+            return {"action": "wait", "detail": "上次分析失败，重试请手动发起"}
         return {"action": "analyze", "detail": "开始资产分析"}
     if stage == "analyzed":
         if _all_assets_have_sheets(db, data_dir, project_id):

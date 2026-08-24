@@ -43,14 +43,52 @@ def make_client_factory(db: Database) -> ClientFactory:
     return lambda task: client_for_task(db, task)
 
 
-def merge_analyses(client: LLMClient, results: list[AssetsAnalysis]) -> tuple[AssetsAnalysis, Usage]:
-    payload = json.dumps(
+def _results_payload(results: list[AssetsAnalysis]) -> str:
+    return json.dumps(
         {"characters": [c.model_dump() for r in results for c in r.characters],
          "scenes": [s.model_dump() for r in results for s in r.scenes],
          "props": [p.model_dump() for r in results for p in r.props]},
         ensure_ascii=False)
-    merged, usage = ask_validated(client, MERGE_SYSTEM, payload, AssetsAnalysis)
-    return merged, usage
+
+
+def merge_analyses(client: LLMClient, results: list[AssetsAnalysis],
+                   max_payload_chars: int = 8000, on_progress=None
+                   ) -> tuple[AssetsAnalysis, Usage]:
+    """树状归并（真机 2026-08-25 教训：56 块拼单请求 53928 tok 爆 16k 上下文）。
+    每轮按 max_payload_chars 贪心分批合并，直到剩单结果；用量累计返回。"""
+    total_prompt = total_completion = 0
+    level = list(results)
+    rnd = 0
+    while len(level) > 1:
+        rnd += 1
+        # 预算留 200 字余量给 JSON 包裹结构
+        budget = max(1, max_payload_chars - 200)
+        sizes = [len(_results_payload([r])) for r in level]
+        batches, cur, cur_size = [], [], 0
+        for r, s in zip(level, sizes):
+            if cur and cur_size + s > budget:
+                batches.append(cur)
+                cur, cur_size = [], 0
+            cur.append(r)
+            cur_size += s
+        if cur:
+            batches.append(cur)
+        if len(batches) >= len(level):  # 预算过小没并起来——强制两两合并防死循环
+            batches = [level[i:i + 2] for i in range(0, len(level), 2)]
+        nxt = []
+        for batch in batches:
+            if len(batch) == 1:
+                nxt.append(batch[0])  # 单结果直通（不可再分）
+                continue
+            merged, usage = ask_validated(client, MERGE_SYSTEM,
+                                          _results_payload(batch), AssetsAnalysis)
+            total_prompt += usage.prompt_tokens
+            total_completion += usage.completion_tokens
+            nxt.append(merged)
+        if on_progress:
+            on_progress(f"合并第 {rnd} 轮：{len(batches)} 批 → {len(nxt)} 份")
+        level = nxt
+    return level[0], Usage(total_prompt, total_completion)
 
 
 def analyze_project(db: Database, data_dir: Path, project_id: int,
@@ -87,7 +125,10 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
     elif len(results) == 1:
         final = results[0]
     else:
-        final, merge_usage = merge_analyses(extract_client, results)
+        final, merge_usage = merge_analyses(
+            extract_client, results,
+            on_progress=lambda msg: emit_log(db, "analyze", "info", msg,
+                                             project_id=project_id))
         emit_log(db, "analyze", "info", f"合并 {len(results)} 块分析结果", project_id=project_id)
         log_llm_call(db, "extract_assets", provider_name, extract_client.model, merge_usage)
     ids = persist_assets(db, data_dir, project_id, final)

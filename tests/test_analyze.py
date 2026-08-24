@@ -95,3 +95,55 @@ def test_analysis_emits_structured_logs(tmp_path):
     assert "入库 1 角色 / 0 场景 / 0 道具" in texts
     assert "阶段流转 created → analyzed" in texts
     assert all(r["project_id"] == proj["id"] for r in fetch_logs(db, proj["id"]))
+
+
+def test_merge_tree_batches_payload():
+    """真机 bug（2026-08-25 验收）：56 块合并单请求 53928 tok 爆 16k 上下文。
+    树状归并：每次请求 user 载荷 ≤ max_payload_chars，多轮直到单结果；用量累计；不丢项。"""
+    import json
+    from comic_studio.engine.llm.analyze import merge_analyses
+    from comic_studio.engine.llm.schemas import AssetsAnalysis
+
+    def mk(i):
+        return AssetsAnalysis.model_validate_json(json.dumps(
+            {"characters": [{"name": f"角{i}", "role": "配角",
+                             "appearance": "外" * 300, "tags": []}],
+             "scenes": [], "props": []}, ensure_ascii=False))
+
+    results = [mk(i) for i in range(12)]  # 每个序列化约 350 字
+    calls = []
+
+    class RecFake(FakeClient):
+        def raw_chat(self, messages, temperature=0.3):
+            calls.append(len(messages[-1]["content"]))  # user 载荷长度
+            names = [c["name"] for c in json.loads(messages[-1]["content"])["characters"]]
+            return json.dumps(
+                {"characters": [{"name": n, "role": "配角", "appearance": "x", "tags": []}
+                                for n in names], "scenes": [], "props": []},
+                ensure_ascii=False), Usage(100, 50)
+
+    fake = RecFake([None])
+    merged, usage = merge_analyses(fake, results, max_payload_chars=1200)
+    assert all(c <= 1200 for c in calls), calls
+    assert len(calls) >= 4  # 多轮树状（12→4→2→1 至少 7 次调用）
+    assert usage.prompt_tokens == 100 * len(calls)
+    assert usage.completion_tokens == 50 * len(calls)
+    assert len(merged.characters) == 12  # 无丢项
+
+
+def test_merge_tree_progress_callback():
+    """on_progress 每轮回调（前端日志可见合并进度，防止长合并像卡死）。"""
+    import json
+    from comic_studio.engine.llm.analyze import merge_analyses
+    from comic_studio.engine.llm.schemas import AssetsAnalysis
+
+    def mk(i):
+        return AssetsAnalysis.model_validate_json(json.dumps(
+            {"characters": [{"name": f"角{i}", "appearance": "x"}],
+             "scenes": [], "props": []}, ensure_ascii=False))
+
+    rounds = []
+    merged, _ = merge_analyses(FakeClient([MERGED]), [mk(i) for i in range(6)],
+                               max_payload_chars=200,
+                               on_progress=lambda msg: rounds.append(msg))
+    assert len(rounds) >= 1 and any("合并" in m for m in rounds)

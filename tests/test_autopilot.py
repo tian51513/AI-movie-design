@@ -105,3 +105,12 @@ def test_autopilot_once_ticks_enabled_only(tmp_path):
     conn.execute("DELETE FROM jobs WHERE project_id=?", (pid,))
     conn.commit()
     assert _autopilot_once(db, tmp_path / "data") == 0
+
+
+def test_wait_after_failed_analyze(tmp_path):
+    """失败不无限重烧：最近一次 analyze 失败 → wait（真机 2026-08-25：失败即重跑烧 token）。"""
+    db, pid = _proj(tmp_path)
+    jid = jobs.enqueue_job(db, "analyze", project_id=pid, payload={"project_id": pid})
+    jobs.finish_job(db, jid, "boom")
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "失败" in act["detail"]
