@@ -115,6 +115,8 @@ MIGRATIONS: list[str] = [
     # 16-17 projects 加提示词模式与真实感LoRA强度
     """ALTER TABLE projects ADD COLUMN prompt_mode TEXT NOT NULL DEFAULT 'D';""",
     """ALTER TABLE projects ADD COLUMN lora_realism REAL NOT NULL DEFAULT 0.75;""",
+    # 18 projects 加 autopilot（一键出片开关）
+    """ALTER TABLE projects ADD COLUMN autopilot INTEGER NOT NULL DEFAULT 0;""",
 ]
 
 
