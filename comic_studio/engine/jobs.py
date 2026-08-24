@@ -43,15 +43,35 @@ def enqueue_job(db, jtype, project_id=None, asset_id=None, shot_id=None,
     return cur.lastrowid
 
 
+_RESOURCE_GROUP = {"gpu_comfy": "gpu", "gpu_llm_local": "gpu"}
+
+
+def _group(res: str | None) -> str | None:
+    return _RESOURCE_GROUP.get(res, res)
+
+
 def claim_next_job(db, handler_types: tuple):
     conn = db.connect()
     conn.execute("BEGIN IMMEDIATE")
-    row = conn.execute(
-        "SELECT * FROM jobs WHERE status='pending' AND type IN (%s) "
-        "AND (resource IS NULL OR resource NOT IN "
-        "  (SELECT resource FROM jobs WHERE status='running' AND resource IS NOT NULL)) "
-        "ORDER BY id LIMIT 1" % ",".join("?" * len(handler_types)),
-        handler_types).fetchone()
+    running_rows = conn.execute(
+        "SELECT resource FROM jobs WHERE status='running' AND resource IS NOT NULL"
+    ).fetchall()
+    busy_groups = {_group(r["resource"]) for r in running_rows}
+    # 所有组内资源字符串的并集（含自身 + 同组兄弟）
+    blocked = {res for res in _RESOURCE_GROUP if _RESOURCE_GROUP[res] in busy_groups}
+    blocked.update(r["resource"] for r in running_rows)
+    type_ph = ",".join("?" * len(handler_types))
+    if blocked:
+        blocked_ph = ",".join("?" * len(blocked))
+        sql = (f"SELECT * FROM jobs WHERE status='pending' AND type IN ({type_ph}) "
+               f"AND (resource IS NULL OR resource NOT IN ({blocked_ph})) "
+               "ORDER BY id LIMIT 1")
+        params = (*handler_types, *blocked)
+    else:
+        sql = (f"SELECT * FROM jobs WHERE status='pending' AND type IN ({type_ph}) "
+               "ORDER BY id LIMIT 1")
+        params = handler_types
+    row = conn.execute(sql, params).fetchone()
     if row is None:
         conn.execute("COMMIT")
         return None

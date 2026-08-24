@@ -41,6 +41,25 @@ def test_resource_mutex(tmp_path):
     assert claim_next_job(db, ("gen_ref", "other"))["id"] == b
 
 
+def test_resource_mutex_cross_group(tmp_path):
+    """I5: gpu_comfy 与 gpu_llm_local 共享 GPU 组，互斥；None 资源不受影响。"""
+    db = _db(tmp_path); pid = _pid(db, tmp_path)
+    a = enqueue_job(db, "gen_ref", project_id=pid, resource="gpu_comfy")
+    b = enqueue_job(db, "gen_prompt", project_id=pid, resource="gpu_llm_local")
+    c = enqueue_job(db, "other", project_id=pid, resource=None)
+    # claim a (gpu_comfy)
+    assert claim_next_job(db, ("gen_ref", "gen_prompt", "other"))["id"] == a
+    # b (gpu_llm_local) 与 a (gpu_comfy) 同组 GPU → 不可认领
+    # c (None) 不受互斥影响，先返回 c
+    claimed = claim_next_job(db, ("gen_prompt", "other"))
+    assert claimed["id"] == c
+    # b 仍不可认领
+    assert claim_next_job(db, ("gen_prompt",)) is None
+    finish_job(db, a, None)
+    # a 完成后 b 可认领
+    assert claim_next_job(db, ("gen_prompt",))["id"] == b
+
+
 def test_claim_ignores_unhandled_types(tmp_path):
     db = _db(tmp_path); pid = _pid(db, tmp_path)
     enqueue_job(db, "analyze", project_id=pid)

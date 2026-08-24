@@ -8,8 +8,11 @@ from .queue.worker import register
 from .settings import get_setting
 
 
+_ROUTE_KEY = {"gen_prompt": "gen_video_prompt"}  # job 类型 → llm_routing 键
+
+
 def enqueue_llm_job(db, jtype, project_id, shot_id=None, payload=None):
-    routing = get_setting(db, "llm_routing").get(jtype)
+    routing = get_setting(db, "llm_routing").get(_ROUTE_KEY.get(jtype, jtype))
     resource = "gpu_llm_local" if routing == "local" else None
     return enqueue_job(db, jtype, project_id=project_id, shot_id=shot_id,
                        resource=resource, payload=payload)
@@ -19,7 +22,7 @@ def enqueue_llm_job(db, jtype, project_id, shot_id=None, payload=None):
 def handle_split(db, data_dir, job, comfy):
     from .llm.storyboard import split_storyboards
     payload = json.loads(job["payload_json"] or "{}")
-    ids = split_storyboards(db, data_dir, payload["project_id"])
+    ids = split_storyboards(db, data_dir, payload.get("project_id", job["project_id"]))
     emit_log(db, "storyboard", "info", f"分镜拆解完成：{len(ids)} 镜",
              project_id=job["project_id"], job_id=job["id"])
 
@@ -32,6 +35,8 @@ def handle_gen_prompt(db, data_dir, job, comfy):
     from .shots import get_shot, update_shot
     payload = json.loads(job["payload_json"] or "{}")
     shot = get_shot(db, payload["shot_id"])
+    if shot is None:
+        raise ValueError("分镜已删除（重拆后旧任务）")
     backend = "ltx" if "ltx" in (shot["workflow_type"] or "") else "h3"
     client = client_for_task(db, "gen_video_prompt")
     t0 = time.monotonic()

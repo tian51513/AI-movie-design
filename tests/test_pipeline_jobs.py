@@ -33,6 +33,19 @@ def test_enqueue_shot_id_persisted(tmp_path):
     assert get_job(db, jid)["shot_id"] == sid
 
 
+def test_enqueue_gen_prompt_uses_routed_key(tmp_path):
+    """I1: gen_prompt 路由键应映射到 gen_video_prompt 设置键。"""
+    db = _db(tmp_path); pid = create_project(db, tmp_path / "d", "p", "9:16", "t")["id"]
+    # 设置 gen_video_prompt 路由为 local
+    set_setting(db, "llm_routing", {"gen_video_prompt": "local"})
+    jid = enqueue_llm_job(db, "gen_prompt", project_id=pid)
+    assert get_job(db, jid)["resource"] == "gpu_llm_local"
+    # 默认（online/无路由）→ resource=None
+    set_setting(db, "llm_routing", {})
+    jid2 = enqueue_llm_job(db, "gen_prompt", project_id=pid)
+    assert get_job(db, jid2)["resource"] is None
+
+
 def test_handlers_registered():
     from comic_studio.engine.queue.worker import HANDLERS
     import comic_studio.engine.pipeline_jobs  # noqa: F401 注册触发

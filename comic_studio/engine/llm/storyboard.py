@@ -19,7 +19,7 @@ SPLIT_SYSTEM = """你是小说改编漫剧的分镜师。把给定的小说文�
 5. continue_prev：本镜是否紧接上一镜延续（同场景、动作连贯）——分块拆解时首镜若延续上一块结尾则 true
 6. 台账四分类：must_appear(画面必须出现的实体/动作)、must_keep(必须保持的资产特征)、may_change(允许自由发挥)、must_avoid(易错必须避免项，如"左右手颠倒""换服装"）
 7. description 写成可直接指导视频生成的画面描述：谁在哪做什么、构图与光线，80 字内中文
-8. duration 按动作量 3~8 秒取值
+8. duration 按动作量 4~8 秒取值
 
 只输出一个 JSON 对象：
 {"shots":[{"text_span":"对应原文摘录","description":"...","shot_type":"对话/动作/场景/情绪",
@@ -34,7 +34,7 @@ class ShotDraft(BaseModel):
     description: str = Field(min_length=1)
     shot_type: str = ""
     camera: dict = Field(default_factory=dict)
-    duration: float = Field(ge=1, le=15, default=5)
+    duration: float = Field(ge=4, le=15, default=5)
     workflow_type: str = "ref2va"
     must_appear: list[str] = []
     must_keep: list[str] = []

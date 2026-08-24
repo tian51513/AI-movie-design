@@ -24,6 +24,18 @@ def test_schema_parses_and_rejects():
         ChunkStoryboard.model_validate({"shots": [{**GOOD_SHOT, "duration": "五秒"}]})
 
 
+def test_duration_minimum_4_rejects_3():
+    """I2: duration 下限 4，3 应被拒绝。"""
+    with pytest.raises(ValidationError):
+        ChunkStoryboard.model_validate({"shots": [{**GOOD_SHOT, "duration": 3}]})
+
+
+def test_duration_4_accepts():
+    """I2: duration=4 应通过。"""
+    sb = ChunkStoryboard.model_validate({"shots": [{**GOOD_SHOT, "duration": 4}]})
+    assert sb.shots[0].duration == 4
+
+
 def test_system_prompt_pins_contract():
     for token in ("workflow_type", "continue_prev", "must_appear", "character_ids", "fl2v"):
         assert token in SPLIT_SYSTEM

@@ -89,7 +89,7 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
         if backend != "h3":
             return text
         bound = len(ledger_assets(shot))  # 台账绑定资产数（ref 图数量）
-        ok, msg = validate_h3(text, shot["duration"], proj["aspect_ratio"],
+        ok, msg = validate_h3(text, max(4, int(shot["duration"])), proj["aspect_ratio"],
                               images=bound, videos=0)
         if ok and "可自行补充" not in text:
             return text
