@@ -131,7 +131,7 @@ created → analyzed → assets_ready ─门1→ storyboard_ready ─门2→ ren
 
 - 门 1/门 2 是显式用户动作（UI 按钮），门 3（渲染完预览后合成）可配置为自动
 - 回退规则：重新 analyze → 已绑定分镜标 `stale`；重生某资产参考图 → 引用它的 shots 标 `stale`；是否重跑由用户决定
-- 断点续跑：jobs 持久化 + `comfy_prompt_id`；重启时先对账 ComfyUI `/history`，再决定重排队，不重复渲染
+- 断点续跑：jobs 持久化 + `comfy_prompt_id`；重启时先对账 ComfyUI `/history`，再决定重排队，不重复渲染（对账机制 Phase 5 实现；当前重排重渲）
 
 ## 6. 工作流模板系统
 
