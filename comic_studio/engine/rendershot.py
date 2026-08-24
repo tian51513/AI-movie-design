@@ -28,26 +28,25 @@ def pick_template_id(shot_row) -> str:
 
 
 def collect_ref_images(db, shot_row) -> list[dict]:
+    """角色优先占满参考槽（人物一致性 > 场景还原），场景/道具仅在有空槽时补位。
+    C 版实验教训：第二角色无参考图 + 同款服装 → 模型身份融合（2026-08-24 实测）。"""
     if shot_row["workflow_type"] == "t2v":
         return []
     ledger = json.loads(shot_row["ledger_json"] or "{}")
     assets_map = ledger.get("assets", {})
-    char_ids = assets_map.get("characters", [])
-    scene_ids = assets_map.get("scenes", [])
+    ordered_ids = (assets_map.get("characters", [])
+                   + assets_map.get("scenes", [])
+                   + assets_map.get("props", []))
     refs = []
-    if char_ids:
-        asset = get_asset(db, char_ids[0])
+    for asset_id in ordered_ids:
+        if len(refs) >= 2:
+            break
+        asset = get_asset(db, asset_id)
         if asset and asset["library_dir"]:
-            refs.append({"slot": "ref0",
-                         "path": f"{asset['library_dir']}/views/sheet.png"})
-    if scene_ids:
-        asset = get_asset(db, scene_ids[0])
-        if asset and asset["library_dir"]:
-            refs.append({"slot": "ref1",
+            refs.append({"slot": f"ref{len(refs)}",
                          "path": f"{asset['library_dir']}/views/sheet.png"})
     if len(refs) == 1:
-        other = "ref1" if refs[0]["slot"] == "ref0" else "ref0"
-        refs.append({"slot": other, "path": refs[0]["path"]})
+        refs.append({"slot": "ref1", "path": refs[0]["path"]})
     return refs
 
 

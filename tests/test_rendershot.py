@@ -5,7 +5,7 @@ from types import SimpleNamespace as NS
 
 import pytest
 
-from comic_studio.engine.assets import persist_assets
+from comic_studio.engine.assets import get_asset, persist_assets
 from comic_studio.engine.comfy.client import ComfyClient
 from comic_studio.engine.db import Database
 from comic_studio.engine.projects import create_project
@@ -154,3 +154,31 @@ def test_handle_gen_shot_registered_and_guard():
     from comic_studio.engine.rendershot import handle_gen_shot
     with pytest.raises(ValueError, match="分镜"):
         handle_gen_shot(db, tmp / "d", get_job(db, jid), None)
+
+
+def test_ref_slots_characters_priority(tmp_path):
+    """回归（C 版教训）：双角色镜两张角色脸先占槽，场景退为文字。"""
+    from comic_studio.engine.assets import list_project_assets, persist_assets
+    from comic_studio.engine.paths import data_to_abs
+    from types import SimpleNamespace as NS
+    db, pid, assets = _setup(tmp_path)
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="第二角色", appearance="白发女性", tags=[])],
+                      scenes=[], props=[]))
+    second = next(a for a in list_project_assets(db, pid) if a["name"] == "第二角色")
+    views = data_to_abs(tmp_path / "data", second["library_dir"]) / "views"
+    views.mkdir(parents=True, exist_ok=True)
+    (views / "sheet.png").write_bytes(b"\x89PNG2")
+    sid = persist_shots(db, pid, [_shot_draft(
+        character_ids=[assets["林晨"]["id"], second["id"]],
+        scene_ids=[assets["庭院"]["id"]])])[0]
+    refs = collect_ref_images(db, get_shot(db, sid))
+    names = [get_asset(db, int(r["path"].split("/")[2]))["name"] for r in refs]
+    assert names == ["林晨", "第二角色"], f"角色未优先占槽: {names}"
+    # 单角色+场景：角色 ref0、场景 ref1（既有行为不变）
+    sid2 = persist_shots(db, pid, [_shot_draft(
+        character_ids=[assets["林晨"]["id"]],
+        scene_ids=[assets["庭院"]["id"]])])[0]
+    refs2 = collect_ref_images(db, get_shot(db, sid2))
+    names2 = [get_asset(db, int(r["path"].split("/")[2]))["name"] for r in refs2]
+    assert names2 == ["林晨", "庭院"]
