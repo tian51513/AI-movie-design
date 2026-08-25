@@ -304,6 +304,7 @@ const methods = {
   startLogsPolling() {
     this.stopLogsPolling();
     let wasBusy = false;
+    this._tickBusy = true;  // 首拍按忙等（1s），随后自适应
     const tick = async () => {
       const r = await fetch(`/api/projects/${this.project.id}/logs?after=${this.lastLogId}`);
       if (!r.ok || !this.project) return;
@@ -315,6 +316,7 @@ const methods = {
         this.queue = await (await fetch(`/api/projects/${this.project.id}/queue`)).json();
         const done = this.queue.jobs.filter(j => j.status === 'done').length;
         const busy = this.queue.running > 0 || this.queue.pending > 0;
+        this._tickBusy = busy || (this.project && this.project.autopilot);
         if ((wasBusy && !busy) || done > this._doneSeen) { await this.loadDetail(); }
         this._doneSeen = done; wasBusy = busy;
       } catch (e) { /* 队列瞬时失败不影响日志流 */ }
@@ -342,9 +344,14 @@ const methods = {
         catch (e) { /* 瞬时失败忽略 */ }
       }
     };
-    this._doneSeen = 0; tick(); this.logsTimer = setInterval(tick, 1000);
+    this._doneSeen = 0;
+    const loop = async () => {          // 自适应轮询：忙 1s / 闲 4s（减少空转请求）
+      await tick();
+      this.logsTimer = setTimeout(loop, this._tickBusy ? 1000 : 4000);
+    };
+    loop();
   },
-  stopLogsPolling() { clearInterval(this.logsTimer); this.logsTimer = null; },
+  stopLogsPolling() { clearTimeout(this.logsTimer); this.logsTimer = null; },
   logColor(level) { return { info: '#9ca3af', warn: '#facc15', error: '#f87171' }[level] || '#eee'; },
 
   // ===== 灯箱 =====
