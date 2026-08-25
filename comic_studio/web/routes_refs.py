@@ -38,9 +38,12 @@ def upload_main_image(request: Request, asset_id: int,
     ext = Path(file.filename or "").suffix.lower()
     if ext not in (".png", ".jpg", ".jpeg", ".webp"):
         raise HTTPException(422, f"只接受图片文件（png/jpg/jpeg/webp），得到 {ext or '无后缀'}")
+    data = file.file.read(20 * 1024 * 1024 + 1)  # 上限 20MB（防超大文件塞盘）
+    if len(data) > 20 * 1024 * 1024:
+        raise HTTPException(422, "图片超过 20MB 上限")
     dest = data_to_abs(request.app.state.data_dir, asset["library_dir"]) / "main.png"
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_bytes(file.file.read())
+    dest.write_bytes(data)
     from ..engine.logbus import emit as emit_log
     emit_log(db, "comfy", "info", f"资产「{asset['name']}」主图已人工上传",
              project_id=asset["source_project"])

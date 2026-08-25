@@ -43,3 +43,12 @@ def test_upload_main_missing_asset_404(tmp_path):
     with c:
         assert c.post("/api/assets/999/main-image",
                       files={"file": ("a.png", b"x", "image/png")}).status_code == 404
+
+
+def test_upload_main_rejects_oversized(tmp_path):
+    """超 20MB 拒收（防塞盘——安全扫描建议）。"""
+    _, asset, c = _client(tmp_path)
+    with c:
+        r = c.post(f"/api/assets/{asset['id']}/main-image",
+                   files={"file": ("big.png", b"x" * (20 * 1024 * 1024 + 2), "image/png")})
+        assert r.status_code == 422
