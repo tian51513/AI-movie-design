@@ -130,8 +130,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
         try:
             from ..engine.themes import sync_themes
             sync_themes(db)
-        except Exception:
-            pass  # 模板文件异常不阻塞启动
+        except Exception as exc:
+            from ..engine.logbus import emit as emit_log
+            emit_log(db, "system", "warn", f"主题模板同步失败：{exc}")  # 不阻塞启动
         # 断点对账（spec §5）：先收集可对账的 gen_shot，再 requeue。
         # ComfyUI 可达且 /history 显示已完成 → 直接下载落盘不重渲；否则照常 requeue。
         from ..engine.jobs import collect_reattach_candidates, requeue_on_restart

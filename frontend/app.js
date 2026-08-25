@@ -32,6 +32,7 @@ function data() {
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '',
     themesManage: [], themeImportFile: null, themeImporting: false,
+    editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '',
     newStyleKey: '', newStyleText: '',
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '',
@@ -517,14 +518,23 @@ const methods = {
     if (j.status === 'failed') return '渲染失败';
     return '排队中';
   },
-  async editAssetDetail(a) {
-    const v = prompt('外貌/服装描述（同步库与 meta；引用分镜会标 stale）：', a.detail || '');
-    if (v === null || !v.trim()) return;
-    const r = await fetch(`/api/assets/${a.id}`, {
+  editAssetDetail(a) {
+    this.editAssetId = a.id;
+    this.editAssetName = a.name;
+    this.editAssetDraft = a.detail || '';
+    this.editAssetOpen = true;
+  },
+  async saveAssetDetail() {
+    const v = (this.editAssetDraft || '').trim();
+    if (!v) { alert('描述不能为空'); return; }
+    const r = await fetch(`/api/assets/${this.editAssetId}`, {
       method: 'PATCH', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({detail: v.trim()})});
-    if (r.ok) { alert('已更新。引用该资产的分镜已标 stale——请重生参考图与提示词'); await this.loadDetail(); }
-    else alert(await r.text());
+      body: JSON.stringify({detail: v})});
+    if (r.ok) {
+      this.editAssetOpen = false;
+      alert('已更新。引用该资产的分镜已标 stale——请重生参考图与提示词');
+      await this.loadDetail();
+    } else alert(await r.text());
   },
 
   stageName(s) { return { created: '已创建', analyzed: '已分析', assets_ready: '资产就绪',

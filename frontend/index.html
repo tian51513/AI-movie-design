@@ -373,6 +373,18 @@
       <div v-if="!logs.length" class="muted">暂无日志——分析等活动产生后此处实时滚动显示</div>
     </div>
   </main>
+  <div v-if="editAssetOpen" @click.self="editAssetOpen=false"
+       style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:110;display:flex;align-items:center;justify-content:center">
+    <div class="card" style="width:min(720px,92vw)">
+      <h3>编辑外貌 · {{ editAssetName }}<span class="muted" style="font-size:12px">（可手写，也可 ✨ 润色）</span></h3>
+      <prompt-box v-model="editAssetDraft" :rows="10" kind="appearance"></prompt-box>
+      <p style="display:flex;gap:8px;align-items:center">
+        <button style="background:#16a34a" @click="saveAssetDetail">保存</button>
+        <button @click="editAssetOpen=false">取消</button>
+        <span class="muted" style="font-size:12px">保存后引用该资产的分镜会标 stale——请重生参考图与提示词</span>
+      </p>
+    </div>
+  </div>
   <div v-if="lightbox" @click="lightbox=null"
        style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;
               align-items:center;justify-content:center;z-index:99;cursor:zoom-out">
