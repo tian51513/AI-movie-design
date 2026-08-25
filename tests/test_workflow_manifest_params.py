@@ -37,3 +37,12 @@ def test_ref2va_lora_strength_point():
     reg = scan_templates(Path("templates/workflows"))
     assert "lora_strength" in reg["h3_ref2va"].inject_params
     assert reg["h3_ref2va"].inject_params["lora_strength"].node == "117"
+
+
+def test_zimage_t2i_steps_default_10():
+    """用户指定（2026-08-25）：zimage_t2i steps 默认 10，且作为可注入参数。"""
+    from comic_studio.engine.workflows import registry
+    reg = registry.scan_templates(registry.TEMPLATE_ROOT)
+    t = reg["zimage_t2i"]
+    assert "steps" in t.inject_params
+    assert t.api_json()["57:3"]["inputs"]["steps"] == 10

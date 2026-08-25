@@ -11,6 +11,9 @@ inject:
     seed:
       node: '57:3'
       field: seed
+    steps:
+      node: '57:3'
+      field: steps
 outputs:
 - node: '9'
   filename_prefix: cs/{project}/{asset}
