@@ -4,9 +4,8 @@ name: H3 辅助四视图生成流（Krea2 架构，主图派生）
 file: character_views.api.json
 prompt_format: '{kind_label}：{name}。{detail}'
 inject:
-  prompt:
-    node: '24'
-    field: prompt
+  # 提示词不注入：四视图 LoRA 用工作流内置触发词（api.json 节点 24），
+  # 管线参数只有主图（body 槽）与随机 seed——2026-08-25 用户勘误
   params:
     seed:
       node: '14'

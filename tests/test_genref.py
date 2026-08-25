@@ -162,7 +162,8 @@ def test_character_two_stage_main_then_views(tmp_path, monkeypatch):
         main_text = m.prompts[0]["prompt"]["57:27"]["inputs"]["text"]
         assert "萧炎" in main_text and "立绘" in main_text and "三视图" not in main_text
         views_wf = m.prompts[1]["prompt"]
-        assert "三视图" in views_wf["24"]["inputs"]["prompt"]
+        # 提示词保留工作流内置触发词（不再被中文提示词覆盖）
+        assert "Character Sheet" in views_wf["24"]["inputs"]["prompt"]
         assert views_wf["17"]["inputs"]["image"].startswith("cs__")  # 主图作种子上传
         lib = get_asset(db, asset["id"])["library_dir"]
         assert (tmp_path / "data" / lib / "main.png").exists()
@@ -200,7 +201,7 @@ def test_two_stage_stage_control(tmp_path, monkeypatch):
                            payload={"asset_id": asset["id"], "stage": "views"})
         handle_gen_ref(db, tmp_path / "data", get_job(db, jid2), ComfyClient(m.base_url))
         assert len(m.prompts) == 2  # 只新增一段
-        assert "三视图" in m.prompts[1]["prompt"]["24"]["inputs"]["prompt"]
+        assert "Character Sheet" in m.prompts[1]["prompt"]["24"]["inputs"]["prompt"]
         assert (tmp_path / "data" / lib / "views" / "sheet.png").exists()
 
 

@@ -88,10 +88,6 @@ def _t2i_to_file(db, comfy, tmpl, prompt, dest, ctx, job, label, images=None):
     return dest
 
 
-VIEWS_DERIVE = ("基于参考人物图生成同一角色的三视图设定图：正面全身、左侧全身、"
-                "背面全身并排，外貌与服装与参考图保持完全一致，白色干净背景")
-
-
 @register("gen_ref")
 def handle_gen_ref(db, data_dir, job, comfy):
     payload = json.loads(job["payload_json"] or "{}")
@@ -145,10 +141,10 @@ def handle_gen_ref(db, data_dir, job, comfy):
             _t2i_to_file(db, comfy, main_tmpl, main_prompt, main_png, ctx, job,
                          label=f"资产「{asset['name']}」主图", images=main_images)
         if stage in ("all", "views"):
-            sheet_prompt, _ = build_gen_prompt(asset, style=style, era=era)
-            sheet_prompt += "。" + VIEWS_DERIVE
+            # 提示词不注入：四视图走工作流内置触发词（用户勘误 2026-08-25——
+            # 参数只有主图 body 槽 + 随机 seed，步数等保持工作流默认）
             wf, uploads = fill_workflow(
-                cv_tmpl, prompt=sheet_prompt,
+                cv_tmpl, prompt=None,
                 params={"seed": payload.get("seed") or random.randint(0, 2**31 - 1)},
                 images=[{"slot": "body", "path": str(main_png)}], output_ctx=ctx,
                 model_overrides=(get_setting(db, "model_overrides") or {}).get(cv_tmpl.id))

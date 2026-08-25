@@ -67,12 +67,11 @@ def load_manifest(path: Path) -> WorkflowTemplate:
     if missing:
         raise ManifestError(f"{path.name} 缺字段: {missing}")
     inj = data["inject"]
-    if "prompt" not in inj:
-        raise ManifestError(f"{path.name} inject.prompt 必填")
+    # inject.prompt 可选：部分工作流用内置触发词（如四视图 LoRA），管线只传图/参数
     return WorkflowTemplate(
         id=data["id"], type=data["type"], name=data["name"], file=data["file"],
         prompt_format=data["prompt_format"],
-        inject_prompt=InjectPoint(**inj["prompt"]),
+        inject_prompt=(InjectPoint(**inj["prompt"]) if inj.get("prompt") else None),
         inject_params={k: InjectPoint(**v) for k, v in (inj.get("params") or {}).items()},
         outputs=[OutputSpec(**o) for o in data["outputs"]],
         requires=list(data.get("requires") or []),

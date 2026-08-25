@@ -46,3 +46,19 @@ def test_zimage_t2i_steps_default_10():
     t = reg["zimage_t2i"]
     assert "steps" in t.inject_params
     assert t.api_json()["57:3"]["inputs"]["steps"] == 10
+
+
+def test_manifest_prompt_optional():
+    """inject.prompt 可选（四视图等用内置触发词的工作流）。"""
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.workflows.filler import fill_workflow
+    reg = registry.scan_templates(registry.TEMPLATE_ROOT)
+    t = reg["character_views"]
+    assert t.inject_prompt is None
+    wf, uploads = fill_workflow(
+        t, prompt=None, params={"seed": 7},
+        images=[{"slot": "body", "path": "x.png"}],
+        output_ctx={"project": "p", "asset": "a"})
+    assert "Character Sheet" in wf["24"]["inputs"]["prompt"]  # 内置词未被覆盖
+    assert wf["17"]["inputs"]["image"] == "cs__p__a__body.png"  # 图槽换成上传名
+    assert uploads and uploads[0]["path"] == "x.png"

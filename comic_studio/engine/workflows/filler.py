@@ -3,7 +3,7 @@
 import copy
 
 
-def fill_workflow(template, *, prompt: str, params: dict,
+def fill_workflow(template, *, prompt: str | None, params: dict,
                    images: list | None, output_ctx: dict,
                    model_overrides: dict | None = None):
     wf = copy.deepcopy(template.api_json())
@@ -11,7 +11,9 @@ def fill_workflow(template, *, prompt: str, params: dict,
     def set_input(node: str, field_name: str, value):
         wf[str(node)]["inputs"][field_name] = value
 
-    set_input(template.inject_prompt.node, template.inject_prompt.field, prompt)
+    if prompt is not None and template.inject_prompt is not None:
+        set_input(template.inject_prompt.node, template.inject_prompt.field, prompt)
+    # prompt=None：保留工作流内置提示词（如四视图 LoRA 触发词）——管线只传图/参数
     # 模型槽位覆盖（settings model_overrides，键=模板 id → {label: 文件名}）
     for slot in template.models:
         value = (model_overrides or {}).get(slot.label)
