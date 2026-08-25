@@ -401,7 +401,9 @@
        style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:110;display:flex;align-items:center;justify-content:center">
     <div class="card" style="width:min(720px,92vw)">
       <h3>编辑外貌 · {{ editAssetName }}<span class="muted" style="font-size:12px">（可手写，也可 ✨ 润色）</span></h3>
-      <prompt-box v-model="editAssetDraft" :rows="10" kind="appearance"></prompt-box>
+      <prompt-box v-model="editAssetDraft" :rows="10"
+                  :kind="editAssetKind === 'character' ? 'appearance' : 'appearance:' + editAssetKind"
+                  :key="editAssetKind"></prompt-box>
       <p style="display:flex;gap:8px;align-items:center">
         <button style="background:#16a34a" @click="saveAssetDetail">保存</button>
         <button @click="editAssetOpen=false">取消</button>

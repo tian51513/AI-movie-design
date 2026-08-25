@@ -20,6 +20,14 @@ _KIND_SYSTEMS = {
         "你是角色设定师。把这段外貌描述改写为可直接用于绘画参考的固化外貌："
         "性别年龄、发色发型、瞳色、体型、标志性服装与配饰，客观具体不写性格心理，"
         "保留原文所有视觉信息。直接输出改写后的描述。"),
+    "appearance:prop": (
+        "你是道具设定师。把这段描述改写为可直接用于绘画参考的道具说明："
+        "外观形状、材质质感、尺寸比例、颜色纹样、时代与文化风格，"
+        "客观具体，不出现人物。直接输出改写后的描述。"),
+    "appearance:scene": (
+        "你是场景设定师。把这段描述改写为可直接用于绘画参考的场景说明："
+        "空间结构、环境元素、光线氛围、色调、时代与文化风格，"
+        "客观具体，不出现人物。直接输出改写后的描述。"),
     "generic": (
         "优化这段中文文本：更通顺、具体、生动，保持原意与语言。直接输出优化结果，不要解释。"),
 }
@@ -32,7 +40,14 @@ def optimize(request: Request, body: dict):
         raise HTTPException(422, "text 为空")
     if len(text) > 20000:  # 防巨型请求打爆 LLM（安全扫描建议的合理部分）
         raise HTTPException(422, f"text 过长（{len(text)} 字符，上限 20000）")
-    system = _KIND_SYSTEMS.get(body.get("kind") or "generic", _KIND_SYSTEMS["generic"])
+    kind = body.get("kind") or "generic"
+    # appearance 按资产类型分化（appearance / appearance:prop / appearance:scene）；
+    # 未知 appearance:* 变体回退基础角色版
+    system = _KIND_SYSTEMS.get(kind)
+    if system is None and kind.startswith("appearance:"):
+        system = _KIND_SYSTEMS["appearance"]
+    if system is None:
+        system = _KIND_SYSTEMS["generic"]
     client = client_for_task(request.app.state.db, "optimize_prompt")
     reply, _u = client.raw_chat(
         [{"role": "system", "content": system},

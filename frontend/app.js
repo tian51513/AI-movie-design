@@ -32,7 +32,7 @@ function data() {
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '',
     themesManage: [], themeImportFile: null, themeImporting: false,
-    editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '',
+    editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character',
     newStyleKey: '', newStyleText: '',
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '',
@@ -537,6 +537,7 @@ const methods = {
   editAssetDetail(a) {
     this.editAssetId = a.id;
     this.editAssetName = a.name;
+    this.editAssetKind = a.kind || 'character';
     this.editAssetDraft = a.detail || '';
     this.editAssetOpen = true;
   },

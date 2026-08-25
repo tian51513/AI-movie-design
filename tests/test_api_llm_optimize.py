@@ -66,3 +66,16 @@ def test_optimize_rejects_oversized_text(client):
     with c:
         assert c.post("/api/llm/optimize",
                       json={"text": "x" * 20001}).status_code == 422
+
+
+def test_optimize_appearance_variants_by_kind(client):
+    """appearance 指引按资产类型分化（真机 2026-08-25：道具被角色化）。"""
+    db, fake, c = client
+    with c:
+        c.post("/api/llm/optimize", json={"text": "红绸肚兜", "kind": "appearance:prop"})
+        assert "材质" in fake.last_messages[0]["content"]
+        assert "性别年龄" not in fake.last_messages[0]["content"]
+        c.post("/api/llm/optimize", json={"text": "庭院", "kind": "appearance:scene"})
+        assert "环境" in fake.last_messages[0]["content"]
+        c.post("/api/llm/optimize", json={"text": "黑发少年", "kind": "appearance"})
+        assert "性别年龄" in fake.last_messages[0]["content"]  # 默认仍角色
