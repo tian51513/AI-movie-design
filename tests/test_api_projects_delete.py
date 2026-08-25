@@ -78,3 +78,24 @@ def test_delete_missing_404(tmp_path):
     _, _, c = _client(tmp_path)
     with c:
         assert c.delete("/api/projects/999").status_code == 404
+
+
+def test_delete_project_with_depends_on_chain(tmp_path):
+    """真机 2026-08-25：镜间 depends_on 自引用链——单条 DELETE 逐行 FK 检查会违约 500。"""
+    db, pid, c = _client(tmp_path)
+    from comic_studio.engine.shots import persist_shots
+    ids = persist_shots(db, pid, [
+        NS(text_span="", description="a", shot_type="", camera={}, duration=5.0,
+           workflow_type="t2v", ledger={}, character_ids=[], scene_ids=[],
+           prop_ids=[], depends_on=None, prompt="p"),
+        NS(text_span="", description="b", shot_type="", camera={}, duration=5.0,
+           workflow_type="t2v", ledger={}, character_ids=[], scene_ids=[],
+           prop_ids=[], depends_on=None, prompt="p"),
+    ])
+    from comic_studio.engine.shots import update_shot  # noqa: F401
+    conn = db.connect()
+    conn.execute("UPDATE shots SET depends_on=? WHERE id=?", (ids[0], ids[1]))
+    conn.commit()  # 镜2 依赖 镜1（接力链；update_shot 不开放该字段，直连建链）
+    with c:
+        r = c.delete(f"/api/projects/{pid}")
+    assert r.status_code == 200
