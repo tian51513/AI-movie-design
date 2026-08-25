@@ -34,7 +34,9 @@ requires:
 
 # 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
 models:
-- {label: unet, node: '4', field: unet_name, cls: UNETLoader}
-- {label: clip, node: '3', field: clip_name, cls: CLIPLoader}
-- {label: vae_audio, node: '8', field: vae_name, cls: VAELoader}
-- {label: vae_video, node: '1', field: vae_name, cls: VAELoader}
+- {label: unet, node: '4', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
+- {label: clip, node: '3', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae_audio, node: '8', field: vae_name, cls: VAELoader, label_cn: 音频 VAE}
+- {label: vae_video, node: '1', field: vae_name, cls: VAELoader, label_cn: 视频 VAE}
+- {label: lora_realism, node: '25', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 真实感 LoRA}
+- {label: lora_turbo, node: '26', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 加速 LoRA}

@@ -15,3 +15,9 @@ outputs:
 - node: '9'
   filename_prefix: cs/{project}/{asset}
 requires: []
+
+# 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
+models:
+- {label: unet, node: '57:28', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
+- {label: clip, node: '57:30', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae, node: '57:29', field: vae_name, cls: VAELoader, label_cn: VAE}

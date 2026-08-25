@@ -40,7 +40,8 @@ class SettingsUpdate(BaseModel):
 def read(request: Request):
     from ..engine.workflows import registry
     try:
-        templates = sorted(registry.scan_templates(registry.TEMPLATE_ROOT))
+        treg = registry.scan_templates(registry.TEMPLATE_ROOT)
+        templates = [{"id": t.id, "name": t.name} for t in treg.values()]
     except registry.ManifestError:
         templates = []
     return {
@@ -124,7 +125,8 @@ def model_choices(template: str = Query(...), request: Request = None):
             choices = info["input"]["required"][slot.field][0]
         except Exception as exc:
             raise HTTPException(502, f"ComfyUI 枚举失败（{slot.cls}.{slot.field}）：{exc}")
-        out.append({"label": slot.label, "cls": slot.cls, "field": slot.field,
+        out.append({"label": slot.label, "label_cn": slot.label_cn or slot.label,
+                    "cls": slot.cls, "field": slot.field,
                     "choices": list(choices or [])})
     return out
 

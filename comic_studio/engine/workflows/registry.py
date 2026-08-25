@@ -34,6 +34,7 @@ class ModelSlot:
     node: str
     field: str
     cls: str  # ComfyUI /object_info 的类名（枚举可选文件用）
+    label_cn: str = ""  # 设置页中文名（英文标识旁展示）
 
 
 @dataclass

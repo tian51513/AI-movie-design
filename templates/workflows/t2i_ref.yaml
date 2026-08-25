@@ -24,4 +24,4 @@ requires: []
 
 # 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
 models:
-- {label: ckpt, node: '12', field: ckpt_name, cls: CheckpointLoaderSimple}
+- {label: ckpt, node: '12', field: ckpt_name, cls: CheckpointLoaderSimple, label_cn: 整合模型 Checkpoint}

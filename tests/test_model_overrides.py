@@ -15,10 +15,16 @@ def test_manifest_model_slots():
     reg = registry.scan_templates(registry.TEMPLATE_ROOT)
     t = reg["h3_ref2va"]
     slots = {s.label: s for s in t.models}
-    assert set(slots) == {"unet", "clip", "vae_audio", "vae_video"}
+    assert set(slots) == {"unet", "clip", "vae_audio", "vae_video",
+                          "lora_realism", "lora_turbo"}
     assert slots["unet"].cls == "UNETLoader"
     assert slots["clip"].node == "92"
+    assert slots["lora_realism"].label_cn == "真实感 LoRA"
     assert reg["t2i_ref"].models[0].label == "ckpt"
+    # 七模板全覆盖：无槽位模板=枚举空、用户误读为失败（2026-08-25 真机）
+    for tid in ("h3_ref2va", "h3_i2v", "h3_t2v", "h3_fl2v", "t2i_ref",
+                "zimage_t2i", "character_views"):
+        assert reg[tid].models, f"{tid} 缺模型槽位"
 
 
 def test_filler_injects_overrides_only():
@@ -47,6 +53,7 @@ def test_choices_endpoint_and_settings_roundtrip(tmp_path):
             assert r.status_code == 200
             slots = {s["label"]: s for s in r.json()}
             assert slots["unet"]["cls"] == "UNETLoader"
+            assert slots["unet"]["label_cn"] == "主模型 UNet"
             assert "a.safetensors" in slots["unet"]["choices"]  # 来自 /object_info
             # PUT 覆盖 → 读回 → filler 端到端生效
             r = c.put("/api/settings", json={"model_overrides": {

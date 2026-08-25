@@ -77,20 +77,22 @@
        <span class="muted">默认 t2i_ref，添加新模板后在设置页改映射</span></p>
     <h3>工作流模型切换</h3>
     <p><label class="muted">模板：</label>
-       <select v-model="moTemplate" @change="loadModelChoices" style="width:200px">
-         <option v-for="t in settingsForm.model_templates" :key="t" :value="t">{{ t }}</option>
+       <select v-model="moTemplate" @change="loadModelChoices" style="width:280px">
+         <option v-for="t in settingsForm.model_templates" :key="t.id" :value="t.id">
+           {{ t.name || t.id }}</option>
        </select>
-       <span class="muted">切换 UNet 量化档等；保存后重渲生效（ComfyUI 需在线以枚举文件）</span></p>
+       <span class="muted">主模型/CLIP/VAE/LoRA 按槽位切换；保存后重渲生效（ComfyUI 需在线以枚举文件）</span></p>
     <div v-if="modelChoices.length" class="row" style="align-items:center">
       <p v-for="slot in modelChoices" :key="slot.label" style="margin:4px 0">
-        <label>{{ slot.label }}：
+        <label :title="`${slot.label}（${slot.cls}.${slot.field}）`">{{ slot.label_cn || slot.label }}：
           <select v-model="currentMO[slot.label]" style="max-width:340px">
             <option value="">（模板默认）</option>
             <option v-for="f in slot.choices" :key="f" :value="f">{{ f }}</option>
           </select></label>
       </p>
     </div>
-    <p v-else-if="moTemplate" class="muted">{{ moError || '点选模板后从 ComfyUI 枚举可选模型…' }}</p>
+    <p v-else-if="moTemplate && !moError" class="muted">该模板未声明可切换的模型槽位</p>
+    <p v-else-if="moError" class="muted" style="color:#f87171">{{ moError }}</p>
     <h3>任务路由</h3>
     <p v-for="(label, task) in taskLabels" :key="task">
       {{ label }}：

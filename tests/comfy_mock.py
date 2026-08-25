@@ -57,11 +57,12 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
                 self._json({"queue_running": [[0, pid, {}, {}, []] for pid in H.queue_running],
                             "queue_pending": []})
             elif self.path.startswith("/object_info/"):
-                # 模型枚举：四个常用加载字段都给固定清单（测试按槽位 field 取用）
+                # 模型枚举：常用加载字段都给固定清单（测试按槽位 field 取用）
                 files = ["a.safetensors", "b.safetensors"]
                 self._json({"input": {"required": {
                     "unet_name": [files], "clip_name": [files],
-                    "vae_name": [files], "ckpt_name": [files]}}})
+                    "vae_name": [files], "ckpt_name": [files],
+                    "lora_name": [files]}}})
             elif self.path.startswith("/history/"):
                 if mode == "hang":
                     self._json({})

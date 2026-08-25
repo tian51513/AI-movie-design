@@ -206,8 +206,8 @@ const methods = {
       model_overrides: JSON.parse(JSON.stringify(s.model_overrides || {})),
       model_templates: s.model_templates || [],
     };
-    this.moTemplate = this.settingsForm.model_templates.includes('h3_ref2va')
-      ? 'h3_ref2va' : (this.settingsForm.model_templates[0] || '');
+    const ids = (this.settingsForm.model_templates || []).map(t => t.id);
+    this.moTemplate = ids.includes('h3_ref2va') ? 'h3_ref2va' : (ids[0] || '');
     await this.loadModelChoices();
     this.llmTest('local', false); this.llmTest('online', false);  // 表单就绪后再自动检测
   },

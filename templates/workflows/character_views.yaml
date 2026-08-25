@@ -27,3 +27,10 @@ outputs:
 requires:
 - comfyui-krea2edit
 - comfyui-kjnodes
+
+# 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
+models:
+- {label: unet, node: '25', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
+- {label: clip, node: '21', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae, node: '9', field: vae_name, cls: VAELoader, label_cn: VAE}
+- {label: lora_quadview, node: '16', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 三视图 LoRA}
