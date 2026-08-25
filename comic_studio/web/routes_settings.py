@@ -119,6 +119,7 @@ def model_choices(template: str = Query(...), request: Request = None):
         raise HTTPException(409, "未配置 ComfyUI 地址（设置页先填 comfy.base_url）")
     comfy = ComfyClient(base_url)
     out = []
+    wf = reg[template].api_json()
     for slot in reg[template].models:
         try:
             with comfy._client() as c:
@@ -128,8 +129,9 @@ def model_choices(template: str = Query(...), request: Request = None):
             choices = choices[0]
         except Exception as exc:
             raise HTTPException(502, f"ComfyUI 枚举失败（{slot.cls}.{slot.field}）：{exc}")
+        current = str((wf.get(str(slot.node), {}).get("inputs") or {}).get(slot.field, ""))
         out.append({"label": slot.label, "label_cn": slot.label_cn or slot.label,
-                    "cls": slot.cls, "field": slot.field,
+                    "cls": slot.cls, "field": slot.field, "current": current,
                     "choices": list(choices or [])})
     return out
 

@@ -115,6 +115,14 @@ const methods = {
     Object.assign(p, await r.json());
     if (on) await this.refresh();  // 让列表立即显示「自动运行中」角标
   },
+  async deleteProject(p) {
+    if (!confirm(`确认删除项目「${p.name}」？\n分镜、任务、渲染产物与成片将全部清除（不可恢复）。`)) return;
+    if (!confirm(`再次确认：删除「${p.name}」不可恢复，确定？`)) return;
+    const r = await fetch(`/api/projects/${p.id}`, {method: 'DELETE'});
+    if (!r.ok) { alert(await r.text()); return; }
+    if (this.project && this.project.id === p.id) this.back();
+    await this.refresh();
+  },
   autopilotActionLabel() {
     const a = this.project && this.project.autopilot_action;
     return this.actionLabel(a);
@@ -222,8 +230,9 @@ const methods = {
       const slots = await r.json();
       this.modelChoices = slots;
       const mo = this.currentMO;
+      // 未覆盖的槽位预填模板当前值——用户能看到默认用的是什么再决定是否调整
       for (const slot of slots)
-        if (!(slot.label in mo)) mo[slot.label] = '';  // 缺省「模板默认」
+        if (!mo[slot.label]) mo[slot.label] = slot.current || '';
     } catch (e) { this.moError = '枚举失败：' + e; }
   },
   llmLamp(provider) {

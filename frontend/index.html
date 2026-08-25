@@ -86,7 +86,7 @@
       <p v-for="slot in modelChoices" :key="slot.label" style="margin:4px 0">
         <label :title="`${slot.label}（${slot.cls}.${slot.field}）`">{{ slot.label_cn || slot.label }}：
           <select v-model="currentMO[slot.label]" style="max-width:340px">
-            <option value="">（模板默认）</option>
+            <option value="">恢复模板默认</option>
             <option v-for="f in slot.choices" :key="f" :value="f">{{ f }}</option>
           </select></label>
       </p>
@@ -118,6 +118,8 @@
                   style="background:#dc2626">⏹ 停止自动</button>
           <button v-else @click.stop="setAutopilot(p, true)" style="background:#16a34a"
                   title="全自动：分析→参考图→门1→拆分镜→提示词→门2→渲染→门3→合成成片">🚀 一键出片</button>
+          <button @click.stop="deleteProject(p)" title="删除项目（分镜/任务/产物全清，全局资产库保留）"
+                  style="background:#7f1d1d;font-size:12px;padding:4px 8px;margin-left:4px">🗑</button>
         </div>
       </div>
       <div class="card">

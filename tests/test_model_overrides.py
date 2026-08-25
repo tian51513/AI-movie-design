@@ -54,6 +54,7 @@ def test_choices_endpoint_and_settings_roundtrip(tmp_path):
             slots = {s["label"]: s for s in r.json()}
             assert slots["unet"]["cls"] == "UNETLoader"
             assert slots["unet"]["label_cn"] == "主模型 UNet"
+            assert slots["unet"]["current"].endswith(".safetensors")  # 模板内置当前值
             assert "a.safetensors" in slots["unet"]["choices"]  # 来自 /object_info
             # PUT 覆盖 → 读回 → filler 端到端生效
             r = c.put("/api/settings", json={"model_overrides": {
