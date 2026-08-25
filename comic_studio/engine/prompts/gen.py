@@ -76,6 +76,22 @@ def ledger_assets(shot_row) -> list[int]:
             + assets.get("props", []))
 
 
+_REQUIRED_SECTIONS = ("subject_definitions:", "summary:", "retention_analysis:",
+                      "detailed_description:", "overall_soundscape:", "non_diegetic_music:")
+
+
+def structure_check(text: str, mode: str | None) -> tuple[bool, str]:
+    """结构化模式（B/C/D）必需分段头校验；A/None 放行（散文模式）。
+    2026-08-25：规范早有骨架要求但无校验，模型实际产出散文被放行。"""
+    if mode is None or mode == "A":
+        return True, ""
+    low = (text or "").lower()
+    missing = [s for s in _REQUIRED_SECTIONS if s not in low]
+    if missing:
+        return False, f"缺少必需分段: {missing}（{mode} 模式要求结构化骨架）"
+    return True, ""
+
+
 def generate_video_prompt(db, shot_id, client, backend: str = "h3",
                           mode: str | None = None,
                           max_attempts: int = 3) -> str:
@@ -98,11 +114,13 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
         if backend != "h3":
             return text
         bound = len(ledger_assets(shot))  # 台账绑定资产数（ref 图数量）
-        ok, msg = validate_h3(text, max(4, int(shot["duration"])), proj["aspect_ratio"],
-                              images=bound, videos=0)
-        if ok and "可自行补充" not in text:
+        sok, smsg = structure_check(text, mode)
+        ok, msg = (validate_h3(text, max(4, int(shot["duration"])), proj["aspect_ratio"],
+                               images=bound, videos=0)
+                   if sok else (False, smsg))
+        if sok and ok and "可自行补充" not in text:
             return text
-        last_err = msg or "输出含占位语"
+        last_err = (smsg or msg) or "输出含占位语"
         messages += [{"role": "assistant", "content": text},
                      {"role": "user", "content":
                       f"上一版未通过机械校验：{last_err}。请修正后重新输出完整提示词，只输出提示词。"}]

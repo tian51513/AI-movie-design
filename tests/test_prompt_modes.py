@@ -41,6 +41,7 @@ def test_generate_uses_project_mode(tmp_path):
 
     generate_video_prompt(db, sid, FakeLLM(), backend="h3")
     assert PROMPT_MODES["A"]["spec"][:30] in captured["system"]
-    # 显式 mode 覆盖项目设置
-    generate_video_prompt(db, sid, FakeLLM(), backend="h3", mode="D")
+    # 显式 mode 覆盖项目设置（D 的结构校验会拒散文回复——system 已捕获即达成测试目的）
+    with pytest.raises(RuntimeError):
+        generate_video_prompt(db, sid, FakeLLM(), backend="h3", mode="D")
     assert PROMPT_MODES["D"]["spec"][:30] in captured["system"]

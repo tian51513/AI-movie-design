@@ -18,6 +18,33 @@ _COMMON_TAIL = """
 - 目标时长与画幅由系统注入镜头上下文，提示词内不重复声明。
 """
 
+# 官方结构骨架（few-shot 填空模板，2026-08-25：此前只"要求列出"分段，
+# 模型实际产出散文——规范升级为给完整骨架照抄，配合 gen.structure_check 硬校验）
+_SKELETON = """
+必须严格按以下骨架输出——节标题逐字使用、独占一行，占位内容替换为实际描述：
+
+subject_definitions:
+<Subject 1> 是来自 <Picture 1> 的人物，其外观由该图提供
+（每个出场角色一条；无参考图的角色写：仅文字定义，<外貌概述>）
+
+summary:
+[一句话：参考来源 + 本镜头核心内容与运镜]
+
+retention_analysis:
+<Subject 1>（出现于 [Shot 1]）：fully_preserved - 保持<人物>的<发型/服装/身份特征>
+（每个保持要素一条）
+
+detailed_description:
+[环境与光线一段]
+[Shot 1] <Subject N> ……（按本模式的具体要求填写）
+
+overall_soundscape:
+[环境音描述]
+
+non_diegetic_music:
+无画外配乐。/ [配乐描述]
+"""
+
 PROMPT_MODES = {
     "A": {
         "name": "散文单镜（快）",
@@ -27,15 +54,15 @@ PROMPT_MODES = {
     },
     "B": {
         "name": "结构化·简洁",
-        "spec": """输出结构化提示词，各节标题独占一行：
-subject_definitions: / summary: / retention_analysis: / detailed_description: / overall_soundscape: / non_diegetic_music:
+        "spec": _SKELETON + """
 B 模式教训：detailed_description 仍须足够详细（每要素一句以上），分节不等于可以简略。
 单镜头描述，无多镜切换。
 """ + _COMMON_TAIL,
     },
     "C": {
         "name": "结构化·高密度构图",
-        "spec": """在 B 的分节结构上，detailed_description 必须显式包含构图模块：
+        "spec": _SKELETON + """
+在 B 的要求上，detailed_description 必须显式包含构图模块：
 - 景别与机位（如 中远景平视）、景深与光线
 - 每人站位（画面左/中/右三分之一处）、朝向（正面/侧面/四分之三侧面）、画面高度占比
 - 两人最小间距约束（同框人物保持三米以上安全距离，动作互不可及）
@@ -44,7 +71,8 @@ C 模式教训：站位约束必须配合双参考图才可靠；只写构图不
     },
     "D": {
         "name": "结构化·多镜电影递进（默认）",
-        "spec": """在 C 的全部要求上，detailed_description 使用多镜递进结构：
+        "spec": _SKELETON + """
+在 C 的全部要求上，detailed_description 使用多镜递进结构：
 - [Shot 1] 开场镜：全景/大全景交代环境与人物关系（远景时注明保持人物发型服装轮廓特征）
 - [Shot 2] 主动作近景：手持微晃/推近等电影运镜，聚焦核心动作
 - [Shot 3] 反应镜：切至另一人物中景，低角度/轮廓光等电影光线语言，含中文台词
