@@ -311,8 +311,9 @@
       <span class="muted" v-if="splitRunning">正在拆解分镜，请稍候…</span>
     </p>
     <p v-if="shots.length" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <button @click="genAllPrompts" :disabled="project.stage!=='storyboard_ready'"
-              :title="project.stage!=='storyboard_ready' ? `阶段 ${stageName(project.stage)} 不能生成提示词（需 分镜就绪）` : '为缺提示词的镜头批量入队'">
+      <button @click="genAllPrompts"
+              :disabled="!['assets_ready','storyboard_ready'].includes(project.stage)"
+              :title="['assets_ready','storyboard_ready'].includes(project.stage) ? '为缺提示词的镜头批量入队' : `阶段 ${stageName(project.stage)} 不能生成提示词（需 资产就绪后拆完分镜）`">
         批量生成提示词</button>
       <button v-if="allShotsReady && project.stage==='assets_ready'" @click="passGate2" style="background:#16a34a">✓ 确认分镜（过门2）</button>
       <button v-if="project.stage==='storyboard_ready'" @click="renderAll">批量渲染</button>
@@ -337,9 +338,9 @@
         </select>
         <span style="flex:1"></span>
         <button @click="regenPrompt(s, !!s.prompt)"
-                :disabled="(s.prompt_job && s.prompt_job.status==='running') || project.stage!=='storyboard_ready'"
-                :title="project.stage!=='storyboard_ready'
-                          ? `阶段 ${stageName(project.stage)} 不能生成提示词（需 分镜就绪）`
+                :disabled="(s.prompt_job && s.prompt_job.status==='running') || !['assets_ready','storyboard_ready'].includes(project.stage)"
+                :title="!['assets_ready','storyboard_ready'].includes(project.stage)
+                          ? `阶段 ${stageName(project.stage)} 不能生成提示词（需 资产就绪后拆完分镜）`
                           : (s.prompt ? '已有提示词时重生成会换一版（force）' : '为本镜生成视频提示词')"
                 style="font-size:12px;padding:3px 8px">
           {{ s.prompt_job && s.prompt_job.status==='running' ? '生成中…' : (s.prompt ? '重生提示词' : '生成提示词') }}</button>
