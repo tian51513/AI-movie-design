@@ -22,7 +22,7 @@ SPEED_STEPS = {"快速": 8, "标准": 16, "高质量": 25}
 def pick_template_id(shot_row) -> str:
     wt = shot_row["workflow_type"] or ""
     if wt == "fl2v":
-        return "h3_i2v"
+        return "h3_fl2v"
     if wt == "t2v":
         return "h3_t2v"
     return "h3_ref2va"
@@ -96,6 +96,12 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
 
     tmpl_id = pick_template_id(shot)
     reg = registry.scan_templates(registry.TEMPLATE_ROOT)
+    # 关键帧接线（方案A 一期）：fl2v 走 h3_fl2v 首尾帧插值；
+    # kf_end 缺失时降级 h3_i2v（仅首帧），二期关键帧任务补齐 kf_* 后自动升回
+    shot_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}")
+    kf_start, kf_end = shot_dir / "kf_start.png", shot_dir / "kf_end.png"
+    if tmpl_id == "h3_fl2v" and not kf_end.exists():
+        tmpl_id = "h3_i2v"
     template = reg[tmpl_id]
 
     prompt = shot["prompt"]
@@ -119,10 +125,12 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         params["aspect"] = aspect_val
 
     # Images
+    if first_frame_png is None and tmpl_id in ("h3_fl2v", "h3_i2v") and kf_start.exists():
+        first_frame_png = kf_start  # 无上镜衔接时，本镜关键帧首图兜底
     if first_frame_png:
         images = [{"slot": "first", "path": str(first_frame_png)}]
-    elif shot["workflow_type"] == "t2v":
-        images = []
+    elif shot["workflow_type"] == "t2v" or tmpl_id in ("h3_fl2v", "h3_i2v"):
+        images = []  # i2v/fl2v 无首帧——交由 I1 快失败给出明确报错
     else:
         raw_refs = collect_ref_images(db, shot)
         if not raw_refs:
@@ -132,6 +140,8 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         images = [{"slot": r["slot"],
                    "path": str(data_to_abs(data_dir, r["path"]))}
                   for r in raw_refs]
+    if tmpl_id == "h3_fl2v":
+        images.append({"slot": "last", "path": str(kf_end)})
 
     output_ctx = {"project": proj["slug"], "asset": f"shot-{shot['seq']}"}
     model_overrides = (get_setting(db, "model_overrides") or {}).get(template.id)

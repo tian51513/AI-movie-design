@@ -46,7 +46,7 @@ def _shot_draft(**kw):
 
 def test_pick_template_mapping():
     assert pick_template_id({"workflow_type": "ref2va"}) == "h3_ref2va"
-    assert pick_template_id({"workflow_type": "fl2v"}) == "h3_i2v"
+    assert pick_template_id({"workflow_type": "fl2v"}) == "h3_fl2v"
     assert pick_template_id({"workflow_type": "t2v"}) == "h3_t2v"
     assert pick_template_id({"workflow_type": None}) == "h3_ref2va"
 
@@ -231,3 +231,41 @@ def test_version_sort_numeric_not_lexicographic(tmp_path):
     vs = _shot_versions_in(d)
     assert vs == ["video.mp4", "video_v1.mp4", "video_v2.mp4", "video_v10.mp4"]
     assert _max_version_number(vs) == 10
+
+
+def test_fl2v_uses_both_keyframes_when_present(tmp_path, monkeypatch):
+    """关键帧接线（方案A 一期）：fl2v → h3_fl2v；shots/<seq>/kf_start.png + kf_end.png
+    → first/last 双槽上传（首尾帧插值）。"""
+    db, pid, _ = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(workflow_type="fl2v", character_ids=[])])[0]
+    update_shot(db, sid, {"prompt": "转身。"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    kd = tmp_path / "data" / "projects" / "渲染剧" / "shots" / "1"
+    kd.mkdir(parents=True)
+    (kd / "kf_start.png").write_bytes(b"\x89PNG")
+    (kd / "kf_end.png").write_bytes(b"\x89PNG")
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok", video=True) as m:
+        out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        assert out.exists()
+        assert any("__first" in u for u in m.uploads), m.uploads
+        assert any("__last" in u for u in m.uploads), m.uploads
+
+
+def test_fl2v_falls_back_to_i2v_without_end_frame(tmp_path, monkeypatch):
+    """一期降级：无 kf_end.png → 用 h3_i2v（仅首帧）；kf_start 可作首帧来源。"""
+    db, pid, _ = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(workflow_type="fl2v", character_ids=[])])[0]
+    update_shot(db, sid, {"prompt": "转身。"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    kd = tmp_path / "data" / "projects" / "渲染剧" / "shots" / "1"
+    kd.mkdir(parents=True)
+    (kd / "kf_start.png").write_bytes(b"\x89PNG")
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok", video=True) as m:
+        out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        assert out.exists()
+        assert any("__first" in u for u in m.uploads)
+        assert not any("__last" in u for u in m.uploads)
