@@ -92,6 +92,9 @@ const methods = {
     try { this.themes = await (await fetch('/api/themes')).json(); }
     catch (e) { alert('主题列表加载失败：' + e); }
   },
+  templatesOfType(type) {
+    return (this.settingsForm.model_templates || []).filter(t => t.type === type);
+  },
   async loadThemesManage() {
     try { this.themesManage = await (await fetch('/api/themes')).json(); }
     catch (e) { /* 忽略 */ }
@@ -260,6 +263,7 @@ const methods = {
       routing: { ...s.llm_routing },
       comfy: { ...s.comfy },
       t2i_tm: s.template_map?.t2i || '',
+      cvTm: s.template_map?.character_views || '',
       model_overrides: JSON.parse(JSON.stringify(s.model_overrides || {})),
       model_templates: s.model_templates || [],
     };
@@ -358,7 +362,8 @@ const methods = {
       },
       llm_routing: { ...this.settingsForm.routing },
       comfy: { base_url: this.settingsForm.comfy.base_url || '' },
-      template_map: { t2i: this.settingsForm.t2i_tm || null },
+      template_map: { t2i: this.settingsForm.t2i_tm || null,
+                      character_views: this.settingsForm.cvTm || null },
       model_overrides: this.settingsForm.model_overrides,
     };
     const resp = await fetch('/api/settings', {

@@ -59,14 +59,15 @@ def build_gen_prompt(asset_row, style: str = "", era: str = "",
     return prompt, ctx
 
 
-def _t2i_to_file(db, comfy, tmpl, prompt, dest, ctx, job, label):
-    """单段 t2i：组工作流 → 提交 → 等待 → 下载到 dest（主图与回退路径共用）。"""
+def _t2i_to_file(db, comfy, tmpl, prompt, dest, ctx, job, label, images=None):
+    """单段 t2i：组工作流 → 提交 → 等待 → 下载到 dest（主图与回退路径共用）。
+    images：模板声明图片槽时传入（如文+图重绘的 ref 槽）。"""
     if comfy is None:
         raise RuntimeError("gen_ref 需要 ComfyUI 端点（settings.comfy.base_url）")
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
         params={"seed": random.randint(0, 2**31 - 1)},
-        images=None, output_ctx=ctx,
+        images=images, output_ctx=ctx,
         model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))
     for up in uploads:
         comfy.upload_image(up["path"], up["name"])
@@ -122,8 +123,27 @@ def handle_gen_ref(db, data_dir, job, comfy):
         if stage in ("all", "main") or not main_png.exists():
             main_prompt, _ = build_gen_prompt(asset, style=style, era=era,
                                               variant="main")
-            _t2i_to_file(db, comfy, resolve_template(db, "t2i"), main_prompt,
-                         main_png, ctx, job, label=f"资产「{asset['name']}」主图")
+            # 主图模板若声明图片槽（文+图重绘类，如 xf_zimage_ti2i）：
+            # 有主图 → 作 ref 传入重绘；无主图 → 引导用纯文生图（zimage_t2i）
+            main_tmpl = resolve_template(db, "t2i")
+            main_images = None
+            if main_tmpl.inject_images:
+                if main_png.exists():
+                    main_images = [{"slot": main_tmpl.inject_images[0]["slot"],
+                                    "path": str(main_png)}]
+                else:
+                    from .workflows import registry as _reg
+                    boot = _reg.scan_templates(_reg.TEMPLATE_ROOT).get("zimage_t2i")
+                    if boot is None or boot.inject_images:
+                        raise ValueError(
+                            f"主图模板 {main_tmpl.id} 需要图片输入，且无现有主图可传"
+                            f"（可先把 t2i 映射切回纯文生图模板生成首张主图）")
+                    main_tmpl = boot
+                    emit_log(db, "comfy", "info",
+                             f"无现有主图，引导用纯文生图 {boot.id} 生成首张主图",
+                             project_id=job["project_id"], job_id=job["id"])
+            _t2i_to_file(db, comfy, main_tmpl, main_prompt, main_png, ctx, job,
+                         label=f"资产「{asset['name']}」主图", images=main_images)
         if stage in ("all", "views"):
             sheet_prompt, _ = build_gen_prompt(asset, style=style, era=era)
             sheet_prompt += "。" + VIEWS_DERIVE

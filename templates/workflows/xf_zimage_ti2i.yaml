@@ -1,0 +1,27 @@
+id: xf_zimage_ti2i
+type: t2i
+name: 小枫 Z-Image 文+图生图（重绘）
+file: xf_zimage_ti2i.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '28'
+    field: value
+  params:
+    seed:
+      node: '4'
+      field: seed
+  images:
+  - node: '23'
+    field: image
+    slot: ref
+outputs:
+- node: '10'
+  filename_prefix: cs/{project}/{asset}
+requires: []
+
+# 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
+models:
+- {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
+- {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae, node: '3', field: vae_name, cls: VAELoader, label_cn: VAE}

@@ -42,7 +42,8 @@ def read(request: Request):
     from ..engine.workflows import registry
     try:
         treg = registry.scan_templates(registry.TEMPLATE_ROOT)
-        templates = [{"id": t.id, "name": t.name} for t in treg.values()]
+        templates = [{"id": t.id, "name": t.name, "type": t.type}
+                     for t in treg.values()]
     except registry.ManifestError:
         templates = []
     return {

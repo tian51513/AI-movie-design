@@ -1,0 +1,153 @@
+{
+ "1": {
+  "inputs": {
+   "unet_name": "z_image_turbo_bf16.safetensors",
+   "weight_dtype": "default"
+  },
+  "class_type": "UNETLoader",
+  "_meta": {
+   "title": "UNet加载器"
+  }
+ },
+ "2": {
+  "inputs": {
+   "clip_name": "qwen_3_4b-fp8.safetensors",
+   "type": "qwen_image",
+   "device": "default"
+  },
+  "class_type": "CLIPLoader",
+  "_meta": {
+   "title": "加载CLIP"
+  }
+ },
+ "3": {
+  "inputs": {
+   "vae_name": "ae.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "加载VAE"
+  }
+ },
+ "4": {
+  "inputs": {
+   "seed": 1032206242285638,
+   "steps": 10,
+   "cfg": 5,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "denoise": 0.75,
+   "model": [
+    "1",
+    0
+   ],
+   "positive": [
+    "5",
+    0
+   ],
+   "negative": [
+    "31",
+    0
+   ],
+   "latent_image": [
+    "26",
+    0
+   ]
+  },
+  "class_type": "KSampler",
+  "_meta": {
+   "title": "K采样器"
+  }
+ },
+ "5": {
+  "inputs": {
+   "text": [
+    "28",
+    0
+   ],
+   "clip": [
+    "2",
+    0
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP文本编码"
+  }
+ },
+ "8": {
+  "inputs": {
+   "samples": [
+    "4",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE解码"
+  }
+ },
+ "10": {
+  "inputs": {
+   "filename_prefix": "ComfyUI",
+   "images": [
+    "8",
+    0
+   ]
+  },
+  "class_type": "SaveImage",
+  "_meta": {
+   "title": "保存图像"
+  }
+ },
+ "23": {
+  "inputs": {
+   "image": "0908061219e65f38fc461eb312.jpg"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "加载图像"
+  }
+ },
+ "26": {
+  "inputs": {
+   "pixels": [
+    "23",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  },
+  "class_type": "VAEEncode",
+  "_meta": {
+   "title": "VAE编码"
+  }
+ },
+ "28": {
+  "inputs": {
+   "value": "保持图片人物的样貌，身体斜对镜头，高清屏幕画质，衣服穿着校服，下身穿着白色短裙，全身照正面视角，腿部与上半生照，微风，阳光晒脸上，长发，大眼睛，，东方面孔女子写真摄影。在公园中，一头黑色长卷发。绝美的面容，精致的妆容，头上的丝带蝴蝶结增添了几分娇俏，随风飘动突显头发凌乱美，灵动，水润的唇微微张开，，颗粒质感，柯尼卡胶卷质感，蓝调，"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "正向提示词（多行）"
+  }
+ },
+ "31": {
+  "inputs": {
+   "conditioning": [
+    "5",
+    0
+   ]
+  },
+  "class_type": "ConditioningZeroOut",
+  "_meta": {
+   "title": "条件零化"
+  }
+ }
+}

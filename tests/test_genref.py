@@ -202,3 +202,38 @@ def test_two_stage_stage_control(tmp_path, monkeypatch):
         assert len(m.prompts) == 2  # 只新增一段
         assert "三视图" in m.prompts[1]["prompt"]["24"]["inputs"]["prompt"]
         assert (tmp_path / "data" / lib / "views" / "sheet.png").exists()
+
+
+def test_main_image_template_with_ref_slot(tmp_path, monkeypatch):
+    """小枫文+图模板（xf_zimage_ti2i）：有主图时作 ref 槽传入重绘；
+    无主图时引导用纯文生图（zimage_t2i）。"""
+    from pathlib import Path
+    db, pid = _setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"t2i": "xf_zimage_ti2i"})
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.assets import persist_assets, list_project_assets, get_asset
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="萧炎", appearance="黑发少年", tags=[])],
+                      scenes=[], props=[]))
+    asset = list_project_assets(db, pid)[0]
+    lib = get_asset(db, asset["id"])["library_dir"]
+    main = tmp_path / "data" / lib / "main.png"
+    from comic_studio.engine.comfy.client import ComfyClient
+    # 场景一：无主图 → 引导 zimage_t2i（纯文生图节点 57:27）
+    jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                      resource="gpu_comfy", payload={"asset_id": asset["id"]})
+    with comfy_server("ok") as m:
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+        main_text = m.prompts[0]["prompt"]["57:27"]["inputs"]["text"]
+        assert "萧炎" in main_text  # 走了 zimage_t2i
+        assert main.exists()
+    # 场景二：已有主图 → 文+图重绘（节点 28 注入 + ref 槽上传）
+    jid2 = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                       resource="gpu_comfy", payload={"asset_id": asset["id"],
+                                                      "stage": "main"})
+    with comfy_server("ok") as m2:
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid2), ComfyClient(m2.base_url))
+        wf2 = m2.prompts[0]["prompt"]
+        assert "萧炎" in wf2["28"]["inputs"]["value"]      # 文本进了文+图模板
+        assert wf2["23"]["inputs"]["image"].startswith("cs__")  # 主图作 ref 上传
