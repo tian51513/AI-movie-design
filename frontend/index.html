@@ -280,6 +280,11 @@
             <button @click="regenAsset(a, 'views')" :disabled="assetBusy(a)"
                     style="margin-top:6px;margin-left:4px;font-size:12px;padding:3px 8px"
                     title="仅以当前主图为种子重新派生三视图（主图不变）">三视图</button>
+            <label style="margin-top:6px;margin-left:4px;font-size:12px;padding:3px 8px;background:#7c3aed;border-radius:6px;cursor:pointer"
+                   title="人工上传主图（替换生成版）；上传后点「三视图」从新主图重派生">
+              ⬆ 上传主图<input type="file" accept=".png,.jpg,.jpeg,.webp"
+                     style="display:none" @change="e => uploadMain(a, e.target.files[0])">
+            </label>
           </template>
           <button @click="editAssetDetail(a)"
                   title="修正外貌/服装描述（同步资产库；引用此资产的分镜会标 stale）"

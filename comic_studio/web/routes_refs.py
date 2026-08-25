@@ -2,7 +2,7 @@
 """参考图生成/队列/视图/门1 接口（spec §5 门1、§8 队列）。"""
 from pathlib import Path
 
-from fastapi import APIRouter, Body, HTTPException, Request
+from fastapi import APIRouter, Body, File, HTTPException, Request, UploadFile
 
 from ..engine.assets import get_asset, list_project_assets
 from ..engine.jobs import enqueue_job
@@ -26,6 +26,25 @@ def _has_views(views_dir: Path) -> bool:
     return any(f for ext in IMAGE_EXTS for f in views_dir.glob(f"*{ext}"))
 
 
+@router.post("/api/assets/{asset_id}/main-image")
+def upload_main_image(request: Request, asset_id: int,
+                      file: UploadFile = File(...)):
+    """人工上传主图（替换生成版，存 library/<dir>/main.png；jpg/webp 也存为
+    main.png，ComfyUI 按内容读取）。上传后可点「三视图」从新主图重派生。"""
+    db = request.app.state.db
+    asset = get_asset(db, asset_id)
+    if asset is None:
+        raise HTTPException(404, "资产不存在")
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in (".png", ".jpg", ".jpeg", ".webp"):
+        raise HTTPException(422, f"只接受图片文件（png/jpg/jpeg/webp），得到 {ext or '无后缀'}")
+    dest = data_to_abs(request.app.state.data_dir, asset["library_dir"]) / "main.png"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(file.file.read())
+    from ..engine.logbus import emit as emit_log
+    emit_log(db, "comfy", "info", f"资产「{asset['name']}」主图已人工上传",
+             project_id=asset["source_project"])
+    return {"path": f"{asset['library_dir']}/main.png"}
 @router.post("/api/assets/{asset_id}/gen", status_code=202)
 def gen_asset(request: Request, asset_id: int, body: dict | None = Body(default=None)):
     """重新生成参考图。stage：all=主图+三视图两段（默认）；main=仅主图；

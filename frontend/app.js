@@ -232,6 +232,15 @@ const methods = {
       j => j.type === 'gen_ref' && j.asset_id === a.id &&
            (j.status === 'pending' || j.status === 'running'));
   },
+  async uploadMain(a, file) {
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch(`/api/assets/${a.id}/main-image`, { method: 'POST', body: fd });
+    if (!r.ok) { alert('上传失败：' + (await r.json()).detail); return; }
+    alert('主图已上传。可点「三视图」从新主图重新派生');
+    await this.loadDetail();
+  },
   async regenAsset(a, stage = 'all') {
     const r = await fetch(`/api/assets/${a.id}/gen`, {
       method: 'POST', headers: {'Content-Type': 'application/json'},
