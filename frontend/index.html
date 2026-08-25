@@ -73,8 +73,8 @@
                title="卸载模型并清理 ComfyUI 显存/内存（渲完想腾显存时用；平时不清理反而更快）">
          {{ freeingComfy ? '清理中…' : '清理显存' }}</button></p>
     <h3>工作流模板映射</h3>
-    <p><label class="muted">t2i 模板 ID：</label><input v-model="settingsForm.t2i_tm" placeholder="t2i_ref" style="width:40%">
-       <span class="muted">默认 t2i_ref，添加新模板后在设置页改映射</span></p>
+    <p><label class="muted">参考图生成模板（t2i 模板 ID）：</label><input v-model="settingsForm.t2i_tm" placeholder="t2i_ref" style="width:40%">
+       <span class="muted">决定资产参考图用哪个文生图工作流；默认 t2i_ref，从 ComfyUI 导出新模板后在此换映射</span></p>
     <h3>工作流模型切换</h3>
     <p><label class="muted">模板：</label>
        <select v-model="moTemplate" @change="loadModelChoices" style="width:280px">
