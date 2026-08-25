@@ -121,8 +121,10 @@ def model_choices(template: str = Query(...), request: Request = None):
     for slot in reg[template].models:
         try:
             with comfy._client() as c:
-                info = c.get(f"{base_url}/object_info/{slot.cls}").json()
-            choices = info["input"]["required"][slot.field][0]
+                info = c.get(f"{base_url}/object_info/{slot.cls}").json()[slot.cls]
+            choices = (info["input"]["required"].get(slot.field)
+                       or info["input"].get("optional", {}).get(slot.field))
+            choices = choices[0]
         except Exception as exc:
             raise HTTPException(502, f"ComfyUI 枚举失败（{slot.cls}.{slot.field}）：{exc}")
         out.append({"label": slot.label, "label_cn": slot.label_cn or slot.label,
