@@ -137,3 +137,33 @@ def test_gen_prompt_zimage_turbo_tail():
     p_prop, _ = build_gen_prompt(dict(row, kind="prop",
                                       appearance_json='{"detail":"剑"}'))
     assert "材质纹理" in p_prop
+
+
+def test_character_two_stage_main_then_views(tmp_path, monkeypatch):
+    """两段式（2026-08-25 需求）：zimage 主图（可重复生成）→ Krea2 四视图派生。
+    未映射 character_views 时回退单段（旧用例覆盖）。"""
+    from pathlib import Path
+    db, pid = _setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"t2i": "zimage_t2i",
+                                     "character_views": "character_views"})
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.assets import persist_assets, list_project_assets, get_asset
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="萧炎", appearance="黑发少年", tags=[])],
+                      scenes=[], props=[]))
+    asset = list_project_assets(db, pid)[0]
+    jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                      resource="gpu_comfy", payload={"asset_id": asset["id"]})
+    with comfy_server("ok") as m:
+        from comic_studio.engine.comfy.client import ComfyClient
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+        assert len(m.prompts) == 2  # 主图 + 四视图两段
+        main_text = m.prompts[0]["prompt"]["57:27"]["inputs"]["text"]
+        assert "萧炎" in main_text and "立绘" in main_text and "三视图" not in main_text
+        views_wf = m.prompts[1]["prompt"]
+        assert "三视图" in views_wf["24"]["inputs"]["prompt"]
+        assert views_wf["17"]["inputs"]["image"].startswith("cs__")  # 主图作种子上传
+        lib = get_asset(db, asset["id"])["library_dir"]
+        assert (tmp_path / "data" / lib / "main.png").exists()
+        assert (tmp_path / "data" / lib / "views" / "sheet.png").exists()
