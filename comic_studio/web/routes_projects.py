@@ -34,23 +34,30 @@ def delete_project(request: Request, project_id: int):
             except Exception:
                 pass  # ComfyUI 不可达不阻塞删除
     conn = db.connect()
-    # 全局资产保留（library 跨项目复用），仅清来源引用
-    conn.execute("UPDATE assets SET source_project=NULL WHERE source_project=?", (project_id,))
-    conn.execute("DELETE FROM jobs WHERE project_id=?", (project_id,))
-    # 镜间接力链：先删叶子（无人 depends_on 它的镜）再循环——单条 DELETE 会被
-    # 自引用 FK 逐行检查卡住（真机 2026-08-25 Internal Server Error）
-    for _ in range(1000):
-        cur = conn.execute(
-            "DELETE FROM shots WHERE project_id=? AND id NOT IN ("
-            "SELECT depends_on FROM shots WHERE project_id=? AND depends_on IS NOT NULL)",
-            (project_id, project_id))
-        if cur.rowcount == 0:
-            break
-    for sql in ("DELETE FROM project_assets WHERE project_id=?",
-                "DELETE FROM logs WHERE project_id=?",
-                "DELETE FROM projects WHERE id=?"):
-        conn.execute(sql, (project_id,))
-    conn.commit()
+    try:
+        # 删除顺序按外键依赖：logs(job_id→jobs) 先于 jobs；
+        # jobs(shot_id→shots) 先于 shots；shots 自引用链按叶子序（见下）
+        conn.execute("DELETE FROM logs WHERE project_id=?", (project_id,))
+        conn.execute("DELETE FROM jobs WHERE project_id=?", (project_id,))
+        # 镜间接力链：先删叶子（无人 depends_on 它的镜）再循环——单条 DELETE 会被
+        # 自引用 FK 逐行检查卡住（真机 2026-08-25 Internal Server Error）
+        for _ in range(1000):
+            cur = conn.execute(
+                "DELETE FROM shots WHERE project_id=? AND id NOT IN ("
+                "SELECT depends_on FROM shots WHERE project_id=? AND depends_on IS NOT NULL)",
+                (project_id, project_id))
+            if cur.rowcount == 0:
+                break
+        # 全局资产保留（library 跨项目复用），仅清来源引用
+        conn.execute("UPDATE assets SET source_project=NULL WHERE source_project=?",
+                     (project_id,))
+        for sql in ("DELETE FROM project_assets WHERE project_id=?",
+                    "DELETE FROM projects WHERE id=?"):
+            conn.execute(sql, (project_id,))
+        conn.commit()
+    except Exception:
+        conn.rollback()  # 失败必须回滚——否则持锁把 worker 线程锁死（真机教训）
+        raise
     import shutil
     shutil.rmtree(Path(request.app.state.data_dir) / "projects" / row["slug"],
                   ignore_errors=True)

@@ -99,3 +99,14 @@ def test_delete_project_with_depends_on_chain(tmp_path):
     with c:
         r = c.delete(f"/api/projects/{pid}")
     assert r.status_code == 200
+
+
+def test_delete_project_with_job_logs(tmp_path):
+    """真机 2026-08-25：logs.job_id 引用 jobs——jobs 先删会 FK 违约（顺序修正回归）。"""
+    db, pid, c = _client(tmp_path)
+    jid = jobs.enqueue_job(db, "gen_shot", project_id=pid, payload={})
+    from comic_studio.engine.logbus import emit as emit_log
+    emit_log(db, "comfy", "info", "带 job_id 的日志", project_id=pid, job_id=jid)
+    with c:
+        assert c.delete(f"/api/projects/{pid}").status_code == 200
+    assert all(v == 0 for v in _counts(db, pid).values())

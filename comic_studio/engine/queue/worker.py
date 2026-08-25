@@ -57,7 +57,13 @@ class Worker(threading.Thread):
         db.migrate()
         self._db = db
         while not self.stop_event.is_set():
-            job = claim_next_job(db, self.handler_types)
+            try:
+                job = claim_next_job(db, self.handler_types)
+            except Exception:
+                # 锁竞争等瞬时异常不得杀死 worker 线程（真机 2026-08-25：
+                # 删除项目持锁时 BEGIN IMMEDIATE 超时，线程阵亡队列停摆）
+                time.sleep(1)
+                continue
             if job is None:
                 time.sleep(self.poll_interval)
                 continue
