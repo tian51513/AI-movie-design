@@ -158,7 +158,7 @@
               @click="paramsOpen=!paramsOpen">{{ videoParamsLabel() }}</span>
         <span v-if="project.autopilot" class="pill" style="background:#7c2d12;color:#fdba74"
               :title="'autopilot 当前动作：' + (project.autopilot_action?.detail || '')">⚡ {{ autopilotActionLabel() }}</span>
-        <button v-if="project.autopilot" @click="setAutopilot(project, false)"
+        <button v-if="project.autopilot && project.stage!=='merged'" @click="setAutopilot(project, false)"
                 style="background:#dc2626;font-size:13px;padding:3px 10px">⏹ 停止自动</button></h2>
     <div v-if="paramsOpen" class="card"
          style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:8px 0;padding:10px 14px">
@@ -254,9 +254,9 @@
       <button @click="genAllPrompts" :disabled="project.stage!=='storyboard_ready'"
               :title="project.stage!=='storyboard_ready' ? `阶段 ${stageName(project.stage)} 不能生成提示词（需 分镜就绪）` : '为缺提示词的镜头批量入队'">
         批量生成提示词</button>
-      <button v-if="allShotsReady" @click="passGate2" style="background:#16a34a">✓ 确认分镜（过门2）</button>
+      <button v-if="allShotsReady && project.stage==='assets_ready'" @click="passGate2" style="background:#16a34a">✓ 确认分镜（过门2）</button>
       <button v-if="project.stage==='storyboard_ready'" @click="renderAll">批量渲染</button>
-      <button v-if="allShotsRendered" @click="passGate3" style="background:#16a34a">✓ 确认渲染（门3）</button>
+      <button v-if="allShotsRendered && project.stage==='storyboard_ready'" @click="passGate3" style="background:#16a34a">✓ 确认渲染（门3）</button>
       <button v-if="project.stage==='rendered'" @click="startMerge"
               style="background:#7c3aed">🎬 合成成片</button>
     </p>

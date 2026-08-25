@@ -122,6 +122,13 @@ def tick(db, data_dir, project_id) -> dict:
     if act is None:
         return {"action": "none"}
     action = act["action"]
+    if action == "done":
+        # 全流程完成 → 自动关闭开关（真机 2026-08-25：完成后「停止自动」仍挂着）
+        conn = db.connect()
+        conn.execute("UPDATE projects SET autopilot=0 WHERE id=?", (project_id,))
+        conn.commit()
+        emit_log(db, "autopilot", "info", "autopilot：全流程完成，自动关闭", project_id=project_id)
+        return act
     if action == "analyze":
         from .pipeline_jobs import enqueue_llm_job
         enqueue_llm_job(db, "analyze", project_id=project_id, payload={"project_id": project_id})

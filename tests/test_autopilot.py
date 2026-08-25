@@ -147,3 +147,16 @@ def test_assets_ready_bridge_after_split(tmp_path):
     assert next_action(db, tmp_path / "data", pid)["action"] == "gate2"
     tick(db, tmp_path / "data", pid)
     assert get_project(db, pid)["stage"] == "storyboard_ready"
+
+
+def test_autopilot_turns_off_when_done(tmp_path):
+    """全流程完成（merged）→ tick 自动关 autopilot（真机：完成后「停止自动」仍可点）。"""
+    from comic_studio.engine.projects import set_stage
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "merged")
+    conn = db.connect()
+    conn.execute("UPDATE projects SET autopilot=1 WHERE id=?", (pid,))
+    conn.commit()
+    assert next_action(db, tmp_path / "data", pid)["action"] == "done"
+    tick(db, tmp_path / "data", pid)
+    assert get_project(db, pid)["autopilot"] == 0
