@@ -1,6 +1,6 @@
 id: character_views
 type: character_views
-name: Krea2 四视图（需 seed 图，P3 升级用）
+name: H3 辅助四视图生成流（Krea2 架构，主图派生）
 file: character_views.api.json
 prompt_format: '{kind_label}：{name}。{detail}'
 inject:
