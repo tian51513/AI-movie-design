@@ -117,6 +117,8 @@ MIGRATIONS: list[str] = [
     """ALTER TABLE projects ADD COLUMN lora_realism REAL NOT NULL DEFAULT 0.75;""",
     # 18 projects 加 autopilot（一键出片开关）
     """ALTER TABLE projects ADD COLUMN autopilot INTEGER NOT NULL DEFAULT 0;""",
+    # 19 projects 加时代背景（明确朝代 → 资产/分镜提示词自动加时代限制）
+    """ALTER TABLE projects ADD COLUMN era TEXT NOT NULL DEFAULT '';""",
 ]
 
 

@@ -150,6 +150,9 @@
               title="点击修改画风（改后重新生成资产参考图生效）"
               @click="editStyle">{{ project.style.slice(0, 12) }}…</span>
         <span v-else class="pill" style="cursor:pointer" @click="editStyle">+ 指定画风</span>
+        <span v-if="project.era" class="pill" style="cursor:pointer;background:#1e3a5f;color:#93c5fd"
+              title="分析时自动检测的时代背景（提示词自动附加时代限制）；点击修改/清除"
+              @click="editEra">⛩ {{ project.era }}</span>
         <span v-if="project.video_megapixels" class="pill" style="cursor:pointer"
               title="点击展开/收起视频参数面板"
               @click="paramsOpen=!paramsOpen">{{ videoParamsLabel() }}</span>

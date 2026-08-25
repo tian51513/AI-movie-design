@@ -37,12 +37,15 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row) -> str:
             if a is not None:
                 detail = json.loads(a["appearance_json"]).get("detail", "")[:60]
                 bind_desc.append(f"{label} id={aid} {a['name']}：{detail}")
+    era = project_row["era"] if "era" in project_row.keys() else ""
     lines = [
         f"镜头 {shot_row['seq']}（{shot_row['shot_type'] or '常规'}，{shot_row['duration']} 秒，"
         f"画幅 {project_row['aspect_ratio']}，后端工作流 {shot_row['workflow_type']}）",
         f"画面描述：{shot_row['description']}",
         f"镜头语言：{shot_row['camera_json']}",
         f"项目画风：{project_row['style'] or '未指定'}",
+        (f"时代风格：{era}，人物服饰、发型、器物、建筑均须符合该时代形制，禁止现代元素"
+         if era else "时代风格：未明确（按描述自行合理推断）"),
         "绑定资产：" + ("；".join(bind_desc) if bind_desc else "无"),
         f"需求台账：必须出现={ledger.get('must_appear', [])}；必须保持={ledger.get('must_keep', [])}；"
         f"允许变化={ledger.get('may_change', [])}；禁止={ledger.get('must_avoid', [])}",

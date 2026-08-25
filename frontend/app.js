@@ -142,6 +142,15 @@ const methods = {
       body: JSON.stringify({style: v})});
     if (r.ok) { await this.loadDetail(); } else { alert(await r.text()); }
   },
+  async editEra() {
+    const v = prompt('时代背景（如 中国唐代；留空=清除。参考图与视频提示词会自动附加时代限制）：',
+      this.project.era || '');
+    if (v === null) return;
+    const r = await fetch(`/api/projects/${this.project.id}`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({era: v})});
+    if (r.ok) { await this.loadDetail(); } else { alert(await r.text()); }
+  },
 
   // ===== 详情：生成与队列 =====
   async startAnalyze() {

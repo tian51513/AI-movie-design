@@ -6,7 +6,7 @@ from ..engine.projects import create_project, get_project, list_projects
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
-_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style",
+_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "era",
                     "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
                     "prompt_mode", "lora_realism", "autopilot")
 
@@ -86,6 +86,13 @@ def patch_style(request: Request, project_id: int, body: dict):
         on = 1 if body["autopilot"] else 0
         conn = db.connect()
         conn.execute("UPDATE projects SET autopilot=? WHERE id=?", (on, project_id))
+        conn.commit()
+
+    # Handle era override (时代背景；检测错了可手动纠正，空串=清除)
+    if "era" in body:
+        conn = db.connect()
+        conn.execute("UPDATE projects SET era=? WHERE id=?",
+                     (str(body["era"] or "").strip(), project_id))
         conn.commit()
 
     # Handle video parameters (composable with style)

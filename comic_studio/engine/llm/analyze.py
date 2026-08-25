@@ -101,6 +101,15 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
     if proj is None:
         raise ValueError(f"项目不存在: {project_id}")
     text = data_to_abs(data_dir, proj["novel_path"]).read_text(encoding="utf-8")
+    # 时代背景检测（2026-08-25）：明确朝代 → 存项目，参考图/视频提示词自动加时代限制
+    from ..era import detect_era
+    era = detect_era(text)
+    if era:
+        conn = db.connect()
+        conn.execute("UPDATE projects SET era=? WHERE id=?", (era, project_id))
+        conn.commit()
+        emit_log(db, "analyze", "info", f"检测到时代背景：{era}（提示词将自动附加时代限制）",
+                 project_id=project_id)
     chunks = split_chunks(text, max_chars=max_chars)
     emit_log(db, "analyze", "info", f"开始分析：{len(chunks)} 个文本块（共 {len(text)} 字）",
              project_id=project_id)
