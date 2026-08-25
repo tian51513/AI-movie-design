@@ -262,6 +262,14 @@
                   :disabled="assetBusy(a)"
                   :title="assetBusy(a) ? '该资产正在生成中' : '用新的随机种子重新生成这张参考图（不改动资产文本）'">
             {{ assetBusy(a) ? '生成中…' : '重新生成图' }}</button>
+          <template v-if="a.kind==='character'">
+            <button @click="regenAsset(a, 'main')" :disabled="assetBusy(a)"
+                    style="margin-top:6px;margin-left:4px;font-size:12px;padding:3px 8px"
+                    title="仅重新生成主图（三视图保持不变，不触发分镜 stale）">主图</button>
+            <button @click="regenAsset(a, 'views')" :disabled="assetBusy(a)"
+                    style="margin-top:6px;margin-left:4px;font-size:12px;padding:3px 8px"
+                    title="仅以当前主图为种子重新派生三视图（主图不变）">三视图</button>
+          </template>
           <button @click="editAssetDetail(a)"
                   title="修正外貌/服装描述（同步资产库；引用此资产的分镜会标 stale）"
                   style="margin-top:6px;margin-left:4px">编辑外貌</button>

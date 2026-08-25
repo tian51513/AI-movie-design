@@ -110,42 +110,53 @@ def handle_gen_ref(db, data_dir, job, comfy):
             cv_tmpl = None  # 未映射/模板缺失 → 单段回退
     views_dir = data_to_abs(data_dir, asset["library_dir"]) / "views"
     dest = views_dir / "sheet.png"
+    stage = payload.get("stage") or "all"
+    if stage not in ("all", "main", "views"):
+        raise ValueError(f"未知 stage: {stage}")
     if cv_tmpl is not None:
         # 两段式（2026-08-25 需求）：zimage 主图（可重复生成）→ Krea2 四视图派生
+        # stage 粒度：all=两段；main=仅主图（sheet 不动、不标 stale）；
+        # views=仅从现有主图重派生三视图（缺主图时先自动补）
         main_png = data_to_abs(data_dir, asset["library_dir"]) / "main.png"
-        main_prompt, ctx = build_gen_prompt(asset, style=style, era=era, variant="main")
-        _t2i_to_file(db, comfy, resolve_template(db, "t2i"), main_prompt,
-                     main_png, ctx, job, label=f"资产「{asset['name']}」主图")
-        sheet_prompt, _ = build_gen_prompt(asset, style=style, era=era)
-        sheet_prompt += "。" + VIEWS_DERIVE
-        wf, uploads = fill_workflow(
-            cv_tmpl, prompt=sheet_prompt,
-            params={"seed": payload.get("seed") or random.randint(0, 2**31 - 1)},
-            images=[{"slot": "body", "path": str(main_png)}], output_ctx=ctx,
-            model_overrides=(get_setting(db, "model_overrides") or {}).get(cv_tmpl.id))
-        for up in uploads:
-            comfy.upload_image(up["path"], up["name"])
-        emit_log(db, "comfy", "info",
-                 f"资产「{asset['name']}」参考图提交（模板 {cv_tmpl.id}，主图派生三视图）",
-                 project_id=job["project_id"], job_id=job["id"])
-        images = comfy.wait_and_collect(
-            comfy.submit(wf, client_id=f"cs-job-{job['id']}"), stall_seconds=600,
-            on_interrupt=lambda: emit_log(db, "comfy", "warn",
-                                          f"job {job['id']} 失速，已 interrupt",
-                                          project_id=job["project_id"], job_id=job["id"]))
-        if not images:
-            raise RuntimeError("ComfyUI 未返回任何输出图片")
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        comfy.download(images[0]["filename"], images[0].get("subfolder", ""),
-                       images[0].get("type", "output"), dest)
-        emit_log(db, "comfy", "info", f"资产「{asset['name']}」参考图已生成并落盘",
-                 project_id=job["project_id"], job_id=job["id"],
-                 data={"path": f"{asset['library_dir']}/views/sheet.png"})
+        ctx = {"project": f"p{asset['source_project']}", "asset": str(asset["id"])}
+        if stage in ("all", "main") or not main_png.exists():
+            main_prompt, _ = build_gen_prompt(asset, style=style, era=era,
+                                              variant="main")
+            _t2i_to_file(db, comfy, resolve_template(db, "t2i"), main_prompt,
+                         main_png, ctx, job, label=f"资产「{asset['name']}」主图")
+        if stage in ("all", "views"):
+            sheet_prompt, _ = build_gen_prompt(asset, style=style, era=era)
+            sheet_prompt += "。" + VIEWS_DERIVE
+            wf, uploads = fill_workflow(
+                cv_tmpl, prompt=sheet_prompt,
+                params={"seed": payload.get("seed") or random.randint(0, 2**31 - 1)},
+                images=[{"slot": "body", "path": str(main_png)}], output_ctx=ctx,
+                model_overrides=(get_setting(db, "model_overrides") or {}).get(cv_tmpl.id))
+            for up in uploads:
+                comfy.upload_image(up["path"], up["name"])
+            emit_log(db, "comfy", "info",
+                     f"资产「{asset['name']}」参考图提交（模板 {cv_tmpl.id}，主图派生三视图）",
+                     project_id=job["project_id"], job_id=job["id"])
+            images = comfy.wait_and_collect(
+                comfy.submit(wf, client_id=f"cs-job-{job['id']}"), stall_seconds=600,
+                on_interrupt=lambda: emit_log(db, "comfy", "warn",
+                                              f"job {job['id']} 失速，已 interrupt",
+                                              project_id=job["project_id"], job_id=job["id"]))
+            if not images:
+                raise RuntimeError("ComfyUI 未返回任何输出图片")
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            comfy.download(images[0]["filename"], images[0].get("subfolder", ""),
+                           images[0].get("type", "output"), dest)
+            emit_log(db, "comfy", "info", f"资产「{asset['name']}」参考图已生成并落盘",
+                     project_id=job["project_id"], job_id=job["id"],
+                     data={"path": f"{asset['library_dir']}/views/sheet.png"})
     else:
-        # 单段（场景/道具，或 character_views 未映射的角色回退）
+        # 单段（场景/道具，或 character_views 未映射的角色回退；stage 仅 all 有意义）
         prompt, ctx = build_gen_prompt(asset, style=style, era=era)
         _t2i_to_file(db, comfy, resolve_template(db, "t2i"), prompt, dest, ctx, job,
                      label=f"资产「{asset['name']}」参考图")
+    if stage == "main":
+        return  # 仅换主图：sheet 未变，无需 stale 联动
     from .shots import mark_stale_for_asset
     n = mark_stale_for_asset(db, asset["id"])
     if n:

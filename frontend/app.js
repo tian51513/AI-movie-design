@@ -229,8 +229,10 @@ const methods = {
       j => j.type === 'gen_ref' && j.asset_id === a.id &&
            (j.status === 'pending' || j.status === 'running'));
   },
-  async regenAsset(a) {
-    const r = await fetch(`/api/assets/${a.id}/gen`, {method:'POST'});
+  async regenAsset(a, stage = 'all') {
+    const r = await fetch(`/api/assets/${a.id}/gen`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({stage})});
     if (!r.ok) alert(await r.text());
   },
   async passGate1() {

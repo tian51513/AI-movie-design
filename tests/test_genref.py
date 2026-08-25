@@ -167,3 +167,38 @@ def test_character_two_stage_main_then_views(tmp_path, monkeypatch):
         lib = get_asset(db, asset["id"])["library_dir"]
         assert (tmp_path / "data" / lib / "main.png").exists()
         assert (tmp_path / "data" / lib / "views" / "sheet.png").exists()
+
+
+def test_two_stage_stage_control(tmp_path, monkeypatch):
+    """stage 粒度（2026-08-25 需求）：main=仅主图；views=仅从现有主图重派生三视图。"""
+    from pathlib import Path
+    db, pid = _setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"t2i": "zimage_t2i",
+                                     "character_views": "character_views"})
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.assets import persist_assets, list_project_assets, get_asset
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="萧炎", appearance="黑发少年", tags=[])],
+                      scenes=[], props=[]))
+    asset = list_project_assets(db, pid)[0]
+    lib = get_asset(db, asset["id"])["library_dir"]
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok") as m:
+        # stage=main：仅一段 t2i 主图，sheet 不落
+        jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                          resource="gpu_comfy",
+                          payload={"asset_id": asset["id"], "stage": "main"})
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+        assert len(m.prompts) == 1
+        assert "立绘" in m.prompts[0]["prompt"]["57:27"]["inputs"]["text"]
+        assert (tmp_path / "data" / lib / "main.png").exists()
+        assert not (tmp_path / "data" / lib / "views" / "sheet.png").exists()
+        # stage=views：仅一段 character_views（用现有主图作种子）
+        jid2 = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                           resource="gpu_comfy",
+                           payload={"asset_id": asset["id"], "stage": "views"})
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid2), ComfyClient(m.base_url))
+        assert len(m.prompts) == 2  # 只新增一段
+        assert "三视图" in m.prompts[1]["prompt"]["24"]["inputs"]["prompt"]
+        assert (tmp_path / "data" / lib / "views" / "sheet.png").exists()

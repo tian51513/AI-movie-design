@@ -2,7 +2,7 @@
 """参考图生成/队列/视图/门1 接口（spec §5 门1、§8 队列）。"""
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Body, HTTPException, Request
 
 from ..engine.assets import get_asset, list_project_assets
 from ..engine.jobs import enqueue_job
@@ -27,11 +27,16 @@ def _has_views(views_dir: Path) -> bool:
 
 
 @router.post("/api/assets/{asset_id}/gen", status_code=202)
-def gen_asset(request: Request, asset_id: int):
+def gen_asset(request: Request, asset_id: int, body: dict | None = Body(default=None)):
+    """重新生成参考图。stage：all=主图+三视图两段（默认）；main=仅主图；
+    views=仅从现有主图重派生三视图。"""
     db = request.app.state.db
     asset = get_asset(db, asset_id)
     if asset is None:
         raise HTTPException(404, "资产不存在")
+    stage = (body or {}).get("stage") or "all"
+    if stage not in ("all", "main", "views"):
+        raise HTTPException(422, "stage 只能是 all/main/views")
     dup = db.connect().execute(
         "SELECT 1 FROM jobs WHERE type='gen_ref' AND asset_id=? AND status IN ('pending','running')",
         (asset_id,)).fetchone()
@@ -39,7 +44,7 @@ def gen_asset(request: Request, asset_id: int):
         raise HTTPException(409, "该资产的参考图生成已在队列中")
     jid = enqueue_job(db, "gen_ref", project_id=asset["source_project"],
                       asset_id=asset_id, resource="gpu_comfy",
-                      payload={"asset_id": asset_id})
+                      payload={"asset_id": asset_id, "stage": stage})
     return {"job_id": jid}
 
 
