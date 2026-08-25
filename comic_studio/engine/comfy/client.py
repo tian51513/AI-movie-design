@@ -37,8 +37,11 @@ class ComfyClient:
     def upload_image(self, path: Path, name: str) -> None:
         with self._client() as c:
             with open(path, "rb") as f:
+                # overwrite 双通道（查询参数+表单字段）：ComfyUI 各版本读取位置
+                # 不一；漏掉时同名上传被静默忽略——重生成为旧图（真机 2026-08-25）
                 resp = c.post(f"{self.base_url}/upload/image",
                               params={"overwrite": "true"},
+                              data={"overwrite": "true"},
                               files={"image": (name, f, "image/png")})
                 resp.raise_for_status()
 

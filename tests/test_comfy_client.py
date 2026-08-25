@@ -32,3 +32,16 @@ def test_upload_submit_free():
         c.free()
         assert m.frees == 1
         tmp.unlink()
+
+
+def test_upload_image_sends_overwrite():
+    """同名上传必须带 overwrite（表单字段）：ComfyUI 默认不覆盖，
+    漏掉则重生成/换主图后工作流仍加载旧图（真机 2026-08-25）。"""
+    import pathlib as _p
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok") as m:
+        f = _p.Path("/tmp/cs_up_test.png")
+        f.write_bytes(b"x")
+        ComfyClient(m.base_url).upload_image(f, "a.png")
+        assert m.upload_overwrites == [True]
+        f.unlink()

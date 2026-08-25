@@ -147,15 +147,20 @@ def views(request: Request, asset_id: int):
     asset = get_asset(db, asset_id)
     if asset is None:
         raise HTTPException(404, "资产不存在")
-    views_dir = data_to_abs(request.app.state.data_dir, asset["library_dir"]) / "views"
+    lib_abs = data_to_abs(request.app.state.data_dir, asset["library_dir"])
+    views_dir = lib_abs / "views"
+    # library_dir 形如 "library/characters/3"，静态挂载根即 library/，
+    # URL 需去掉前导 "library/" 避免 /library/library/...
+    rel = asset["library_dir"]
+    rel = rel[len("library/"):] if rel.startswith("library/") else rel
     out = []
+    main = lib_abs / "main.png"
+    if main.exists():  # 主图（两段式第一段/人工上传）——列表首位展示
+        out.append({"name": "主图 main", "type": "image",
+                    "url": f"/library/{rel}/main.png?v={int(main.stat().st_mtime)}"})
     if views_dir.is_dir():
         for f in sorted(views_dir.iterdir()):
             if f.suffix.lower() in VIEW_MEDIA_TYPES:
-                # library_dir 形如 "library/characters/3"，静态挂载根即 library/，
-                # URL 需去掉前导 "library/" 避免 /library/library/...
-                rel = asset["library_dir"]
-                rel = rel[len("library/"):] if rel.startswith("library/") else rel
                 out.append({"name": f.stem, "type": VIEW_MEDIA_TYPES[f.suffix.lower()],
                             "url": f"/library/{rel}/views/{f.name}?v={int(f.stat().st_mtime)}"})
     return out

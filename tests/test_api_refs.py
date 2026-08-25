@@ -6,6 +6,7 @@ from types import SimpleNamespace as NS
 from fastapi.testclient import TestClient
 
 from comic_studio.engine.assets import persist_assets, list_project_assets
+from comic_studio.engine.paths import data_to_abs
 from comic_studio.web.app import create_app
 
 
@@ -94,3 +95,19 @@ def test_generate_refs_batch_dedup(tmp_path):
         conn.commit()
         r = c.post(f"/api/projects/{pid}/generate-refs").json()
         assert r["enqueued"] == 1  # 只有缺图的那个
+
+
+def test_views_listing_includes_main(tmp_path):
+    """主图应在视图列表首位展示（2026-08-25 真机：只见四视图不见主图）。"""
+    with _client(tmp_path) as c:
+        pid = _mk_project(c)
+        rows = _seed(tmp_path, c, c.app, pid)
+        aid = rows[0]["id"]
+        lib = data_to_abs(tmp_path / "data", rows[0]["library_dir"])
+        (lib / "main.png").write_bytes(b"\x89PNG-main")
+        (lib / "views").mkdir(parents=True, exist_ok=True)
+        (lib / "views" / "sheet.png").write_bytes(b"\x89PNG-sheet")
+        items = c.get(f"/api/assets/{aid}/views").json()
+        assert items[0]["name"] == "主图 main"
+        assert "main.png?" in items[0]["url"]
+        assert any(i["name"] == "sheet" for i in items)

@@ -28,13 +28,17 @@ class MockComfy:
     def interrupts(self):
         return self._server.RequestHandlerClass.interrupts
 
+    @property
+    def upload_overwrites(self):
+        return self._server.RequestHandlerClass.upload_overwrites
+
 
 def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
                   queue_running=()):
     _q_running = tuple(queue_running)
 
     class H(BaseHTTPRequestHandler):
-        uploads, prompts, frees, interrupts = [], [], 0, 0
+        uploads, prompts, frees, interrupts, upload_overwrites = [], [], 0, 0, []
         n = 0
         queue_running = _q_running
 
@@ -105,6 +109,7 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
                 m = re.search(rb'filename="([^"]+)"', body)
                 if m:
                     H.uploads.append(m.group(1).decode())
+                H.upload_overwrites.append(b"name=\"overwrite\"" in body)
                 self._json({"name": m.group(1).decode() if m else "unnamed"})
             elif self.path == "/prompt":
                 H.n += 1
