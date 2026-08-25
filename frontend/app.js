@@ -42,7 +42,8 @@ function data() {
     llmTestManual: {local: false, online: false},
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
-      split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成' },
+      split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
+      optimize_prompt: '提示词优化（✨按钮）' },
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     paramsOpen: false, merges: [],
   };
@@ -467,7 +468,57 @@ const methods = {
   kindName(k) { return { character: '角色', scene: '场景', prop: '道具' }[k]; },
 };
 
-createApp({ data, computed, methods, async mounted() {
+/* ===== 可复用组件 ===== */
+// 提示词优化输入框：textarea 右上角 ✨ → 弹窗（预填当前值）→ LLM 优化 → 确认覆盖
+const PromptBox = {
+  props: {
+    modelValue: { type: String, default: '' },
+    rows: { type: Number, default: 2 },
+    kind: { type: String, default: 'generic' },  // shot_desc / video_prompt / appearance / generic
+  },
+  emits: ['update:modelValue', 'focus', 'blur'],
+  data: () => ({ open: false, draft: '', busy: false, err: '' }),
+  template: `
+  <div style="position:relative">
+    <textarea :value="modelValue" :rows="rows"
+      @input="$emit('update:modelValue', $event.target.value)"
+      @focus="$emit('focus')" @blur="$emit('blur')"
+      style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px"></textarea>
+    <button v-if="modelValue" @mousedown.prevent.stop="openDialog" title="AI 优化这段文本"
+            style="position:absolute;top:3px;right:3px;background:#7c3aed;font-size:11px;padding:1px 6px;border-radius:4px">✨</button>
+    <div v-if="open" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:120;display:flex;align-items:center;justify-content:center" @click.self="open=false">
+      <div class="card" style="width:min(720px,92vw)">
+        <h3>✨ 优化文本<span class="muted" style="font-size:12px">（确认后覆盖原文本框）</span></h3>
+        <textarea v-model="draft" rows="9" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px"></textarea>
+        <p v-if="err" style="color:#f87171;font-size:13px">{{ err }}</p>
+        <p style="display:flex;gap:8px;align-items:center">
+          <button @click="optimize" :disabled="busy || !draft.trim()" style="background:#7c3aed">
+            {{ busy ? '优化中…' : '✨ 优化' }}</button>
+          <button @click="apply" :disabled="busy || !draft.trim()" style="background:#16a34a">确认覆盖</button>
+          <button @click="open=false" :disabled="busy">取消</button>
+          <span class="muted" style="font-size:12px">可先手改再优化；优化走「提示词优化」路由的 LLM</span>
+        </p>
+      </div>
+    </div>
+  </div>`,
+  methods: {
+    openDialog() { this.draft = this.modelValue || ''; this.err = ''; this.open = true; },
+    async optimize() {
+      this.busy = true; this.err = '';
+      try {
+        const r = await fetch('/api/llm/optimize', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: this.draft, kind: this.kind }) });
+        if (!r.ok) { this.err = '优化失败：' + ((await r.json()).detail || r.status); }
+        else { this.draft = (await r.json()).text; }
+      } catch (e) { this.err = '优化失败：' + e; }
+      this.busy = false;
+    },
+    apply() { this.$emit('update:modelValue', this.draft); this.open = false; },
+  },
+};
+
+createApp({ components: { PromptBox }, data, computed, methods, async mounted() {
     await this.refresh();
     setInterval(async () => {  // 项目列表轮询：autopilot 角标/成片状态实时化
       if (this.view === 'projects' && !this.creating) {

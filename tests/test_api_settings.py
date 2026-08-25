@@ -8,6 +8,7 @@ ROUTING_DEFAULTS = {
     "fix_appearance": "local",
     "split_storyboards": "online",
     "gen_video_prompt": "online",
+    "optimize_prompt": "online",
 }
 
 

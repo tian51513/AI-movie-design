@@ -12,7 +12,8 @@ from ..engine.settings import get_setting, set_setting
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 PROVIDER_NAMES = ("local", "online")
-TASK_NAMES = ("extract_assets", "fix_appearance", "split_storyboards", "gen_video_prompt")
+TASK_NAMES = ("extract_assets", "fix_appearance", "split_storyboards", "gen_video_prompt",
+              "optimize_prompt")
 
 
 class ProviderConfig(BaseModel):

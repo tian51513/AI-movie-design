@@ -204,6 +204,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
     from .routes_merge import router as merge_router
     app.include_router(merge_router)
 
+    from .routes_llm import router as llm_router
+    app.include_router(llm_router)
+
     from .routes_analyze import router as analyze_router
     app.include_router(analyze_router)
 

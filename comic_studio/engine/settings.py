@@ -26,6 +26,7 @@ DEFAULT_SETTINGS = {
         "fix_appearance": "local",
         "split_storyboards": "online",
         "gen_video_prompt": "online",
+        "optimize_prompt": "online",
     },
     "comfy": {"base_url": "http://127.0.0.1:8188"},
     # 工作流模型槽位覆盖（计划5B 任务6）：{模板 id: {label: 文件名}}
