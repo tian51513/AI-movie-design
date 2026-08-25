@@ -52,6 +52,11 @@
 - `engine/rendershot.py` 扩展 — lora_strength 注入（项目 lora_realism）、远景升兆像素、多版本 video_v{N} 落盘、shot_versions 辅助
 - 注意：提示词生成读项目 prompt_mode；重生提示词与渲染按镜头当前 prompt
 
+## 模块地图（关键帧链路 2026-08-25）
+
+- `engine/rendershot.py` — fl2v 关键帧：`ensure_keyframes`（缺 kf_start/kf_end.png 时经 t2i 模板自动生成首尾对，同 seed 保构图、成对约束入词）；`build_keyframe_prompt`（分镜描述+画风+时代+ZImage 尾缀）；fl2v 渲染提示词追加 `KF_NO_CUT` 镜内禁切约束；生成失败降级 h3_i2v
+- 注意：fl2v → h3_fl2v（首尾帧插值）；关键帧复用 zimage_t2i 模板与 model_overrides
+
 ## 模块地图（Phase 5B）
 
 - `comic_studio/engine/autopilot.py` — 一键出片决策引擎（next_action 纯决策 / tick 执行；幂等续跑）
