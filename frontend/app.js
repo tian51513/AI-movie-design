@@ -120,9 +120,10 @@ const methods = {
   },
   actionLabel(a) {
     if (!a) return '自动运行中';
+    if (a.action === 'wait') return a.detail || '等待任务';  // wait 显示具体原因（渲染中等）
     return { analyze: '分析资产', gen_refs: '生成参考图', gate1: '过门1', split: '拆分分镜',
       gen_prompts: '生成提示词', gate2: '提示词检查', render: '批量渲染', gate3: '过门3',
-      merge: '合成成片', wait: '等待任务', done: '已完成' }[a.action] || a.action;
+      merge: '合成成片', done: '已完成' }[a.action] || a.action;
   },
   async startMerge() {
     const r = await fetch(`/api/projects/${this.project.id}/merge`, {method: 'POST'});
