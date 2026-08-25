@@ -94,6 +94,19 @@
     </div>
     <p v-else-if="moTemplate && !moError" class="muted">该模板未声明可切换的模型槽位</p>
     <p v-else-if="moError" class="muted" style="color:#f87171">{{ moError }}</p>
+    <h3>预设主题管理</h3>
+    <p><input type="file" accept=".md" @change="e => themeImportFile = e.target.files[0]">
+       <button @click="importThemes" :disabled="!themeImportFile || themeImporting">
+         {{ themeImporting ? '导入中…' : '导入模板' }}</button>
+       <span class="muted">格式同 templates/tpl/default_theme.md；同名主题覆盖更新；
+         标题含「成人向/情欲」的节自动跳过</span></p>
+    <div style="max-height:220px;overflow-y:auto;border:1px solid #2c3540;border-radius:6px;padding:8px">
+      <p v-for="t in themesManage" :key="t.id" style="margin:3px 0;font-size:13px" :title="t.description">
+        <span class="pill">{{ t.category }}</span> {{ t.name }}
+        <a href="#" @click.prevent="deleteTheme(t)" style="color:#f87171;margin-left:8px">删</a>
+      </p>
+      <p v-if="!themesManage.length" class="muted">暂无主题（重启后自动同步 templates/tpl/）</p>
+    </div>
     <h3>任务路由</h3>
     <p v-for="(label, task) in taskLabels" :key="task">
       {{ label }}：
@@ -124,7 +137,25 @@
         </div>
       </div>
       <div class="card">
-        <form @submit.prevent="createProject">
+        <p style="margin:0 0 8px">
+          <button type="button" @click="newMode='upload'"
+                  :style="newMode==='upload'?'background:#16a34a':''">📎 上传小说</button>
+          <button type="button" style="margin-left:4px" @click="newMode='theme'; loadThemes()"
+                  :style="newMode==='theme'?'background:#16a34a':''">🎨 主题生成</button>
+        </p>
+        <form v-if="newMode==='theme'" @submit.prevent="createFromTheme">
+          <p><select v-model="newThemeId" required>
+               <option value="" disabled>选择主题…</option>
+               <option v-for="t in themes" :key="t.id" :value="t.id"
+                       :title="t.description">{{ t.name }}（{{ t.category }}）</option>
+             </select></p>
+          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
+          <p><input v-model="newName" placeholder="漫剧名称（留空用主题名）"></p>
+          <p><input v-model="newProtagonist" placeholder="主角姓名（可选）"></p>
+          <p><button :disabled="creating || !newThemeId">
+             {{ creating ? '生成中…（约 1-3 分钟）' : '✨ 生成并创建' }}</button></p>
+        </form>
+        <form v-else @submit.prevent="createProject">
           <p><input v-model="newName" placeholder="漫剧名称" required></p>
           <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
         <p><select v-model="newStyleKey">

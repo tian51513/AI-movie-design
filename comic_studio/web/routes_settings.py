@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 PROVIDER_NAMES = ("local", "online")
 TASK_NAMES = ("extract_assets", "fix_appearance", "split_storyboards", "gen_video_prompt",
-              "optimize_prompt")
+              "optimize_prompt", "gen_story")
 
 
 class ProviderConfig(BaseModel):

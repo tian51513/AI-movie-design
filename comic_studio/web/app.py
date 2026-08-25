@@ -126,6 +126,12 @@ def create_app(db_path: str | Path = "./data/studio.db",
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         db.migrate()
+        # 主题模板同步入库（幂等 upsert；templates/tpl/*.md）
+        try:
+            from ..engine.themes import sync_themes
+            sync_themes(db)
+        except Exception:
+            pass  # 模板文件异常不阻塞启动
         # 断点对账（spec §5）：先收集可对账的 gen_shot，再 requeue。
         # ComfyUI 可达且 /history 显示已完成 → 直接下载落盘不重渲；否则照常 requeue。
         from ..engine.jobs import collect_reattach_candidates, requeue_on_restart
@@ -206,6 +212,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
 
     from .routes_llm import router as llm_router
     app.include_router(llm_router)
+
+    from .routes_themes import router as themes_router
+    app.include_router(themes_router)
 
     from .routes_analyze import router as analyze_router
     app.include_router(analyze_router)

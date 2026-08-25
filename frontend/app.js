@@ -30,6 +30,8 @@ function data() {
     view: 'projects', projects: [], project: null, assets: [],
     views: {}, queue: {running:0, pending:0, failed:0, comfy_ok:false},
     newName: '', newRatio: '9:16', newFile: null, creating: false,
+    newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '',
+    themesManage: [], themeImportFile: null, themeImporting: false,
     newStyleKey: '', newStyleText: '',
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '',
@@ -43,7 +45,7 @@ function data() {
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
-      optimize_prompt: '提示词优化（✨按钮）' },
+      optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文' },
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     paramsOpen: false, merges: [],
   };
@@ -82,6 +84,49 @@ const methods = {
     const resp = await fetch('/api/projects', { method: 'POST', body: fd });
     if (!resp.ok) { alert(await resp.text()); }
     this.creating = false; this.newName = ''; this.newFile = null;
+    await this.refresh();
+  },
+  async loadThemes() {
+    if (this.themes.length) return;
+    try { this.themes = await (await fetch('/api/themes')).json(); }
+    catch (e) { alert('主题列表加载失败：' + e); }
+  },
+  async loadThemesManage() {
+    try { this.themesManage = await (await fetch('/api/themes')).json(); }
+    catch (e) { /* 忽略 */ }
+  },
+  async importThemes() {
+    if (!this.themeImportFile) return;
+    this.themeImporting = true;
+    try {
+      const fd = new FormData();
+      fd.append('file', this.themeImportFile);
+      const r = await fetch('/api/themes/import', { method: 'POST', body: fd });
+      const b = await r.json();
+      if (!r.ok) alert('导入失败：' + (b.detail || ''));
+      else { alert(`已导入 ${b.imported} 个主题`); this.themeImportFile = null;
+             this.themes = []; await this.loadThemesManage(); }
+    } catch (e) { alert('导入失败：' + e); }
+    this.themeImporting = false;
+  },
+  async deleteTheme(t) {
+    if (!confirm(`删除主题「${t.name}」？`)) return;
+    const r = await fetch(`/api/themes/${t.id}`, { method: 'DELETE' });
+    if (!r.ok) alert(await r.text());
+    else { this.themes = []; await this.loadThemesManage(); }
+  },
+  async createFromTheme() {
+    this.creating = true;
+    try {
+      const resp = await fetch('/api/projects/from-theme', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          theme_id: this.newThemeId, aspect_ratio: this.newRatio,
+          name: this.newName || undefined, protagonist: this.newProtagonist }) });
+      if (!resp.ok) { alert(await resp.text()); }
+      else { this.newName = ''; this.newProtagonist = ''; this.newThemeId = ''; }
+    } catch (e) { alert('生成失败：' + e); }
+    this.creating = false;
     await this.refresh();
   },
 
@@ -218,6 +263,7 @@ const methods = {
     const ids = (this.settingsForm.model_templates || []).map(t => t.id);
     this.moTemplate = ids.includes('h3_ref2va') ? 'h3_ref2va' : (ids[0] || '');
     await this.loadModelChoices();
+    this.loadThemesManage();
     this.llmTest('local', false); this.llmTest('online', false);  // 表单就绪后再自动检测
   },
   // ===== 模型切换 =====

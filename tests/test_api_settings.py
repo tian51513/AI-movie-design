@@ -9,6 +9,7 @@ ROUTING_DEFAULTS = {
     "split_storyboards": "online",
     "gen_video_prompt": "online",
     "optimize_prompt": "online",
+    "gen_story": "online",
 }
 
 

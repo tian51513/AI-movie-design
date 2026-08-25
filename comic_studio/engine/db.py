@@ -119,6 +119,14 @@ MIGRATIONS: list[str] = [
     """ALTER TABLE projects ADD COLUMN autopilot INTEGER NOT NULL DEFAULT 0;""",
     # 19 projects 加时代背景（明确朝代 → 资产/分镜提示词自动加时代限制）
     """ALTER TABLE projects ADD COLUMN era TEXT NOT NULL DEFAULT '';""",
+    # 20 主题模板（LLM 实时生成项目文本的预设主题，templates/tpl/*.md 同步入库）
+    """CREATE TABLE IF NOT EXISTS theme_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        category TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );""",
 ]
 
 
