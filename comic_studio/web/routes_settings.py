@@ -101,7 +101,10 @@ def update(request: Request, body: SettingsUpdate):
                 raise HTTPException(
                     422, f"模板 {tmpl_id} 无模型槽位: {sorted(bad_labels)}，"
                          f"可用 {sorted(labels)}")
-            merged.setdefault(tmpl_id, {}).update(slots)
+            if not slots:
+                merged.pop(tmpl_id, None)  # 空字典=恢复该模板默认（清空覆盖）
+            else:
+                merged.setdefault(tmpl_id, {}).update(slots)
         set_setting(db, "model_overrides", merged)
     return {"status": "ok"}
 

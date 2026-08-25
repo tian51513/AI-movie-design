@@ -81,12 +81,13 @@
          <option v-for="t in settingsForm.model_templates" :key="t.id" :value="t.id">
            {{ t.name || t.id }}</option>
        </select>
-       <span class="muted">主模型/CLIP/VAE/LoRA 按槽位切换；保存后重渲生效（ComfyUI 需在线以枚举文件）</span></p>
+       <button v-if="moTemplate" @click="resetMO" title="清除该模板全部覆盖，回到工作流内置模型"
+               style="background:#7f1d1d;font-size:12px;padding:3px 8px">恢复默认</button></p>
+    <p class="muted" style="margin:4px 0 8px">主模型/CLIP/VAE/LoRA 按槽位切换，当前选中即生效值（无覆盖时显示模板内置默认）；保存后重渲生效（ComfyUI 需在线以枚举文件）</p>
     <div v-if="modelChoices.length" class="row" style="align-items:center">
       <p v-for="slot in modelChoices" :key="slot.label" style="margin:4px 0">
         <label :title="`${slot.label}（${slot.cls}.${slot.field}）`">{{ slot.label_cn || slot.label }}：
           <select v-model="currentMO[slot.label]" style="max-width:340px">
-            <option value="">恢复模板默认</option>
             <option v-for="f in slot.choices" :key="f" :value="f">{{ f }}</option>
           </select></label>
       </p>

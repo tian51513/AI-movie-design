@@ -235,6 +235,15 @@ const methods = {
         if (!mo[slot.label]) mo[slot.label] = slot.current || '';
     } catch (e) { this.moError = '枚举失败：' + e; }
   },
+  async resetMO() {
+    if (!confirm(`恢复「${this.moTemplate}」全部槽位为工作流内置默认？`)) return;
+    this.settingsForm.model_overrides[this.moTemplate] = {};
+    const r = await fetch('/api/settings', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({model_overrides: {[this.moTemplate]: {}}})});
+    if (!r.ok) { alert('恢复失败：' + (await r.text())); return; }
+    await this.loadModelChoices();  // 重新预填内置默认
+  },
   llmLamp(provider) {
     const r = this.llmTestResult[provider];
     if (this.llmTesting === provider) return {color: '#8b949e', text: '检测中…'};

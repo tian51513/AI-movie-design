@@ -66,3 +66,15 @@ def test_choices_endpoint_and_settings_roundtrip(tmp_path):
             r = c.put("/api/settings", json={"model_overrides": {
                 "h3_ref2va": {"nope": "x.safetensors"}}})
             assert r.status_code == 422
+
+
+def test_empty_override_dict_clears_template(tmp_path):
+    """恢复默认：PUT 空字典 → 清除该模板覆盖（merge 语义不适用于清空）。"""
+    db = Database(tmp_path / "s2.db"); db.migrate()
+    create_project(db, tmp_path / "data2", "清覆剧", "16:9", "t")
+    with TestClient(create_app(tmp_path / "s2.db", tmp_path / "data2",
+                               start_workers=False)) as c:
+        c.put("/api/settings", json={"model_overrides": {
+            "h3_ref2va": {"unet": "x.safetensors"}}})
+        c.put("/api/settings", json={"model_overrides": {"h3_ref2va": {}}})
+        assert c.get("/api/settings").json()["model_overrides"].get("h3_ref2va") in (None, {})
