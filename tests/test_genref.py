@@ -118,4 +118,22 @@ def test_style_goes_after_suffix_and_dedup(tmp_path):
     p, _ = build_gen_prompt(row, style="真人电影，电影质感。")
     assert "。。" not in p
     assert p.index("白色干净背景") < p.index("真人电影")  # 风格段在设定图套话之后
-    assert "真人电影，电影质感。严格三视图布局" in p  # 风格后结构再强调
+    # 顺序：风格段 → Turbo 尾缀 → 结构再强调
+    assert p.index("真人电影") < p.index("ultra-detailed") < p.index("严格三视图布局")
+
+
+def test_gen_prompt_zimage_turbo_tail():
+    """ZImage-Turbo 规范（data/ZImage-Turbo 技能模板）：无负向词、纠错正向写入、
+    中英混编、质量尾缀适配 8 步推理。"""
+    row = {"kind": "character", "name": "林晨", "source_project": 1, "id": 1,
+           "appearance_json": '{"detail":"黑发少年"}'}
+    p, _ = build_gen_prompt(row)
+    assert "ultra-detailed" in p and "8k" in p
+    assert "避免多余手指" in p and "避免五官扭曲" in p and "无蜡像塑料感" in p
+    assert "无文字水印" in p
+    p_scene, _ = build_gen_prompt(dict(row, kind="scene",
+                                       appearance_json='{"detail":"古城"}'))
+    assert "cinematic color grading" in p_scene and "画面完整" in p_scene
+    p_prop, _ = build_gen_prompt(dict(row, kind="prop",
+                                      appearance_json='{"detail":"剑"}'))
+    assert "材质纹理" in p_prop

@@ -19,6 +19,17 @@ KIND_SUFFIX = {
     "prop": "，道具设定图，白色背景，居中特写",
 }
 
+# ZImage-Turbo 规范（data/ZImage-Turbo 完整版本地技能模板.md，2026-08-25 接入）：
+# 负向词完全无效——纠错全部正向写入；中英混编（中文意境+英文质感）；精简适配 8 步推理
+ZIMAGE_TAIL = {
+    "character": "，cinematic color grading，sharp focus，ultra-detailed，8k，"
+                 "避免畸形肢体，避免多余手指，避免五官扭曲，无蜡像塑料感，无文字水印，画面完整",
+    "scene": "，cinematic color grading，sharp focus，ultra-detailed，8k，"
+             "无文字水印，画面完整不裁切",
+    "prop": "，sharp focus，ultra-detailed，8k，材质纹理真实清晰，"
+            "无文字水印，画面干净完整",
+}
+
 
 def build_gen_prompt(asset_row, style: str = "", era: str = ""):
     """style：项目级画风描述；era：时代背景（非空时附加时代限制段）。"""
@@ -34,6 +45,7 @@ def build_gen_prompt(asset_row, style: str = "", era: str = ""):
     if era:
         from .era import ERA_SUFFIX
         prompt += "。" + ERA_SUFFIX.format(era=era)
+    prompt += ZIMAGE_TAIL.get(asset_row["kind"], "")  # Turbo 质量与正向纠错尾缀
     if asset_row["kind"] == "character":
         prompt += "。严格三视图布局：正面、左侧、背面各一个，禁止视角重复"  # 结构收尾再强调
     ctx = {"project": f"p{asset_row['source_project']}", "asset": str(asset_row["id"])}
