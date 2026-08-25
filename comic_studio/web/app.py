@@ -39,9 +39,18 @@ def _try_reattach(db, data_dir, rows) -> tuple:
     except Exception:
         inflight = set()
     done, waiting = 0, []
+    from ..engine.comfy.client import ComfyError
     for row in rows:
         try:
             dest = reattach(db, data_dir, row, comfy)
+        except ComfyError as exc:
+            # history 有记录但状态 error——多为曾被 interrupt，属正常路径：重排重渲
+            level, msg = ("info", f"job#{row['id']} 的 ComfyUI 任务已被中断——重排重渲") \
+                if "interrupted" in str(exc) else \
+                ("warn", f"断点对账失败 job#{row['id']}：{exc}")
+            emit_log(db, "comfy", level, msg,
+                     project_id=row["project_id"], job_id=row["id"])
+            continue
         except Exception as exc:  # 单条失败不影响其余对账
             emit_log(db, "comfy", "warn",
                      f"断点对账失败 job#{row['id']}：{exc}",
