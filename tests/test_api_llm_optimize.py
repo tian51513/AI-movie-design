@@ -58,3 +58,11 @@ def test_optimize_prompt_is_routable_task(client):
         r = c.put("/api/settings", json={"llm_routing": {"optimize_prompt": "local"}})
         assert r.status_code == 200
         assert c.get("/api/settings").json()["llm_routing"]["optimize_prompt"] == "local"
+
+
+def test_optimize_rejects_oversized_text(client):
+    """超大文本 422（防巨型 LLM 请求）。"""
+    _, _, c = client
+    with c:
+        assert c.post("/api/llm/optimize",
+                      json={"text": "x" * 20001}).status_code == 422

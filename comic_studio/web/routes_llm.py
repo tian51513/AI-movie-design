@@ -30,6 +30,8 @@ def optimize(request: Request, body: dict):
     text = (body.get("text") or "").strip()
     if not text:
         raise HTTPException(422, "text 为空")
+    if len(text) > 20000:  # 防巨型请求打爆 LLM（安全扫描建议的合理部分）
+        raise HTTPException(422, f"text 过长（{len(text)} 字符，上限 20000）")
     system = _KIND_SYSTEMS.get(body.get("kind") or "generic", _KIND_SYSTEMS["generic"])
     client = client_for_task(request.app.state.db, "optimize_prompt")
     reply, _u = client.raw_chat(
