@@ -89,6 +89,68 @@ def collect_ref_images(db, shot_row) -> list[dict]:
     return refs
 
 
+KF_NO_CUT = ("本镜头为首尾帧插值生成：单一连续镜头，机位、景别、光线全程保持不变，"
+             "禁止镜内切换与跳切；人物动作从首帧状态平滑过渡至尾帧状态。")
+KF_PAIR_CONSTRAINT = ("两帧必须严格同机位、同景别、同构图、同光线与背景，"
+                      "仅人物的肢体动作与表情不同；禁止任何镜头切换")
+
+
+def build_keyframe_prompt(shot, proj, phase: str) -> str:
+    """首/尾关键帧提示词：分镜描述 + 画风 + 时代 + 成对约束 + ZImage 尾缀。"""
+    from .era import ERA_SUFFIX
+    from .genref import ZIMAGE_TAIL
+    detail = (shot["description"] or "").strip().rstrip("。；;，,") or "按分镜描述"
+    prompt = f"漫剧分镜关键帧（{phase}瞬间）：{detail}"
+    style = ((proj["style"] or "") if proj is not None else "").strip().rstrip("。；;，,")
+    if style:
+        prompt += "。" + style
+    era = proj["era"] if proj is not None and "era" in proj.keys() else ""
+    if era:
+        prompt += "。" + ERA_SUFFIX.format(era=era)
+    return prompt + "。" + KF_PAIR_CONSTRAINT + ZIMAGE_TAIL["scene"]
+
+
+def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
+    """fl2v 关键帧生成（方案A 二期）：缺 kf_*.png 时经 t2i 模板生成首尾对。
+    两帧共用同一 seed（保构图一致），成对约束写入提示词（方案 A 避坑守则）。"""
+    shot = get_shot(db, shot_id)
+    proj = get_project(db, shot["project_id"])
+    shot_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}")
+    shot_dir.mkdir(parents=True, exist_ok=True)
+    kf_start, kf_end = shot_dir / "kf_start.png", shot_dir / "kf_end.png"
+    if kf_start.exists() and kf_end.exists():
+        return kf_start, kf_end
+    from .workflows.registry import resolve_template
+    tmpl = resolve_template(db, "t2i")
+    overrides = (get_setting(db, "model_overrides") or {}).get(tmpl.id)
+    seed = random.randint(0, 2**31 - 1)  # 两帧同 seed：构图一致，仅动作不同
+    for phase, dest in (("起始", kf_start), ("结尾", kf_end)):
+        if dest.exists():
+            continue
+        wf, uploads = fill_workflow(
+            tmpl, prompt=build_keyframe_prompt(shot, proj, phase),
+            params={"seed": seed}, images=None,
+            output_ctx={"project": proj["slug"],
+                        "asset": f"shot-{shot['seq']}-kf-{phase}"},
+            model_overrides=overrides)
+        for up in uploads:
+            comfy.upload_image(Path(up["path"]), up["name"])
+        emit_log(db, "comfy", "info",
+                 f"分镜 {shot['seq']} 关键帧（{phase}）提交（模板 {tmpl.id}）",
+                 project_id=proj["id"], job_id=job_id)
+        results = comfy.wait_and_collect(
+            comfy.submit(wf, client_id=f"cs-kf-{shot_id}-{phase}"), stall_seconds=600)
+        img = next((r for r in results if r.get("_kind") == "image"), None)
+        if img is None:
+            raise RuntimeError(f"分镜 {shot['seq']} 关键帧（{phase}）未返回图片")
+        comfy.download(img["filename"], img.get("subfolder", ""),
+                       img.get("type", "output"), dest)
+        emit_log(db, "comfy", "info",
+                 f"分镜 {shot['seq']} 关键帧（{phase}）已生成落盘",
+                 project_id=proj["id"], job_id=job_id)
+    return kf_start, kf_end
+
+
 def render_shot(db, data_dir, shot_id, comfy, job_id=None,
                 first_frame_png: Path | None = None) -> Path:
     shot = get_shot(db, shot_id)
@@ -100,6 +162,13 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     # kf_end 缺失时降级 h3_i2v（仅首帧），二期关键帧任务补齐 kf_* 后自动升回
     shot_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}")
     kf_start, kf_end = shot_dir / "kf_start.png", shot_dir / "kf_end.png"
+    if tmpl_id == "h3_fl2v" and not (kf_start.exists() and kf_end.exists()):
+        try:
+            ensure_keyframes(db, data_dir, shot_id, comfy, job_id=job_id)  # 二期：自动补对
+        except Exception as exc:
+            emit_log(db, "comfy", "warn",
+                     f"分镜 {shot['seq']} 关键帧生成失败，降级首帧模式：{exc}",
+                     project_id=proj["id"], job_id=job_id)
     if tmpl_id == "h3_fl2v" and not kf_end.exists():
         tmpl_id = "h3_i2v"
     template = reg[tmpl_id]
@@ -107,6 +176,8 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     prompt = shot["prompt"]
     if not prompt:
         raise ValueError("shot prompt 为空")
+    if tmpl_id == "h3_fl2v":
+        prompt += "\n" + KF_NO_CUT  # 插值约束：和解 D 模式提示词的镜内切换
 
     params = {
         "seed": random.randint(0, 2**31 - 1),

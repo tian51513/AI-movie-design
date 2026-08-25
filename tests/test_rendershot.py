@@ -101,12 +101,14 @@ def test_render_shot_raises_when_image_slots_empty_ref2va(tmp_path, monkeypatch)
 
 
 def test_render_shot_raises_when_fl2v_no_first_frame(tmp_path, monkeypatch):
-    """I1: fl2v 无首帧无绑定资产 → h3_i2v 需要 slot first 但 uploads 空 → raise."""
+    """I1: fl2v 关键帧生成失败且无任何帧 → 降级 h3_i2v 仍无 slot first → raise."""
     db, pid, assets = _setup(tmp_path)
     sid = persist_shots(db, pid, [_shot_draft(workflow_type="fl2v", character_ids=[])])[0]
     update_shot(db, sid, {"prompt": "推门。"})
     from comic_studio.engine.workflows import registry
     monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    monkeypatch.setattr("comic_studio.engine.rendershot.ensure_keyframes",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("kf 失败")))
     from comic_studio.engine.comfy.client import ComfyClient
     with comfy_server("ok", video=True) as m:
         with pytest.raises(ValueError, match="未提供"):
@@ -254,12 +256,14 @@ def test_fl2v_uses_both_keyframes_when_present(tmp_path, monkeypatch):
 
 
 def test_fl2v_falls_back_to_i2v_without_end_frame(tmp_path, monkeypatch):
-    """一期降级：无 kf_end.png → 用 h3_i2v（仅首帧）；kf_start 可作首帧来源。"""
+    """降级（生成失败时）：无 kf_end.png → 用 h3_i2v（仅首帧）；kf_start 作首帧。"""
     db, pid, _ = _setup(tmp_path)
     sid = persist_shots(db, pid, [_shot_draft(workflow_type="fl2v", character_ids=[])])[0]
     update_shot(db, sid, {"prompt": "转身。"})
     from comic_studio.engine.workflows import registry
     monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    monkeypatch.setattr("comic_studio.engine.rendershot.ensure_keyframes",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("kf 失败")))
     kd = tmp_path / "data" / "projects" / "渲染剧" / "shots" / "1"
     kd.mkdir(parents=True)
     (kd / "kf_start.png").write_bytes(b"\x89PNG")
@@ -269,3 +273,59 @@ def test_fl2v_falls_back_to_i2v_without_end_frame(tmp_path, monkeypatch):
         assert out.exists()
         assert any("__first" in u for u in m.uploads)
         assert not any("__last" in u for u in m.uploads)
+
+
+def _mk_kf_shot(tmp_path, db_pid=None):
+    """建 fl2v 分镜（无关键帧文件）。"""
+    db, pid, _ = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(workflow_type="fl2v",
+                                              description="沈雪柔转身拔剑")])[0]
+    update_shot(db, sid, {"prompt": "动作描述"})
+    return db, pid, sid
+
+
+def test_ensure_keyframes_generates_pair(tmp_path, monkeypatch):
+    """关键帧二期：fl2v 缺 kf 文件 → t2i 生成首尾对；同 seed 保构图、约束入词。"""
+    from comic_studio.engine import rendershot
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    db, pid, sid = _mk_kf_shot(tmp_path)
+    with comfy_server("ok") as m:  # 图像结果模式
+        comfy = ComfyClient(m.base_url)
+        ks, ke = rendershot.ensure_keyframes(db, tmp_path / "data", sid, comfy)
+        assert ks.exists() and ke.exists()
+        assert len(m.prompts) == 2
+        seeds = [p["prompt"]["57:3"]["inputs"]["seed"] for p in m.prompts]
+        assert seeds[0] == seeds[1]  # 同 seed：两帧构图一致
+        texts = [p["prompt"]["57:27"]["inputs"]["text"] for p in m.prompts]
+        assert all("同机位" in t and "构图" in t for t in texts)
+        assert all("ultra-detailed" in t for t in texts)  # ZImage 尾缀
+        assert "起始" in texts[0] and "结尾" in texts[1]
+
+
+def test_ensure_keyframes_skips_existing(tmp_path, monkeypatch):
+    from comic_studio.engine import rendershot
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    db, pid, sid = _mk_kf_shot(tmp_path)
+    kd = tmp_path / "data" / "projects" / "渲染剧" / "shots" / "1"
+    kd.mkdir(parents=True)
+    (kd / "kf_start.png").write_bytes(b"x"); (kd / "kf_end.png").write_bytes(b"x")
+    with comfy_server("ok") as m:
+        rendershot.ensure_keyframes(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        assert len(m.prompts) == 0  # 已有不重生成
+
+
+def test_fl2v_render_appends_no_cut_constraint(tmp_path, monkeypatch):
+    """fl2v 渲染提示词追加镜内禁切约束（首尾帧插值与 D 多镜提示词冲突的和解）。"""
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    db, pid, sid = _mk_kf_shot(tmp_path)
+    kd = tmp_path / "data" / "projects" / "渲染剧" / "shots" / "1"
+    kd.mkdir(parents=True)
+    (kd / "kf_start.png").write_bytes(b"x"); (kd / "kf_end.png").write_bytes(b"x")
+    with comfy_server("ok", video=True) as m:
+        out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        assert out.exists()
+        sent = m.prompts[0]["prompt"]["64"]["inputs"]["prompt"]
+        assert "插值" in sent and ("禁止镜内切换" in sent or "机位" in sent)
