@@ -183,6 +183,12 @@ const methods = {
     if (r.ok) { await this.loadDetail(); } else { alert(await r.text()); }
   },
   failedTooltip() { return (this.queue.jobs||[]).filter(j=>j.status==='failed').map(j=>`#${j.id}: ${j.error||''}`).join('\n') || '无失败任务'; },
+  async clearQueue() {
+    if (!confirm(`确认取消本项目的 ${this.queue.pending} 个排队 + ${this.queue.running} 个在跑任务？\n（在跑的渲染会被掐断；已完成的不受影响）`)) return;
+    const r = await fetch(`/api/projects/${this.project.id}/queue`, {method: 'DELETE'});
+    if (r.ok) alert(`已取消 ${(await r.json()).cancelled} 个任务`);
+    else alert(await r.text());
+  },
 
   // ===== 设置 =====
   async openSettings() {

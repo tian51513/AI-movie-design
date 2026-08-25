@@ -62,6 +62,36 @@ def gen_batch(request: Request, project_id: int):
     return {"enqueued": n}
 
 
+@router.delete("/api/projects/{project_id}/queue")
+def clear_queue(request: Request, project_id: int):
+    """一键清空队列/取消任务：pending/running → cancelled；
+    running 的 gen_shot 先向 ComfyUI 发 /interrupt（掐断在跑的渲染）。"""
+    db = request.app.state.db
+    if get_project(db, project_id) is None:
+        raise HTTPException(404, "项目不存在")
+    running_shots = db.connect().execute(
+        "SELECT id FROM jobs WHERE project_id=? AND status='running' "
+        "AND type='gen_shot'", (project_id,)).fetchall()
+    if running_shots:
+        base_url = (get_setting(db, "comfy") or {}).get("base_url")
+        if base_url:
+            from ..engine.comfy.client import ComfyClient
+            try:
+                ComfyClient(base_url).interrupt()
+            except Exception:
+                pass  # ComfyUI 不可达也不阻塞取消（本地行已无效）
+    conn = db.connect()
+    cur = conn.execute(
+        "UPDATE jobs SET status='cancelled', error='手动取消', "
+        "finished_at=datetime('now') "
+        "WHERE project_id=? AND status IN ('pending','running')", (project_id,))
+    conn.commit()
+    from ..engine.logbus import emit as emit_log
+    emit_log(db, "system", "warn", f"手动清空队列：取消 {cur.rowcount} 个任务",
+             project_id=project_id)
+    return {"cancelled": cur.rowcount}
+
+
 @router.get("/api/projects/{project_id}/queue")
 def queue_status(request: Request, project_id: int):
     db = request.app.state.db

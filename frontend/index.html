@@ -238,7 +238,10 @@
     </p>
     </template>
     <p><span class="muted" :title="failedTooltip()">运行 {{queue.running}} · 排队 {{queue.pending}} · 失败 {{queue.failed}}
-        · ComfyUI <span :style="{color: queue.comfy_ok?'#4ade80':'#f87171'}">●</span></span></p>
+        · ComfyUI <span :style="{color: queue.comfy_ok?'#4ade80':'#f87171'}">●</span></span>
+       <button v-if="queue.pending || queue.running" @click="clearQueue"
+               style="background:#dc2626;font-size:12px;padding:3px 10px"
+               title="取消本项目全部待跑/在跑任务（在跑的渲染会向 ComfyUI 发 interrupt 掐断）">🗑 清空队列</button></p>
     <!-- 分镜模式 -->
     <template v-if="detailMode==='shots'">
     <p v-if="project.stage==='assets_ready' || project.stage==='storyboard_ready'">

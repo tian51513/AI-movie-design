@@ -88,6 +88,8 @@ def retry_or_fail(db, job_id: int, error: str, max_attempts: int = 3,
                    consume_attempt: bool = True) -> str:
     conn = db.connect()
     job = get_job(db, job_id)
+    if job["status"] != "running":
+        return job["status"]  # 已取消/已完结（如手动清队列）——worker 不得复活
     if job["attempts"] < max_attempts:
         if not consume_attempt:
             # 回退本次 claim 的 attempts+1：不可达等可重试等待不计入尝试预算

@@ -110,6 +110,11 @@ class ComfyClient:
                 ids.add(entry[1])
         return ids
 
+    def interrupt(self) -> None:
+        """中断 ComfyUI 当前执行（手动取消用）。"""
+        with self._client() as c:
+            c.post(f"{self.base_url}/interrupt")
+
     def download(self, filename: str, subfolder: str, type_: str, dest: Path) -> None:
         with self._client() as c:
             resp = c.get(f"{self.base_url}/view",
