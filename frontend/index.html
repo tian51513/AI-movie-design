@@ -216,9 +216,13 @@
       <label>质量档
         <select :value="project.video_speed" @change="patchVideoParam('video_speed', $event.target.value)">
           <option>快速</option><option>标准</option><option>高质量</option></select></label>
-      <label>默认时长
+      <label>分镜段时长
         <input type="number" min="1" max="15" :value="project.default_shot_duration"
                @change="patchVideoParam('default_shot_duration', Number($event.target.value))" style="width:52px">s</label>
+      <label>预设总时长
+        <input type="number" min="0" max="3600" :value="project.target_duration"
+               @change="patchVideoParam('target_duration', Number($event.target.value))" style="width:60px">s</label>
+      <span class="muted" style="font-size:12px">总时长>0 时按镜数均摊段时长（下限4s，已有分镜即改即生效）</span>
       <label>提示词模式
         <select :value="project.prompt_mode" @change="patchVideoParam('prompt_mode', $event.target.value)">
           <option value="A">A 散文（快/单角色）</option>

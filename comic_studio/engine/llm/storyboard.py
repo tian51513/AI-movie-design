@@ -19,7 +19,7 @@ SPLIT_SYSTEM = """你是小说改编漫剧的分镜师。把给定的小说文�
 5. continue_prev：本镜是否紧接上一镜延续（同场景、动作连贯）——分块拆解时首镜若延续上一块结尾则 true
 6. 台账四分类：must_appear(画面必须出现的实体/动作)、must_keep(必须保持的资产特征)、may_change(允许自由发挥)、must_avoid(易错必须避免项，如"左右手颠倒""换服装"）
 7. description 写成可直接指导视频生成的画面描述：谁在哪做什么、构图与光线，80 字内中文
-8. duration 按动作量 4~8 秒取值
+8. duration 一律填项目统一段时长（上下文给出），不得自行增减
 
 只输出一个 JSON 对象：
 {"shots":[{"text_span":"对应原文摘录","description":"...","shot_type":"对话/动作/场景/情绪",
@@ -134,9 +134,12 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=8
             _content_guard(d.description + " " + d.text_span)
         if result.shots[0].continue_prev and staged:
             link_first_of_block.append(len(staged))
+        from ..projects import get_project as _gp
+        _proj = _gp(db, project_id)
+        _dur = float(_proj["default_shot_duration"]) if _proj else 5.0
         staged.extend(SimpleNamespace(
             text_span=d.text_span, description=d.description, shot_type=d.shot_type,
-            camera=d.camera, duration=d.duration, workflow_type=d.workflow_type,
+            camera=d.camera, duration=_dur, workflow_type=d.workflow_type,
             ledger={"must_appear": d.must_appear, "must_keep": d.must_keep,
                     "may_change": d.may_change, "must_avoid": d.must_avoid},
             character_ids=d.character_ids, scene_ids=d.scene_ids, prop_ids=d.prop_ids,

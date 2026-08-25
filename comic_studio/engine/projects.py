@@ -58,7 +58,8 @@ def set_stage(db: Database, project_id: int, stage: str) -> None:
 def update_video_params(db: Database, project_id: int, *, video_megapixels: float | None = None,
                         video_multiple: int | None = None, video_speed: str | None = None,
                         default_shot_duration: float | None = None,
-                        prompt_mode: str | None = None, lora_realism: float | None = None) -> sqlite3.Row:
+                        prompt_mode: str | None = None, lora_realism: float | None = None,
+                        target_duration: float | None = None) -> sqlite3.Row:
     """更新项目视频参数。仅非 None 参数会更新；非法值抛 ValueError。"""
     updates = {}
     if video_megapixels is not None:
@@ -85,6 +86,10 @@ def update_video_params(db: Database, project_id: int, *, video_megapixels: floa
         if not (0 <= lora_realism <= 1.0):
             raise ValueError("lora_realism 必须在 0~1.0 范围内")
         updates["lora_realism"] = lora_realism
+    if target_duration is not None:
+        if not (0 <= target_duration <= 3600):
+            raise ValueError("target_duration 必须在 0~3600 范围内（0=不限）")
+        updates["target_duration"] = target_duration
 
     if not updates:
         return get_project(db, project_id)
@@ -93,4 +98,20 @@ def update_video_params(db: Database, project_id: int, *, video_megapixels: floa
     set_clause = ", ".join(f"{k}=?" for k in updates.keys())
     conn.execute(f"UPDATE projects SET {set_clause} WHERE id=?", list(updates.values()) + [project_id])
     conn.commit()
+
+    # 时长统一应用（2026-08-26 需求）：段时长改 → 全部分镜统一；
+    # 预设总时长 >0 → 按镜数均摊（下限 4s）并同步段时长
+    if target_duration is not None and target_duration > 0:
+        n = conn.execute("SELECT COUNT(*) c FROM shots WHERE project_id=?",
+                         (project_id,)).fetchone()["c"]
+        if n:
+            per = max(4, round(target_duration / n))
+            conn.execute("UPDATE shots SET duration=? WHERE project_id=?", (per, project_id))
+            conn.execute("UPDATE projects SET default_shot_duration=? WHERE id=?",
+                         (per, project_id))
+            conn.commit()
+    elif default_shot_duration is not None:
+        conn.execute("UPDATE shots SET duration=? WHERE project_id=?",
+                     (default_shot_duration, project_id))
+        conn.commit()
     return get_project(db, project_id)

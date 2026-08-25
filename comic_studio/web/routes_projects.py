@@ -17,7 +17,7 @@ GEN_STORY_SYSTEM = """你是漫剧改编用的小说作者。按给定主题写�
 
 _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "era",
                     "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
-                    "prompt_mode", "lora_realism", "autopilot")
+                    "prompt_mode", "lora_realism", "target_duration", "autopilot")
 
 
 @router.delete("/{project_id}")
@@ -185,7 +185,7 @@ def patch_style(request: Request, project_id: int, body: dict):
         conn.commit()
 
     # Handle video parameters (composable with style)
-    if any(k in body for k in ("video_megapixels", "video_multiple", "video_speed", "default_shot_duration", "prompt_mode", "lora_realism")):
+    if any(k in body for k in ("video_megapixels", "video_multiple", "video_speed", "default_shot_duration", "prompt_mode", "lora_realism", "target_duration")):
         try:
             from ..engine.projects import update_video_params
             kwargs = {}
@@ -201,6 +201,8 @@ def patch_style(request: Request, project_id: int, body: dict):
                 kwargs["prompt_mode"] = body["prompt_mode"]
             if "lora_realism" in body:
                 kwargs["lora_realism"] = body["lora_realism"]
+            if "target_duration" in body:
+                kwargs["target_duration"] = body["target_duration"]
             row = update_video_params(db, project_id, **kwargs)
         except ValueError as e:
             raise HTTPException(422, str(e))

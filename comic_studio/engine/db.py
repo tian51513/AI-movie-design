@@ -127,6 +127,8 @@ MIGRATIONS: list[str] = [
         description TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );""",
+    # 21 projects 加预设总时长（按镜数均摊为段时长；0=不限）——只能在末尾追加
+    """ALTER TABLE projects ADD COLUMN target_duration REAL NOT NULL DEFAULT 0;""",
 ]
 
 
