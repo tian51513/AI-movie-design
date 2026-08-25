@@ -29,10 +29,14 @@ class MockComfy:
         return self._server.RequestHandlerClass.interrupts
 
 
-def _make_handler(mode: str, video: bool = False, animated_images: bool = False):
+def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
+                  queue_running=()):
+    _q_running = tuple(queue_running)
+
     class H(BaseHTTPRequestHandler):
         uploads, prompts, frees, interrupts = [], [], 0, 0
         n = 0
+        queue_running = _q_running
 
         def log_message(self, *a):
             pass
@@ -48,6 +52,10 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False)
         def do_GET(self):
             if self.path == "/system_stats":
                 self._json({"system": {"os": "mock"}, "devices": []})
+            elif self.path == "/queue":
+                # ComfyUI 队列格式：[序号, prompt_id, prompt, extra, outputs]
+                self._json({"queue_running": [[0, pid, {}, {}, []] for pid in H.queue_running],
+                            "queue_pending": []})
             elif self.path.startswith("/object_info/"):
                 # 模型枚举：四个常用加载字段都给固定清单（测试按槽位 field 取用）
                 files = ["a.safetensors", "b.safetensors"]
@@ -115,8 +123,10 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False)
 
 
 @contextmanager
-def comfy_server(mode="ok", video=False, animated_images=False):
-    server = ThreadingHTTPServer(("127.0.0.1", 0), _make_handler(mode, video, animated_images))
+def comfy_server(mode="ok", video=False, animated_images=False, queue_running=()):
+    server = ThreadingHTTPServer(("127.0.0.1", 0),
+                                 _make_handler(mode, video, animated_images,
+                                               queue_running=tuple(queue_running)))
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()
     try:

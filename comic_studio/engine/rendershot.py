@@ -218,6 +218,30 @@ def reattach(db, data_dir, job_row, comfy) -> Path | None:
     return dest
 
 
+def reattach_wait(db, data_dir, job_row, comfy,
+                  stall_seconds: float = 900) -> Path | None:
+    """等待式接回：prompt 仍在 ComfyUI 队列/执行中 → 等它跑完直接下载（不重提交）。
+    失速/失败 → None（交回上层标 failed，由下一轮真正重渲）。"""
+    if job_row["shot_id"] is None:
+        return None
+    shot = get_shot(db, job_row["shot_id"])
+    if shot is None:
+        return None
+    proj = get_project(db, shot["project_id"])
+    results = comfy.wait_and_collect(job_row["comfy_prompt_id"],
+                                     stall_seconds=stall_seconds)
+    video = next((r for r in results if r.get("_kind") == "video"), None)
+    if video is None:
+        return None
+    dest = _download_video_result(db, data_dir, comfy, shot, proj, video,
+                                  job_id=job_row["id"])
+    emit_log(db, "comfy", "info",
+             f"分镜 {shot['seq']} 断点对账：等待 ComfyUI 跑完落盘，未重渲",
+             project_id=proj["id"], job_id=job_row["id"],
+             data={"prompt_id": job_row["comfy_prompt_id"]})
+    return dest
+
+
 @register("gen_shot")
 def handle_gen_shot(db, data_dir, job, comfy):
     """gen_shot worker handler：首帧链 + 渲染编排。"""

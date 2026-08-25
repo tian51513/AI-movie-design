@@ -94,7 +94,8 @@ def test_try_reattach_marks_job_done(tmp_path):
         from comic_studio.engine.settings import set_setting
         set_setting(db, "comfy", {"base_url": mock.base_url})
         rows = jobs.collect_reattach_candidates(db)
-        assert _try_reattach(db, tmp_path / "data", rows) == 1
+        done, waiting = _try_reattach(db, tmp_path / "data", rows)
+        assert done == 1 and waiting == []
         assert jobs.get_job(db, row["id"])["status"] == "done"
         assert get_shot(db, sid)["video_path"].endswith("video_v1.mp4")
 
@@ -110,5 +111,38 @@ def test_try_reattach_unreachable_falls_back(tmp_path):
     from comic_studio.engine.settings import set_setting
     set_setting(db, "comfy", {"base_url": "http://127.0.0.1:1"})  # 不可达
     rows = jobs.collect_reattach_candidates(db)
-    assert _try_reattach(db, tmp_path / "data", rows) == 0
+    done, waiting = _try_reattach(db, tmp_path / "data", rows)
+    assert done == 0 and waiting == []
     assert jobs.get_job(db, rows[0]["id"])["status"] == "running"
+
+
+def test_reattach_wait_for_inflight_prompt(tmp_path):
+    """重启时 prompt 仍在 ComfyUI 队列/执行中 → 不重渲：保持 running、跳过 requeue，
+    由后台等待线程接回（wait_and_collect → 落盘）。"""
+    from comic_studio.web.app import _try_reattach
+    from comic_studio.engine.rendershot import reattach_wait
+    from comic_studio.engine.settings import set_setting
+    db, pid, sid, _ = _proj_with_shot(tmp_path, "cs-shot-1")
+    jobs.enqueue_job(db, "gen_shot", project_id=pid, shot_id=sid,
+                     payload={"shot_id": sid})
+    conn = db.connect()
+    conn.execute("UPDATE jobs SET status='running', comfy_prompt_id='p-live' "
+                 "WHERE project_id=?", (pid,))
+    conn.commit()
+    # 场景一：history 无产物但 prompt 在队 → 等待接回（不判死、requeue 跳过）
+    with comfy_server(mode="hang", queue_running=["p-live"]) as mock:
+        set_setting(db, "comfy", {"base_url": mock.base_url})
+        rows = jobs.collect_reattach_candidates(db)
+        done, waiting = _try_reattach(db, tmp_path / "data", rows)
+        assert done == 0 and waiting == [rows[0]["id"]]
+        jobs.requeue_on_restart(db, ("gen_shot",), exclude_ids=waiting)
+        assert jobs.get_job(db, rows[0]["id"])["status"] == "running"
+    # 场景二：等待线程视角——ComfyUI 跑完（history 有产物）→ 落盘且不重提交
+    with comfy_server(mode="ok", video=True) as mock:
+        comfy = ComfyClient(mock.base_url)
+        n_prompts = len(mock.prompts)
+        dest = reattach_wait(db, tmp_path / "data",
+                             jobs.get_job(db, rows[0]["id"]), comfy)
+        assert dest is not None and dest.exists()
+        assert get_shot(db, sid)["video_path"].endswith("video_v1.mp4")
+        assert len(mock.prompts) == n_prompts

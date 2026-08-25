@@ -11,11 +11,14 @@ from ..engine.db import Database
 _FRONTEND = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
 
 
-def _try_reattach(db, data_dir, rows) -> int:
-    """启动期断点对账（spec §5）：running gen_shot 逐条查 ComfyUI /history，
-    已完成 → reattach 落盘+标 done；不可达/未完成 → 不动（留给 requeue 重渲）。"""
+def _try_reattach(db, data_dir, rows) -> tuple:
+    """启动期断点对账（spec §5）。返回 (立即接回数, 等待接回的 job id 列表)。
+    - history 已有产物 → 立即落盘标 done
+    - prompt 仍在 ComfyUI 队列/执行中 → 保持 running 并返回 id（后台等待接回，
+      requeue 跳过——2026-08-25 真机教训：重启即重渲造成同镜双渲）
+    - 不可达/两者皆无 → 不动（留给 requeue 重渲）"""
     if not rows:
-        return 0
+        return 0, []
     from ..engine.comfy.client import ComfyClient
     from ..engine.jobs import finish_job
     from ..engine.logbus import emit as emit_log
@@ -24,14 +27,18 @@ def _try_reattach(db, data_dir, rows) -> int:
 
     base_url = (get_setting(db, "comfy") or {}).get("base_url")
     if not base_url:
-        return 0
+        return 0, []
     comfy = ComfyClient(base_url)
     try:
         comfy.health()
     except Exception as exc:
         emit_log(db, "comfy", "warn", f"断点对账跳过：ComfyUI 不可达（{exc}）")
-        return 0
-    n = 0
+        return 0, []
+    try:
+        inflight = comfy.queued_prompt_ids()
+    except Exception:
+        inflight = set()
+    done, waiting = 0, []
     for row in rows:
         try:
             dest = reattach(db, data_dir, row, comfy)
@@ -40,11 +47,37 @@ def _try_reattach(db, data_dir, rows) -> int:
                      f"断点对账失败 job#{row['id']}：{exc}",
                      project_id=row["project_id"], job_id=row["id"])
             continue
-        if dest is None:
+        if dest is not None:
+            finish_job(db, row["id"], None)
+            done += 1
+        elif row["comfy_prompt_id"] in inflight:
+            waiting.append(row["id"])  # ComfyUI 还在跑：等它，不重渲
+    return done, waiting
+
+
+def _reattach_waiting(db, data_dir, job_ids, comfy_base_url) -> None:
+    """后台线程：等待在队 prompt 跑完落盘；失速/失败标 failed（下一轮真重渲）。"""
+    from ..engine.comfy.client import ComfyClient
+    from ..engine.jobs import finish_job, get_job
+    from ..engine.logbus import emit as emit_log
+    from ..engine.rendershot import reattach_wait
+
+    comfy = ComfyClient(comfy_base_url)
+    for jid in job_ids:
+        row = get_job(db, jid)
+        if row is None or row["status"] != "running":
             continue
-        finish_job(db, row["id"], None)
-        n += 1
-    return n
+        try:
+            dest = reattach_wait(db, data_dir, row, comfy)
+        except Exception as exc:
+            emit_log(db, "comfy", "warn",
+                     f"等待接回失败 job#{jid}：{exc}",
+                     project_id=row["project_id"], job_id=jid)
+            dest = None
+        if dest is not None:
+            finish_job(db, jid, None)
+        else:
+            finish_job(db, jid, "reattach_wait 未取得产物")
 
 
 def _autopilot_once(db, data_dir) -> int:
@@ -88,14 +121,18 @@ def create_app(db_path: str | Path = "./data/studio.db",
         # ComfyUI 可达且 /history 显示已完成 → 直接下载落盘不重渲；否则照常 requeue。
         from ..engine.jobs import collect_reattach_candidates, requeue_on_restart
         reattach_rows = collect_reattach_candidates(db, "gen_shot")
-        reattached = _try_reattach(db, data_dir, reattach_rows)
-        # 断点对账（spec §5）：先收集可对账的 gen_shot，再 requeue。
-        # ComfyUI 可达且 /history 显示已完成 → 直接下载落盘不重渲；否则照常 requeue。
-        from ..engine.jobs import collect_reattach_candidates, requeue_on_restart
-        reattach_rows = collect_reattach_candidates(db, "gen_shot")
-        reattached = _try_reattach(db, data_dir, reattach_rows)
+        reattached, waiting_ids = _try_reattach(db, data_dir, reattach_rows)
         # 重启后 BackgroundTasks 已消亡，running job 不可能合法存在
-        requeued = requeue_on_restart(db, ("gen_ref", "split_storyboards", "gen_prompt", "gen_shot"))
+        #（waiting_ids：ComfyUI 仍在跑的保持 running 由后台接回，跳过重排防双渲）
+        requeued = requeue_on_restart(
+            db, ("gen_ref", "split_storyboards", "gen_prompt", "gen_shot"),
+            exclude_ids=waiting_ids)
+        if waiting_ids:
+            from threading import Thread
+            from ..engine.settings import get_setting
+            Thread(target=_reattach_waiting, daemon=True, name="reattach-waiting",
+                   args=(db, data_dir, waiting_ids,
+                         (get_setting(db, "comfy") or {}).get("base_url", ""))).start()
         if start_workers:
             from ..engine import genref, merge as merge_mod, pipeline_jobs, rendershot  # 注册触发
             merge_mod.register_merge_handler()  # merge handler 延迟注册（避免环）

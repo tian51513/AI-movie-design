@@ -98,6 +98,18 @@ class ComfyClient:
                     f"ComfyUI {prompt_id} 超过 {stall_seconds}s 无进展，已发送 interrupt")
             time.sleep(poll_interval)
 
+    def queued_prompt_ids(self) -> set:
+        """当前在 ComfyUI 队列/执行中的 prompt_id 集合（断点对账：在队=可等待接回）。"""
+        with self._client() as c:
+            resp = c.get(f"{self.base_url}/queue")
+            resp.raise_for_status()
+            q = resp.json()
+        ids = set()
+        for entry in (q.get("queue_running") or []) + (q.get("queue_pending") or []):
+            if len(entry) > 1 and entry[1]:
+                ids.add(entry[1])
+        return ids
+
     def download(self, filename: str, subfolder: str, type_: str, dest: Path) -> None:
         with self._client() as c:
             resp = c.get(f"{self.base_url}/view",

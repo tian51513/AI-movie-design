@@ -102,15 +102,21 @@ def retry_or_fail(db, job_id: int, error: str, max_attempts: int = 3,
     return "failed"
 
 
-def requeue_on_restart(db, requeue_types: tuple) -> int:
+def requeue_on_restart(db, requeue_types: tuple, exclude_ids=()) -> int:
+    """重启对账：running → pending（重跑）。exclude_ids：等待接回的 job 不动（防双渲）。"""
     conn = db.connect()
+    exclude = tuple(exclude_ids)
     marks = ",".join("?" * len(requeue_types))
+    excl = f" AND id NOT IN ({','.join('?' * len(exclude))})" if exclude else ""
     cur = conn.execute(
         f"UPDATE jobs SET status='pending', started_at=NULL "
-        f"WHERE status='running' AND type IN ({marks}) AND attempts < 3", requeue_types)
+        f"WHERE status='running' AND type IN ({marks}) AND attempts < 3{excl}",
+        requeue_types + exclude)
+    fail_marks = ",".join("?" * len(exclude))
+    fail_excl = f" AND id NOT IN ({fail_marks})" if exclude else ""
     conn.execute(
         f"UPDATE jobs SET status='failed', error='interrupted by restart', "
-        f"finished_at=datetime('now') WHERE status='running'")
+        f"finished_at=datetime('now') WHERE status='running'{fail_excl}", exclude)
     conn.commit()
     return cur.rowcount
 
