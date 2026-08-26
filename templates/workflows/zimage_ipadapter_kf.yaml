@@ -1,0 +1,32 @@
+id: zimage_ipadapter_kf
+type: t2i
+name: Z-Image IP-Adapter 关键帧（抠图身份注入+纯t2i）
+file: zimage_ipadapter_kf.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '28'
+    field: value
+  params:
+    seed:
+      node: '4'
+      field: seed
+  images:
+  - node: '100'
+    field: image
+    slot: char_ref
+  - node: '101'
+    field: image
+    slot: scene_ref
+outputs:
+- node: '10'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- ComfyUI-Easy-Use
+- comfyui-rembg
+
+# 模型槽位
+models:
+- {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
+- {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae, node: '3', field: vae_name, cls: VAELoader, label_cn: VAE}
