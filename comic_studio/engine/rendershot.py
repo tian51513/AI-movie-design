@@ -194,7 +194,10 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
     char_refs = _anchor_refs(db, shot, data_dir)  # [main.png]（不含三视图）
 
     # 合并参考：上镜尾帧优先，无则角色主图
-    start_ref = prev_kf_end  # 仅有上镜尾帧时 img2img；首镜纯文（白底/画风融合两大坑）
+    # 参考图策略：IP-Adapter 模板角色图是身份参考（不是底图），始终传入；
+    # img2img 模板才需要区分底图来源（上镜尾帧 > 首镜无底图退纯文）
+    # 2026-08-27：模板有图槽就尽量填——具体怎么用由模板决定
+    start_ref = prev_kf_end or (char_refs[0] if char_refs else None)
 
     def _start_images():
         if not n_slots or not start_ref:
