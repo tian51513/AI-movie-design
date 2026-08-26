@@ -505,7 +505,8 @@ const methods = {
     const r = await fetch(`/api/projects/${this.project.id}`, {
       method: 'PATCH', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({[key]: value})});
-    if (!r.ok) { alert(await r.text()); await this.loadDetail(); }
+    if (r.ok) { Object.assign(this.project, await r.json()); }  // 回写 UI——否则输入框被旧值顶回，形同没保存
+    else { alert(await r.text()); await this.loadDetail(); }
   },
   promptBadge(s) {
     const j = s.prompt_job;
@@ -518,7 +519,7 @@ const methods = {
   videoParamsLabel() {
     const p = this.project;
     if (!p) return '';
-    return `${p.video_megapixels}MP · ${p.video_multiple}倍 · ${p.video_speed} · 默认${p.default_shot_duration}s · ${p.prompt_mode||'D'}模式 · LoRA${p.lora_realism}`;
+    return `${p.video_megapixels}MP · ${p.video_multiple}倍 · ${p.video_speed} · 段${p.default_shot_duration}s${p.target_duration ? ` · 总${p.target_duration}s` : ''} · ${p.prompt_mode||'D'}模式 · LoRA${p.lora_realism}`;
   },
   async selectVersion(s, file) {
     const r = await fetch(`/api/shots/${s.id}/version`, {
