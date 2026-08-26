@@ -49,6 +49,11 @@ class ComfyClient:
         with self._client() as c:
             resp = c.post(f"{self.base_url}/prompt",
                           json={"prompt": workflow, "client_id": client_id})
+            if resp.status_code >= 500:
+                # 5xx（如 503 Forwarding failure=后端僵死）视作瞬时不可达：
+                # worker 走退避重试不烧尝试次数（真机 2026-08-26 教训）
+                raise ComfyUnreachable(
+                    f"ComfyUI 5xx（{resp.status_code}）：{resp.text[:120]}")
             resp.raise_for_status()
             return resp.json()["prompt_id"]
 
