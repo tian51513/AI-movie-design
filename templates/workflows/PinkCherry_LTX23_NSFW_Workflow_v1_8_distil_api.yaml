@@ -1,0 +1,23 @@
+id: PinkCherry_LTX23_NSFW_Workflow_v1_8_distil_api
+type: i2v
+name: PinkCherry_LTX23_NSFW_Workflow_v1_8_distil_api
+file: PinkCherry_LTX23_NSFW_Workflow_v1_8_distil_api.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '110'
+    field: text
+  images:
+  - node: '167'
+    field: image
+    slot: ref0
+outputs:
+- node: '1'
+  filename_prefix: cs/{project}/{asset}
+requires: []
+
+# 模型槽位（settings model_overrides 按模板 id 覆盖）
+models:
+- {label: vae_0, node: '184', field: vae_name, cls: VAELoader, label_cn: VAE}
+- {label: vae_1, node: '330', field: vae_name, cls: VAELoader, label_cn: VAE}
+- {label: lora_0, node: '378', field: lora_name, cls: LoraLoaderModelOnly, label_cn: LoRA}

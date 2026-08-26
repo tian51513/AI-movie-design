@@ -13,11 +13,13 @@ def analyze_workflow(wf: dict, name: str) -> dict:
 
     # ===== 1. 类型识别 =====
     classes = {n.get("class_type", "") for n in wf.values()}
-    if any("SaveVideo" in c or "CreateVideo" in c for c in classes):
+    is_video = (any("SaveVideo" in c or "CreateVideo" in c for c in classes)
+                or any("LTXV" in c and "Video" in c for c in classes)  # LTX 系列
+                or any("EmptyLTXVLatentVideo" in c for c in classes))
+    if is_video:
         if "MiniMaxH3ReferenceToVideo" in classes:
             wtype = "ref2va"
         elif "MiniMaxH3ImageToVideo" in classes:
-            # 有 LoadImage 且 ≥2 → 首尾帧；有 1 个 → 图生视频；无 → 文生
             load_imgs = [nid for nid, n in wf.items()
                          if n.get("class_type") == "LoadImage"]
             if len(load_imgs) >= 2:
@@ -27,11 +29,23 @@ def analyze_workflow(wf: dict, name: str) -> dict:
             else:
                 wtype = "t2v"
         else:
-            wtype = "t2v"  # 未知视频类型归为 t2v
+            # LTX / 未知视频框架：按 LoadImage 数分类
+            load_imgs = [nid for nid, n in wf.items()
+                         if n.get("class_type") == "LoadImage"]
+            if len(load_imgs) >= 2:
+                wtype = "fl2v"
+            elif len(load_imgs) == 1:
+                wtype = "i2v"
+            else:
+                wtype = "t2v"
     elif any("SaveImage" in c for c in classes):
         wtype = "t2i"
     else:
-        wtype = "other"
+        # 最后尝试：有 LTXV/LatentVideo 迹象也归视频
+        if any("LatentVideo" in c or "LTXVDecode" in c for c in classes):
+            wtype = "t2v"
+        else:
+            wtype = "other"
 
     # ===== 2. 注入点识别 =====
     prompt_node, prompt_field = None, None

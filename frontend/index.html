@@ -385,7 +385,7 @@
     </div><!-- /film-strip -->
     <div v-if="shots.length === 0 && !splitRunning" class="muted" style="padding:20px 0">暂无分镜——点击上方「拆分分镜」开始</div>
     <!-- 分镜导览条（快速跳转） -->
-    <div v-if="shots.length > 3" style="display:flex;gap:4px;overflow-x:auto;padding:4px 0;margin-bottom:8px;scrollbar-width:none">
+    <div v-if="shots.length > 3" style="display:flex;gap:4px;flex-wrap:wrap;padding:4px 0;margin-bottom:8px">
       <button v-for="s in shots" :key="'nav'+s.id" @click="scrollToShot(s.seq)"
               :style="s.status==='rendered' ? 'background:#16a34a' : (s.status==='ready' ? 'background:#3b82f6' : '')"
               style="min-width:36px;font-size:11px;padding:3px 6px;border-radius:4px;flex-shrink:0"
