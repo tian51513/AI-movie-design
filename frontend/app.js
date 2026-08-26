@@ -540,11 +540,18 @@ const methods = {
     this.expandedShot = s.id;
   },
   shotStatusColor(s) {
+    const label = this.shotStatusLabel(s);
+    if (label === '渲染中' || label === '排队渲染') return '#f59e0b';
+    if (label === '生成提示词') return '#60a5fa';
     if (s.status === 'ready') return '#4ade80';
     if (s.status === 'stale') return '#fb923c';
     return '#f87171';
   },
   shotStatusLabel(s) {
+    // 渲染进行中动态覆盖（真机 2026-08-26：渲染时仍显示'就绪'令人困惑）
+    if (s.render_job && s.render_job.status === 'running') return '渲染中';
+    if (s.render_job && s.render_job.status === 'pending') return '排队渲染';
+    if (s.prompt_job && s.prompt_job.status === 'running') return '生成提示词';
     return { pending: '待生成', ready: '就绪', stale: '资产已更新' }[s.status] || s.status;
   },
   async renderShot(s) {
