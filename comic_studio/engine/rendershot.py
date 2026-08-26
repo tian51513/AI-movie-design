@@ -106,15 +106,23 @@ def build_keyframe_prompt(db, shot, proj, phase: str) -> str:
     from .genref import ZIMAGE_TAIL
     detail = (shot["description"] or "").strip().rstrip("。；;，,") or "按分镜描述"
     prompt = f"漫剧分镜关键帧（{phase}瞬间）：{detail}"
-    # 角色外貌文字（2026-08-26 真机教训：不加则模型不知道角色长什么样）
     ledger = json.loads(shot["ledger_json"] or "{}")
+    # 角色外貌文字（2026-08-26：不加则模型不知道角色长什么样）
     for aid in (ledger.get("assets", {}) or {}).get("characters", []):
         a = get_asset(db, aid)
         if a:
             appearance = json.loads(a["appearance_json"]).get("detail", "")
             if appearance:
                 prompt += f"。角色「{a['name']}」：{appearance[:150]}"
-            break  # 首位角色
+            break
+    # 场景描述（2026-08-26 真机：参考图白底被继承 → 背景全白）
+    for sid in (ledger.get("assets", {}) or {}).get("scenes", []):
+        sc = get_asset(db, sid)
+        if sc:
+            scene_desc = json.loads(sc["appearance_json"]).get("detail", "")
+            if scene_desc:
+                prompt += f"。场景「{sc['name']}」：{scene_desc[:100]}"
+            break
     style = ((proj["style"] or "") if proj is not None else "").strip().rstrip("。；;，,")
     if style:
         prompt += "。" + style
@@ -184,7 +192,9 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
     images = _start_images()
     anchor_line = ""
     if images:
-        anchor_line = "。人物外貌与服装与参考图保持完全一致"
+        anchor_line = ("。人物的外貌、五官、发型与服装与参考图保持完全一致，"
+                       "但背景场景按本提示词的文字描述生成（参考图仅为人物立绘，"
+                       "其白色背景不是画面背景，必须替换为描述中的具体场景）")
     if not images and not start_ref and n_slots > 0:
         # 无参考图 + 模板需要图输入 → 引导纯文
         boot = scan_templates(TEMPLATE_ROOT).get("zimage_t2i")
