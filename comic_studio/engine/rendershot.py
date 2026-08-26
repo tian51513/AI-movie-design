@@ -107,21 +107,21 @@ def build_keyframe_prompt(db, shot, proj, phase: str) -> str:
     detail = (shot["description"] or "").strip().rstrip("。；;，,") or "按分镜描述"
     prompt = f"漫剧分镜关键帧（{phase}瞬间）：{detail}"
     ledger = json.loads(shot["ledger_json"] or "{}")
-    # 角色外貌文字（2026-08-26：不加则模型不知道角色长什么样）
+    # 场景描述优先（2026-08-26 真机：白底 → 场景放前面提高权重）
+    for sid in (ledger.get("assets", {}) or {}).get("scenes", []):
+        sc = get_asset(db, sid)
+        if sc:
+            scene_desc = json.loads(sc["appearance_json"]).get("detail", "")
+            if scene_desc:
+                prompt += f"。场景环境：{sc['name']}——{scene_desc[:120]}"
+            break
+    # 角色外貌
     for aid in (ledger.get("assets", {}) or {}).get("characters", []):
         a = get_asset(db, aid)
         if a:
             appearance = json.loads(a["appearance_json"]).get("detail", "")
             if appearance:
                 prompt += f"。角色「{a['name']}」：{appearance[:150]}"
-            break
-    # 场景描述（2026-08-26 真机：参考图白底被继承 → 背景全白）
-    for sid in (ledger.get("assets", {}) or {}).get("scenes", []):
-        sc = get_asset(db, sid)
-        if sc:
-            scene_desc = json.loads(sc["appearance_json"]).get("detail", "")
-            if scene_desc:
-                prompt += f"。场景「{sc['name']}」：{scene_desc[:100]}"
             break
     style = ((proj["style"] or "") if proj is not None else "").strip().rstrip("。；;，,")
     if style:
