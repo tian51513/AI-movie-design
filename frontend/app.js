@@ -31,6 +31,7 @@ function data() {
     views: {}, queue: {running:0, pending:0, failed:0, comfy_ok:false},
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '',
+    newSegDur: 5, newTotalDur: 0,
     themesManage: [], themeImportFile: null, themeImporting: false,
     editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character',
     newStyleKey: '', newStyleText: '',
@@ -82,6 +83,8 @@ const methods = {
     fd.append('name', this.newName); fd.append('aspect_ratio', this.newRatio);
     fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : STYLE_PRESETS[this.newStyleKey] || '');
     fd.append('novel', this.newFile);
+    fd.append('default_shot_duration', this.newSegDur || 5);
+    fd.append('target_duration', this.newTotalDur || 0);
     const resp = await fetch('/api/projects', { method: 'POST', body: fd });
     if (!resp.ok) { alert(await resp.text()); }
     this.creating = false; this.newName = ''; this.newFile = null;
@@ -126,7 +129,9 @@ const methods = {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           theme_id: this.newThemeId, aspect_ratio: this.newRatio,
-          name: this.newName || undefined, protagonist: this.newProtagonist }) });
+          name: this.newName || undefined, protagonist: this.newProtagonist,
+          default_shot_duration: this.newSegDur || 5,
+          target_duration: this.newTotalDur || 0 }) });
       if (!resp.ok) { alert(await resp.text()); }
       else { this.newName = ''; this.newProtagonist = ''; this.newThemeId = ''; }
     } catch (e) { alert('生成失败：' + e); }

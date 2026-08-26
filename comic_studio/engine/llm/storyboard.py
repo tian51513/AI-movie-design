@@ -151,6 +151,14 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=8
     # 渲染时首帧接力从未触发，镜间不连贯的根因之一）
     for prev, cur in zip(ids, ids[1:]):
         conn.execute("UPDATE shots SET depends_on=? WHERE id=?", (prev, cur))
+    # 创建时设了预设总时长 → 拆完按镜数均摊（下限4s，连贯性/时长需求 2026-08-26）
+    _proj = conn.execute("SELECT target_duration, default_shot_duration FROM projects "
+                         "WHERE id=?", (project_id,)).fetchone()
+    if _proj and _proj["target_duration"] and _proj["target_duration"] > 0:
+        per = max(4, round(_proj["target_duration"] / max(1, len(ids))))
+        conn.execute("UPDATE shots SET duration=? WHERE project_id=?", (per, project_id))
+        conn.execute("UPDATE projects SET default_shot_duration=? WHERE id=?",
+                     (per, project_id))
     conn.commit()
     emit_log(db, "storyboard", "info", f"分镜落库 {len(ids)} 镜（已替换旧分镜）",
              project_id=project_id)

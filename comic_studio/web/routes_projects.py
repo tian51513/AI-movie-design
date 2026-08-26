@@ -96,7 +96,9 @@ def create_from_theme(request: Request, body: dict):
     if len(text) < 500:
         raise HTTPException(422, f"生成的正文过短（{len(text)} 字），请重试或换主题")
     row = create_project(db, data_dir, body.get("name") or theme["name"], aspect,
-                         text, style=(body.get("style") or ""))
+                         text, style=(body.get("style") or ""),
+                         default_shot_duration=float(body.get("default_shot_duration") or 5.0),
+                         target_duration=float(body.get("target_duration") or 0.0))
     return _public(row)
 
 
@@ -110,7 +112,8 @@ def create(request: Request, name: str = Form(...),
            style: str = Form(""), video_megapixels: float = Form(0.4),
            video_multiple: int = Form(32), video_speed: str = Form("标准"),
            default_shot_duration: float = Form(5.0),
-           prompt_mode: str = Form("D"), lora_realism: float = Form(0.75)):
+           prompt_mode: str = Form("D"), lora_realism: float = Form(0.75),
+           target_duration: float = Form(0.0)):
     if aspect_ratio not in ("9:16", "16:9"):
         raise HTTPException(422, "aspect_ratio 只能是 9:16 或 16:9")
     try:
@@ -121,7 +124,8 @@ def create(request: Request, name: str = Form(...),
                          name, aspect_ratio, text, style=style,
                          video_megapixels=video_megapixels, video_multiple=video_multiple,
                          video_speed=video_speed, default_shot_duration=default_shot_duration,
-                         prompt_mode=prompt_mode, lora_realism=lora_realism)
+                         prompt_mode=prompt_mode, lora_realism=lora_realism,
+                         target_duration=target_duration)
     return _public(row)
 
 

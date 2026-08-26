@@ -63,3 +63,36 @@ def test_patch_target_duration_redistributes(tmp_path):
         # 总时长过小 → 均摊钳到 4s 下限
         c.patch(f"/api/projects/{pid}", json={"target_duration": 12})
         assert [s["duration"] for s in list_shots(db, pid)] == [4.0] * 6
+
+
+def test_create_with_durations(tmp_path):
+    """创建项目即可指定段时长/总时长（2026-08-26 需求）。"""
+    db, pid = _proj(tmp_path, default_shot_duration=6, target_duration=90)
+    row = get_project(db, pid)
+    assert row["default_shot_duration"] == 6 and row["target_duration"] == 90
+
+
+def _split_shot(desc):
+    return {"text_span": "推门", "description": desc, "shot_type": "动作",
+            "camera": {"景别": "全景", "机位": "平视", "运镜": "固定", "转场": "切"},
+            "duration": 5, "workflow_type": "ref2va",
+            "must_appear": [], "must_keep": [], "may_change": [], "must_avoid": [],
+            "character_ids": [1], "scene_ids": [], "prop_ids": [], "continue_prev": False}
+
+
+def test_split_applies_target_redistribution(tmp_path):
+    """创建时设了总时长 → 拆分镜后自动按镜数均摊（下限4s）。"""
+    import json as _json
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    from tests.test_storyboard_split import FakeLLM
+    from comic_studio.engine.paths import data_to_abs
+    from comic_studio.engine.shots import list_shots
+    db, pid = _proj(tmp_path, target_duration=10)  # 2 镜 → 每镜 5s
+    novel = data_to_abs(tmp_path / "data", get_project(db, pid)["novel_path"])
+    novel.parent.mkdir(parents=True, exist_ok=True)
+    novel.write_text("甲" * 60 + "\n\n" + "乙" * 60, encoding="utf-8")
+    two = _json.dumps({"shots": [_split_shot("甲镜"), _split_shot("乙镜")]},
+                      ensure_ascii=False)
+    fake = FakeLLM([two])
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
+    assert [s["duration"] for s in list_shots(db, pid)] == [5.0, 5.0]

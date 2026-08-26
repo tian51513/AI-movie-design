@@ -160,7 +160,9 @@
                <option v-for="t in themes" :key="t.id" :value="t.id"
                        :title="t.description">{{ t.name }}（{{ t.category }}）</option>
              </select></p>
-          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
+          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select>
+             段时长<input type="number" min="1" max="15" v-model.number="newSegDur" style="width:44px">s
+             总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s</p>
           <p><input v-model="newName" placeholder="漫剧名称（留空用主题名）"></p>
           <p><input v-model="newProtagonist" placeholder="主角姓名（可选）"></p>
           <p><button :disabled="creating || !newThemeId">
@@ -182,6 +184,9 @@
                <option>喜剧</option><option>舞台剧</option></optgroup>
              <option value="自定义">自定义…</option></select></p>
         <p v-if="newStyleKey==='自定义'"><input v-model="newStyleText" placeholder="自定义画风描述" style="width:90%"></p>
+        <p class="muted" style="margin:2px 0">段时长<input type="number" min="1" max="15" v-model.number="newSegDur" style="width:44px">s
+           总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s
+           （总时长>0 时拆分镜后按镜数均摊）</p>
           <p><input type="file" accept=".txt" @change="f => newFile = f.target.files[0]" required></p>
           <p><button :disabled="creating">{{ creating ? '创建中…' : '创建项目' }}</button></p>
         </form>
