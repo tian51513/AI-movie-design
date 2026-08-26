@@ -11,6 +11,9 @@ inject:
     seed:
       node: '4'
       field: seed
+    denoise:
+      node: '4'
+      field: denoise
   images:
   - node: '23'
     field: image
