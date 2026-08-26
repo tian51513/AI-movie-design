@@ -10,7 +10,7 @@ from comic_studio.engine.comfy.client import ComfyClient
 from comic_studio.engine.db import Database
 from comic_studio.engine.projects import create_project
 from comic_studio.engine.rendershot import (
-    SPEED_STEPS, collect_ref_images, pick_template_id, render_shot)
+    collect_ref_images, pick_template_id, render_shot)
 from comic_studio.engine.shots import get_shot, list_shots, persist_shots, update_shot
 from comfy_mock import comfy_server
 

@@ -16,9 +16,6 @@ from .workflows import registry
 from .workflows.filler import fill_workflow
 
 ASPECT_ENUM = {"16:9": "16:9 (Widescreen)", "9:16": "9:16 (Portrait Widescreen)"}
-# 步数对齐加速版 turbo 设计（4-step LoRA + TE 加速 + sage，2026-08-26 用户勘误：
-# 原快速8/标准16/高质量25 与 4 步 turbo 设计打架，真机耗时数倍于手跑工作流）
-SPEED_STEPS = {"快速": 4, "标准": 4, "高质量": 6}
 
 
 def pick_template_id(shot_row) -> str:
@@ -215,7 +212,6 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         "seed": random.randint(0, 2**31 - 1),
         "megapixels": proj["video_megapixels"],
         "multiple": proj["video_multiple"],
-        "steps": SPEED_STEPS[proj["video_speed"]],
         "duration": max(4, int(shot["duration"])),
         "lora_strength": proj["lora_realism"],
     }
