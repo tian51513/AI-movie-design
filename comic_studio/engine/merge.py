@@ -74,6 +74,28 @@ def _canvas(aspect_ratio: str) -> tuple:
     return (1920, 1080) if aspect_ratio == "16:9" else (1080, 1920)
 
 
+def _replace_audio(video: Path, audio: Path, output: Path) -> Path:
+    """P6：TTS 音轨替换——视频画面保留，音频换为 TTS 配音。"""
+    subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-i", str(audio),
+                    "-map", "0:v", "-map", "1:a",
+                    "-c:v", "copy", "-c:a", "aac", "-shortest",
+                    str(output)],
+                   check=True, capture_output=True, timeout=300)
+    return output
+
+
+def _burn_subtitles(video: Path, srt: Path) -> None:
+    """P6：SRT 字幕烧入成片（原地覆盖）。"""
+    tmp = video.with_suffix(".sub_tmp.mp4")
+    style = ("FontName=SimSun,FontSize=22,PrimaryColour=&H00FFFFFF&,"
+             "OutlineColour=&H00000000&,Outline=2,Bold=1,MarginV=25")
+    subprocess.run([ffmpeg_bin(), "-y", "-i", str(video),
+                    "-vf", f"subtitles={srt}:force_style='{style}'",
+                    "-c:a", "copy", str(tmp)],
+                   check=True, capture_output=True, timeout=600)
+    tmp.replace(video)
+
+
 def merge_project(db, data_dir, project_id, job_id=None) -> Path:
     """按 seq 收集选用视频 → 归一化 → concat → output/epNNN.mp4；置 stage=merged。"""
     from .logbus import emit as emit_log
@@ -101,8 +123,19 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
             if not src.exists():
                 raise ValueError(f"镜头 {s['seq']} 视频文件缺失: {src}")
             part = normalize(src, td / f"{s['seq']:04d}.mp4", w, h, 25)
+            # P6：TTS 音轨替换（dialogue.mp3 存在时替换 H3 原生音频）
+            tts_audio = src.parent / "dialogue.mp3"
+            if tts_audio.exists():
+                tts_part = td / f"{s['seq']:04d}_tts.mp4"
+                _replace_audio(part, tts_audio, tts_part)
+                part = tts_part
             parts.append(part)
         concat(parts, out)
+
+    # P6：字幕烧录（subtitles.srt 存在时烧入成片）
+    srt = out_dir / "subtitles.srt"
+    if srt.exists():
+        _burn_subtitles(out, srt)
     set_stage(db, project_id, "merged")
     emit_log(db, "merge", "info", f"成片合成完成 → {out.name}（{len(shots)} 镜）",
              project_id=project_id, job_id=job_id)
