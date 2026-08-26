@@ -33,6 +33,13 @@ class LLMClient:
         resp = self._client.chat.completions.create(**kwargs)
         # 协议不匹配/异常响应时 choices/usage 可能为 None（如误连 Anthropic 端点）
         choices = getattr(resp, "choices", None) or []
+        # 输出撞上下文/长度上限被硬截断：立刻报错，不进重试——截断 JSON 重试必败，
+        # 且 ask_validated 会把失败输出追加进消息进一步挤占空间（真机 2026-08-27 job 582）
+        finish = getattr(choices[0], "finish_reason", None) if choices else None
+        if finish == "length":
+            raise LLMError(
+                f"输出被长度上限截断（finish_reason=length）：请减小单次输入（如缩小分块）"
+                f"或提高模型上下文窗口")
         text = (choices[0].message.content or "") if choices else ""
         u = getattr(resp, "usage", None)
         usage = Usage(getattr(u, "prompt_tokens", 0) or 0,

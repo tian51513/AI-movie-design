@@ -51,6 +51,27 @@ def test_ask_validated_gives_up_after_max():
     assert c.call_count() == 2
 
 
+def test_raw_chat_raises_on_truncated_output():
+    """finish_reason=length（输出撞上下文/长度上限被截断）必须立刻报错——
+    截断的 JSON 重试必败，且 ask_validated 重试还会追加失败输出挤占空间
+    （真机 2026-08-27：job 582 分块 8127 字，7006+9378=16384 恰好 num_ctx，3 次徒劳重试）。"""
+    from types import SimpleNamespace as NS
+
+    class FakeCompletions:
+        def create(self, **kw):
+            msg = NS(content='{"shots":[{"prop_ids')
+            return NS(choices=[NS(message=msg, finish_reason="length")],
+                      usage=NS(prompt_tokens=7006, completion_tokens=9378))
+
+    class FakeClient:
+        chat = type("C", (), {"completions": FakeCompletions()})()
+
+    c = LLMClient("http://x", "k", "m")
+    c._client = FakeClient()
+    with pytest.raises(LLMError, match="截断"):
+        c.raw_chat([{"role": "user", "content": "hi"}])
+
+
 def test_raw_chat_handles_none_choices_and_usage():
     """协议不匹配（如 Anthropic 端点）时 resp.choices/usage 可能为 None——不崩，返回空文本。"""
     from comic_studio.engine.llm.provider import LLMClient
