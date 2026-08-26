@@ -164,6 +164,19 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
     for phase, dest in (("起始", kf_start), ("结尾", kf_end)):
         if dest.exists():
             continue
+        # 尾帧参考首帧（方案A 正确做法 2026-08-26 用户勘误）：
+        # img2img 保构图+人物（首帧已从 main.png 获得正确外貌），
+        # 提示词仅改"结尾瞬间"动作——同 seed 但不依赖 seed 保构图
+        if phase == "结尾" and kf_start.exists():
+            if tmpl.inject_images:
+                images = [{"slot": tmpl.inject_images[0]["slot"],
+                           "path": str(kf_start)}]
+                anchor_line = ("。画面构图、场景、光线与人物外貌服装与参考图完全一致，"
+                               "仅人物动作与表情变化为本镜结尾瞬间")
+            else:
+                # 纯文模板（zimage_t2i）无图槽——提示词补描述
+                anchor_line = ("。与起始帧同构图同场景同人物同服装，"
+                               "仅动作与表情变化为结尾瞬间")
         wf, uploads = fill_workflow(
             tmpl, prompt=build_keyframe_prompt(shot, proj, phase) + anchor_line,
             params={"seed": seed}, images=images,
