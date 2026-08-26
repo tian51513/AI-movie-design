@@ -30,7 +30,7 @@ function data() {
     view: 'projects', projects: [], project: null, assets: [],
     views: {}, queue: {running:0, pending:0, failed:0, comfy_ok:false},
     newName: '', newRatio: '9:16', newFile: null, creating: false,
-    newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '',
+    newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '', newWordCount: '',
     newSegDur: 5, newTotalDur: 0,
     settingsTab: 'llm', wfImportFile: null, wfImporting: false, activeShotSeq: 1,
     themesManage: [], themeImportFile: null, themeImporting: false,
@@ -206,10 +206,12 @@ const methods = {
         body: JSON.stringify({
           theme_id: this.newThemeId, aspect_ratio: this.newRatio,
           name: this.newName || undefined, protagonist: this.newProtagonist,
+          word_count: this.newWordCount || undefined,
           default_shot_duration: this.newSegDur || 5,
           target_duration: this.newTotalDur || 0 }) });
       if (!resp.ok) { alert(await resp.text()); }
-      else { this.newName = ''; this.newProtagonist = ''; this.newThemeId = ''; }
+      else { this.newName = ''; this.newProtagonist = ''; this.newThemeId = '';
+             this.newWordCount = ''; }
     } catch (e) { alert('生成失败：' + e); }
     this.creating = false;
     await this.refresh();

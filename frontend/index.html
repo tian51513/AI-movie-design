@@ -220,6 +220,8 @@
              总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s</p>
           <p><input v-model="newName" placeholder="漫剧名称（留空用主题名）"></p>
           <p><input v-model="newProtagonist" placeholder="主角姓名（可选）"></p>
+          <p><input type="number" min="300" max="20000" v-model.number="newWordCount"
+                    placeholder="目标字数（可选，默认 8000~12000）" style="width:60%"></p>
           <p><button :disabled="creating || !newThemeId">
              {{ creating ? '生成中…（约 1-3 分钟）' : '✨ 生成并创建' }}</button></p>
         </form>

@@ -10,10 +10,15 @@ from ..engine.projects import create_project, get_project, list_projects
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 GEN_STORY_SYSTEM = """你是漫剧改编用的小说作者。按给定主题写一部适合改编为漫画短剧的小说正文：
-- 目标 8000~12000 字，多个具体场景（利于拆分镜），人物有名字与外形特征
+- 目标 {target_words}，多个具体场景（利于拆分镜），人物有名字与外形特征
 - 以画面感写作：动作、表情、环境光线、对白（对白自然口语化）
 - 段落之间用空行分隔；不写章节标题、目录、作者注或任何解释
 - 直接输出正文本身。"""
+
+# 默认目标字数（不传 word_count 时）；可传 word_count 控制（真机 2026-08-27：
+# 主题生成 21862 字正文 → 分镜分块过大撞上下文截断，源头控制篇幅）
+DEFAULT_STORY_WORDS = "8000~12000 字"
+WORD_COUNT_RANGE = (300, 20000)
 
 _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "era",
                     "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
@@ -85,12 +90,24 @@ def create_from_theme(request: Request, body: dict):
     if aspect not in ("9:16", "16:9"):
         raise HTTPException(422, "aspect_ratio 只能是 9:16 或 16:9")
     protagonist = (body.get("protagonist") or "").strip()
+    word_count = body.get("word_count")
+    if word_count is not None:
+        try:
+            word_count = int(word_count)
+        except (TypeError, ValueError):
+            raise HTTPException(422, "word_count 需为整数")
+        lo, hi = WORD_COUNT_RANGE
+        if not lo <= word_count <= hi:
+            raise HTTPException(422, f"word_count 需在 {lo}~{hi} 之间")
+    target = DEFAULT_STORY_WORDS if word_count is None else \
+        f"约 {word_count} 字（允许上下浮动 20%）"
+    system = GEN_STORY_SYSTEM.format(target_words=target)
     user = (f"主题《{theme['name']}》（{theme['category']}）：{theme['description']}")
     if protagonist:
         user += f"\n主角姓名用「{protagonist}」。"
     client = client_for_task(db, "gen_story")
     text, _u = client.raw_chat(
-        [{"role": "system", "content": GEN_STORY_SYSTEM},
+        [{"role": "system", "content": system},
          {"role": "user", "content": user}], temperature=0.7)
     text = (text or "").strip()
     if len(text) < 500:

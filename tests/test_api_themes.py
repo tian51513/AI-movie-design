@@ -107,3 +107,39 @@ def test_import_rejects_non_md(app_client):
         r = c.post("/api/themes/import",
                    files={"file": ("x.txt", b"...", "text/plain")})
         assert r.status_code == 422
+
+
+def test_create_from_theme_word_count_controls_target(app_client, monkeypatch):
+    """字数参数（2026-08-27 用户需求）：主题生成正文过长（真机 21862 字）导致
+    分镜分块过大撞上下文截断——创建时可传 word_count 控制目标字数。"""
+    class SysCaptureLLM(FakeLLM):
+        def __init__(self, reply):
+            super().__init__(reply)
+            self.last_system = ""
+        def raw_chat(self, messages, temperature=0.3):
+            self.last_system = messages[0]["content"]
+            return super().raw_chat(messages, temperature)
+
+    db, c = app_client
+    fake = SysCaptureLLM(STORY)
+    import comic_studio.web.routes_projects as rp
+    monkeypatch.setattr(rp, "client_for_task", lambda db, task: fake)
+    with c:
+        themes = c.get("/api/themes").json()
+        r = c.post("/api/projects/from-theme", json={
+            "theme_id": themes[0]["id"], "aspect_ratio": "9:16", "word_count": 3000})
+        assert r.status_code == 201, r.text
+        assert "3000" in fake.last_system      # 目标字数注入 system 提示词
+        assert "8000~12000" not in fake.last_system  # 默认目标被替换
+
+
+def test_create_from_theme_word_count_out_of_range_422(app_client, monkeypatch):
+    db, c = app_client
+    import comic_studio.web.routes_projects as rp
+    monkeypatch.setattr(rp, "client_for_task",
+                        lambda db, task: FakeLLM(STORY))
+    with c:
+        themes = c.get("/api/themes").json()
+        r = c.post("/api/projects/from-theme", json={
+            "theme_id": themes[0]["id"], "aspect_ratio": "9:16", "word_count": 50})
+        assert r.status_code == 422
