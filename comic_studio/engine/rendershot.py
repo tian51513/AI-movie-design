@@ -112,7 +112,9 @@ def build_keyframe_prompt(shot, proj, phase: str) -> str:
     era = proj["era"] if proj is not None and "era" in proj.keys() else ""
     if era:
         prompt += "。" + ERA_SUFFIX.format(era=era)
-    return prompt + "。" + KF_PAIR_CONSTRAINT + ZIMAGE_TAIL["scene"]
+    # 注意：不放 KF_PAIR_CONSTRAINT——'两帧'字样会让图像模型在单张图里画两个画面；
+    # 配对一致性由同 seed + 相似提示词保证
+    return prompt + ZIMAGE_TAIL["scene"]
 
 
 def _anchor_main_png(db, shot):
