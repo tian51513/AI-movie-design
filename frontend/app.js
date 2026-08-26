@@ -134,6 +134,11 @@ const methods = {
     if (!r.ok) { alert('上传失败'); return; }
     await this.loadShots();  // 刷新缩略图
   },
+  async generateTts() {
+    const r = await fetch(`/api/projects/${this.project.id}/tts`, {method: 'POST'});
+    if (r.ok) { const b = await r.json(); alert(`配音就绪：${b.shots_with_dialogue} 镜`); }
+    else alert(await r.text());
+  },
   async autoBind() {
     const r = await fetch(`/api/projects/${this.project.id}/auto-bind`, {method: 'POST'});
     if (r.ok) { const b = await r.json(); alert(`补绑 ${b.bound} 处角色`); await this.loadShots(); }

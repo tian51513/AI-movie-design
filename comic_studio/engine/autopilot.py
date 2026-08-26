@@ -178,6 +178,19 @@ def tick(db, data_dir, project_id) -> dict:
             n += 1
         emit_log(db, "autopilot", "info", f"autopilot 入队 {n} 镜渲染", project_id=project_id)
     elif action == "merge":
+        # P6：合成前自动生成 TTS 配音 + SRT 字幕
+        try:
+            from .tts import generate_dialogue_audio
+            from .subtitles import generate_srt
+            audio_result = generate_dialogue_audio(db, data_dir, project_id)
+            generate_srt(db, data_dir, project_id)
+            if audio_result:
+                emit_log(db, "autopilot", "info",
+                         f"配音+字幕已生成（{len(audio_result)} 镜）",
+                         project_id=project_id)
+        except Exception as exc:
+            emit_log(db, "autopilot", "warn",
+                     f"TTS/字幕生成失败（{exc}），继续合成", project_id=project_id)
         from .jobs import enqueue_job
         enqueue_job(db, "merge", project_id=project_id, payload={"project_id": project_id})
     elif action.startswith("gate"):
