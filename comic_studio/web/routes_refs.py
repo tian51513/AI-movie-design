@@ -2,7 +2,7 @@
 """参考图生成/队列/视图/门1 接口（spec §5 门1、§8 队列）。"""
 from pathlib import Path
 
-from fastapi import APIRouter, Body, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Body, File, HTTPException, Query, Request, UploadFile
 
 from ..engine.assets import get_asset, list_project_assets
 from ..engine.jobs import enqueue_job
@@ -178,3 +178,54 @@ def gate1(request: Request, project_id: int):
     except ValueError as exc:
         raise HTTPException(422, str(exc))
     return {"stage": "assets_ready"}
+
+
+@router.post("/api/shots/{shot_id}/keyframe")
+def upload_keyframe(request: Request, shot_id: int,
+                    file: UploadFile = File(...), phase: str = Query("start")):
+    """人工上传关键帧（phase=start/end → kf_start.png / kf_end.png）。"""
+    from ..engine.shots import get_shot as _gs
+    from ..engine.projects import get_project as _gp
+    db = request.app.state.db
+    shot = _gs(db, shot_id)
+    if shot is None:
+        raise HTTPException(404, "分镜不存在")
+    if phase not in ("start", "end"):
+        raise HTTPException(422, "phase 只能是 start/end")
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in (".png", ".jpg", ".jpeg", ".webp"):
+        raise HTTPException(422, "只接受图片文件")
+    proj = _gp(db, shot["project_id"])
+    dest = data_to_abs(request.app.state.data_dir,
+                       f"projects/{proj['slug']}/shots/{shot['seq']}") / f"kf_{phase}.png"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(file.file.read())
+    from ..engine.logbus import emit as emit_log
+    emit_log(db, "comfy", "info",
+             f"分镜 {shot['seq']} 关键帧（{phase}）已人工上传",
+             project_id=shot["project_id"])
+    return {"path": str(dest.relative_to(request.app.state.data_dir))}
+
+
+@router.post("/api/shots/{shot_id}/regen-keyframes", status_code=202)
+def regen_keyframes(request: Request, shot_id: int):
+    """触发关键帧重新生成（走队列，角色主图锚定 + 前镜尾帧参考）。"""
+    from ..engine.shots import get_shot as _gs
+    db = request.app.state.db
+    shot = _gs(db, shot_id)
+    if shot is None:
+        raise HTTPException(404, "分镜不存在")
+    # 删旧关键帧让 ensure_keyframes 重生成
+    from ..engine.projects import get_project as _gp
+    from ..engine.paths import data_to_abs as _dta
+    proj = _gp(db, shot["project_id"])
+    kd = _dta(request.app.state.data_dir,
+              f"projects/{proj['slug']}/shots/{shot['seq']}")
+    for f in ("kf_start.png", "kf_end.png"):
+        (kd / f).unlink(missing_ok=True)
+    # 入队 gen_shot 任务（render 时自动补关键帧）
+    from ..engine.jobs import enqueue_job
+    jid = enqueue_job(db, "gen_shot", project_id=shot["project_id"],
+                      shot_id=shot_id, resource="gpu_comfy",
+                      payload={"shot_id": shot_id})
+    return {"job_id": jid}

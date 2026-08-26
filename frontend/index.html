@@ -16,6 +16,12 @@
   .muted { color: #8b949e; font-size: 13px; }
   .pill { display: inline-block; background: #2c3540; border-radius: 10px; padding: 1px 8px; font-size: 12px; margin-left: 6px; }
   h2 { margin: 18px 0 8px; }
+  .film-strip { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory;
+                padding: 8px 0 16px; scrollbar-width: thin; }
+  .film-strip::-webkit-scrollbar { height: 8px; }
+  .film-strip::-webkit-scrollbar-thumb { background: #2c3540; border-radius: 4px; }
+  .film-card { flex: 0 0 min(420px, 85vw); scroll-snap-align: start; max-height: 78vh;
+               overflow-y: auto; }
   ul { padding-left: 18px; }
 </style>
 </head>
@@ -376,8 +382,18 @@
       <button v-if="project.stage==='rendered'" @click="startMerge"
               style="background:#7c3aed">🎬 合成成片</button>
     </p>
+    </div><!-- /film-strip -->
     <div v-if="shots.length === 0 && !splitRunning" class="muted" style="padding:20px 0">暂无分镜——点击上方「拆分分镜」开始</div>
-    <div v-for="s in shots" :key="s.id" class="card" style="margin-bottom:10px">
+    <!-- 分镜导览条（快速跳转） -->
+    <div v-if="shots.length > 3" style="display:flex;gap:4px;overflow-x:auto;padding:4px 0;margin-bottom:8px;scrollbar-width:none">
+      <button v-for="s in shots" :key="'nav'+s.id" @click="scrollToShot(s.seq)"
+              :style="s.status==='rendered' ? 'background:#16a34a' : (s.status==='ready' ? 'background:#3b82f6' : '')"
+              style="min-width:36px;font-size:11px;padding:3px 6px;border-radius:4px;flex-shrink:0"
+              :title="`镜${s.seq} ${s.status}`">{{ s.seq }}</button>
+    </div>
+    <!-- 横向胶片式分镜卡 -->
+    <div class="film-strip" id="shotStrip">
+    <div v-for="s in shots" :key="s.id" class="card film-card">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <b>#{{ s.seq }}</b>
         <span class="pill" :style="{border: '1px solid ' + shotStatusColor(s), color: shotStatusColor(s)}">{{ shotStatusLabel(s) }}</span>
@@ -423,6 +439,28 @@
           <prompt-box v-model="s.prompt" :rows="4" kind="video_prompt"
                  @focus="editingShot=true" @blur="editingShot=false;saveShot(s, {prompt: s.prompt})"></prompt-box>
         </div>
+      </div>
+      <!-- fl2v 关键帧展示（首帧/尾帧缩略图 + 上传/重生） -->
+      <div v-if="s.workflow_type==='fl2v'" style="margin-top:8px;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+        <div v-for="phase in ['start','end']" :key="phase"
+             style="flex:0 0 200px;border:1px solid #2c3540;border-radius:6px;padding:6px">
+          <div class="muted" style="font-size:11px;margin-bottom:4px">
+            {{ phase==='start' ? '⏮ 首帧' : '⏭ 尾帧' }}
+            <label style="margin-left:6px;cursor:pointer;color:#7c3aed;font-size:11px"
+                   title="上传自己的{{ phase==='start' ? '首' : '尾' }}帧图片">⬆上传
+              <input type="file" accept=".png,.jpg,.jpeg,.webp" style="display:none"
+                     @change="e => uploadKf(s, phase, e.target.files[0])"></label>
+          </div>
+          <img v-if="kfUrl(s, phase)" :src="kfUrl(s, phase)"
+               style="max-width:100%;border-radius:4px;cursor:zoom-in"
+               @click="lightbox=kfUrl(s, phase)">
+          <div v-else class="muted" style="font-size:11px;padding:20px 0;text-align:center">
+            未生成（渲染时自动补）
+          </div>
+        </div>
+        <button @click="regenKf(s)" :disabled="assetBusy(s)"
+                style="font-size:11px;padding:3px 8px;background:#7c3aed"
+                title="删除旧关键帧并重新生成（走队列）">🔄 重生首尾帧</button>
       </div>
       <div v-if="s.video_url" style="margin-top:8px">
         <video controls :src="s.video_url" style="max-width:100%;border-radius:6px;border:1px solid #2c3540"></video>

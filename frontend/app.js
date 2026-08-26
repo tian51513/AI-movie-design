@@ -103,6 +103,30 @@ const methods = {
     try { this.themesManage = await (await fetch('/api/themes')).json(); }
     catch (e) { /* 忽略 */ }
   },
+  scrollToShot(seq) {
+    const strip = document.getElementById('shotStrip');
+    if (!strip) return;
+    const card = strip.children[seq - 1];
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+  },
+  kfUrl(s, phase) {
+    // 从 shots API 返回的 kf_start_url / kf_end_url 取（routes_shots 需附上）
+    return s[`kf_${phase}_url`];
+  },
+  async uploadKf(s, phase, file) {
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch(`/api/shots/${s.id}/keyframe?phase=${phase}`,
+      { method: 'POST', body: fd });
+    if (!r.ok) { alert('上传失败'); return; }
+    await this.loadShots();  // 刷新缩略图
+  },
+  async regenKf(s) {
+    if (!confirm(`重新生成分镜 ${s.seq} 的首尾帧？\n（会先删除现有帧，走队列重生成）`)) return;
+    const r = await fetch(`/api/shots/${s.id}/regen-keyframes`, { method: 'POST' });
+    if (!r.ok) alert(await r.text());
+  },
   testWorkflow(tid) {
     if (!tid) return;
     // 下载 JSON → 新标签打开 ComfyUI

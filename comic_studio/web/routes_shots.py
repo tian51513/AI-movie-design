@@ -34,8 +34,19 @@ def _last_job(db, shot_id, jtype):
             "finished_at": row["finished_at"], "elapsed_s": elapsed}
 
 
-def _shot_public(r, versions=None, db=None):
+def _shot_public(r, versions=None, db=None, data_dir=None, slug=None):
     vp = r["video_path"]
+    # fl2v 关键帧 URL（存在才有）
+    kf_urls = {}
+    if data_dir and slug:
+        from ..engine.paths import data_to_abs as _dta
+        shot_dir = _dta(data_dir, f"projects/{slug}/shots/{r['seq']}")
+        for phase in ("start", "end"):
+            kf = shot_dir / f"kf_{phase}.png"
+            if kf.exists():
+                kf_urls[f"kf_{phase}_url"] = (
+                    f"/media/projects/{slug}/shots/{r['seq']}/kf_{phase}.png"
+                    f"?v={int(kf.stat().st_mtime)}")
     return {"id": r["id"], "seq": r["seq"], "description": r["description"],
             "shot_type": r["shot_type"], "camera": json.loads(r["camera_json"] or "{}"),
             "ledger": json.loads(r["ledger_json"] or "{}"), "duration": r["duration"],
@@ -44,6 +55,7 @@ def _shot_public(r, versions=None, db=None):
             "video_url": f"/media/{vp}" if vp else None,
             "versions": versions if versions is not None else [],
             "selected": vp.rsplit("/", 1)[-1] if vp else None,
+            **kf_urls,
             "render_job": _last_job(db, r["id"], "gen_shot") if db is not None else None,
             "prompt_job": _last_job(db, r["id"], "gen_prompt") if db is not None else None}
 
@@ -79,7 +91,8 @@ def listing(request: Request, project_id: int):
         raise HTTPException(404, "项目不存在")
     return [_shot_public(
         r, versions=shot_versions(request.app.state.data_dir, proj["slug"], r["seq"]),
-        db=request.app.state.db)
+        db=request.app.state.db,
+        data_dir=request.app.state.data_dir, slug=proj["slug"])
         for r in list_shots(request.app.state.db, project_id)]
 
 
