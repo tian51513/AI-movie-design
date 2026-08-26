@@ -82,7 +82,7 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
     if is_t2v:
         lines.append(
             "【文生视频模式】无图片参考——提示词是唯一画面约束，必须极度详尽：\n"
-            "在结构化骨架的 detailed_description 中，额外包含以下维度的具体描述：\n"
+            "以下维度必须写在 detailed_description 分段内部（作为该段落的组成部分），不得另起分段或放在 non_diegetic_music 之后：\n"
             "· 色彩与光影（主色调/光源方向/氛围/对比度/景深）\n"
             "· 构图与镜头（机位/景别/运镜方式/黄金分割或中心构图）\n"
             "· 人物（服饰/发型/表情/动作/皮肤质感，逐人描述）\n"
