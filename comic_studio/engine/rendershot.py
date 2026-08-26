@@ -183,16 +183,8 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
         if dest.exists():
             continue
         if phase == "结尾" and kf_start.exists():
-            # 尾帧（2026-08-26 用户需求）：首帧 + 分镜内容 → img2img
-            if n_slots >= 2 and len(char_refs) > 1:
-                imgs = [{"slot": tmpl.inject_images[0]["slot"], "path": str(kf_start)}]
-                imgs.append({"slot": tmpl.inject_images[1]["slot"],
-                             "path": str(char_refs[-1])})  # 多视图（人设保底）
-                if sheet_abs and sheet_abs.exists():
-                    imgs.append({"slot": tmpl.inject_images[1]["slot"],
-                                 "path": str(sheet_abs)})
-                images = imgs
-            elif n_slots == 1:
+            # 尾帧：首帧 img2img（构图/人物/服装/场景继承，仅动作变化）
+            if n_slots >= 1:
                 images = [{"slot": tmpl.inject_images[0]["slot"], "path": str(kf_start)}]
             else:
                 images = None
