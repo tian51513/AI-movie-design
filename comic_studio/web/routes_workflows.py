@@ -2,7 +2,7 @@
 """工作流导入 REST（2026-08-26 需求）：上传 ComfyUI API JSON → 自动识别入库。"""
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
 
 router = APIRouter(prefix="/api/workflows", tags=["workflows"])
 
@@ -23,3 +23,18 @@ def import_workflow(request: Request, file: UploadFile = File(...)):
     except ValueError as e:
         raise HTTPException(422, str(e))
     return analysis
+
+
+@router.get("/download")
+def download_workflow(request: Request, tid: str = Query(...)):
+    """下载模板的 api.json（用户拖入 ComfyUI 测试）。"""
+    from ..engine.workflows import registry
+    from fastapi.responses import Response
+    reg = registry.scan_templates(registry.TEMPLATE_ROOT)
+    t = next((t for t in reg.values() if t.id == tid), None)
+    if t is None:
+        raise HTTPException(404, f"模板不存在: {tid}")
+    json_bytes = (t.dir / t.file).read_bytes()
+    return Response(
+        content=json_bytes, media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={t.id}.json"})

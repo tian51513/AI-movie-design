@@ -103,6 +103,16 @@ const methods = {
     try { this.themesManage = await (await fetch('/api/themes')).json(); }
     catch (e) { /* 忽略 */ }
   },
+  testWorkflow(tid) {
+    if (!tid) return;
+    // 下载 JSON → 新标签打开 ComfyUI
+    const a = document.createElement('a');
+    a.href = `/api/workflows/download?tid=${encodeURIComponent(tid)}`;
+    a.download = tid + '.json';
+    a.click();
+    const comfy = (this.settingsForm.comfy?.base_url) || 'http://127.0.0.1:8188';
+    window.open(comfy, '_blank');
+  },
   async importWorkflow() {
     if (!this.wfImportFile) return;
     this.wfImporting = true;

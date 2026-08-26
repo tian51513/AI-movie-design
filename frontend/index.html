@@ -98,7 +98,9 @@
          <option v-for="t in templatesOfType('character_views')" :key="t.id" :value="t.id"
                  :title="t.id">{{ t.name }}</option>
        </select>
-       <span class="muted">角色三视图派生（主图作种子图）</span></p>
+       <span class="muted">角色三视图派生（主图作种子图）</span>
+       <button @click="testWorkflow(settingsForm.t2i_tm)" style="font-size:12px;padding:3px 8px;margin-left:4px"
+               title="下载当前主图模板 JSON → 打开 ComfyUI 拖入测试">🧪</button></p>
     <p><label class="muted">多参生视频模板：</label>
        <select v-model="settingsForm.r2vaTm" style="width:280px">
          <option v-for="t in templatesOfType('ref2va')" :key="t.id" :value="t.id">{{ t.name }}</option>
@@ -122,6 +124,8 @@
          <option v-for="t in settingsForm.model_templates" :key="t.id" :value="t.id">
            {{ t.name || t.id }}</option>
        </select>
+       <button v-if="moTemplate" @click="testWorkflow(moTemplate)"
+               title="下载此工作流 JSON 并打开 ComfyUI 测试" style="font-size:12px;padding:3px 8px">🧪 测试</button>
        <button v-if="moTemplate" @click="resetMO" title="清除该模板全部覆盖，回到工作流内置模型"
                style="background:#7f1d1d;font-size:12px;padding:3px 8px">恢复默认</button></p>
     <p class="muted" style="margin:4px 0 8px">主模型/CLIP/VAE/LoRA 按槽位切换，当前选中即生效值（无覆盖时显示模板内置默认）；保存后重渲生效（ComfyUI 需在线以枚举文件）</p>
