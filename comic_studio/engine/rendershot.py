@@ -194,7 +194,7 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
     char_refs = _anchor_refs(db, shot, data_dir)  # [main.png]（不含三视图）
 
     # 合并参考：上镜尾帧优先，无则角色主图
-    start_ref = prev_kf_end or (char_refs[0] if char_refs else None)
+    start_ref = prev_kf_end  # 仅有上镜尾帧时 img2img；首镜纯文（白底/画风融合两大坑）
 
     def _start_images():
         if not n_slots or not start_ref:
