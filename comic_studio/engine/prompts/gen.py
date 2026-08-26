@@ -27,7 +27,8 @@ def build_h3_system() -> str:
     return "\n\n---\n\n".join(parts)
 
 
-def build_shot_context(shot_row, assets_by_id: dict, project_row) -> str:
+def build_shot_context(shot_row, assets_by_id: dict, project_row,
+                       prev_shot=None) -> str:
     ledger = json.loads(shot_row["ledger_json"] or "{}")
     assets = ledger.get("assets", {})
     bind_desc = []
@@ -50,6 +51,13 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row) -> str:
         f"需求台账：必须出现={ledger.get('must_appear', [])}；必须保持={ledger.get('must_keep', [])}；"
         f"允许变化={ledger.get('may_change', [])}；禁止={ledger.get('must_avoid', [])}",
     ]
+    if prev_shot is not None:
+        # 连贯性③（2026-08-26）：姿态/位置/服装默认延续上镜结尾
+        prev_desc = (prev_shot["description"] or "")[:80]
+        lines.append(
+            f"连贯性约束：人物姿态、位置、服装默认延续上一镜结尾状态，"
+            f"仅当本镜描述明确写出变化（起身/更衣/换位等）才变化。"
+            f"上一镜（第 {prev_shot['seq']} 镜）：{prev_desc}")
     return "\n".join(lines)
 
 
@@ -102,7 +110,10 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
         mode = (proj["prompt_mode"]
                 if proj is not None and proj["prompt_mode"] in PROMPT_MODES else "D")
     assets_by_id = {a["id"]: a for a in list_project_assets(db, shot["project_id"])}
-    ctx = build_shot_context(shot, assets_by_id, proj)
+    prev_shot = db.connect().execute(
+        "SELECT * FROM shots WHERE project_id=? AND seq=?",
+        (shot["project_id"], shot["seq"] - 1)).fetchone()
+    ctx = build_shot_context(shot, assets_by_id, proj, prev_shot=prev_shot)
     system = (build_h3_system() + "\n\n---\n\n" + mode_spec(mode)
               if backend == "h3" else LTX_SYSTEM)
     messages = [{"role": "system", "content": system},

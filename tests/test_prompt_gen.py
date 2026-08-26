@@ -122,3 +122,34 @@ def test_mode_specs_embed_skeleton():
                         "detailed_description:", "non_diegetic_music:"):
             assert section in spec, (m, section)
     assert "subject_definitions" not in mode_spec("A")  # A 散文明确不用结构
+
+
+def test_shot_context_carries_prev_continuity(tmp_path):
+    """连贯性③（2026-08-26）：上下文带上一镜信息+延续约束——
+    姿态/位置/服装默认延续上镜结尾，仅明确写出变化才变。"""
+    from comic_studio.engine.shots import persist_shots
+    db = Database(tmp_path / "s3.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d3", "连贯剧", "9:16", "t")["id"]
+    drafts = [NS(text_span="", description="林晨坐着喝茶", shot_type="", camera={},
+                 duration=5.0, workflow_type="ref2va", ledger={},
+                 character_ids=[], scene_ids=[], prop_ids=[], depends_on=None,
+                 prompt=""),
+              NS(text_span="", description="林晨继续说话", shot_type="", camera={},
+                 duration=5.0, workflow_type="ref2va", ledger={},
+                 character_ids=[], scene_ids=[], prop_ids=[], depends_on=None,
+                 prompt="")]
+    sids = persist_shots(db, pid, drafts)
+    captured = {}
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            captured["user"] = messages[-1]["content"]
+            return ("subject_definitions:\\n<Subject 1>\\nsummary:\\n x\\n"
+                    "retention_analysis:\\n x\\ndetailed_description:\\n x\\n"
+                    "overall_soundscape:\\n x\\nnon_diegetic_music:\\n 无"), Usage(1, 1)
+
+    out = generate_video_prompt(db, sids[1], FakeLLM(), backend="h3")
+    assert "林晨坐着喝茶" in captured["user"]      # 上一镜描述入上下文
+    assert "延续上一镜" in captured["user"]         # 延续约束
+    assert "明确写出" in captured["user"]
