@@ -127,11 +127,9 @@ def _anchor_refs(db, shot, data_dir):
             continue
         lib = data_to_abs(data_dir, a["library_dir"])
         main = lib / "main.png"
-        sheet = lib / "views" / "sheet.png"
         if main.exists():
             refs.append(main)
-        if sheet.exists():
-            refs.append(sheet)
+        # 不加 sheet.png：三视图含三人像，图像模型会照画多人物（2026-08-26 预判）
         break  # 首位角色
     return refs
 
