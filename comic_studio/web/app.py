@@ -217,6 +217,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
     from .routes_themes import router as themes_router
     app.include_router(themes_router)
 
+    from .routes_workflows import router as workflows_router
+    app.include_router(workflows_router)
+
     from .routes_analyze import router as analyze_router
     app.include_router(analyze_router)
 

@@ -1,0 +1,22 @@
+id: my_t2i
+type: t2i
+name: my_t2i
+file: my_t2i.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '5'
+    field: text
+  params:
+    seed:
+      node: '4'
+      field: seed
+outputs:
+- node: '10'
+  filename_prefix: test
+requires: []
+
+# 模型槽位（settings model_overrides 按模板 id 覆盖）
+models:
+- {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
+- {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}

@@ -1,0 +1,42 @@
+{
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "test.safetensors"
+  }
+ },
+ "2": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "test.safetensors"
+  }
+ },
+ "5": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "a cat",
+   "clip": [
+    "2",
+    0
+   ]
+  }
+ },
+ "4": {
+  "class_type": "KSampler",
+  "inputs": {
+   "seed": 123,
+   "steps": 8,
+   "cfg": 1,
+   "positive": [
+    "5",
+    0
+   ]
+  }
+ },
+ "10": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "filename_prefix": "test"
+  }
+ }
+}
