@@ -16,7 +16,9 @@ from .workflows import registry
 from .workflows.filler import fill_workflow
 
 ASPECT_ENUM = {"16:9": "16:9 (Widescreen)", "9:16": "9:16 (Portrait Widescreen)"}
-SPEED_STEPS = {"快速": 8, "标准": 16, "高质量": 25}
+# 步数对齐加速版 turbo 设计（4-step LoRA + TE 加速 + sage，2026-08-26 用户勘误：
+# 原快速8/标准16/高质量25 与 4 步 turbo 设计打架，真机耗时数倍于手跑工作流）
+SPEED_STEPS = {"快速": 4, "标准": 4, "高质量": 6}
 
 
 def pick_template_id(shot_row) -> str:
@@ -110,9 +112,22 @@ def build_keyframe_prompt(shot, proj, phase: str) -> str:
     return prompt + "。" + KF_PAIR_CONSTRAINT + ZIMAGE_TAIL["scene"]
 
 
+def _anchor_main_png(db, shot):
+    """取本镜首位有主图的角色 main.png（关键帧人设锚定，连贯性②）。"""
+    ledger = json.loads(shot["ledger_json"] or "{}")
+    for aid in (ledger.get("assets", {}) or {}).get("characters", []):
+        a = get_asset(db, aid)
+        if a and a["library_dir"]:
+            main = Path(a["library_dir"]) / "main.png"
+            return main
+    return None
+
+
 def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
     """fl2v 关键帧生成（方案A 二期）：缺 kf_*.png 时经 t2i 模板生成首尾对。
-    两帧共用同一 seed（保构图一致），成对约束写入提示词（方案 A 避坑守则）。"""
+    两帧共用同一 seed（保构图一致），成对约束写入提示词（方案 A 避坑守则）。
+    连贯性②：主图模板有图槽且角色有 main.png → 作参考锚定脸/服装；
+    无主图时引导纯文生图（zimage_t2i）。"""
     shot = get_shot(db, shot_id)
     proj = get_project(db, shot["project_id"])
     shot_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}")
@@ -120,16 +135,33 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
     kf_start, kf_end = shot_dir / "kf_start.png", shot_dir / "kf_end.png"
     if kf_start.exists() and kf_end.exists():
         return kf_start, kf_end
-    from .workflows.registry import resolve_template
+    from .workflows.registry import resolve_template, scan_templates, TEMPLATE_ROOT
     tmpl = resolve_template(db, "t2i")
+    images = None
+    anchor_line = ""
+    main_rel = _anchor_main_png(db, shot)
+    if tmpl.inject_images:
+        if main_rel is not None:
+            main_abs = data_to_abs(data_dir, str(main_rel))
+            if main_abs.exists():
+                images = [{"slot": tmpl.inject_images[0]["slot"], "path": str(main_abs)}]
+                anchor_line = "。人物外貌与服装与参考图保持完全一致"
+        if images is None:
+            boot = scan_templates(TEMPLATE_ROOT).get("zimage_t2i")
+            if boot is None or boot.inject_images:
+                raise ValueError("关键帧模板需要图片输入且无可锚定的角色主图")
+            tmpl = boot
+            emit_log(db, "comfy", "info",
+                     f"分镜 {shot['seq']} 关键帧无主图可锚定，引导纯文生图 {boot.id}",
+                     project_id=proj["id"], job_id=job_id)
     overrides = (get_setting(db, "model_overrides") or {}).get(tmpl.id)
     seed = random.randint(0, 2**31 - 1)  # 两帧同 seed：构图一致，仅动作不同
     for phase, dest in (("起始", kf_start), ("结尾", kf_end)):
         if dest.exists():
             continue
         wf, uploads = fill_workflow(
-            tmpl, prompt=build_keyframe_prompt(shot, proj, phase),
-            params={"seed": seed}, images=None,
+            tmpl, prompt=build_keyframe_prompt(shot, proj, phase) + anchor_line,
+            params={"seed": seed}, images=images,
             output_ctx={"project": proj["slug"],
                         "asset": f"shot-{shot['seq']}-kf-{phase}"},
             model_overrides=overrides)

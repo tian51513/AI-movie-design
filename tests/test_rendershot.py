@@ -355,3 +355,38 @@ def test_ref2va_prev_tail_frame_takes_ref0(tmp_path, monkeypatch):
         wf = m.prompts[0]["prompt"]
         assert wf["96"]["inputs"]["image"].endswith("__ref0.png")   # 尾帧占 ref0
         assert wf["97"]["inputs"]["image"].endswith("__ref1.png")   # 角色三视图占 ref1
+
+
+def test_keyframes_anchor_character_main(tmp_path, monkeypatch):
+    """连贯性②（2026-08-26）：关键帧生成锚定角色主图——文+图模板传 main.png
+    作参考（锁脸/锁服装）；无主图引导纯文生图。"""
+    db, pid, assets = _setup(tmp_path)
+    from comic_studio.engine.paths import data_to_abs
+    aid = assets["林晨"]["id"]
+    lib = data_to_abs(tmp_path / "data", assets["林晨"]["library_dir"])
+    lib.mkdir(parents=True, exist_ok=True)
+    (lib / "main.png").write_bytes(b"\x89PNG-main")
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    # 两镜一次建齐（persist_shots 是替换式，二次调用会清掉首镜与 kf 文件）
+    sid, sid2 = persist_shots(db, pid, [
+        _shot_draft(workflow_type="fl2v", description="转身", character_ids=[aid]),
+        _shot_draft(workflow_type="fl2v", description="乙", character_ids=[])])
+    update_shot(db, sid, {"prompt": "p"})
+    update_shot(db, sid2, {"prompt": "p"})
+    from comic_studio.engine import rendershot
+    from comic_studio.engine.comfy.client import ComfyClient
+    kd = tmp_path / "data" / "projects" / "渲染剧" / "shots" / "1"
+    with comfy_server("ok") as m:
+        comfy = ComfyClient(m.base_url)
+        set_setting(db, "template_map", {"t2i": "xf_zimage_ti2i"})
+        rendershot.ensure_keyframes(db, tmp_path / "data", sid, comfy)
+        wf1 = m.prompts[0]["prompt"]
+        assert wf1["23"]["inputs"]["image"].startswith("cs__")  # 主图作 ref 上传
+        assert "参考图" in wf1["28"]["inputs"]["value"]          # 锚定约束入词
+        assert (kd / "kf_start.png").exists() and (kd / "kf_end.png").exists()
+        # 无主图资产（镜2 无绑定角色）→ 引导纯文生图
+        rendershot.ensure_keyframes(db, tmp_path / "data", sid2, comfy)
+        last = m.prompts[-1]["prompt"]
+        assert "57:27" in last  # 走了 zimage_t2i 引导
