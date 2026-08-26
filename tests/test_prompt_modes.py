@@ -45,3 +45,26 @@ def test_generate_uses_project_mode(tmp_path):
     with pytest.raises(RuntimeError):
         generate_video_prompt(db, sid, FakeLLM(), backend="h3", mode="D")
     assert PROMPT_MODES["D"]["spec"][:30] in captured["system"]
+
+
+def test_t2v_rich_prompt_spec():
+    """t2v 富结构化模板（2026-08-26 用户需求）：纯文生视频无参考图，
+    提示词是唯一约束——七段结构化格式。"""
+    from comic_studio.engine.prompts.modes import mode_spec
+    spec = mode_spec("D")  # D 是默认，t2v 时生成器自动附加富模板
+    # 验证核心分段已在骨架
+    for section in ("subject_definitions:", "detailed_description:",
+                    "overall_soundscape:", "non_diegetic_music:"):
+        assert section in spec
+
+
+def test_t2v_context_adds_rich_template():
+    """workflow_type=t2v 时上下文附加密富模板要求。"""
+    from comic_studio.engine.prompts.gen import build_shot_context
+    shot = {"seq": 1, "description": "对话", "duration": 5.0,
+            "shot_type": "", "camera_json": "{}", "workflow_type": "t2v",
+            "ledger_json": "{}"}
+    proj = {"aspect_ratio": "16:9", "style": "写实", "era": ""}
+    ctx = build_shot_context(shot, {}, proj)
+    assert "文生视频" in ctx or "纯文" in ctx
+    assert "无图片参考" in ctx  # 槽位表应显示无参考

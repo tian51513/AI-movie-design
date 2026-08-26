@@ -61,6 +61,7 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
         tag = ("角色三视图，人物外貌唯一依据" if a["kind"] == "character"
                else ("场景参考" if a["kind"] == "scene" else "道具参考"))
         slots.append(f"<Picture {len(slots) + 1}> = {a['name']}（{tag}）")
+    is_t2v = ((shot_row["workflow_type"] if "workflow_type" in shot_row.keys() else "") or "") == "t2v"
     lines = [
         f"镜头 {shot_row['seq']}（{shot_row['shot_type'] or '常规'}，{shot_row['duration']} 秒，"
         f"画幅 {project_row['aspect_ratio']}，后端工作流 {shot_row['workflow_type']}）",
@@ -69,14 +70,28 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
         f"项目画风：{project_row['style'] or '未指定'}",
         (f"时代风格：{era}，人物服饰、发型、器物、建筑均须符合该时代形制，禁止现代元素"
          if era else "时代风格：未明确（按描述自行合理推断）"),
-        "图片槽位表（subject_definitions 引用图片只能用槽位号 1/2，"
-        "严禁使用资产 id 数字）：" + ("；".join(slots) if slots else "无图片参考"),
-        ("身份锚定规则：<Picture 1> 尾帧仅衔接画面；人物五官与服装必须以角色三视图槽位为准"
-         if relay else ""),
-        "绑定资产概览：" + ("；".join(bind_desc) if bind_desc else "无"),
-        f"需求台账：必须出现={ledger.get('must_appear', [])}；必须保持={ledger.get('must_keep', [])}；"
-        f"允许变化={ledger.get('may_change', [])}；禁止={ledger.get('must_avoid', [])}",
     ]
+    if is_t2v:
+        lines.append(
+            "【文生视频模式】无图片参考——提示词是唯一画面约束，必须极度详尽：\n"
+            "在结构化骨架的 detailed_description 中，额外包含以下维度的具体描述：\n"
+            "· 色彩与光影（主色调/光源方向/氛围/对比度/景深）\n"
+            "· 构图与镜头（机位/景别/运镜方式/黄金分割或中心构图）\n"
+            "· 人物（服饰/发型/表情/动作/皮肤质感，逐人描述）\n"
+            "· 节奏（前中后段的时间分配与情绪递进）\n"
+            "· 避免项（写明禁止出现的风格/元素，如 禁止卡通化/禁止模糊边缘/禁止二次元化）\n"
+            "不使用任何 <Picture N> 引用（无参考图）")
+    else:
+        lines.extend([
+            "图片槽位表（subject_definitions 引用图片只能用槽位号 1/2，"
+            "严禁使用资产 id 数字）：" + ("；".join(slots) if slots else "无图片参考"),
+            ("身份锚定规则：<Picture 1> 尾帧仅衔接画面；人物五官与服装必须以角色三视图槽位为准"
+             if relay else ""),
+        ])
+    lines.append("绑定资产概览：" + ("；".join(bind_desc) if bind_desc else "无"))
+    lines.append(
+        f"需求台账：必须出现={ledger.get('must_appear', [])}；必须保持={ledger.get('must_keep', [])}；"
+        f"允许变化={ledger.get('may_change', [])}；禁止={ledger.get('must_avoid', [])}")
     dialogue = ledger.get("dialogue") or []
     if dialogue:
         lines.append("台词（视频对白必须逐字使用，不得改写）：" + "；".join(
