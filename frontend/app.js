@@ -32,7 +32,7 @@ function data() {
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '',
     newSegDur: 5, newTotalDur: 0,
-    settingsTab: 'llm', wfImportFile: null, wfImporting: false,
+    settingsTab: 'llm', wfImportFile: null, wfImporting: false, activeShotSeq: 1,
     themesManage: [], themeImportFile: null, themeImporting: false,
     editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character',
     newStyleKey: '', newStyleText: '',
@@ -104,10 +104,22 @@ const methods = {
     catch (e) { /* 忽略 */ }
   },
   scrollToShot(seq) {
+    this.activeShotSeq = seq;
     const strip = document.getElementById('shotStrip');
     if (!strip) return;
     const card = strip.children[seq - 1];
     if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+  },
+  onStripScroll() {
+    // 检测最靠近左侧边缘的卡片 → 高亮对应导航按钮
+    const strip = document.getElementById('shotStrip');
+    if (!strip || !this.shots.length) return;
+    const stripLeft = strip.scrollLeft;
+    const cardW = strip.children[0] ? strip.children[0].offsetWidth + 12 : 400;
+    const idx = Math.round(stripLeft / cardW);
+    if (idx >= 0 && idx < this.shots.length) {
+      this.activeShotSeq = this.shots[idx].seq;
+    }
   },
   kfUrl(s, phase) {
     // 从 shots API 返回的 kf_start_url / kf_end_url 取（routes_shots 需附上）
