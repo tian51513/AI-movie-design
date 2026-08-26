@@ -100,12 +100,21 @@ KF_PAIR_CONSTRAINT = ("两帧必须严格同机位、同景别、同构图、同
                       "仅人物的肢体动作与表情不同；禁止任何镜头切换")
 
 
-def build_keyframe_prompt(shot, proj, phase: str) -> str:
-    """首/尾关键帧提示词：分镜描述 + 画风 + 时代 + 成对约束 + ZImage 尾缀。"""
+def build_keyframe_prompt(db, shot, proj, phase: str) -> str:
+    """首/尾关键帧提示词：分镜描述 + 角色外貌文字 + 画风 + 时代 + ZImage 尾缀。"""
     from .era import ERA_SUFFIX
     from .genref import ZIMAGE_TAIL
     detail = (shot["description"] or "").strip().rstrip("。；;，,") or "按分镜描述"
     prompt = f"漫剧分镜关键帧（{phase}瞬间）：{detail}"
+    # 角色外貌文字（2026-08-26 真机教训：不加则模型不知道角色长什么样）
+    ledger = json.loads(shot["ledger_json"] or "{}")
+    for aid in (ledger.get("assets", {}) or {}).get("characters", []):
+        a = get_asset(db, aid)
+        if a:
+            appearance = json.loads(a["appearance_json"]).get("detail", "")
+            if appearance:
+                prompt += f"。角色「{a['name']}」：{appearance[:150]}"
+            break  # 首位角色
     style = ((proj["style"] or "") if proj is not None else "").strip().rstrip("。；;，,")
     if style:
         prompt += "。" + style
@@ -166,8 +175,21 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
     anchor_line = ""
     if images:
         anchor_line = "。人物外貌与服装与参考图保持完全一致"
-    elif n_slots > 0:
-        # 有图槽但无角色参考（无资产/无主图）→ 引导纯文生图
+    elif char_refs and n_slots == 0:
+        # 反向引导（真机 2026-08-26：zimage_t2i 纯文 → 参考图传不进 → 人物不一致）
+        reg_all = scan_templates(TEMPLATE_ROOT)
+        cand = reg_all.get("xf_zimage_ti2i")
+        if cand and cand.inject_images:
+            tmpl = cand
+            n_slots = len(cand.inject_images)
+            images = _start_images()
+            if images:
+                anchor_line = "。人物外貌与服装与参考图保持完全一致"
+                emit_log(db, "comfy", "info",
+                         f"分镜 {shot['seq']} 关键帧升图+文模板 {cand.id}（角色主图锚定）",
+                         project_id=proj["id"], job_id=job_id)
+    elif n_slots > 0 and not char_refs:
+        # 有图槽但无角色参考 → 引导纯文生图
         boot = scan_templates(TEMPLATE_ROOT).get("zimage_t2i")
         if boot is None or boot.inject_images:
             raise ValueError("关键帧模板需要图片输入且无可锚定的角色主图")
@@ -192,7 +214,7 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
                            "仅人物动作与表情变化为本镜结尾瞬间" if images else
                            "。与起始帧同构图同场景同人物同服装，仅动作与表情变化为结尾瞬间")
         wf, uploads = fill_workflow(
-            tmpl, prompt=build_keyframe_prompt(shot, proj, phase) + anchor_line,
+            tmpl, prompt=build_keyframe_prompt(db, shot, proj, phase) + anchor_line,
             params={"seed": seed}, images=images,
             output_ctx={"project": proj["slug"],
                         "asset": f"shot-{shot['seq']}-kf-{phase}"},
