@@ -117,15 +117,23 @@ def build_keyframe_prompt(shot, proj, phase: str) -> str:
     return prompt + ZIMAGE_TAIL["scene"]
 
 
-def _anchor_main_png(db, shot):
-    """取本镜首位有主图的角色 main.png（关键帧人设锚定，连贯性②）。"""
+def _anchor_refs(db, shot, data_dir):
+    """取角色的主图+多视图参考（关键帧人设锚定）。返回绝对路径列表。"""
     ledger = json.loads(shot["ledger_json"] or "{}")
+    refs = []
     for aid in (ledger.get("assets", {}) or {}).get("characters", []):
         a = get_asset(db, aid)
-        if a and a["library_dir"]:
-            main = Path(a["library_dir"]) / "main.png"
-            return main
-    return None
+        if not a or not a["library_dir"]:
+            continue
+        lib = data_to_abs(data_dir, a["library_dir"])
+        main = lib / "main.png"
+        sheet = lib / "views" / "sheet.png"
+        if main.exists():
+            refs.append(main)
+        if sheet.exists():
+            refs.append(sheet)
+        break  # 首位角色
+    return refs
 
 
 def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
@@ -142,41 +150,57 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
         return kf_start, kf_end
     from .workflows.registry import resolve_template, scan_templates, TEMPLATE_ROOT
     tmpl = resolve_template(db, "t2i")
-    images = None
+    n_slots = len(tmpl.inject_images) if tmpl.inject_images else 0
+    char_refs = _anchor_refs(db, shot, data_dir)  # [(main.png, desc), (sheet.png, desc)]
+
+    # 构建首帧参考图集：按模板槽数填入角色资产（主图优先，多视图补位）
+    def _start_images():
+        if not n_slots or not char_refs:
+            return None
+        imgs = []
+        for i, ref_abs in enumerate(char_refs):
+            if i >= n_slots:
+                break
+            imgs.append({"slot": tmpl.inject_images[i]["slot"], "path": str(ref_abs)})
+        return imgs if imgs else None
+
+    images = _start_images()
     anchor_line = ""
-    main_rel = _anchor_main_png(db, shot)
-    if tmpl.inject_images:
-        if main_rel is not None:
-            main_abs = data_to_abs(data_dir, str(main_rel))
-            if main_abs.exists():
-                images = [{"slot": tmpl.inject_images[0]["slot"], "path": str(main_abs)}]
-                anchor_line = "。人物外貌与服装与参考图保持完全一致"
-        if images is None:
-            boot = scan_templates(TEMPLATE_ROOT).get("zimage_t2i")
-            if boot is None or boot.inject_images:
-                raise ValueError("关键帧模板需要图片输入且无可锚定的角色主图")
-            tmpl = boot
-            emit_log(db, "comfy", "info",
-                     f"分镜 {shot['seq']} 关键帧无主图可锚定，引导纯文生图 {boot.id}",
-                     project_id=proj["id"], job_id=job_id)
+    if images:
+        anchor_line = "。人物外貌与服装与参考图保持完全一致"
+    elif n_slots > 0:
+        # 有图槽但无角色参考（无资产/无主图）→ 引导纯文生图
+        boot = scan_templates(TEMPLATE_ROOT).get("zimage_t2i")
+        if boot is None or boot.inject_images:
+            raise ValueError("关键帧模板需要图片输入且无可锚定的角色主图")
+        tmpl = boot
+        n_slots = 0
+        emit_log(db, "comfy", "info",
+                 f"分镜 {shot['seq']} 关键帧无主图可锚定，引导纯文生图 {boot.id}",
+                 project_id=proj["id"], job_id=job_id)
+
     overrides = (get_setting(db, "model_overrides") or {}).get(tmpl.id)
-    seed = random.randint(0, 2**31 - 1)  # 两帧同 seed：构图一致，仅动作不同
+    seed = random.randint(0, 2**31 - 1)
     for phase, dest in (("起始", kf_start), ("结尾", kf_end)):
         if dest.exists():
             continue
-        # 尾帧参考首帧（方案A 正确做法 2026-08-26 用户勘误）：
-        # img2img 保构图+人物（首帧已从 main.png 获得正确外貌），
-        # 提示词仅改"结尾瞬间"动作——同 seed 但不依赖 seed 保构图
         if phase == "结尾" and kf_start.exists():
-            if tmpl.inject_images:
-                images = [{"slot": tmpl.inject_images[0]["slot"],
-                           "path": str(kf_start)}]
-                anchor_line = ("。画面构图、场景、光线与人物外貌服装与参考图完全一致，"
-                               "仅人物动作与表情变化为本镜结尾瞬间")
+            # 尾帧（2026-08-26 用户需求）：首帧 + 分镜内容 → img2img
+            if n_slots >= 2 and len(char_refs) > 1:
+                imgs = [{"slot": tmpl.inject_images[0]["slot"], "path": str(kf_start)}]
+                imgs.append({"slot": tmpl.inject_images[1]["slot"],
+                             "path": str(char_refs[-1])})  # 多视图（人设保底）
+                if sheet_abs and sheet_abs.exists():
+                    imgs.append({"slot": tmpl.inject_images[1]["slot"],
+                                 "path": str(sheet_abs)})
+                images = imgs
+            elif n_slots == 1:
+                images = [{"slot": tmpl.inject_images[0]["slot"], "path": str(kf_start)}]
             else:
-                # 纯文模板（zimage_t2i）无图槽——提示词补描述
-                anchor_line = ("。与起始帧同构图同场景同人物同服装，"
-                               "仅动作与表情变化为结尾瞬间")
+                images = None
+            anchor_line = ("。画面构图、场景、光线与人物外貌服装与参考图完全一致，"
+                           "仅人物动作与表情变化为本镜结尾瞬间" if images else
+                           "。与起始帧同构图同场景同人物同服装，仅动作与表情变化为结尾瞬间")
         wf, uploads = fill_workflow(
             tmpl, prompt=build_keyframe_prompt(shot, proj, phase) + anchor_line,
             params={"seed": seed}, images=images,
