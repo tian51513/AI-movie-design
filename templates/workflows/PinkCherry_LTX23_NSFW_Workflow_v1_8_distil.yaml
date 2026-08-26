@@ -1,5 +1,5 @@
 id: PinkCherry_LTX23_NSFW_Workflow_v1_8_distil
-type: other
+type: fl2v
 name: PinkCherry_LTX23_NSFW_Workflow_v1_8_distil
 file: PinkCherry_LTX23_NSFW_Workflow_v1_8_distil.api.json
 prompt_format: '{kind_label}：{name}。{detail}'

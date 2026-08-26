@@ -30,12 +30,11 @@ def analyze_workflow(wf: dict, name: str) -> dict:
                 wtype = "t2v"
         else:
             # LTX / 未知视频框架：按 LoadImage 数分类
+            # （i2v 是内部降级类型，导入统一归 fl2v 让用户在下拉可选中）
             load_imgs = [nid for nid, n in wf.items()
                          if n.get("class_type") == "LoadImage"]
-            if len(load_imgs) >= 2:
+            if len(load_imgs) >= 1:
                 wtype = "fl2v"
-            elif len(load_imgs) == 1:
-                wtype = "i2v"
             else:
                 wtype = "t2v"
     elif any("SaveImage" in c for c in classes):
