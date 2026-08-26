@@ -118,6 +118,18 @@ _REQUIRED_SECTIONS = ("subject_definitions:", "summary:", "retention_analysis:",
                       "detailed_description:", "overall_soundscape:", "non_diegetic_music:")
 
 
+import re as _re
+
+
+def _check_picture_refs(text: str) -> tuple[bool, str]:
+    """<Picture N> 只允许 1/2（真机 2026-08-26：LLM 照抄资产 id → 锚定全失效）。"""
+    refs = _re.findall(r"<Picture (\d+)>", text or "")
+    bad = [r for r in refs if r not in ("1", "2")]
+    if bad:
+        return False, f"<Picture> 引用了不存在的图片编号 {bad}（只能用 1/2，严禁资产 id）"
+    return True, ""
+
+
 def structure_check(text: str, mode: str | None) -> tuple[bool, str]:
     """结构化模式（B/C/D）必需分段头校验；A/None 放行（散文模式）。
     2026-08-25：规范早有骨架要求但无校验，模型实际产出散文被放行。"""
@@ -156,10 +168,11 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
             return text
         bound = len(ledger_assets(shot))  # 台账绑定资产数（ref 图数量）
         sok, smsg = structure_check(text, mode)
+        pok, pmsg = _check_picture_refs(text)
         ok, msg = (validate_h3(text, max(4, int(shot["duration"])), proj["aspect_ratio"],
                                images=bound, videos=0)
-                   if sok else (False, smsg))
-        if sok and ok and "可自行补充" not in text:
+                   if sok and pok else (False, pmsg or smsg))
+        if sok and pok and ok and "可自行补充" not in text:
             return text
         last_err = (smsg or msg) or "输出含占位语"
         messages += [{"role": "assistant", "content": text},

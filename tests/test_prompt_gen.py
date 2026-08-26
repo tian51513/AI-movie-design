@@ -215,3 +215,14 @@ def test_context_carries_verbatim_dialogue(tmp_path):
     generate_video_prompt(db, sid, FakeLLM(), backend="h3")
     assert "哪里不舒服？" in captured["user"]
     assert "逐字使用" in captured["user"] and "林医生" in captured["user"]
+
+
+def test_picture_reference_validation():
+    """真机 2026-08-26：<Picture 70>=资产 id——机械拦截只允许 1/2。"""
+    from comic_studio.engine.prompts.gen import _check_picture_refs
+    ok, msg = _check_picture_refs("subject_definitions:\n是来自 <Picture 1> 的人物")
+    assert ok
+    ok, msg = _check_picture_refs("subject_definitions:\n是来自 <Picture 70> 的人物")
+    assert not ok and "70" in msg
+    ok, msg = _check_picture_refs("无任何图片引用的纯文本")
+    assert ok  # 无引用不拦

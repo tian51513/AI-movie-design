@@ -18,13 +18,19 @@ from .workflows.filler import fill_workflow
 ASPECT_ENUM = {"16:9": "16:9 (Widescreen)", "9:16": "9:16 (Portrait Widescreen)"}
 
 
-def pick_template_id(shot_row) -> str:
-    wt = shot_row["workflow_type"] or ""
-    if wt == "fl2v":
-        return "h3_fl2v"
-    if wt == "t2v":
-        return "h3_t2v"
-    return "h3_ref2va"
+def pick_template_id(shot_row, db=None) -> str:
+    """分镜视频模板路由（2026-08-26 需求）：优先读 template_map 按类型映射，
+    用户可在设置页为 ref2va/fl2v/t2v 各自切换实际模板；无映射时走内置默认。"""
+    wt = (shot_row["workflow_type"] or "").strip() or "ref2va"
+    defaults = {"ref2va": "h3_ref2va", "fl2v": "h3_fl2v", "t2v": "h3_t2v"}
+    if db is not None:
+        try:
+            tmpl_id = get_setting(db, "template_map").get(wt)
+            if tmpl_id:
+                return tmpl_id
+        except Exception:
+            pass
+    return defaults.get(wt, "h3_ref2va")
 
 
 def _shot_versions_in(shot_dir) -> list:
@@ -185,7 +191,7 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     shot = get_shot(db, shot_id)
     proj = get_project(db, shot["project_id"])
 
-    tmpl_id = pick_template_id(shot)
+    tmpl_id = pick_template_id(shot, db=db)
     reg = registry.scan_templates(registry.TEMPLATE_ROOT)
     # 关键帧接线（方案A 一期）：fl2v 走 h3_fl2v 首尾帧插值；
     # kf_end 缺失时降级 h3_i2v（仅首帧），二期关键帧任务补齐 kf_* 后自动升回

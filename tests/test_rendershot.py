@@ -390,3 +390,17 @@ def test_keyframes_anchor_character_main(tmp_path, monkeypatch):
         rendershot.ensure_keyframes(db, tmp_path / "data", sid2, comfy)
         last = m.prompts[-1]["prompt"]
         assert "57:27" in last  # 走了 zimage_t2i 引导
+
+
+def test_pick_template_reads_template_map(tmp_path):
+    """分镜视频映射（2026-08-26 需求）：pick_template_id 按 template_map 路由，
+    可为 ref2va/fl2v/t2v 各自切换实际模板。"""
+    from comic_studio.engine.settings import set_setting
+    db = Database(tmp_path / "m.db"); db.migrate()
+    set_setting(db, "template_map", {
+        "ref2va": "h3_ref2va", "fl2v": "h3_fl2v", "t2v": "h3_t2v"})
+    assert pick_template_id({"workflow_type": "ref2va"}, db) == "h3_ref2va"
+    assert pick_template_id({"workflow_type": "fl2v"}, db) == "h3_fl2v"
+    set_setting(db, "template_map", {"ref2va": "h3_t2v", "fl2v": "h3_i2v", "t2v": "h3_t2v"})
+    assert pick_template_id({"workflow_type": "ref2va"}, db) == "h3_t2v"  # 切了
+    assert pick_template_id({"workflow_type": "fl2v"}, db) == "h3_i2v"
