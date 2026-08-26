@@ -25,6 +25,17 @@
     <button style="float:right" @click="openSettings">设置</button></header>
   <main v-if="view==='settings'">
     <p><a href="#" @click.prevent="view='projects'">← 返回</a></p>
+        <p style="display:flex;gap:6px;margin:0 0 12px">
+      <button v-for="t in [
+        {id:'llm',name:'🤖 LLM 设置'},
+        {id:'wf',name:'🎬 工作流'},
+        {id:'themes',name:'📚 预设主题'},
+        {id:'route',name:'🔀 任务路由'}]" :key="t.id"
+        @click="settingsTab=t.id"
+        :style="settingsTab===t.id ? 'background:#16a34a;font-weight:bold' : ''"
+        style="padding:6px 14px">{{ t.name }}</button>
+    </p>
+    <div v-show="settingsTab==='llm'">
     <h2>LLM 设置</h2>
     <div class="row">
       <div class="card" style="flex:1;min-width:320px">
@@ -63,6 +74,8 @@
              {{ llmTestResult.online?.ok ? '✓ ' + (llmTestResult.online?.detail || 'OK') : '✗ ' + llmTestResult.online?.detail }}</span></p>
       </div>
     </div>
+</div>
+    <div v-show="settingsTab==='wf'">
     <h3>ComfyUI
       <span :style="{color: comfyStatus===null?'#8b949e':(comfyStatus?'#4ade80':'#f87171')}">●</span>
       <span class="muted">{{ comfyStatus===null ? '检测中…' : (comfyStatus ? '在线' : '离线') }}</span>
@@ -86,6 +99,23 @@
                  :title="t.id">{{ t.name }}</option>
        </select>
        <span class="muted">角色三视图派生（主图作种子图）</span></p>
+    <p><label class="muted">多参生视频模板：</label>
+       <select v-model="settingsForm.r2vaTm" style="width:280px">
+         <option v-for="t in templatesOfType('ref2va')" :key="t.id" :value="t.id">{{ t.name }}</option>
+       </select>
+       <label class="muted" style="margin-left:8px">首尾帧模板：</label>
+       <select v-model="settingsForm.fl2vTm" style="width:280px">
+         <option v-for="t in templatesOfType('fl2v')" :key="t.id" :value="t.id">{{ t.name }}</option>
+       </select>
+       <label class="muted" style="margin-left:8px">文生视频模板：</label>
+       <select v-model="settingsForm.t2vTm" style="width:280px">
+         <option v-for="t in templatesOfType('t2v')" :key="t.id" :value="t.id">{{ t.name }}</option>
+       </select></p>
+    <h3>工作流导入</h3>
+    <p><input type="file" accept=".json" @change="e => wfImportFile = e.target.files[0]">
+       <button @click="importWorkflow" :disabled="!wfImportFile || wfImporting">
+         {{ wfImporting ? '导入中…' : '导入工作流' }}</button>
+       <span class="muted">ComfyUI 导出 [API] 格式 JSON → 自动识别类型/参数/提示词注入点</span></p>
     <h3>工作流模型切换</h3>
     <p><label class="muted">模板：</label>
        <select v-model="moTemplate" @change="loadModelChoices" style="width:280px">
@@ -105,6 +135,8 @@
     </div>
     <p v-else-if="moTemplate && !moError" class="muted">该模板未声明可切换的模型槽位</p>
     <p v-else-if="moError" class="muted" style="color:#f87171">{{ moError }}</p>
+</div>
+    <div v-show="settingsTab==='themes'">
     <h3>预设主题管理</h3>
     <p><input type="file" accept=".md" @change="e => themeImportFile = e.target.files[0]">
        <button @click="importThemes" :disabled="!themeImportFile || themeImporting">
@@ -118,6 +150,8 @@
       </p>
       <p v-if="!themesManage.length" class="muted">暂无主题（重启后自动同步 templates/tpl/）</p>
     </div>
+</div>
+    <div v-show="settingsTab==='route'">
     <h3>任务路由</h3>
     <p v-for="(label, task) in taskLabels" :key="task">
       {{ label }}：
@@ -128,6 +162,7 @@
     </p>
     <p><button :disabled="saving" @click="saveSettings">{{ saving ? '保存中…' : '保存设置' }}</button>
        <span class="muted">改模型/路由立即生效，无需重启</span></p>
+</div>
   </main>
   <main v-else-if="view==='projects'">
     <h2>项目</h2>

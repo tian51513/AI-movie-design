@@ -32,6 +32,7 @@ function data() {
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '',
     newSegDur: 5, newTotalDur: 0,
+    settingsTab: 'llm', wfImportFile: null, wfImporting: false,
     themesManage: [], themeImportFile: null, themeImporting: false,
     editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character',
     newStyleKey: '', newStyleText: '',
@@ -101,6 +102,22 @@ const methods = {
   async loadThemesManage() {
     try { this.themesManage = await (await fetch('/api/themes')).json(); }
     catch (e) { /* 忽略 */ }
+  },
+  async importWorkflow() {
+    if (!this.wfImportFile) return;
+    this.wfImporting = true;
+    try {
+      const fd = new FormData();
+      fd.append('file', this.wfImportFile);
+      const r = await fetch('/api/workflows/import', { method: 'POST', body: fd });
+      const b = await r.json();
+      if (!r.ok) alert('导入失败：' + (b.detail || ''));
+      else { alert(`已导入 ${b.id}（类型 ${b.type}）`); this.wfImportFile = null;
+             // 重载模板列表
+             const s2 = await (await fetch('/api/settings')).json();
+             this.settingsForm.model_templates = s2.model_templates || []; }
+    } catch (e) { alert('导入失败：' + e); }
+    this.wfImporting = false;
   },
   async importThemes() {
     if (!this.themeImportFile) return;
@@ -278,6 +295,9 @@ const methods = {
       comfy: { ...s.comfy },
       t2i_tm: s.template_map?.t2i || '',
       cvTm: s.template_map?.character_views || '',
+      r2vaTm: s.template_map?.ref2va || 'h3_ref2va',
+      fl2vTm: s.template_map?.fl2v || 'h3_fl2v',
+      t2vTm: s.template_map?.t2v || 'h3_t2v',
       model_overrides: JSON.parse(JSON.stringify(s.model_overrides || {})),
       model_templates: s.model_templates || [],
     };
@@ -377,7 +397,10 @@ const methods = {
       llm_routing: { ...this.settingsForm.routing },
       comfy: { base_url: this.settingsForm.comfy.base_url || '' },
       template_map: { t2i: this.settingsForm.t2i_tm || null,
-                      character_views: this.settingsForm.cvTm || null },
+                      character_views: this.settingsForm.cvTm || null,
+                      ref2va: this.settingsForm.r2vaTm || null,
+                      fl2v: this.settingsForm.fl2vTm || null,
+                      t2v: this.settingsForm.t2vTm || null },
       model_overrides: this.settingsForm.model_overrides,
     };
     const resp = await fetch('/api/settings', {

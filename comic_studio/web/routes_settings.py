@@ -26,7 +26,7 @@ class ComfyConfig(BaseModel):
     base_url: str = ""
 
 
-TEMPLATE_MAP_KEYS = {"character_views", "t2i", "ref2va", "fl2v", "t2v"}
+TEMPLATE_MAP_KEYS = {"character_views", "t2i", "ref2va", "fl2v", "t2v", "i2v"}
 
 
 class SettingsUpdate(BaseModel):
