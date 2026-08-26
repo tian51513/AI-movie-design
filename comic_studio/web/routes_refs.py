@@ -211,8 +211,10 @@ def upload_keyframe(request: Request, shot_id: int,
 
 
 @router.post("/api/shots/{shot_id}/regen-keyframes", status_code=202)
-def regen_keyframes(request: Request, shot_id: int):
-    """只重生关键帧（不渲染视频）。删旧帧 + 标状态，下一镜渲染时自动补。"""
+def regen_keyframes(request: Request, shot_id: int, phase: str = Query("all")):
+    """只重生关键帧（不渲染视频）。phase=start/end/all 独立控制哪帧。"""
+    if phase not in ("start", "end", "all"):
+        raise HTTPException(422, "phase 只能是 start/end/all")
     from ..engine.shots import get_shot as _gs, update_shot as _us
     db = request.app.state.db
     shot = _gs(db, shot_id)
@@ -223,7 +225,9 @@ def regen_keyframes(request: Request, shot_id: int):
     proj = _gp(db, shot["project_id"])
     kd = _dta(request.app.state.data_dir,
               f"projects/{proj['slug']}/shots/{shot['seq']}")
-    for f in ("kf_start.png", "kf_end.png"):
+    _files = {"start": ["kf_start.png"], "end": ["kf_end.png"],
+              "all": ["kf_start.png", "kf_end.png"]}[phase]
+    for f in _files:
         (kd / f).unlink(missing_ok=True)
     _us(db, shot_id, {"status": "生成首尾帧"})
     # 直接调 ensure_keyframes（同步执行，不入队渲染）

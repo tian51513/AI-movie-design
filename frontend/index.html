@@ -455,12 +455,15 @@
                style="max-width:100%;border-radius:4px;cursor:zoom-in"
                @click="lightbox=kfUrl(s, phase)">
           <div v-else class="muted" style="font-size:11px;padding:20px 0;text-align:center">
-            未生成（渲染时自动补）
+            未生成
           </div>
+          <button @click="regenKf(s, phase)" :disabled="assetBusy(s)"
+                  style="font-size:10px;padding:2px 6px;margin-top:4px;width:100%"
+                  title="只重生此帧（不影响另一帧）">🔄 重生此帧</button>
         </div>
         <button @click="regenKf(s)" :disabled="assetBusy(s)"
                 style="font-size:11px;padding:3px 8px;background:#7c3aed"
-                title="删除旧关键帧并重新生成（走队列）">🔄 重生首尾帧</button>
+                title="删除两帧并重新生成">🔄 重生双帧</button>
       </div>
       <div v-if="s.video_url" style="margin-top:8px">
         <video controls :src="s.video_url" style="max-width:100%;border-radius:6px;border:1px solid #2c3540"></video>

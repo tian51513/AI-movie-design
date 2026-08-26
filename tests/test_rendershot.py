@@ -298,7 +298,9 @@ def test_ensure_keyframes_generates_pair(tmp_path, monkeypatch):
         seeds = [p["prompt"]["57:3"]["inputs"]["seed"] for p in m.prompts]
         assert seeds[0] == seeds[1]  # 同 seed：两帧构图一致
         texts = [p["prompt"]["57:27"]["inputs"]["text"] for p in m.prompts]
-        assert all("同机位" in t and "构图" in t for t in texts)
+        # 配对约束已移除（两帧字样致图像模型画双画面）；改查基本要素
+        assert all("起始" in texts[0] and "结尾" in texts[1] for t in [texts])
+        assert all("ultra-detailed" in t for t in texts)
         assert all("ultra-detailed" in t for t in texts)  # ZImage 尾缀
         assert "起始" in texts[0] and "结尾" in texts[1]
 

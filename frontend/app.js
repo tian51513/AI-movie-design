@@ -122,10 +122,13 @@ const methods = {
     if (!r.ok) { alert('上传失败'); return; }
     await this.loadShots();  // 刷新缩略图
   },
-  async regenKf(s) {
-    if (!confirm(`重新生成分镜 ${s.seq} 的首尾帧？\n（会先删除现有帧，走队列重生成）`)) return;
-    const r = await fetch(`/api/shots/${s.id}/regen-keyframes`, { method: 'POST' });
-    if (!r.ok) alert(await r.text());
+  async regenKf(s, phase = 'all') {
+    const label = phase === 'start' ? '首帧' : phase === 'end' ? '尾帧' : '双帧';
+    if (!confirm(`重新生成分镜 ${s.seq} 的${label}？`)) return;
+    const r = await fetch(`/api/shots/${s.id}/regen-keyframes?phase=${phase}`,
+                          { method: 'POST' });
+    if (!r.ok) { alert(await r.text()); return; }
+    await this.loadShots();  // 刷新缩略图
   },
   testWorkflow(tid) {
     if (!tid) return;
