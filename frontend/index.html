@@ -20,7 +20,7 @@
                 padding: 8px 0 16px; scrollbar-width: thin; }
   .film-strip::-webkit-scrollbar { height: 8px; }
   .film-strip::-webkit-scrollbar-thumb { background: #2c3540; border-radius: 4px; }
-  .film-card { flex: 0 0 min(420px, 85vw); scroll-snap-align: start; max-height: 78vh;
+  .film-card { flex: 0 0 min(66vw, 900px); scroll-snap-align: start; max-height: 78vh;
                overflow-y: auto; }
   ul { padding-left: 18px; }
 </style>
@@ -441,9 +441,9 @@
         </div>
       </div>
       <!-- fl2v 关键帧展示（首帧/尾帧缩略图 + 上传/重生） -->
-      <div v-if="s.workflow_type==='fl2v'" style="margin-top:8px;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+      <div v-if="s.workflow_type==='fl2v'" style="margin-top:8px;display:flex;gap:8px;align-items:flex-start">
         <div v-for="phase in ['start','end']" :key="phase"
-             style="flex:0 0 200px;border:1px solid #2c3540;border-radius:6px;padding:6px">
+             style="flex:1;min-width:0;border:1px solid #2c3540;border-radius:6px;padding:6px">
           <div class="muted" style="font-size:11px;margin-bottom:4px">
             {{ phase==='start' ? '⏮ 首帧' : '⏭ 尾帧' }}
             <label style="margin-left:6px;cursor:pointer;color:#7c3aed;font-size:11px"
