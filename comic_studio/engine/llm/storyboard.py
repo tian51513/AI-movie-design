@@ -138,7 +138,10 @@ def auto_bind_characters(db, project_id):
     return bound
 
 
-def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=8000):
+def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2000):
+    """max_chars=2000：按上下文容量实证取值（2026-08-27 job 582 真机教训：
+    8127 字块输出撞 Ollama 16384 num_ctx 硬截断；最密拆解 6.28 completion tok/输入字
+    + prompt 0.82 tok/字 + ~350 开销 → 块 ≤ ~2100 字才稳妥）。"""
     if client_factory is None:
         client_factory = make_split_factory(db)
     proj = get_project(db, project_id)

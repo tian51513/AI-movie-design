@@ -134,3 +134,28 @@ def test_auto_bind_characters_from_description(tmp_path):
     ledger = _json.loads(rows[0]["ledger_json"])
     char_ids = (ledger.get("assets") or {}).get("characters") or []
     assert len(char_ids) >= 1  # 自动补绑了
+
+
+def test_split_default_chunk_fits_context(tmp_path):
+    """默认分块必须按模型上下文容量取值（真机 2026-08-27 job 582：8127 字块
+    输出撞 16384 num_ctx 硬截断）。实测最密拆解 6.28 completion tok/输入字 +
+    prompt 0.82 tok/字 + ~350 开销 ≤ 16384 → 块 ≤ ~2100 字，默认取 2000。"""
+    db, pid = _setup(tmp_path)
+    import pathlib
+    from comic_studio.engine.projects import get_project
+    novel = data_to_abs(tmp_path / "data", get_project(db, pid)["novel_path"])
+    novel.write_text("\n\n".join("甲" * 900 for _ in range(4)), encoding="utf-8")
+
+    class CapturingFake(FakeLLM):
+        def __init__(self):
+            super().__init__([CHUNK.format(desc="镜", cid=1)])
+            self.users = []
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            self.users.append(messages[-1]["content"])
+            return super().raw_chat(messages, temperature, max_tokens)
+
+    fake = CapturingFake()
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
+    assert len(fake.users) >= 2  # 3600 字默认必须拆多块（旧默认 8000 只会 1 块）
+    chunks = [u.split("小说文本：\n", 1)[1] for u in fake.users]
+    assert all(len(c) <= 2000 for c in chunks), [len(c) for c in chunks]
