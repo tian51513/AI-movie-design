@@ -144,10 +144,12 @@ def _anchor_refs(db, shot, data_dir):
 
 
 def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
-    """fl2v 关键帧生成（方案A 二期）：缺 kf_*.png 时经 t2i 模板生成首尾对。
-    两帧共用同一 seed（保构图一致），成对约束写入提示词（方案 A 避坑守则）。
-    连贯性②：主图模板有图槽且角色有 main.png → 作参考锚定脸/服装；
-    无主图时引导纯文生图（zimage_t2i）。"""
+    """fl2v 关键帧生成（方案A）：缺 kf_*.png 时经 t2i 模板生成首尾对。
+    首帧参考图（按优先级，2026-08-26 用户需求——必须有一张参考图）：
+      1. 上镜尾帧 kf_end.png（画面/人物接力——帧链传播人设）
+      2. 角色 main.png（首镜人设锚定）
+    尾帧参考首帧（img2img，构图/服装继承，仅动作变化）。
+    denoise 差异化：首帧 0.7 自由创作场景 / 尾帧 0.45 紧贴首帧。"""
     shot = get_shot(db, shot_id)
     proj = get_project(db, shot["project_id"])
     shot_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}")
@@ -156,47 +158,42 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
     if kf_start.exists() and kf_end.exists():
         return kf_start, kf_end
     from .workflows.registry import resolve_template, scan_templates, TEMPLATE_ROOT
-    tmpl = resolve_template(db, "t2i")
+    tmpl = resolve_template(db, "keyframe")  # 独立关键帧图生图模板（2026-08-26 用户建议）
     n_slots = len(tmpl.inject_images) if tmpl.inject_images else 0
-    char_refs = _anchor_refs(db, shot, data_dir)  # [(main.png, desc), (sheet.png, desc)]
 
-    # 构建首帧参考图集：按模板槽数填入角色资产（主图优先，多视图补位）
+    # 首帧参考图：上镜尾帧 > 角色主图（帧链接力）
+    prev_kf_end = None
+    if shot["depends_on"]:
+        prev = get_shot(db, shot["depends_on"])
+        if prev:
+            prev_dir = data_to_abs(data_dir,
+                                   f"projects/{proj['slug']}/shots/{prev['seq']}")
+            _pkf = prev_dir / "kf_end.png"
+            if _pkf.exists():
+                prev_kf_end = _pkf
+    char_refs = _anchor_refs(db, shot, data_dir)  # [main.png]（不含三视图）
+
+    # 合并参考：上镜尾帧优先，无则角色主图
+    start_ref = prev_kf_end or (char_refs[0] if char_refs else None)
+
     def _start_images():
-        if not n_slots or not char_refs:
+        if not n_slots or not start_ref:
             return None
-        imgs = []
-        for i, ref_abs in enumerate(char_refs):
-            if i >= n_slots:
-                break
-            imgs.append({"slot": tmpl.inject_images[i]["slot"], "path": str(ref_abs)})
-        return imgs if imgs else None
+        return [{"slot": tmpl.inject_images[0]["slot"], "path": str(start_ref)}]
 
     images = _start_images()
     anchor_line = ""
     if images:
         anchor_line = "。人物外貌与服装与参考图保持完全一致"
-    elif char_refs and n_slots == 0:
-        # 反向引导（真机 2026-08-26：zimage_t2i 纯文 → 参考图传不进 → 人物不一致）
-        reg_all = scan_templates(TEMPLATE_ROOT)
-        cand = reg_all.get("xf_zimage_ti2i")
-        if cand and cand.inject_images:
-            tmpl = cand
-            n_slots = len(cand.inject_images)
-            images = _start_images()
-            if images:
-                anchor_line = "。人物外貌与服装与参考图保持完全一致"
-                emit_log(db, "comfy", "info",
-                         f"分镜 {shot['seq']} 关键帧升图+文模板 {cand.id}（角色主图锚定）",
-                         project_id=proj["id"], job_id=job_id)
-    elif n_slots > 0 and not char_refs:
-        # 有图槽但无角色参考 → 引导纯文生图
+    if not images and not start_ref and n_slots > 0:
+        # 无参考图 + 模板需要图输入 → 引导纯文
         boot = scan_templates(TEMPLATE_ROOT).get("zimage_t2i")
         if boot is None or boot.inject_images:
-            raise ValueError("关键帧模板需要图片输入且无可锚定的角色主图")
+            raise ValueError("关键帧模板需要图片输入且无参考图可传")
         tmpl = boot
         n_slots = 0
         emit_log(db, "comfy", "info",
-                 f"分镜 {shot['seq']} 关键帧无主图可锚定，引导纯文生图 {boot.id}",
+                 f"分镜 {shot['seq']} 关键帧无参考图，引导纯文生图 {boot.id}",
                  project_id=proj["id"], job_id=job_id)
 
     overrides = (get_setting(db, "model_overrides") or {}).get(tmpl.id)

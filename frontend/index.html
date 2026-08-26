@@ -104,7 +104,13 @@
          <option v-for="t in templatesOfType('character_views')" :key="t.id" :value="t.id"
                  :title="t.id">{{ t.name }}</option>
        </select>
-       <span class="muted">角色三视图派生（主图作种子图）</span>
+       <span class="muted">角色三视图派生（主图作种子图）</span></p>
+    <p><label class="muted">关键帧图生图模板：</label>
+       <select v-model="settingsForm.kfTm" style="width:300px">
+         <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
+                 :title="t.id">{{ t.name }}</option>
+       </select>
+       <span class="muted">fl2v 首尾帧生成用（img2img，需有图片输入槽）</span>
        <button @click="testWorkflow(settingsForm.t2i_tm)" style="font-size:12px;padding:3px 8px;margin-left:4px"
                title="下载当前主图模板 JSON → 打开 ComfyUI 拖入测试">🧪</button></p>
     <p><label class="muted">多参生视频模板：</label>

@@ -10,7 +10,8 @@ DEFAULT_SETTINGS = {
     # 类型→模板映射（spec §6.3）；t2v 可选，默认 None
     "template_map": {
         "character_views": "character_views",
-        "t2i": "zimage_t2i",  # 主力：Z-Image Turbo（majicmix 版 t2i_ref 保留可切换）
+        "t2i": "zimage_t2i",
+        "keyframe": "xf_zimage_ti2i",  # 关键帧图生图  # 主力：Z-Image Turbo（majicmix 版 t2i_ref 保留可切换）
         "ref2va": "h3_ref2va",
         "fl2v": "h3_fl2v",
         "t2v": "h3_t2v",
