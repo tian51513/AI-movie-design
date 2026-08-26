@@ -272,6 +272,7 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         comfy.upload_image(Path(up["path"]), up["name"])
 
     prompt_id = comfy.submit(wf, client_id=f"cs-shot-{shot_id}")
+    update_shot(db, shot_id, {"status": "渲染中"})  # 阶段状态
     emit_log(db, "comfy", "info",
              f"分镜 {shot['seq']} 提交渲染（模板 {template.id}）",
              project_id=proj["id"], job_id=job_id,
@@ -421,6 +422,10 @@ def handle_gen_shot(db, data_dir, job, comfy):
             emit_log(db, "comfy", "warn",
                      f"分镜 {shot['seq']} 前镜无视频，降级常规路径",
                      project_id=proj["id"], job_id=job["id"])
+
+    # 阶段状态（2026-08-26 用户需求：分镜 pill 需区分"生成首尾帧"与"渲染中"）
+    if shot["workflow_type"] == "fl2v":
+        update_shot(db, shot_id, {"status": "生成首尾帧"})
 
     dest = render_shot(db, data_dir, shot_id, comfy, job_id=job["id"],
                        first_frame_png=first_frame_png)

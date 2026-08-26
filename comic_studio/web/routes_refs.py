@@ -212,13 +212,12 @@ def upload_keyframe(request: Request, shot_id: int,
 
 @router.post("/api/shots/{shot_id}/regen-keyframes", status_code=202)
 def regen_keyframes(request: Request, shot_id: int):
-    """触发关键帧重新生成（走队列，角色主图锚定 + 前镜尾帧参考）。"""
-    from ..engine.shots import get_shot as _gs
+    """只重生关键帧（不渲染视频）。删旧帧 + 标状态，下一镜渲染时自动补。"""
+    from ..engine.shots import get_shot as _gs, update_shot as _us
     db = request.app.state.db
     shot = _gs(db, shot_id)
     if shot is None:
         raise HTTPException(404, "分镜不存在")
-    # 删旧关键帧让 ensure_keyframes 重生成
     from ..engine.projects import get_project as _gp
     from ..engine.paths import data_to_abs as _dta
     proj = _gp(db, shot["project_id"])
@@ -226,9 +225,19 @@ def regen_keyframes(request: Request, shot_id: int):
               f"projects/{proj['slug']}/shots/{shot['seq']}")
     for f in ("kf_start.png", "kf_end.png"):
         (kd / f).unlink(missing_ok=True)
-    # 入队 gen_shot 任务（render 时自动补关键帧）
-    from ..engine.jobs import enqueue_job
-    jid = enqueue_job(db, "gen_shot", project_id=shot["project_id"],
-                      shot_id=shot_id, resource="gpu_comfy",
-                      payload={"shot_id": shot_id})
-    return {"job_id": jid}
+    _us(db, shot_id, {"status": "生成首尾帧"})
+    # 直接调 ensure_keyframes（同步执行，不入队渲染）
+    from ..engine.settings import get_setting
+    from ..engine.comfy.client import ComfyClient
+    base_url = (get_setting(db, "comfy") or {}).get("base_url")
+    if not base_url:
+        raise HTTPException(409, "未配置 ComfyUI 地址")
+    from ..engine.rendershot import ensure_keyframes
+    try:
+        ensure_keyframes(db, request.app.state.data_dir, shot_id,
+                         ComfyClient(base_url))
+        _us(db, shot_id, {"status": "ready"})
+    except Exception as e:
+        _us(db, shot_id, {"status": "ready"})
+        raise HTTPException(502, f"关键帧生成失败：{e}")
+    return {"ok": True}

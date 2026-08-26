@@ -552,7 +552,7 @@ const methods = {
     if (s.render_job && s.render_job.status === 'running') return '渲染中';
     if (s.render_job && s.render_job.status === 'pending') return '排队渲染';
     if (s.prompt_job && s.prompt_job.status === 'running') return '生成提示词';
-    return { pending: '待生成', ready: '就绪', stale: '资产已更新' }[s.status] || s.status;
+    return { pending: '待生成', ready: '就绪', stale: '资产已更新', '生成首尾帧': '生成首尾帧', '渲染中': '渲染中' }[s.status] || s.status;
   },
   async renderShot(s) {
     const r = await fetch(`/api/shots/${s.id}/render`, {
