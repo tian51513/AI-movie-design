@@ -51,9 +51,17 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
     slots = []
     if relay:
         slots.append("<Picture 1> = 上一镜尾帧（仅供构图与姿态衔接，人物外貌不得以此为准）")
+    from ..rendershot import pick_template_id as _pti
+    from ..workflows import registry as _wreg
+    try:
+        _tid = _pti(shot_row, db=None)
+        _regs = _wreg.scan_templates(_wreg.TEMPLATE_ROOT)
+        max_slots = len(_regs[_tid].inject_images) if _tid in _regs else 2
+    except Exception:
+        max_slots = 2
     for aid in (chars + (ledger.get("assets") or {}).get("scenes", [])
                 + (ledger.get("assets") or {}).get("props", [])):
-        if len(slots) >= 2:
+        if len(slots) >= max_slots:
             break
         a = assets_by_id.get(aid)
         if a is None:
@@ -83,7 +91,7 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
             "不使用任何 <Picture N> 引用（无参考图）")
     else:
         lines.extend([
-            "图片槽位表（subject_definitions 引用图片只能用槽位号 1/2，"
+            f"图片槽位表（subject_definitions 引用图片只能用槽位号 1~{max_slots}，"
             "严禁使用资产 id 数字）：" + ("；".join(slots) if slots else "无图片参考"),
             ("身份锚定规则：<Picture 1> 尾帧仅衔接画面；人物五官与服装必须以角色三视图槽位为准"
              if relay else ""),
@@ -136,12 +144,14 @@ _REQUIRED_SECTIONS = ("subject_definitions:", "summary:", "retention_analysis:",
 import re as _re
 
 
-def _check_picture_refs(text: str) -> tuple[bool, str]:
-    """<Picture N> 只允许 1/2（真机 2026-08-26：LLM 照抄资产 id → 锚定全失效）。"""
+def _check_picture_refs(text: str, max_pics: int = 2) -> tuple[bool, str]:
+    """<Picture N> 编号不能超过模板实际槽数（真机 2026-08-26 教训）。"""
+    valid = {str(i) for i in range(1, max_pics + 1)}
     refs = _re.findall(r"<Picture (\d+)>", text or "")
-    bad = [r for r in refs if r not in ("1", "2")]
+    bad = [r for r in refs if r not in valid]
     if bad:
-        return False, f"<Picture> 引用了不存在的图片编号 {bad}（只能用 1/2，严禁资产 id）"
+        return False, (f"<Picture> 引用了不存在的图片编号 {bad}"
+                       f"（只能用 1~{max_pics}，严禁资产 id）")
     return True, ""
 
 
@@ -167,6 +177,15 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
         mode = (proj["prompt_mode"]
                 if proj is not None and proj["prompt_mode"] in PROMPT_MODES else "D")
     assets_by_id = {a["id"]: a for a in list_project_assets(db, shot["project_id"])}
+    # 模板实际图槽数（动态——导入多槽模板不再被 2 封顶）
+    from ..workflows import registry as _reg
+    from ..rendershot import pick_template_id
+    try:
+        _tid = pick_template_id(shot, db=db)
+        _reg_cached = _reg.scan_templates(_reg.TEMPLATE_ROOT)
+        max_ref_images = len(_reg_cached[_tid].inject_images) if _tid in _reg_cached else 2
+    except Exception:
+        max_ref_images = 2
     prev_shot = db.connect().execute(
         "SELECT * FROM shots WHERE project_id=? AND seq=?",
         (shot["project_id"], shot["seq"] - 1)).fetchone()
@@ -183,7 +202,7 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
             return text
         bound = len(ledger_assets(shot))  # 台账绑定资产数（ref 图数量）
         sok, smsg = structure_check(text, mode)
-        pok, pmsg = _check_picture_refs(text)
+        pok, pmsg = _check_picture_refs(text, max_pics=max_ref_images)
         ok, msg = (validate_h3(text, max(4, int(shot["duration"])), proj["aspect_ratio"],
                                images=bound, videos=0)
                    if sok and pok else (False, pmsg or smsg))

@@ -199,7 +199,10 @@ def upload_keyframe(request: Request, shot_id: int,
     dest = data_to_abs(request.app.state.data_dir,
                        f"projects/{proj['slug']}/shots/{shot['seq']}") / f"kf_{phase}.png"
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_bytes(file.file.read())
+    data = file.file.read(20 * 1024 * 1024 + 1)
+    if len(data) > 20 * 1024 * 1024:
+        raise HTTPException(422, "图片超过 20MB 上限")
+    dest.write_bytes(data)
     from ..engine.logbus import emit as emit_log
     emit_log(db, "comfy", "info",
              f"分镜 {shot['seq']} 关键帧（{phase}）已人工上传",

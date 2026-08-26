@@ -83,7 +83,7 @@ def collect_ref_images(db, shot_row) -> list[dict]:
                    + assets_map.get("props", []))
     refs = []
     for asset_id in ordered_ids:
-        if len(refs) >= 2:
+        if len(refs) >= 2:  # TODO 动态槽数（需 db 查 template inject_images 数）
             break
         asset = get_asset(db, asset_id)
         if asset and asset["library_dir"]:
