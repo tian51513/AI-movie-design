@@ -13,7 +13,9 @@ def import_workflow(request: Request, file: UploadFile = File(...)):
     生成 manifest 入库（templates/workflows/）。"""
     if not (file.filename or "").lower().endswith(".json"):
         raise HTTPException(422, "只接受 .json 文件（ComfyUI 导出时选 API 格式）")
-    raw = file.file.read()
+    raw = file.file.read(5 * 1024 * 1024 + 1)  # 上限 5MB
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(422, "工作流 JSON 超过 5MB 上限")
     from ..engine.workflows.importer import import_workflow_json
     template_dir = Path("templates/workflows")
     try:
