@@ -77,6 +77,10 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
         f"需求台账：必须出现={ledger.get('must_appear', [])}；必须保持={ledger.get('must_keep', [])}；"
         f"允许变化={ledger.get('may_change', [])}；禁止={ledger.get('must_avoid', [])}",
     ]
+    dialogue = ledger.get("dialogue") or []
+    if dialogue:
+        lines.append("台词（视频对白必须逐字使用，不得改写）：" + "；".join(
+            f"{d.get('speaker', '?')}：“{d.get('line', '')}”" for d in dialogue))
     if prev_shot is not None:
         # 连贯性③（2026-08-26）：姿态/位置/服装默认延续上镜结尾
         prev_desc = (prev_shot["description"] or "")[:80]

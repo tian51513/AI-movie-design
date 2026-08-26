@@ -98,3 +98,21 @@ def test_split_auto_chains_depends_on(tmp_path):
     assert rows[0]["depends_on"] is None
     for prev, cur in zip(rows, rows[1:]):
         assert cur["depends_on"] == prev["id"]
+
+
+def test_split_extracts_verbatim_dialogue(tmp_path):
+    """台词链路（2026-08-26）：拆分镜照录原文对白入 ledger.dialogue。"""
+    db, pid = _setup(tmp_path)
+    reply = CHUNK.format(desc="问诊", cid=1).replace(
+        '"continue_prev":false',
+        '"continue_prev":false,"dialogue":[{"speaker":"林晨","line":"你怎么了？"}]')
+    fake = FakeLLM([reply])
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
+    import json as _json
+    ledger = _json.loads(list_shots(db, pid)[0]["ledger_json"])
+    assert ledger["dialogue"] == [{"speaker": "林晨", "line": "你怎么了？"}]
+    # 无对白镜：默认空数组不报错
+    fake2 = FakeLLM([CHUNK.format(desc="空镜", cid=1)])
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake2)
+    ledger2 = _json.loads(list_shots(db, pid)[0]["ledger_json"])
+    assert ledger2.get("dialogue", []) == []

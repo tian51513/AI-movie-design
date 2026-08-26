@@ -20,6 +20,8 @@ SPLIT_SYSTEM = """你是小说改编漫剧的分镜师。把给定的小说文�
 6. 台账四分类：must_appear(画面必须出现的实体/动作)、must_keep(必须保持的资产特征)、may_change(允许自由发挥)、must_avoid(易错必须避免项，如"左右手颠倒""换服装"）
 7. description 写成可直接指导视频生成的画面描述：谁在哪做什么、构图与光线，80 字内中文
 8. duration 一律填项目统一段时长（上下文给出），不得自行增减
+9. dialogue：从 text_span 照录本镜人物对白，格式 [{"speaker":"说话人","line":"原话"}]；
+   逐字保留原文（含语气词），不改写不概括；无对白则省略或空数组
 
 只输出一个 JSON 对象：
 {"shots":[{"text_span":"对应原文摘录","description":"...","shot_type":"对话/动作/场景/情绪",
@@ -44,6 +46,8 @@ class ShotDraft(BaseModel):
     scene_ids: list[int] = []
     prop_ids: list[int] = []
     continue_prev: bool = False
+    # 台词链路（2026-08-26）：原文照录，供视频语音/TTS 逐字使用
+    dialogue: list[dict[str, str]] = []
 
 
 class ChunkStoryboard(BaseModel):
@@ -141,7 +145,8 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=8
             text_span=d.text_span, description=d.description, shot_type=d.shot_type,
             camera=d.camera, duration=_dur, workflow_type=d.workflow_type,
             ledger={"must_appear": d.must_appear, "must_keep": d.must_keep,
-                    "may_change": d.may_change, "must_avoid": d.must_avoid},
+                    "may_change": d.may_change, "must_avoid": d.must_avoid,
+                    "dialogue": d.dialogue},
             character_ids=d.character_ids, scene_ids=d.scene_ids, prop_ids=d.prop_ids,
             depends_on=None) for d in result.shots)
     ids = persist_shots(db, project_id, staged)

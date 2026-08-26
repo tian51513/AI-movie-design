@@ -192,3 +192,26 @@ def test_context_uses_slot_map_not_asset_ids(tmp_path):
 def test_skeleton_has_dialogue_tag_example():
     from comic_studio.engine.prompts.modes import mode_spec
     assert "<d>Chinese" in mode_spec("D")   # 骨架含对白标记示例
+
+
+def test_context_carries_verbatim_dialogue(tmp_path):
+    """台词链路：ledger.dialogue → 上下文'逐字使用'行 → 视频说原话。"""
+    db = Database(tmp_path / "s5.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d5", "台词剧", "9:16", "t")["id"]
+    sid = persist_shots(db, pid, [NS(text_span="", description="问诊", shot_type="",
+        camera={}, duration=5.0, workflow_type="ref2va",
+        ledger={"dialogue": [{"speaker": "林医生", "line": "哪里不舒服？"}],
+                "assets": {}},
+        character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
+    from comic_studio.engine.prompts.gen import generate_video_prompt
+    captured = {}
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            captured["user"] = messages[-1]["content"]
+            return ("subject_definitions:\n x\nsummary:\n x\nretention_analysis:\n x\n"
+                    "detailed_description:\n x\noverall_soundscape:\n x\n"
+                    "non_diegetic_music:\n 无"), Usage(1, 1)
+    generate_video_prompt(db, sid, FakeLLM(), backend="h3")
+    assert "哪里不舒服？" in captured["user"]
+    assert "逐字使用" in captured["user"] and "林医生" in captured["user"]

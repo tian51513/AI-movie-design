@@ -13,7 +13,8 @@ _COMMON_TAIL = """
 通用要求：
 - 每个出场角色的服装必须独立明确描述并写入对应 Subject 的保持条目；
   两人同框时服装差异必须写清（2026-08-24 服装教训）。
-- 对白使用 <d>Chinese</d> 标记中文台词；环境音与音乐按 overall_soundscape / non_diegetic_music 输出。
+- 对白使用 <d>Chinese</d> 标记中文台词；上下文给出"台词"行时必须逐字使用所给台词，
+  不得改写；环境音与音乐按 overall_soundscape / non_diegetic_music 输出。
 - 依据绑定的参考图编号 <Picture N> 锚定人物；无图角色仅用文字定义并注明。
 - 目标时长与画幅由系统注入镜头上下文，提示词内不重复声明。
 """
