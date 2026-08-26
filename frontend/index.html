@@ -176,9 +176,13 @@
         <option value="online">线上 API</option>
       </select>
     </p>
-    <p><button :disabled="saving" @click="saveSettings">{{ saving ? '保存中…' : '保存设置' }}</button>
-       <span class="muted">改模型/路由立即生效，无需重启</span></p>
-</div>
+    </div>
+
+    <p style="margin-top:16px;padding-top:12px;border-top:1px solid #2c3540">
+      <button :disabled="saving" @click="saveSettings" style="padding:8px 24px;font-size:14px">
+        {{ saving ? '保存中…' : '💾 保存全部设置' }}</button>
+      <span class="muted" style="margin-left:8px">改模型/路由/映射立即生效</span>
+    </p>
   </main>
   <main v-else-if="view==='projects'">
     <h2>项目</h2>
