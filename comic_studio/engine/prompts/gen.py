@@ -37,8 +37,30 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
             a = assets_by_id.get(aid)
             if a is not None:
                 detail = json.loads(a["appearance_json"]).get("detail", "")[:60]
-                bind_desc.append(f"{label} id={aid} {a['name']}：{detail}")
+                bind_desc.append(f"{label} {a['name']}：{detail}")  # 不带 id——防 LLM 照抄进 <Picture N>
     era = project_row["era"] if "era" in project_row.keys() else ""
+    # 图片槽位表（与渲染实际布局一致；真机 2026-08-26 教训：<Picture 70>=
+    # 资产 id 照抄 → 角色锚定全失效——必须显式告知槽位号与内容）
+    chars = (ledger.get("assets") or {}).get("characters") or []
+    prev_chars = set()
+    if prev_shot is not None:
+        prev_chars = set(
+            ((json.loads(prev_shot["ledger_json"] or "{}").get("assets")
+              or {}).get("characters")) or [])
+    relay = prev_shot is not None and bool(set(chars) & prev_chars)
+    slots = []
+    if relay:
+        slots.append("<Picture 1> = 上一镜尾帧（仅供构图与姿态衔接，人物外貌不得以此为准）")
+    for aid in (chars + (ledger.get("assets") or {}).get("scenes", [])
+                + (ledger.get("assets") or {}).get("props", [])):
+        if len(slots) >= 2:
+            break
+        a = assets_by_id.get(aid)
+        if a is None:
+            continue
+        tag = ("角色三视图，人物外貌唯一依据" if a["kind"] == "character"
+               else ("场景参考" if a["kind"] == "scene" else "道具参考"))
+        slots.append(f"<Picture {len(slots) + 1}> = {a['name']}（{tag}）")
     lines = [
         f"镜头 {shot_row['seq']}（{shot_row['shot_type'] or '常规'}，{shot_row['duration']} 秒，"
         f"画幅 {project_row['aspect_ratio']}，后端工作流 {shot_row['workflow_type']}）",
@@ -47,7 +69,11 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
         f"项目画风：{project_row['style'] or '未指定'}",
         (f"时代风格：{era}，人物服饰、发型、器物、建筑均须符合该时代形制，禁止现代元素"
          if era else "时代风格：未明确（按描述自行合理推断）"),
-        "绑定资产：" + ("；".join(bind_desc) if bind_desc else "无"),
+        "图片槽位表（subject_definitions 引用图片只能用槽位号 1/2，"
+        "严禁使用资产 id 数字）：" + ("；".join(slots) if slots else "无图片参考"),
+        ("身份锚定规则：<Picture 1> 尾帧仅衔接画面；人物五官与服装必须以角色三视图槽位为准"
+         if relay else ""),
+        "绑定资产概览：" + ("；".join(bind_desc) if bind_desc else "无"),
         f"需求台账：必须出现={ledger.get('must_appear', [])}；必须保持={ledger.get('must_keep', [])}；"
         f"允许变化={ledger.get('may_change', [])}；禁止={ledger.get('must_avoid', [])}",
     ]

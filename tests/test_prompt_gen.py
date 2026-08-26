@@ -153,3 +153,42 @@ def test_shot_context_carries_prev_continuity(tmp_path):
     assert "林晨坐着喝茶" in captured["user"]      # 上一镜描述入上下文
     assert "延续上一镜" in captured["user"]         # 延续约束
     assert "明确写出" in captured["user"]
+
+
+def test_context_uses_slot_map_not_asset_ids(tmp_path):
+    """真机 2026-08-26：<Picture 70>=资产id 照抄——角色锚定全失效。
+    上下文必须给显式槽位表（<Picture 1/2>=具体内容），并禁用资产 id。"""
+    from comic_studio.engine.shots import persist_shots
+    db = Database(tmp_path / "s4.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d4", "槽位剧", "9:16", "t")["id"]
+    from comic_studio.engine.assets import persist_assets
+    persist_assets(db, tmp_path / "d4", pid,
+                   NS(characters=[NS(name="林医生", appearance="黑框眼镜", tags=[])],
+                      scenes=[], props=[]))
+    aid = __import__("comic_studio.engine.assets", fromlist=["list_project_assets"]) \
+        .list_project_assets(db, pid)[0]["id"]
+    sid = persist_shots(db, pid, [NS(text_span="", description="问诊", shot_type="",
+        camera={}, duration=5.0, workflow_type="ref2va",
+        ledger={}, character_ids=[aid], scene_ids=[], prop_ids=[],
+        depends_on=None)])[0]
+    from comic_studio.engine.prompts.gen import generate_video_prompt
+    captured = {}
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            captured["user"] = messages[-1]["content"]
+            captured["system"] = messages[0]["content"]
+            return ("subject_definitions:\n<Subject 1>\nsummary:\n x\n"
+                    "retention_analysis:\n x\ndetailed_description:\n x\n"
+                    "overall_soundscape:\n x\nnon_diegetic_music:\n 无"), Usage(1, 1)
+    generate_video_prompt(db, sid, FakeLLM(), backend="h3")
+    ctx = captured["user"]
+    assert "<Picture 1> = 林医生（角色三视图" in ctx         # 显式槽位表
+    assert "严禁" in ctx and "资产 id" in ctx             # 禁用规则
+    assert f"id={aid} " not in ctx                        # 不再出现裸 id 绑定行
+    assert "<d>Chinese" in captured["system"]           # 对白标记指引在系统词/骨架
+
+
+def test_skeleton_has_dialogue_tag_example():
+    from comic_studio.engine.prompts.modes import mode_spec
+    assert "<d>Chinese" in mode_spec("D")   # 骨架含对白标记示例

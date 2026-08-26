@@ -377,6 +377,18 @@ def handle_gen_shot(db, data_dir, job, comfy):
     # 首帧链：depends_on 非空时尝试提取前一镜最后一帧
     if shot["depends_on"]:
         prev_shot = get_shot(db, shot["depends_on"])
+        # 接力门控（真机 2026-08-26）：上镜无本镜角色时跳过尾帧衔接——
+        # 否则新角色被无关节奏帧锚定而漂移，且接力链会传播漂移画风
+        _cur = json.loads(shot["ledger_json"] or "{}").get("assets", {}) or {}
+        _prev = json.loads(prev_shot["ledger_json"] or "{}").get("assets", {}) or {} \
+            if prev_shot else {}
+        _cur_chars = set(_cur.get("characters") or [])
+        _prev_chars = set(_prev.get("characters") or [])
+        if _cur_chars and not (_cur_chars & _prev_chars):
+            emit_log(db, "comfy", "info",
+                     f"分镜 {shot['seq']} 含上镜未出场角色，跳过尾帧衔接（防漂移）",
+                     project_id=proj["id"], job_id=job["id"])
+            prev_shot = None
         if prev_shot and prev_shot["video_path"]:
             prev_video = data_to_abs(data_dir, prev_shot["video_path"])
             if prev_video.exists():
