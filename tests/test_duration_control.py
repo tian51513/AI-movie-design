@@ -96,3 +96,22 @@ def test_split_applies_target_redistribution(tmp_path):
     fake = FakeLLM([two])
     split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
     assert [s["duration"] for s in list_shots(db, pid)] == [5.0, 5.0]
+
+
+def test_patch_render_mode_batch_updates(tmp_path):
+    """视频渲染模式项目级切换（2026-08-26）：改 render_mode → 全部镜 workflow_type 联动。"""
+    from comic_studio.engine.shots import persist_shots, list_shots
+    db, pid = _proj(tmp_path)
+    persist_shots(db, pid, [
+        _shot("a"), _shot("b"), _shot("c", 5)])  # 默认 ref2va
+    with TestClient(create_app(tmp_path / "s.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        r = c.patch(f"/api/projects/{pid}", json={"render_mode": "t2v"})
+        assert r.status_code == 200
+        assert {s["workflow_type"] for s in list_shots(db, pid)} == {"t2v"}
+        # 再切回 fl2v
+        c.patch(f"/api/projects/{pid}", json={"render_mode": "fl2v"})
+        assert {s["workflow_type"] for s in list_shots(db, pid)} == {"fl2v"}
+        # 非法值 422
+        assert c.patch(f"/api/projects/{pid}",
+                       json={"render_mode": "xxx"}).status_code == 422

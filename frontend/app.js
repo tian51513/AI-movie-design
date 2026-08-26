@@ -529,6 +529,19 @@ const methods = {
     const r = await fetch(`/api/projects/${this.project.id}/gate3`, {method: 'POST'});
     if (r.ok) await this.loadDetail(); else alert(await r.text());
   },
+  currentRenderMode() {
+    if (!this.shots.length) return 'ref2va';
+    const counts = {};
+    for (const s of this.shots) counts[s.workflow_type] = (counts[s.workflow_type] || 0) + 1;
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  },
+  async patchRenderMode(mode) {
+    const r = await fetch(`/api/projects/${this.project.id}`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({render_mode: mode})});
+    if (r.ok) { await this.loadDetail(); await this.loadShots(); }
+    else alert(await r.text());
+  },
   async patchVideoParam(key, value) {
     const r = await fetch(`/api/projects/${this.project.id}`, {
       method: 'PATCH', headers: {'Content-Type': 'application/json'},

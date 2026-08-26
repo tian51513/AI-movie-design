@@ -259,6 +259,13 @@
       <label>分镜段时长
         <input type="number" min="1" max="15" :value="project.default_shot_duration"
                @change="patchVideoParam('default_shot_duration', Number($event.target.value))" style="width:52px">s</label>
+      <label>渲染模式
+        <select :value="currentRenderMode()" @change="patchRenderMode($event.target.value)"
+                title="项目级批量切换全部镜的视频渲染类型；具体工作流在设置页映射">
+          <option value="ref2va">多参生视频（默认，角色一致性好）</option>
+          <option value="fl2v">首尾帧生视频（连贯性好，需关键帧）</option>
+          <option value="t2v">文生视频（最快，无参考图）</option>
+        </select></label>
       <label>预设总时长
         <input type="number" min="0" max="3600" :value="project.target_duration"
                @change="patchVideoParam('target_duration', Number($event.target.value))" style="width:60px">s</label>

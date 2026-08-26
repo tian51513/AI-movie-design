@@ -181,6 +181,17 @@ def patch_style(request: Request, project_id: int, body: dict):
         conn.execute("UPDATE projects SET autopilot=? WHERE id=?", (on, project_id))
         conn.commit()
 
+    # Handle render_mode (视频渲染模式项目级切换 → 批量改全部镜 workflow_type；
+    # 类型→具体模板由 settings 页 template_map 决定，两层协同 2026-08-26)
+    if "render_mode" in body:
+        mode = body["render_mode"]
+        if mode not in ("ref2va", "fl2v", "t2v"):
+            raise HTTPException(422, "render_mode 只能是 ref2va/fl2v/t2v")
+        conn = db.connect()
+        conn.execute("UPDATE shots SET workflow_type=? WHERE project_id=?",
+                     (mode, project_id))
+        conn.commit()
+
     # Handle era override (时代背景；检测错了可手动纠正，空串=清除)
     if "era" in body:
         conn = db.connect()
