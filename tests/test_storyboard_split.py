@@ -86,3 +86,15 @@ def test_split_resolves_relative_novel_path(tmp_path):
     fake = FakeLLM([CHUNK.format(desc="推门镜", cid=1)])
     ids = split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
     assert len(list_shots(db, pid)) == 1
+
+
+def test_split_auto_chains_depends_on(tmp_path):
+    """连贯性①（2026-08-26）：拆分镜自动建立尾帧接力链——
+    每镜 depends_on 指向上一镜，渲染时本镜首帧取上镜视频尾帧。"""
+    db, pid = _setup(tmp_path)
+    fake = FakeLLM([CHUNK.format(desc="甲", cid=1)])
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
+    rows = list_shots(db, pid)
+    assert rows[0]["depends_on"] is None
+    for prev, cur in zip(rows, rows[1:]):
+        assert cur["depends_on"] == prev["id"]

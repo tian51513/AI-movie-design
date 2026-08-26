@@ -146,8 +146,11 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=8
             depends_on=None) for d in result.shots)
     ids = persist_shots(db, project_id, staged)
     conn = db.connect()
-    for idx in link_first_of_block:   # 跨块衔接：本块首镜 depends_on 上一块末镜
-        conn.execute("UPDATE shots SET depends_on=? WHERE id=?", (ids[idx - 1], ids[idx]))
+    # 尾帧接力链（连贯性① 2026-08-26）：全顺序镜自动链接（含跨块衔接——
+    # 此前仅 continue_prev 标记的块边界链接，绝大多数镜 depends_on 为空，
+    # 渲染时首帧接力从未触发，镜间不连贯的根因之一）
+    for prev, cur in zip(ids, ids[1:]):
+        conn.execute("UPDATE shots SET depends_on=? WHERE id=?", (prev, cur))
     conn.commit()
     emit_log(db, "storyboard", "info", f"分镜落库 {len(ids)} 镜（已替换旧分镜）",
              project_id=project_id)

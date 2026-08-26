@@ -198,10 +198,18 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     # Images
     if first_frame_png is None and tmpl_id in ("h3_fl2v", "h3_i2v") and kf_start.exists():
         first_frame_png = kf_start  # 无上镜衔接时，本镜关键帧首图兜底
-    if first_frame_png:
+    if first_frame_png and tmpl_id in ("h3_fl2v", "h3_i2v"):
         images = [{"slot": "first", "path": str(first_frame_png)}]
     elif shot["workflow_type"] == "t2v" or tmpl_id in ("h3_fl2v", "h3_i2v"):
         images = []  # i2v/fl2v 无首帧——交由 I1 快失败给出明确报错
+    elif first_frame_png is not None:
+        # 接力（连贯性①配套）：上镜尾帧优先占 ref0（画面/姿态延续），
+        # 角色参考占 ref1（锁人设）——全链后 ref2va 的默认形态
+        raw_refs = collect_ref_images(db, shot)
+        ref1_path = (data_to_abs(data_dir, raw_refs[0]["path"])
+                     if raw_refs else first_frame_png)
+        images = [{"slot": "ref0", "path": str(first_frame_png)},
+                  {"slot": "ref1", "path": str(ref1_path)}]
     else:
         raw_refs = collect_ref_images(db, shot)
         if not raw_refs:

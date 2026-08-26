@@ -329,3 +329,29 @@ def test_fl2v_render_appends_no_cut_constraint(tmp_path, monkeypatch):
         assert out.exists()
         sent = m.prompts[0]["prompt"]["64"]["inputs"]["prompt"]
         assert "插值" in sent and ("禁止镜内切换" in sent or "机位" in sent)
+
+
+def test_ref2va_prev_tail_frame_takes_ref0(tmp_path, monkeypatch):
+    """连贯性①配套（2026-08-26）：全链后 ref2va 镜带上镜尾帧——尾帧占 ref0
+    （画面/姿态延续），角色参考占 ref1；不得再触发图片快失败。"""
+    db, pid, assets = _setup(tmp_path)
+    aid = assets["林晨"]["id"]
+    sid = persist_shots(db, pid, [_shot_draft(
+        workflow_type="ref2va", character_ids=[aid],
+        ledger={"assets": {"characters": [aid], "scenes": [], "props": []}})])[0]
+    update_shot(db, sid, {"prompt": "对话。"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    frame = tmp_path / "prev_tail.png"
+    frame.write_bytes(b"\x89PNG")
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok", video=True) as m:
+        out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url),
+                          first_frame_png=frame)
+        assert out.exists()  # 未触发快失败
+        ups = m.uploads
+        assert any(u.endswith("__ref0.png") for u in ups), ups
+        assert any(u.endswith("__ref1.png") for u in ups), ups
+        wf = m.prompts[0]["prompt"]
+        assert wf["96"]["inputs"]["image"].endswith("__ref0.png")   # 尾帧占 ref0
+        assert wf["97"]["inputs"]["image"].endswith("__ref1.png")   # 角色三视图占 ref1
