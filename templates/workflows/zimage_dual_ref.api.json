@@ -1,0 +1,187 @@
+{
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "z_image_turbo_bf16.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "2": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen_3_4b-fp8.safetensors",
+   "type": "qwen_image",
+   "device": "default"
+  }
+ },
+ "3": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "ae.safetensors"
+  }
+ },
+ "5": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": [
+    "28",
+    0
+   ],
+   "clip": [
+    "2",
+    0
+   ]
+  }
+ },
+ "28": {
+  "class_type": "PrimitiveStringMultiline",
+  "inputs": {
+   "value": ""
+  }
+ },
+ "31": {
+  "class_type": "ConditioningZeroOut",
+  "inputs": {
+   "conditioning": [
+    "5",
+    0
+   ]
+  }
+ },
+ "23": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "character_ref.png"
+  }
+ },
+ "230": {
+  "class_type": "ImageResizeKJv2",
+  "inputs": {
+   "width": 1024,
+   "height": 1024,
+   "upscale_method": "lanczos",
+   "keep_proportion": "crop",
+   "pad_color": "0, 0, 0",
+   "crop_position": "center",
+   "divisible_by": 32,
+   "device": "cpu",
+   "image": [
+    "23",
+    0
+   ]
+  }
+ },
+ "26": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "230",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "27": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "scene_ref.png"
+  }
+ },
+ "270": {
+  "class_type": "ImageResizeKJv2",
+  "inputs": {
+   "width": 1024,
+   "height": 1024,
+   "upscale_method": "lanczos",
+   "keep_proportion": "crop",
+   "pad_color": "0, 0, 0",
+   "crop_position": "center",
+   "divisible_by": 32,
+   "device": "cpu",
+   "image": [
+    "27",
+    0
+   ]
+  }
+ },
+ "280": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "270",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "290": {
+  "class_type": "LatentBlend",
+  "inputs": {
+   "samples1": [
+    "280",
+    0
+   ],
+   "samples2": [
+    "26",
+    0
+   ],
+   "blend_factor": 0.7
+  }
+ },
+ "4": {
+  "class_type": "KSampler",
+  "inputs": {
+   "seed": 12345,
+   "steps": 10,
+   "cfg": 5,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "denoise": 0.75,
+   "model": [
+    "1",
+    0
+   ],
+   "positive": [
+    "5",
+    0
+   ],
+   "negative": [
+    "31",
+    0
+   ],
+   "latent_image": [
+    "290",
+    0
+   ]
+  }
+ },
+ "8": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "4",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "10": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "filename_prefix": "cs/{project}/{asset}",
+   "images": [
+    "8",
+    0
+   ]
+  }
+ }
+}

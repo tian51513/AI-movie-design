@@ -1,0 +1,34 @@
+id: zimage_dual_ref
+type: t2i
+name: Z-Image 双参考图生图（角色+场景）
+file: zimage_dual_ref.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '28'
+    field: value
+  params:
+    seed:
+      node: '4'
+      field: seed
+    denoise:
+      node: '4'
+      field: denoise
+  images:
+  - node: '23'
+    field: image
+    slot: char_ref
+  - node: '27'
+    field: image
+    slot: scene_ref
+outputs:
+- node: '10'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- comfyui-kjnodes
+
+# 模型槽位
+models:
+- {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
+- {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae, node: '3', field: vae_name, cls: VAELoader, label_cn: VAE}

@@ -146,9 +146,21 @@ def _anchor_refs(db, shot, data_dir):
         main = lib / "main.png"
         if main.exists():
             refs.append(main)
-        # 不加 sheet.png：三视图含三人像，图像模型会照画多人物（2026-08-26 预判）
-        break  # 首位角色
+        break
     return refs
+
+
+def _scene_sheet(db, shot, data_dir):
+    """取绑定场景资产的参考图（关键帧场景锚定，双槽模板用）。"""
+    ledger = json.loads(shot["ledger_json"] or "{}")
+    for sid in (ledger.get("assets", {}) or {}).get("scenes", []):
+        a = get_asset(db, sid)
+        if a and a["library_dir"]:
+            sheet = data_to_abs(data_dir, a["library_dir"]) / "views" / "sheet.png"
+            if sheet.exists():
+                return sheet
+        break
+    return None
 
 
 def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
@@ -187,6 +199,14 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
     def _start_images():
         if not n_slots or not start_ref:
             return None
+        if n_slots >= 2:
+            # 双槽模板（如 zimage_dual_ref）：槽0=角色/尾帧，槽1=场景参考图
+            imgs = [{"slot": tmpl.inject_images[0]["slot"], "path": str(start_ref)}]
+            # 场景参考图：从绑定的场景资产取 sheet.png
+            _sc = _scene_sheet(db, shot, data_dir)
+            if _sc:
+                imgs.append({"slot": tmpl.inject_images[1]["slot"], "path": str(_sc)})
+            return imgs
         return [{"slot": tmpl.inject_images[0]["slot"], "path": str(start_ref)}]
 
     images = _start_images()
