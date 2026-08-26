@@ -78,4 +78,18 @@ def test_optimize_appearance_variants_by_kind(client):
         c.post("/api/llm/optimize", json={"text": "庭院", "kind": "appearance:scene"})
         assert "环境" in fake.last_messages[0]["content"]
         c.post("/api/llm/optimize", json={"text": "黑发少年", "kind": "appearance"})
-        assert "性别年龄" in fake.last_messages[0]["content"]  # 默认仍角色
+        assert "性别：" in fake.last_messages[0]["content"]  # 默认仍角色（行模板版）
+
+
+def test_appearance_template_labels(client):
+    """角色外貌固定行模板（2026-08-26 需求）：分析与 ✨ 优化同一套标签。"""
+    _, fake, c = client
+    with c:
+        c.post("/api/llm/optimize", json={"text": "黑发女子", "kind": "appearance"})
+    system = fake.last_messages[0]["content"]
+    for label in ("性别：", "年龄：", "发色发型：", "瞳色：", "肤色：", "体型：", "服装：", "配饰："):
+        assert label in system, label
+    from comic_studio.engine.llm.analyze import EXTRACT_SYSTEM
+    for label in ("性别：", "发色发型：", "肤色：", "配饰："):
+        assert label in EXTRACT_SYSTEM, label
+    assert "未成年" in EXTRACT_SYSTEM and "未成年" in system  # 边界约束入词
