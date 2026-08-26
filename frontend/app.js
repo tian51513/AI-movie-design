@@ -122,6 +122,11 @@ const methods = {
     if (!r.ok) { alert('上传失败'); return; }
     await this.loadShots();  // 刷新缩略图
   },
+  async autoBind() {
+    const r = await fetch(`/api/projects/${this.project.id}/auto-bind`, {method: 'POST'});
+    if (r.ok) { const b = await r.json(); alert(`补绑 ${b.bound} 处角色`); await this.loadShots(); }
+    else alert(await r.text());
+  },
   async regenKf(s, phase = 'all') {
     const label = phase === 'start' ? '首帧' : phase === 'end' ? '尾帧' : '双帧';
     if (!confirm(`重新生成分镜 ${s.seq} 的${label}？`)) return;

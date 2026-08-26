@@ -60,6 +60,14 @@ def _shot_public(r, versions=None, db=None, data_dir=None, slug=None):
             "prompt_job": _last_job(db, r["id"], "gen_prompt") if db is not None else None}
 
 
+@router.post("/api/projects/{project_id}/auto-bind")
+def auto_bind(request: Request, project_id: int):
+    """角色自动补绑：扫描描述文本，提到的角色补绑到 ledger（修已有项目漏绑）。"""
+    from ..engine.llm.storyboard import auto_bind_characters
+    n = auto_bind_characters(request.app.state.db, project_id)
+    return {"bound": n}
+
+
 @router.post("/api/projects/{project_id}/split-storyboards", status_code=202)
 def start_split(request: Request, project_id: int):
     db = request.app.state.db

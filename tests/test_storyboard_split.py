@@ -116,3 +116,21 @@ def test_split_extracts_verbatim_dialogue(tmp_path):
     split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake2)
     ledger2 = _json.loads(list_shots(db, pid)[0]["ledger_json"])
     assert ledger2.get("dialogue", []) == []
+
+
+def test_auto_bind_characters_from_description(tmp_path):
+    """角色自动补绑（2026-08-26 真机：拆解时 LLM 漏绑角色 → 关键帧无参考图）。
+    拆完后扫描描述文本，提到的角色自动补绑。"""
+    from comic_studio.engine.llm.storyboard import auto_bind_characters
+    from comic_studio.engine.shots import list_shots, update_shot
+    db, pid = _setup(tmp_path)
+    # _setup 有一个角色（林晨），拆一镜描述里提到"林晨"但 character_ids 为空
+    fake = FakeLLM([CHUNK.format(desc="林晨推门而入", cid=999)])  # cid=999 = 未绑定
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
+    rows = list_shots(db, pid)
+    # 拆解后自动补绑：描述含"林晨" → 应绑定到项目角色
+    assert rows[0]["ledger_json"] and "林晨" in rows[0]["description"]
+    import json as _json
+    ledger = _json.loads(rows[0]["ledger_json"])
+    char_ids = (ledger.get("assets") or {}).get("characters") or []
+    assert len(char_ids) >= 1  # 自动补绑了

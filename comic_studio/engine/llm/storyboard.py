@@ -106,6 +106,38 @@ def make_split_factory(db):
     return make_client_factory(db)
 
 
+
+
+def auto_bind_characters(db, project_id):
+    """角色自动补绑（2026-08-26 真机教训：LLM 拆解漏绑角色 → 关键帧无参考图）。
+    扫描每镜描述文本，提到的项目角色自动补绑到 ledger.assets.characters。"""
+    from ..assets import list_project_assets
+    from ..shots import list_shots
+    chars = [(a['id'], a['name']) for a in list_project_assets(db, project_id)
+             if a['kind'] == 'character']
+    if not chars:
+        return 0
+    conn = db.connect()
+    bound = 0
+    for shot in list_shots(db, project_id):
+        ledger = json.loads(shot['ledger_json'] or '{}')
+        assets = ledger.setdefault('assets', {})
+        cur_ids = set(assets.get('characters') or [])
+        desc = shot['description'] or ''
+        for cid, cname in chars:
+            if cid in cur_ids:
+                continue
+            if cname in desc:
+                cur_ids.add(cid)
+                bound += 1
+        if cur_ids != set(assets.get('characters') or []):
+            assets['characters'] = sorted(cur_ids)
+            conn.execute('UPDATE shots SET ledger_json=? WHERE id=?',
+                         (json.dumps(ledger, ensure_ascii=False), shot['id']))
+    conn.commit()
+    return bound
+
+
 def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=8000):
     if client_factory is None:
         client_factory = make_split_factory(db)
@@ -165,6 +197,11 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=8
         conn.execute("UPDATE projects SET default_shot_duration=? WHERE id=?",
                      (per, project_id))
     conn.commit()
+    # 角色自动补绑（真机 2026-08-26：LLM 漏绑 → 关键帧/参考图无角色锚定）
+    n_bound = auto_bind_characters(db, project_id)
+    if n_bound:
+        emit_log(db, "storyboard", "info", f"角色自动补绑：{n_bound} 处",
+                 project_id=project_id)
     emit_log(db, "storyboard", "info", f"分镜落库 {len(ids)} 镜（已替换旧分镜）",
              project_id=project_id)
     return ids
