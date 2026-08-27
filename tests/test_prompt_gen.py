@@ -66,7 +66,9 @@ def test_generate_retries_on_validation_failure_then_ok(tmp_path):
     sid = persist_shots(db, pid, [NS(text_span="", description="x",
         shot_type="", camera={}, duration=5.0, workflow_type="ref2va",
         ledger={}, character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
-    replies = iter(["占位 可自行补充", "林晨推开木门，晨光，推进镜头，写实。"])
+    # 首答超长（>7000 字符上限）——自愈修不了长度，必须走 LLM 重试路径
+    #（占位语类问题已被 P7-C 自愈接管，不再触发重试）
+    replies = iter(["超长" * 4000, "林晨推开木门，晨光，推进镜头，写实。"])
 
     class FakeLLM:
         model = "fake"
@@ -226,3 +228,49 @@ def test_picture_reference_validation():
     assert not ok and "70" in msg
     ok, msg = _check_picture_refs("无任何图片引用的纯文本")
     assert ok  # 无引用不拦
+
+
+def test_heal_h3_prompt_common_fixes():
+    """P7-C 提示词 token 自愈（借鉴 Director reinforce）：机械可修的不退回 LLM。"""
+    from comic_studio.engine.prompts.gen import heal_h3_prompt
+    shot = {"ledger_json": '{"dialogue":[{"speaker":"林晨","line":"你好"}]}',
+            "duration": 5}
+    # ① 有对白但缺 <d>Chinese</d> → 补；② <Picture 9> 超界 → 删；
+    # ③ 重复约束行去重；④ 占位语删除
+    bad = ("subject_definitions: 林晨\nsummary: 林晨推门。\n"
+           "<Picture 9> 的画面主体身份明确。林晨说：你好。\n"
+           "禁止出现：多余手指。禁止出现：多余手指。\n（可自行补充细节）")
+    healed, fixes = heal_h3_prompt(bad, shot, max_pics=2)
+    assert "<d>Chinese</d>" in healed
+    assert "<Picture 9>" not in healed
+    assert healed.count("禁止出现：多余手指。") == 1
+    assert "可自行补充" not in healed
+    assert len(fixes) >= 4
+    # 无对白不补 <d>；无问题的文本原样返回
+    ok_text = "summary: 空镜。subject_definitions: 无。"
+    h2, f2 = heal_h3_prompt(ok_text, {"ledger_json": "{}"}, max_pics=2)
+    assert h2 == ok_text and f2 == []
+
+
+def test_generate_prompt_uses_healed_version(tmp_path):
+    """自愈成功 → 不再消耗 LLM 重试次数（raw_chat 只调一次）。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "p", "9:16", "t")["id"]
+    sid = persist_shots(db, pid, [NS(text_span="", description="对话",
+        shot_type="", camera={}, duration=5.0, workflow_type="ref2va",
+        ledger={"dialogue": [{"speaker": "林晨", "line": "你好"}]},
+        character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
+    calls = []
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            calls.append(1)
+            return ("林晨在庭院对话，中景固定镜头。<Picture 9> 的主体清晰。"
+                    "林晨说：你好。（可自行补充细节）"), Usage(1, 1)
+
+    out = generate_video_prompt(db, sid, FakeLLM(), backend="h3", mode="A")
+    assert len(calls) == 1  # 自愈生效，没有第二次 LLM 调用
+    assert "<d>Chinese</d>" in out and "<Picture 9>" not in out
+    assert "可自行补充" not in out
+    """自愈成功 → 不再消耗 LLM 重试次数。"""

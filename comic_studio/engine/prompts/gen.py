@@ -167,6 +167,56 @@ def structure_check(text: str, mode: str | None) -> tuple[bool, str]:
     return True, ""
 
 
+def _dedup_sentences(line: str) -> tuple[str, bool]:
+    """行内去重句子（约束包裹膨胀：同一句禁令出现两次只留一次）。"""
+    if "。" not in line or len(line) < 20:
+        return line, False
+    seen, out, changed = set(), [], False
+    for s in line.split("。"):
+        ss = s.strip()
+        if len(ss) > 6:
+            if ss in seen:
+                changed = True
+                continue
+            seen.add(ss)
+        out.append(s)
+    return "。".join(out), changed
+
+
+def heal_h3_prompt(text: str, shot_row, max_pics: int = 2):
+    """P7-C 提示词 token 自愈（借鉴 Director reinforce 思想）：机械可修的问题
+    直接修，不消耗 LLM 重试——①占位语删除 ②超界 <Picture N> 引用删除
+    ③行内重复句子去重 ④有对白缺 <d>Chinese</d> 补标记。返回 (healed, fixes)。"""
+    fixes = []
+    t = text or ""
+    if "可自行补充" in t:
+        t = "\n".join(l for l in t.splitlines() if "可自行补充" not in l)
+        fixes.append("删除占位语")
+    bad_refs = sorted({int(n) for n in _re.findall(r"<Picture (\d+)>", t)
+                       if int(n) > max_pics})
+    if bad_refs:
+        for n in bad_refs:
+            t = t.replace(f"<Picture {n}>", " ")
+        t = _re.sub(r"[ \t]{2,}", " ", t)
+        fixes.append(f"删除超界引用 {bad_refs}")
+    kept, dup = [], False
+    for line in t.splitlines():
+        line2, changed = _dedup_sentences(line)
+        dup = dup or changed
+        kept.append(line2)
+    if dup:
+        t = "\n".join(kept)
+        fixes.append("重复句去重")
+    try:
+        ledger = json.loads(shot_row["ledger_json"] or "{}") if shot_row is not None else {}
+    except (json.JSONDecodeError, TypeError, KeyError):
+        ledger = {}
+    if ledger.get("dialogue") and "<d>" not in t:
+        t = t.rstrip() + "\n<d>Chinese</d>"
+        fixes.append("补 <d>Chinese</d>")
+    return t, fixes
+
+
 def generate_video_prompt(db, shot_id, client, backend: str = "h3",
                           mode: str | None = None,
                           max_attempts: int = 3) -> str:
@@ -198,6 +248,10 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
     for _ in range(max_attempts):
         text, _u = client.raw_chat(messages, temperature=0.4)
         text = (text or "").strip()
+        if backend == "h3":
+            # P7-C 自愈：机械可修的问题直接修，不消耗重试（占位语/超界引用/
+            # 重复句/缺对白标记——2026-08-27 前这些全靠 LLM 重生成，两次排障浪费）
+            text, _fixes = heal_h3_prompt(text, shot, max_pics=max_ref_images)
         if backend != "h3":
             return text
         bound = len(ledger_assets(shot))  # 台账绑定资产数（ref 图数量）
