@@ -137,7 +137,12 @@ const methods = {
   },
   async generateTts() {
     const r = await fetch(`/api/projects/${this.project.id}/tts`, {method: 'POST'});
-    if (r.ok) { const b = await r.json(); alert(`配音就绪：${b.shots_with_dialogue} 镜`); }
+    if (r.ok) {
+      const b = await r.json();
+      alert(b.shots_with_dialogue
+        ? `配音就绪：${b.shots_with_dialogue} 镜`
+        : '0 镜有台词——拆分镜按原文照录对白，小说原文没有引号对白时无内容可配音');
+    }
     else alert(await r.text());
   },
   async autoBind() {
