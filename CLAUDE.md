@@ -76,3 +76,11 @@
 - `web/routes_merge.py` 扩展 — POST /tts；`engine/llm/provider.py` — normalize_base_url（Ollama/LM Studio 误填自动归一 /v1）+ 思考模型响应处理（剥 <think>、reasoning-only 报错、extra_body 透传；本机 LM Studio 实测无法请求侧屏蔽思考）
 - 分镜控制：shots.disabled（迁移 22）——无效镜不进门禁计数/渲染/合成；`routes_shots.py` POST shots/batch（disable/enable/delete）；拆分镜 target_count 按块字数占比分配配额
 - 注意：llm-test 不限 max_tokens（思考模型预算）；空正文/无 choices 均显式报错，不再静默空串
+
+## 模块地图（2026-08-27 下午增量）
+
+- `web/routes_projects.py` — 主题生成两步流：POST from-theme/preview 只生成不建项目，from-theme 带 text 直建（≥100 字不再调 LLM）；extra_prompt 补充描述拼上下文；GET 列表富化（excerpt/char_count/shot_count/updated_at=最近 job 时间）
+- `engine/genref.py` — 画风拆层（style_vis 迁移 23：主图/关键帧用视觉子集，叙事词只留在 style 给视频提示词）；写实意图检测（PHOTO_RE→PHOTO_BOOST+全身照措辞，"立绘"已移除）；外貌行模板压缩 condense_appearance（丢「无」行、性别英文锚）；**模板级提示词方言** prompt_style（manifest 声明 natural_zh/tags_en，SD 系 CLIP 走英文标签流 build_gen_prompt_tags_en）
+- `engine/llm/storyboard.py` — 对白机械兜底 backfill_dialogue（模型不填 dialogue 字段时从 text_span 引号提取，说话人双向就近匹配角色名册）；拆分镜 target_count 配额注入
+- `engine/shots.py` — 删镜/重拆前清 jobs.shot_id 外键引用（FK=ON 下 DELETE 被 jobs 引用拦下，job 653 教训）
+- 前端：创建入口顶部弹窗（上传/主题两 tab+预览）；项目列表窗格瀑布流/列表分页（12/页，localStorage 记忆）；分镜卡 💬 对白显示；项目参数输入 editingProject 焦点守卫（轮询不再顶回输入值）
