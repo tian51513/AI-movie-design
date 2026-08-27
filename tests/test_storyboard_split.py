@@ -1,3 +1,4 @@
+import json
 import pytest
 from types import SimpleNamespace as NS
 
@@ -183,3 +184,33 @@ def test_split_target_count_allocates_per_chunk(tmp_path):
     # 配额合计 = 9（按字数占比 round 分配后补齐）
     quotas = [int(u.split("本块目标拆出约 ")[1].split(" 个")[0]) for u in captured]
     assert sum(quotas) == 9
+
+
+def test_split_backfills_dialogue_mechanically(tmp_path):
+    """对白机械兜底（2026-08-27 真机：nsfwvision-v3 等 RP 模型拆解 dialogue 恒空，
+    但 text_span 原文照录了弯引号对白）：从 text_span 正则提取引号句，
+    说话人取引号前后最近角色名；LLM 已给出的 dialogue 不动。"""
+    from comic_studio.engine.projects import get_project
+    db, pid = _setup(tmp_path)
+    # 场景对齐真机：登记真嗣/明日香为项目角色（兜底按角色名册归说话人）
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="真嗣", appearance="黑发少年", tags=[]),
+                                  NS(name="明日香", appearance="红发少女", tags=[])],
+                      scenes=[], props=[]))
+    novel = data_to_abs(tmp_path / "data", get_project(db, pid)["novel_path"])
+    novel.write_text(
+        "阳光洒在屋顶。真嗣抬头，嘴角抽了抽：“她很温柔，像风铃一样。”\n"
+        "“喂，你到底在想什么？”明日香把饭盒推了推，“别光吃不说话。”", encoding="utf-8")
+    # 模型不填 dialogue（复现真机：text_span 照录原文含引号、dialogue 缺省空数组）
+    span = ("真嗣抬头，嘴角抽了抽：“她很温柔，像风铃一样。”"
+            "“喂，你到底在想什么？”明日香把饭盒推了推：“别光吃不说话。”")
+    no_dlg = CHUNK.format(desc="屋顶对话", cid=1).replace('"text_span":"推门"',
+                                                           f'"text_span":"{span}"')
+    fake = FakeLLM([no_dlg])
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
+    rows = list_shots(db, pid)
+    all_dlg = [d for s in rows for d in (json.loads(s["ledger_json"]).get("dialogue") or [])]
+    assert any("风铃" in d["line"] for d in all_dlg)
+    assert any("别光吃不说话" in d["line"] for d in all_dlg)
+    speakers = {d["speaker"] for d in all_dlg}
+    assert "真嗣" in speakers and "明日香" in speakers  # 前后窗口最近角色名

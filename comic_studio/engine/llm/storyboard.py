@@ -112,6 +112,46 @@ def make_split_factory(db):
 
 
 
+_QUOTE_RE = re.compile(r'[“「"]([^”」"]{2,})[”」"]')
+
+
+def backfill_dialogue(staged: list, character_names: list[str]) -> int:
+    """对白机械兜底（2026-08-27 真机：nsfwvision-v3 等 RP 模型把对白写进描述正文、
+    不填 schema 的 dialogue 字段 → TTS/字幕链路全空）。从 text_span 提取引号句
+    （弯引号 “”、直引号 "、方引号 「」；内层单引号 ‘’ 不取），说话人取引号
+    前后窗口内最近出现的角色名（前优先），找不到用首个角色或"旁白"。
+    LLM 已给出 dialogue 的镜不动。返回补录句数。"""
+    names = [n for n in character_names if n]
+    n_filled = 0
+    for s in staged:
+        ledger = getattr(s, "ledger", None)
+        if not isinstance(ledger, dict) or ledger.get("dialogue"):
+            continue
+        span = getattr(s, "text_span", "") or ""
+        entries = []
+        for m in _QUOTE_RE.finditer(span):
+            before, after = span[:m.start()], span[m.end():m.end() + 30]
+            # 双向就近：中文小说对白两种形态都常见——“某人曰：“…”（名在前）与
+            # “…”某人动作（名在后），谁离引号近归谁
+            speaker, dist = None, None
+            for name in names:
+                i = before.rfind(name)
+                if i != -1:
+                    d0 = len(before) - i - len(name)
+                    if dist is None or d0 < dist:
+                        dist, speaker = d0, name
+            for name in names:
+                j = after.find(name)
+                if j != -1 and (dist is None or j < dist):
+                    dist, speaker = j, name
+            entries.append({"speaker": speaker or (names[0] if names else "旁白"),
+                            "line": m.group(1).strip()})
+        if entries:
+            ledger["dialogue"] = entries
+            n_filled += len(entries)
+    return n_filled
+
+
 def auto_bind_characters(db, project_id):
     """角色自动补绑（2026-08-26 真机教训：LLM 拆解漏绑角色 → 关键帧无参考图）。
     扫描每镜描述文本，提到的项目角色自动补绑到 ledger.assets.characters。"""
@@ -200,6 +240,14 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2
                     "dialogue": d.dialogue},
             character_ids=d.character_ids, scene_ids=d.scene_ids, prop_ids=d.prop_ids,
             depends_on=None) for d in result.shots)
+    # 对白机械兜底（2026-08-27 真机：nsfwvision-v3 等 RP 模型把对白写进描述正文、
+    # 不填 schema 的 dialogue 字段 → TTS/字幕链路全空）：从 text_span 引号原文提取，
+    # 说话人取引号前后最近角色名；LLM 已填的镜不动
+    char_names = [r["name"] for r in assets if r["kind"] == "character"]
+    n_dlg = backfill_dialogue(staged, char_names)
+    if n_dlg:
+        emit_log(db, "storyboard", "info", f"对白机械补录：{n_dlg} 句（模型未提取，从原文引号恢复）",
+                 project_id=project_id)
     ids = persist_shots(db, project_id, staged)
     conn = db.connect()
     # 尾帧接力链（连贯性① 2026-08-26）：全顺序镜自动链接（含跨块衔接——
