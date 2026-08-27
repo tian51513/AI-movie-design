@@ -13,7 +13,10 @@ SPLIT_SYSTEM = """你是小说改编漫剧的分镜师。把给定的小说文�
 
 规则：
 1. 每个分镜 = 一个可独立生成的视频镜头（通常 4~8 秒）；按剧情顺序，覆盖全部情节，不跳戏不脑补
-2. 只使用名册中列出的资产 id 绑定角色/场景/道具；新出现的无名路人不绑定
+2. 白名单纪律：只使用名册中列出的资产 id 绑定角色/场景/道具
+   - 泛称（众人/群臣/学生们等群体称谓）必须映射为白名单内的具体角色；映射不了就按无名背景处理，不绑定
+   - 白名单外的具名角色一律改写为背景人物：不进 character_ids、不进 must_appear，description 里以剪影/背景群像带过
+   - 新出现的无名路人不绑定
 3. camera 用中文枚举：景别(远景/全景/中景/近景/特写)、机位(平视/仰视/俯视/过肩)、运镜(固定/推/拉/摇/移/跟)、转场(切/叠化/无)。景别优先中景/近景；远景与大全景仅在环境叙事必需时使用，并在台账 must_keep 注明保持人物发型与服装轮廓特征
 4. workflow_type：与上一镜衔接（同场景连续动作）→ "fl2v"；常规（参考角色/场景出图）→ "ref2va"；建立全新画面且无参考 → "t2v"
 5. continue_prev：本镜是否紧接上一镜延续（同场景、动作连贯）——分块拆解时首镜若延续上一块结尾则 true
@@ -74,7 +77,7 @@ def build_split_user_prompt(chunk_text: str, assets_rows, quota_line: str | None
     if quota_line:
         lines.append(quota_line)
         lines.append("")
-    lines.append("可用资产名册（只允许绑定以下 id）：")
+    lines.append("可用资产白名单（只允许绑定以下 id；名单外一律转无名背景）：")
     for kind, label in (("character", "角色"), ("scene", "场景"), ("prop", "道具")):
         if roster[kind]:
             lines.append(f"{label}：" + "；".join(roster[kind]))

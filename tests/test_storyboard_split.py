@@ -214,3 +214,15 @@ def test_split_backfills_dialogue_mechanically(tmp_path):
     assert any("别光吃不说话" in d["line"] for d in all_dlg)
     speakers = {d["speaker"] for d in all_dlg}
     assert "真嗣" in speakers and "明日香" in speakers  # 前后窗口最近角色名
+
+
+def test_split_whitelist_discipline_in_prompt():
+    """P7-B 拆解白名单纪律（借鉴 NovelFlow）：泛称映射/名单外转背景条款进 system，
+    名册措辞强调白名单语义。"""
+    from comic_studio.engine.llm.storyboard import SPLIT_SYSTEM, build_split_user_prompt
+    # 泛称（众人/群臣等）必须映射白名单内具体角色，映射不了按无名背景
+    assert "泛称" in SPLIT_SYSTEM and "无名背景" in SPLIT_SYSTEM
+    # 白名单外具名角色：改写为背景人物，不绑定不入 must_appear
+    assert "背景人物" in SPLIT_SYSTEM and "must_appear" in SPLIT_SYSTEM
+    u = build_split_user_prompt("正文", [])
+    assert "白名单" in u
