@@ -159,3 +159,27 @@ def test_split_default_chunk_fits_context(tmp_path):
     assert len(fake.users) >= 2  # 3600 字默认必须拆多块（旧默认 8000 只会 1 块）
     chunks = [u.split("小说文本：\n", 1)[1] for u in fake.users]
     assert all(len(c) <= 2000 for c in chunks), [len(c) for c in chunks]
+
+
+def test_split_target_count_allocates_per_chunk(tmp_path):
+    """指定分镜数：按各块字数占比分配配额，注入每块 user 提示词。"""
+    from comic_studio.engine.projects import get_project
+    db, pid = _setup(tmp_path)
+    novel = data_to_abs(tmp_path / "data", get_project(db, pid)["novel_path"])
+    novel.write_text("林晨推门，庭院里站着一个白发少女。" * 220, encoding="utf-8")  # ~4400 字 ≥ 2 块
+    captured = []
+
+    class CapLLM(FakeLLM):
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            captured.append(messages[-1]["content"])
+            return super().raw_chat(messages, temperature=temperature, max_tokens=max_tokens)
+
+    fake = CapLLM([CHUNK.format(desc="镜头", cid=1)] * 6)
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake,
+                      target_count=9)
+    assert len(captured) >= 2
+    for u in captured:
+        assert "全文目标 9 个分镜" in u and "本块目标" in u
+    # 配额合计 = 9（按字数占比 round 分配后补齐）
+    quotas = [int(u.split("本块目标拆出约 ")[1].split(" 个")[0]) for u in captured]
+    assert sum(quotas) == 9

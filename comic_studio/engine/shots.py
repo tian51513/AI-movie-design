@@ -68,6 +68,33 @@ def update_shot(db: Database, shot_id: int, fields: dict) -> None:
     conn.commit()
 
 
+def set_disabled_batch(db: Database, project_id: int, ids: list[int], disabled: int) -> int:
+    """批量置生效/无效（2026-08-27 需求）：无效镜不进门禁计数/渲染/合成。返回受影响行数。"""
+    if not ids:
+        return 0
+    conn = db.connect()
+    marks = ",".join("?" * len(ids))
+    cur = conn.execute(
+        f"UPDATE shots SET disabled=? WHERE project_id=? AND id IN ({marks})",
+        (1 if disabled else 0, project_id, *ids))
+    conn.commit()
+    return cur.rowcount
+
+
+def delete_shots_batch(db: Database, project_id: int, ids: list[int]) -> int:
+    """批量删除分镜；引用被删镜的 depends_on 一并清空（避免悬挂链接）。"""
+    if not ids:
+        return 0
+    conn = db.connect()
+    marks = ",".join("?" * len(ids))
+    # 先清引用（depends_on 指向将删镜的其它镜）
+    conn.execute(f"UPDATE shots SET depends_on=NULL WHERE depends_on IN ({marks})", ids)
+    cur = conn.execute(f"DELETE FROM shots WHERE project_id=? AND id IN ({marks})",
+                       (project_id, *ids))
+    conn.commit()
+    return cur.rowcount
+
+
 def mark_stale_for_asset(db: Database, asset_id: int) -> int:
     """资产参考图重生后，引用它的分镜标 stale（spec §5 回退规则，不自动重跑）。"""
     n = 0

@@ -39,16 +39,18 @@ def _all_assets_have_sheets(db, data_dir, project_id) -> bool:
 def _shots_missing_prompt(db, project_id) -> int:
     conn = db.connect()
     return conn.execute(
-        "SELECT COUNT(*) c FROM shots WHERE project_id=? AND (prompt IS '' OR prompt='' OR TRIM(prompt)='')",
+        "SELECT COUNT(*) c FROM shots WHERE project_id=? AND disabled=0 "
+        "AND (prompt IS '' OR prompt='' OR TRIM(prompt)='')",
         (project_id,)).fetchone()["c"]
 
 
 def _all_shots_have_video(db, project_id) -> bool:
     conn = db.connect()
-    total = conn.execute("SELECT COUNT(*) c FROM shots WHERE project_id=?",
+    total = conn.execute("SELECT COUNT(*) c FROM shots WHERE project_id=? AND disabled=0",
                          (project_id,)).fetchone()["c"]
-    done = conn.execute("SELECT COUNT(*) c FROM shots WHERE project_id=? AND video_path IS NOT NULL",
-                         (project_id,)).fetchone()["c"]
+    done = conn.execute("SELECT COUNT(*) c FROM shots WHERE project_id=? AND disabled=0 "
+                        "AND video_path IS NOT NULL",
+                        (project_id,)).fetchone()["c"]
     return total > 0 and total == done
 
 
@@ -155,7 +157,7 @@ def tick(db, data_dir, project_id) -> dict:
         n = 0
         from .shots import list_shots
         for s in list_shots(db, project_id):
-            if (s["prompt"] or "").strip() or s["id"] in queued:
+            if s["disabled"] or (s["prompt"] or "").strip() or s["id"] in queued:
                 continue
             enqueue_llm_job(db, "gen_prompt", project_id=project_id, shot_id=s["id"],
                               payload={"shot_id": s["id"]})
@@ -170,7 +172,7 @@ def tick(db, data_dir, project_id) -> dict:
         n = 0
         from .shots import list_shots
         for s in list_shots(db, project_id):
-            if s["video_path"] or s["id"] in queued:
+            if s["disabled"] or s["video_path"] or s["id"] in queued:
                 continue
             enqueue_job(db, "gen_shot", project_id=project_id, shot_id=s["id"],
                         resource="gpu_comfy",

@@ -32,7 +32,8 @@ def handle_analyze(db, data_dir, job, comfy):
 def handle_split(db, data_dir, job, comfy):
     from .llm.storyboard import split_storyboards
     payload = json.loads(job["payload_json"] or "{}")
-    ids = split_storyboards(db, data_dir, payload.get("project_id", job["project_id"]))
+    ids = split_storyboards(db, data_dir, payload.get("project_id", job["project_id"]),
+                            target_count=payload.get("target_count"))
     emit_log(db, "storyboard", "info", f"分镜拆解完成：{len(ids)} 镜",
              project_id=job["project_id"], job_id=job["id"])
 

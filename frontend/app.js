@@ -50,6 +50,7 @@ function data() {
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
       optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文' },
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
+    splitTargetCount: null, shotSel: [],
     paramsOpen: false, merges: [],
   };
 }
@@ -563,9 +564,23 @@ const methods = {
   },
   async startSplit() {
     if (this.shots.length && !confirm('已存在分镜，重新拆解将覆盖（提示词会丢失）。继续？')) return;
-    const r = await fetch(`/api/projects/${this.project.id}/split-storyboards`, {method:'POST'});
+    // 分镜数可选：填了按全文目标数分配各块配额，不填自动拆分
+    const body = this.splitTargetCount ? JSON.stringify({target_count: this.splitTargetCount}) : null;
+    const r = await fetch(`/api/projects/${this.project.id}/split-storyboards`,
+      {method:'POST', headers: body ? {'Content-Type': 'application/json'} : undefined, body});
     if (!r.ok) { alert(await r.text()); return; }
     this.splitRunning = true;
+  },
+  async batchShots(action) {
+    const ids = this.shotSel;
+    if (!ids.length) return;
+    if (action === 'delete' && !confirm(`确定删除选中的 ${ids.length} 个分镜？不可恢复。`)) return;
+    const r = await fetch(`/api/projects/${this.project.id}/shots/batch`,
+      {method:'POST', headers: {'Content-Type': 'application/json'},
+       body: JSON.stringify({action, ids})});
+    if (!r.ok) { alert(await r.text()); return; }
+    this.shotSel = [];
+    await this.loadDetail();
   },
   async regenPrompt(s, force=false) {
     const r = await fetch(`/api/shots/${s.id}/regen-prompt`,

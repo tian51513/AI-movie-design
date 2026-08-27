@@ -129,6 +129,8 @@ MIGRATIONS: list[str] = [
     );""",
     # 21 projects 加预设总时长（按镜数均摊为段时长；0=不限）——只能在末尾追加
     """ALTER TABLE projects ADD COLUMN target_duration REAL NOT NULL DEFAULT 0;""",
+    # 22 shots 加生效/无效状态（无效镜渲染与合成跳过，2026-08-27 需求）
+    """ALTER TABLE shots ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0;""",
 ]
 
 

@@ -9,7 +9,8 @@ from ..engine.jobs import enqueue_job
 from ..engine.pipeline_gates import GATE_STAGES, GateStageError, gate_pass
 from ..engine.pipeline_jobs import enqueue_llm_job
 from ..engine.projects import get_project, set_stage
-from ..engine.shots import get_shot, list_shots, update_shot
+from ..engine.shots import (delete_shots_batch, get_shot, list_shots,
+                            set_disabled_batch, update_shot)
 from ..engine.logbus import emit as emit_log
 from ..engine.rendershot import pick_template_id, shot_versions
 from ..engine.projects import get_project
@@ -53,6 +54,7 @@ def _shot_public(r, versions=None, db=None, data_dir=None, slug=None):
             "workflow_type": r["workflow_type"], "prompt": r["prompt"],
             "status": r["status"], "depends_on": r["depends_on"],
             "video_url": f"/media/{vp}" if vp else None,
+            "disabled": bool(r["disabled"]),
             "versions": versions if versions is not None else [],
             "selected": vp.rsplit("/", 1)[-1] if vp else None,
             **kf_urls,
@@ -69,7 +71,7 @@ def auto_bind(request: Request, project_id: int):
 
 
 @router.post("/api/projects/{project_id}/split-storyboards", status_code=202)
-def start_split(request: Request, project_id: int):
+def start_split(request: Request, project_id: int, body: dict | None = Body(default=None)):
     db = request.app.state.db
     proj = get_project(db, project_id)
     if proj is None:
@@ -79,9 +81,41 @@ def start_split(request: Request, project_id: int):
     running = jobs.latest_job(db, project_id, "split_storyboards")
     if running and running["status"] in ("pending", "running"):
         raise HTTPException(409, "分镜拆解正在进行中")
+    body = body or {}
+    target = body.get("target_count")
+    if target is not None and (not isinstance(target, int) or target < 1):
+        raise HTTPException(422, "target_count 需为 ≥1 的整数（不传则自动拆分）")
+    payload = {"project_id": project_id}
+    if target:
+        payload["target_count"] = target
     jid = enqueue_llm_job(db, "split_storyboards", project_id=project_id,
-                          payload={"project_id": project_id})
+                          payload=payload)
     return {"job_id": jid}
+
+
+@router.post("/api/projects/{project_id}/shots/batch")
+def shots_batch(request: Request, project_id: int, body: dict = Body(...)):
+    """批量处理分镜（2026-08-27 需求）：disable/enable 置无效/生效，delete 删除。"""
+    db = request.app.state.db
+    if get_project(db, project_id) is None:
+        raise HTTPException(404, "项目不存在")
+    action = body.get("action")
+    ids = body.get("ids") or []
+    if action not in ("disable", "enable", "delete"):
+        raise HTTPException(422, "action 只支持 disable/enable/delete")
+    if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
+        raise HTTPException(422, "ids 需为整数数组")
+    if not ids:
+        return {"updated": 0, "deleted": 0}
+    if action == "delete":
+        n = delete_shots_batch(db, project_id, ids)
+        emit_log(db, "storyboard", "info", f"批量删除分镜 {n} 条",
+                 project_id=project_id)
+        return {"deleted": n}
+    n = set_disabled_batch(db, project_id, ids, 1 if action == "disable" else 0)
+    label = "无效（渲染/合成将跳过）" if action == "disable" else "生效"
+    emit_log(db, "storyboard", "info", f"批量置{label}分镜 {n} 条", project_id=project_id)
+    return {"updated": n}
 
 
 @router.get("/api/projects/{project_id}/split-storyboards/status")
@@ -213,6 +247,8 @@ def render_shot(request: Request, shot_id: int, body: dict | None = Body(default
         raise HTTPException(422, "提示词为空，无法渲染")
     body = body or {}
     force = body.get("force")
+    if shot["disabled"]:
+        raise HTTPException(422, "镜头已标无效（先在分镜列表恢复生效，或 force 批量渲染时不会包含它）")
     if shot["video_path"] and not force:
         raise HTTPException(409, "已有视频，force=true 才会重渲")
     dup = db.connect().execute(
@@ -240,7 +276,11 @@ def render_batch(request: Request, project_id: int):
         "AND shot_id IS NOT NULL AND status IN ('pending','running')")}
     n = 0
     skipped = 0
+    skipped_disabled = 0
     for s in list_shots(db, project_id):
+        if s["disabled"]:
+            skipped_disabled += 1
+            continue
         if not (s["prompt"] or "").strip():
             skipped += 1
             continue
@@ -253,6 +293,8 @@ def render_batch(request: Request, project_id: int):
     result = {"enqueued": n}
     if skipped:
         result["skipped_no_prompt"] = skipped
+    if skipped_disabled:
+        result["skipped_disabled"] = skipped_disabled
     return result
 
 

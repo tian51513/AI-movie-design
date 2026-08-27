@@ -41,8 +41,10 @@ def gate_pass(db, data_dir, project_id: int, n: int, source: str = "确认") -> 
             raise ValueError(f"以下资产还没有参考图: {missing}")
     else:
         shots = list_shots(db, project_id)
+        # 无效镜（disabled=1）不进门禁计数：无效镜缺提示词/视频不阻塞过门
+        shots = [s for s in shots if not s["disabled"]]
         if not shots:
-            raise ValueError("尚无分镜，请先拆分镜")
+            raise ValueError("尚无分镜，请先拆分镜（或全部镜头被标无效）")
         if n == 2:
             missing = [s["seq"] for s in shots if not (s["prompt"] or "").strip()]
             label = "缺提示词的镜头"

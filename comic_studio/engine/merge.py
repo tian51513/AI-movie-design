@@ -106,6 +106,8 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
     if proj is None:
         raise ValueError(f"项目不存在: {project_id}")
     shots = list_shots(db, project_id)
+    # 无效镜（disabled=1）不进合成：守卫与 concat 都只看生效镜（2026-08-27 需求）
+    shots = [s for s in shots if not s["disabled"]]
     missing = [s["seq"] for s in shots if not s["video_path"]]
     if not shots or missing:
         raise ValueError(f"无法合成：以下镜头无视频: {missing or '（无分镜）'}")

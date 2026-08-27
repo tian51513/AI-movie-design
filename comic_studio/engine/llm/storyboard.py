@@ -61,7 +61,7 @@ class ChunkStoryboard(BaseModel):
         return v
 
 
-def build_split_user_prompt(chunk_text: str, assets_rows) -> str:
+def build_split_user_prompt(chunk_text: str, assets_rows, quota_line: str | None = None) -> str:
     roster = {"character": [], "scene": [], "prop": []}
     for r in assets_rows:
         appearance_json = r["appearance_json"] if hasattr(r, '__getitem__') else r.appearance_json
@@ -70,7 +70,11 @@ def build_split_user_prompt(chunk_text: str, assets_rows) -> str:
         rid = r["id"] if hasattr(r, '__getitem__') else r.id
         name = r["name"] if hasattr(r, '__getitem__') else r.name
         roster[kind].append(f"id={rid} {name}（{detail}）")
-    lines = ["可用资产名册（只允许绑定以下 id）："]
+    lines = []
+    if quota_line:
+        lines.append(quota_line)
+        lines.append("")
+    lines.append("可用资产名册（只允许绑定以下 id）：")
     for kind, label in (("character", "角色"), ("scene", "场景"), ("prop", "道具")):
         if roster[kind]:
             lines.append(f"{label}：" + "；".join(roster[kind]))
@@ -138,10 +142,13 @@ def auto_bind_characters(db, project_id):
     return bound
 
 
-def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2000):
+def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2000,
+                      target_count=None):
     """max_chars=2000：按上下文容量实证取值（2026-08-27 job 582 真机教训：
     8127 字块输出撞 Ollama 16384 num_ctx 硬截断；最密拆解 6.28 completion tok/输入字
-    + prompt 0.82 tok/字 + ~350 开销 → 块 ≤ ~2100 字才稳妥）。"""
+    + prompt 0.82 tok/字 + ~350 开销 → 块 ≤ ~2100 字才稳妥）。
+    target_count：指定全文分镜数（2026-08-27 需求）——按各块字数占比分配配额注入提示词；
+    None=自动拆分（现状）。"""
     if client_factory is None:
         client_factory = make_split_factory(db)
     proj = get_project(db, project_id)
@@ -151,9 +158,16 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2
     text = data_to_abs(data_dir, proj["novel_path"]).read_text(encoding="utf-8")
     _content_guard(text)
     chunks = split_chunks(text, max_chars=max_chars)
+    # 配额分配：按字数占比 round，最后一块兜底补齐/削减到总数
+    quotas = None
+    if target_count:
+        total_chars = sum(len(c) for c in chunks) or 1
+        quotas = [max(1, round(target_count * len(c) / total_chars)) for c in chunks]
+        quotas[-1] = max(1, target_count - sum(quotas[:-1]))
     assets = list_project_assets(db, project_id)
     emit_log(db, "storyboard", "info",
-             f"开始分镜拆解：{len(chunks)} 块（共 {len(text)} 字，{len(assets)} 个资产入名册）",
+             f"开始分镜拆解：{len(chunks)} 块（共 {len(text)} 字，{len(assets)} 个资产入名册）"
+             + (f"，目标 {target_count} 镜（配额 {quotas}）" if quotas else ""),
              project_id=project_id)
     client = client_factory("split_storyboards")
     provider = get_setting(db, "llm_routing")["split_storyboards"]
@@ -162,8 +176,10 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2
         emit_log(db, "storyboard", "info", f"分块 {i}/{len(chunks)} 拆解中（{len(chunk)} 字）",
                  project_id=project_id)
         t0 = time.monotonic()
+        quota_line = (f"【数量约束】全文目标 {target_count} 个分镜，本块目标拆出约 {quotas[i-1]} 个分镜"
+                      f"（按篇幅分配，允许 ±1 浮动）") if quotas else None
         result, usage = ask_validated(client, SPLIT_SYSTEM,
-                                      build_split_user_prompt(chunk, assets),
+                                      build_split_user_prompt(chunk, assets, quota_line),
                                       ChunkStoryboard)
         emit_log(db, "llm", "info",
                  f"split_storyboards 完成 · {getattr(client, 'model', '?')} · "
