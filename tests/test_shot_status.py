@@ -166,3 +166,25 @@ def test_merge_guard_skips_disabled(tmp_path, monkeypatch):
     monkeypatch.setattr(M, "concat", _fake_concat)
     merge_project(db, tmp_path / "data", pid)  # 修复前：无效镜缺视频 → raise"无法合成"
     assert seen == [("norm", "video_v1.mp4"), ("concat", 1)]  # 只吃生效镜
+
+
+def test_replace_and_delete_clear_job_references(tmp_path):
+    """FK 修复（2026-08-27 真机 job 653：重拆 DELETE shots 被 jobs.shot_id 外键拦下）：
+    替换/删除分镜前先把引用 job 的 shot_id 置 NULL（保留任务行作审计）。"""
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.shots import persist_shots
+    db, pid, ids = _db3(tmp_path)
+    enqueue_job(db, "gen_prompt", project_id=pid, shot_id=ids[0], payload={"shot_id": ids[0]})
+    enqueue_job(db, "gen_shot", project_id=pid, shot_id=ids[1], resource="gpu_comfy",
+                payload={"shot_id": ids[1]})
+    # 替换式重拆（DELETE+INSERT）不再抛 IntegrityError
+    persist_shots(db, pid, [_draft(prompt="p")])
+    row = db.connect().execute(
+        "SELECT COUNT(*) c FROM jobs WHERE shot_id IS NOT NULL").fetchone()["c"]
+    assert row == 0  # 引用已清
+    # 批量删除路径同样安全
+    new_ids = [s["id"] for s in list_shots(db, pid)]
+    enqueue_job(db, "gen_prompt", project_id=pid, shot_id=new_ids[0], payload={})
+    assert delete_shots_batch(db, pid, new_ids) == 1
+    assert db.connect().execute(
+        "SELECT COUNT(*) c FROM jobs WHERE shot_id IS NOT NULL").fetchone()["c"] == 0

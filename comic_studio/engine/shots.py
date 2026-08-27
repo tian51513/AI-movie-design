@@ -10,6 +10,11 @@ _CAMERA_FIELDS = ("景别", "机位", "运镜", "转场")
 
 def persist_shots(db: Database, project_id: int, drafts: list) -> list[int]:
     conn = db.connect()
+    # 先清 jobs.shot_id 引用再删旧镜（jobs.shot_id 外键 REFERENCES shots(id)，
+    # FK=ON 下直接 DELETE 被 IntegrityError 拦下——2026-08-27 真机 job 653；
+    # 任务行保留作审计，只解除引用）
+    conn.execute("UPDATE jobs SET shot_id=NULL WHERE project_id=? AND shot_id IS NOT NULL",
+                 (project_id,))
     conn.execute("DELETE FROM shots WHERE project_id=?", (project_id,))
     ids = []
     seq_to_id = {}
@@ -87,8 +92,9 @@ def delete_shots_batch(db: Database, project_id: int, ids: list[int]) -> int:
         return 0
     conn = db.connect()
     marks = ",".join("?" * len(ids))
-    # 先清引用（depends_on 指向将删镜的其它镜）
+    # 先清引用：帧链（depends_on 指向将删镜）与任务行（jobs.shot_id 外键同上）
     conn.execute(f"UPDATE shots SET depends_on=NULL WHERE depends_on IN ({marks})", ids)
+    conn.execute(f"UPDATE jobs SET shot_id=NULL WHERE shot_id IN ({marks})", ids)
     cur = conn.execute(f"DELETE FROM shots WHERE project_id=? AND id IN ({marks})",
                        (project_id, *ids))
     conn.commit()
