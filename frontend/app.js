@@ -50,7 +50,7 @@ function data() {
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
       optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文' },
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
-    splitTargetCount: null, shotSel: [],
+    splitTargetCount: null, shotSel: [], editingProject: false,
     paramsOpen: false, merges: [],
   };
 }
@@ -231,7 +231,11 @@ const methods = {
     await this.loadDetail(); this.startLogsPolling();
   },
   async loadDetail() {
-    this.project = await (await fetch(`/api/projects/${this.project.id}`)).json();
+    // 项目参数输入中跳过 project 整体替换——否则轮询把正在键入的值顶回旧值，
+    // 手动输入"存不上"（点加减按钮立即触发 change 所以没事；2026-08-27 真机）
+    if (!this.editingProject) {
+      this.project = await (await fetch(`/api/projects/${this.project.id}`)).json();
+    }
     this.assets = await (await fetch(`/api/projects/${this.project.id}/assets`)).json();
     this.views = {}; (await Promise.all(this.assets.map(async a => [a.id, await (await fetch(`/api/assets/${a.id}/views`)).json()]))).forEach(([k,v]) => this.views[k]=v);
     const s = await fetch(`/api/projects/${this.project.id}/analyze/status`);
@@ -535,7 +539,8 @@ const methods = {
         } catch (e) { /* shots 轮询失败不影响日志流 */ }
       }
       // autopilot：轻量刷新详情（角标动作/阶段），重载仍由队列 busy→idle 触发
-      if (this.project && this.project.autopilot && this.view === 'detail') {
+      if (this.project && this.project.autopilot && this.view === 'detail'
+          && !this.editingProject) {
         try { this.project = await (await fetch(`/api/projects/${this.project.id}`)).json(); }
         catch (e) { /* 瞬时失败忽略 */ }
       }
