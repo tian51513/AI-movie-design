@@ -67,3 +67,12 @@
 - `comic_studio/web/app.py` — lifespan：断点对账（先 reattach 后 requeue）+ autopilot 巡检线程（3 秒扫 autopilot=1）
 - 工作流模型切换：manifest `models:` 槽位（registry.ModelSlot）→ settings `model_overrides`（键=模板 id）→ filler 注入；choices 从 ComfyUI /object_info 枚举
 - 注意：merge handler 经 `register_merge_handler()` 延迟注册（app lifespan 调用）；`analyze` 是队列 job 类型（autopilot 用），手动分析仍是 BackgroundTask
+
+## 模块地图（Phase 6 + 2026-08-27 增量）
+
+- `comic_studio/engine/tts.py` — Edge-TTS 配音（按性别分配声音，ledger.dialogue 逐句 → dialogue.mp3）
+- `comic_studio/engine/subtitles.py` — SRT 字幕（镜内均分 + 时间轴累计 → subtitles.srt）
+- `engine/merge.py` 扩展 — TTS 音轨替换 + SRT 字幕烧录（autopilot merge 前自动生成）
+- `web/routes_merge.py` 扩展 — POST /tts；`engine/llm/provider.py` — normalize_base_url（Ollama/LM Studio 误填自动归一 /v1）+ 思考模型响应处理（剥 <think>、reasoning-only 报错、extra_body 透传；本机 LM Studio 实测无法请求侧屏蔽思考）
+- 分镜控制：shots.disabled（迁移 22）——无效镜不进门禁计数/渲染/合成；`routes_shots.py` POST shots/batch（disable/enable/delete）；拆分镜 target_count 按块字数占比分配配额
+- 注意：llm-test 不限 max_tokens（思考模型预算）；空正文/无 choices 均显式报错，不再静默空串
