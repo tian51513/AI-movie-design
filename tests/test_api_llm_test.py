@@ -19,7 +19,7 @@ def test_llm_test_ok(tmp_path, monkeypatch):
     calls = {}
 
     class FakeLLM:
-        def __init__(self, base_url, api_key, model, timeout=30):
+        def __init__(self, base_url, api_key, model, timeout=30, extra_body=None):
             calls.update(base_url=base_url, api_key=api_key, model=model)
         def raw_chat(self, messages, temperature=0.3, max_tokens=None):
             calls.update(messages=messages, max_tokens=max_tokens)
@@ -28,7 +28,22 @@ def test_llm_test_ok(tmp_path, monkeypatch):
     with _client(tmp_path) as c:
         r = c.post("/api/settings/llm-test", json=_body())
         assert r.status_code == 200 and r.json()["ok"] is True
-        assert calls["max_tokens"] == 8 and calls["model"] == "m"
+        # max_tokens 必须放开（None）：思考型模型 8 token 全烧在思考上，正文恒空（真机 2026-08-27 LM Studio）
+        assert calls["max_tokens"] is None and calls["model"] == "m"
+
+
+def test_llm_test_empty_reply_reports_not_ok(tmp_path, monkeypatch):
+    """返回空正文不能报 ok——之前空回复也算通过，端点配错完全看不出来。"""
+    import comic_studio.web.routes_settings as rs
+
+    class FakeLLM:
+        def __init__(self, *a, **k): pass
+        def raw_chat(self, *a, **k):
+            return "", None
+    monkeypatch.setattr(rs, "LLMClient", FakeLLM)
+    with _client(tmp_path) as c:
+        r = c.post("/api/settings/llm-test", json=_body())
+        assert r.json()["ok"] is False and "空" in r.json()["detail"]
 
 
 def test_llm_test_failure_returns_detail(tmp_path, monkeypatch):

@@ -20,6 +20,9 @@ class ProviderConfig(BaseModel):
     base_url: str = ""
     api_key: str = ""
     model: str = ""
+    # 附加请求参数（透传 chat.completions.create 的 extra_body），如屏蔽思考：
+    # {"chat_template_kwargs": {"enable_thinking": false}}——本机 LM Studio 实测无效，留给支持的服务端
+    extra_body: dict | None = None
 
 
 class ComfyConfig(BaseModel):
@@ -192,6 +195,7 @@ class LLMTestBody(BaseModel):
     base_url: str
     api_key: str = ""
     model: str = ""
+    extra_body: dict | None = None
 
 
 @router.post("/llm-test")
@@ -205,9 +209,14 @@ def llm_test(body: LLMTestBody, request: Request = None):
         return {"ok": False, "detail": "base_url 与模型名不能为空"}
     try:
         client = LLMClient(body.base_url.strip(), body.api_key.strip() or "none",
-                           body.model.strip(), timeout=15)
+                           body.model.strip(), timeout=60, extra_body=body.extra_body)
+        # 不限 max_tokens：思考型模型（reasoning_content）预算太小会只出思考不出正文
+        # （真机 2026-08-27 LM Studio：max_tokens=8 时正文恒空，测试连接"通过"是假象）
         reply, _ = client.raw_chat(
-            [{"role": "user", "content": "连接测试，请只回复：OK"}], max_tokens=8)
-        return {"ok": True, "detail": (reply or "")[:50]}
+            [{"role": "user", "content": "连接测试，请只回复：OK"}])
+        if not (reply or "").strip():
+            return {"ok": False, "detail": "连接成功但返回空正文——多为思考型模型（思考耗尽输出预算）"
+                                           "或端点路径不对；可在 provider 配置 extra_body 屏蔽思考"}
+        return {"ok": True, "detail": reply.strip()[:50]}
     except Exception as e:
         return {"ok": False, "detail": f"{type(e).__name__}: {e}"[:200]}

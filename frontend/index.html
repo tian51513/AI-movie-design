@@ -64,6 +64,8 @@
            </select></p>
         <p v-else><input v-model="settingsForm.local.model"
                   placeholder="模型名（点上方获取模型后变下拉）" style="width:90%"></p>
+        <p><input v-model="settingsForm.local.extra_body_json"
+                  placeholder="附加参数 JSON（可选，如 {&quot;chat_template_kwargs&quot;:{&quot;enable_thinking&quot;:false}} 屏蔽思考）" style="width:90%"></p>
         <p><label class="muted"><input type="checkbox" v-model="showThink"> 显示推理模型（含 think）</label></p>
       </div>
       <div class="card" style="flex:1;min-width:320px">
@@ -73,6 +75,8 @@
         <p><input v-model="settingsForm.online.base_url" placeholder="base_url（OpenAI 兼容）" style="width:90%"></p>
         <p><input type="password" v-model="settingsForm.online.api_key" placeholder="api_key" style="width:90%"></p>
         <p><input v-model="settingsForm.online.model" placeholder="模型名" style="width:90%"></p>
+        <p><input v-model="settingsForm.online.extra_body_json"
+                  placeholder="附加参数 JSON（可选）" style="width:90%"></p>
         <p><button @click="llmTest('online')" :disabled="llmTesting==='online'">
              {{ llmTesting==='online' ? '测试中…' : '测试连接' }}</button>
            <span v-if="llmTestManual.online && llmTestResult.online !== null"

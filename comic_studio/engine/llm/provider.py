@@ -20,27 +20,74 @@ class Usage:
     completion_tokens: int
 
 
+# Qwen3 系思考模型可能把 <think>…</think> 内联在 content 里
+_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
+
+
+def normalize_base_url(base_url: str) -> str:
+    """常见误填归一到 OpenAI 兼容根（Ollama 与 LM Studio 都是 <host>/v1）：
+    /api（Ollama 原生风格）、/api/v0（LM Studio 原生）、裸主机 → /v1；
+    误粘整条 /chat/completions 尾巴 → 剥掉；线上深路径（如 bigmodel /api/paas/v4）原样保留。
+    （真机 2026-08-27：base_url 填成 LM Studio 的 /api，SDK 打 /api/chat/completions，
+    LM Studio 对未知端点回 HTTP 200 + error JSON，被当成空回复静默吞掉。）"""
+    u = (base_url or "").strip()
+    if not u:
+        return u
+    if not re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", u):
+        u = "http://" + u
+    if u.endswith("/chat/completions"):
+        u = u[: -len("/chat/completions")]
+    m = re.match(r"^([a-zA-Z][a-zA-Z0-9+.-]*://[^/]+)(/.*)?$", u)
+    if not m:
+        return u.rstrip("/")
+    root, path = m.group(1), (m.group(2) or "").rstrip("/")
+    if path in ("", "/api", "/api/v0"):
+        path = "/v1"
+    return root + path
+
+
 class LLMClient:
-    def __init__(self, base_url: str, api_key: str, model: str, timeout: float = 600):
-        self._client = OpenAI(base_url=base_url, api_key=api_key, timeout=timeout)
+    def __init__(self, base_url: str, api_key: str, model: str, timeout: float = 600,
+                 extra_body: dict | None = None):
+        self.base_url = normalize_base_url(base_url)
+        self._client = OpenAI(base_url=self.base_url, api_key=api_key, timeout=timeout)
         self.model = model
+        # extra_body 透传 create()（思考模型屏蔽思考等：本机 LM Studio 实测
+        # think/chat_template_kwargs/reasoning_effort 均无效，留给支持的服务端配置）
+        self.extra_body = extra_body
 
     def raw_chat(self, messages: list[dict], temperature: float = 0.3,
                  max_tokens: int | None = None) -> tuple[str, Usage]:
         kwargs = dict(model=self.model, messages=messages, temperature=temperature)
         if max_tokens is not None:
             kwargs["max_tokens"] = max_tokens
+        if self.extra_body is not None:
+            kwargs["extra_body"] = self.extra_body
         resp = self._client.chat.completions.create(**kwargs)
-        # 协议不匹配/异常响应时 choices/usage 可能为 None（如误连 Anthropic 端点）
         choices = getattr(resp, "choices", None) or []
+        if not choices:
+            # HTTP 200 但无 choices：服务端用 200 返回错误体（LM Studio 对未知端点即如此）
+            raise LLMError(
+                "LLM 响应没有 choices（HTTP 200 但内容异常）——通常是 base_url 端点不对："
+                "Ollama/LM Studio 的 OpenAI 兼容根是 <host>/v1（/api 已自动归一为 /v1，"
+                "请核对地址与端口）")
         # 输出撞上下文/长度上限被硬截断：立刻报错，不进重试——截断 JSON 重试必败，
         # 且 ask_validated 会把失败输出追加进消息进一步挤占空间（真机 2026-08-27 job 582）
-        finish = getattr(choices[0], "finish_reason", None) if choices else None
+        finish = getattr(choices[0], "finish_reason", None)
         if finish == "length":
             raise LLMError(
                 f"输出被长度上限截断（finish_reason=length）：请减小单次输入（如缩小分块）"
                 f"或提高模型上下文窗口")
-        text = (choices[0].message.content or "") if choices else ""
+        message = choices[0].message
+        text = _THINK_RE.sub("", message.content or "").strip()
+        if not text:
+            # 思考型模型（LM Studio/DeepSeek 把思考放 reasoning_content）：只剩思考没有正文
+            reasoning = (getattr(message, "reasoning_content", None)
+                         or getattr(message, "reasoning", None) or "")
+            if reasoning:
+                raise LLMError(
+                    "模型只输出了思考内容（reasoning）没有正文：请放开 max_tokens/加大上下文，"
+                    "或在设置里为该 provider 配置 extra_body 屏蔽思考")
         u = getattr(resp, "usage", None)
         usage = Usage(getattr(u, "prompt_tokens", 0) or 0,
                       getattr(u, "completion_tokens", 0) or 0)
@@ -115,7 +162,7 @@ def client_for_task(db: Database, task: str) -> "LLMClient":
     if not p.get("base_url"):
         raise LLMError(f"线上 LLM 未配置：settings.llm_providers.{name}.base_url 为空")
     return LLMClient(base_url=p["base_url"], api_key=p.get("api_key") or "none",
-                     model=p["model"])
+                     model=p["model"], extra_body=p.get("extra_body"))
 
 
 def log_llm_call(db: Database, task: str, provider: str, model: str, usage: Usage) -> None:

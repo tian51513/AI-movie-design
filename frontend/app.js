@@ -351,7 +351,10 @@ const methods = {
     this.llmTestManual = {local: false, online: false};
     const s = await (await fetch('/api/settings')).json();
     this.settingsForm = {
-      local: { ...s.llm_providers.local }, online: { ...s.llm_providers.online },
+      local: { ...s.llm_providers.local,
+               extra_body_json: s.llm_providers.local?.extra_body ? JSON.stringify(s.llm_providers.local.extra_body) : '' },
+      online: { ...s.llm_providers.online,
+                extra_body_json: s.llm_providers.online?.extra_body ? JSON.stringify(s.llm_providers.online.extra_body) : '' },
       routing: { ...s.llm_routing },
       comfy: { ...s.comfy },
       t2i_tm: s.template_map?.t2i || '',
@@ -401,6 +404,12 @@ const methods = {
     return r.ok ? {color: '#4ade80', text: '在线'}
                 : {color: '#f87171', text: '离线'};
   },
+  // extra_body 输入框（JSON 字符串）→ 对象；空返回 null，非法 JSON 返回 undefined
+  _parseExtra(p) {
+    const raw = (p.extra_body_json || '').trim();
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return undefined; }
+  },
   async llmTest(provider, manual = true) {
     this.llmTesting = provider;
     this.llmTestManual[provider] = !!manual;
@@ -409,11 +418,17 @@ const methods = {
       this.llmTestResult[provider] = {ok: false, unconfigured: true, detail: 'base_url 或模型名为空'};
       this.llmTesting = ''; return;
     }
+    const eb = this._parseExtra(p);
+    if (eb === undefined) {
+      this.llmTestResult[provider] = {ok: false, detail: 'extra_body 不是合法 JSON'};
+      this.llmTesting = ''; return;
+    }
     try {
       const r = await fetch('/api/settings/llm-test', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({provider, base_url: p.base_url || '',
-                              api_key: p.api_key || '', model: p.model || ''})});
+                              api_key: p.api_key || '', model: p.model || '',
+                              extra_body: eb})});
       this.llmTestResult[provider] = await r.json();
     } catch (e) { this.llmTestResult[provider] = {ok: false, detail: String(e)}; }
     this.llmTesting = '';
@@ -447,14 +462,21 @@ const methods = {
     this.loadingModels = false;
   },
   async saveSettings() {
+    const ebLocal = this._parseExtra(this.settingsForm.local);
+    const ebOnline = this._parseExtra(this.settingsForm.online);
+    if (ebLocal === undefined || ebOnline === undefined) {
+      alert('extra_body 不是合法 JSON（两个 provider 各自检查）'); return;
+    }
     this.saving = true;      const payload = {
       llm_providers: {
         local: { base_url: this.settingsForm.local.base_url || '',
                  api_key: this.settingsForm.local.api_key || 'ollama',
-                 model: this.settingsForm.local.model || '' },
+                 model: this.settingsForm.local.model || '',
+                 extra_body: ebLocal },
         online: { base_url: this.settingsForm.online.base_url || '',
                   api_key: this.settingsForm.online.api_key || '',
-                  model: this.settingsForm.online.model || '' },
+                  model: this.settingsForm.online.model || '',
+                  extra_body: ebOnline },
       },
       llm_routing: { ...this.settingsForm.routing },
       comfy: { base_url: this.settingsForm.comfy.base_url || '' },
@@ -713,7 +735,12 @@ const PromptBox = {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: this.draft, kind: this.kind }) });
         if (!r.ok) { this.err = '优化失败：' + ((await r.json()).detail || r.status); }
-        else { this.draft = (await r.json()).text; }
+        else {
+          const t = (await r.json()).text || '';
+          // 空结果不清空原文本（真机 2026-08-27：LLM 端点配错返回空 text，弹窗文本被清空）
+          if (!t.trim()) { this.err = '优化返回空结果，已保留原文本'; }
+          else { this.draft = t; }
+        }
       } catch (e) { this.err = '优化失败：' + e; }
       this.busy = false;
     },
