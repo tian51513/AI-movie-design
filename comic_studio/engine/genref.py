@@ -41,11 +41,57 @@ def is_photo_style(style_text: str) -> bool:
     return bool(PHOTO_RE.search(style_text or ""))
 
 
+_APPEARANCE_LINE = re.compile(r"^([一-龥]{1,5})[：:]\s*(.+)$")
+
+
+def condense_appearance(detail: str) -> str:
+    """外貌行模板 → 紧凑自然语言（2026-08-27 真机：majicmix 下男性角色变女性）。
+    「无」值行对 CLIP 是噪声，丢弃；性别转强词并加英文锚（CLIP 对 male/man
+    token 敏感，majicmix 女性先验强，必须显式压）；年龄/发型/服装并成短句。
+    非行模板的自由文本原样返回。"""
+    lines = [l.strip() for l in (detail or "").splitlines() if l.strip()]
+    fields, order = {}, []
+    for line in lines:
+        m = _APPEARANCE_LINE.match(line)
+        if m:
+            label, value = m.group(1), m.group(2).strip()
+        else:
+            label, value = "", line
+        if not value or value == "无":
+            continue
+        if label and label not in fields:
+            fields[label] = value
+        order.append((label, value))
+    if not fields and order:  # 纯自由文本
+        return "，".join(v for _, v in order)
+    gender = fields.pop("性别", "")
+    age = fields.pop("年龄", "")
+    hair = fields.pop("发色发型", "")
+    clothes = fields.pop("服装", "")
+    if gender in ("男", "男性"):
+        gender_cn, gender_en = "男性", "man"
+    elif gender in ("女", "女性"):
+        gender_cn, gender_en = "女性", "woman"
+    else:
+        gender_cn, gender_en = gender, ""
+    s = (age + ("岁" if age and not age.endswith("岁") else "") ) + hair + gender_cn
+    if gender_en:
+        s += f"（{gender_en}）"
+    if clothes:
+        s += "，穿" + clothes
+    for label, value in order:
+        if label in ("", "性别", "年龄", "发色发型", "服装"):
+            continue
+        if fields.get(label) == value:
+            s += "，" + value
+    return s.strip("，")
+
+
 def build_gen_prompt(asset_row, style: str = "", era: str = "",
                      variant: str = "views"):
     """style：项目级画风；era：时代背景；variant：views=三视图设定图（单段回退），
     main=角色主图（两段式第一段，无三视图约束）。"""
-    detail = json.loads(asset_row["appearance_json"]).get("detail", "")
+    detail = condense_appearance(json.loads(asset_row["appearance_json"]).get("detail", ""))
     base = KIND_LABEL[asset_row["kind"]] + "：" + asset_row["name"]
     if detail:
         base += "。" + detail.strip().rstrip("。；;，,")

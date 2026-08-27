@@ -276,3 +276,21 @@ def test_photo_style_changes_wording_and_boosts(tmp_path, monkeypatch):
     p_anime, _ = build_gen_prompt(row, style="日系动漫风格，赛璐璐上色", variant="main")
     assert "立绘" not in p_anime and "全身像" in p_anime
     assert "真人实拍质感" not in p_anime
+
+
+def test_condense_appearance_drops_none_and_strengthens_gender():
+    """行模板→自然语言（2026-08-27 真机：majicmix 下男性角色变女性）：
+    「无」值行不进提示词（对 CLIP 是噪声）；性别转强词（含英文锚，CLIP 对
+    male/man token 敏感）；年龄/发型/服装并成自然短句。自由文本原样保留。"""
+    from comic_studio.engine.genref import condense_appearance
+    detail = ("性别：男\n年龄：17\n发色发型：黑色短发\n瞳色：无\n肤色：无\n"
+              "体型：无\n服装：校服衬衫，黑色长裤\n配饰：无")
+    out = condense_appearance(detail)
+    assert "无" not in out and "瞳色" not in out and "配饰" not in out
+    assert "男性" in out and "17岁" in out and "黑色短发" in out
+    assert "校服衬衫" in out and "man" in out.lower()
+    # 女性分支
+    out_f = condense_appearance(detail.replace("性别：男", "性别：女"))
+    assert "女性" in out_f and "woman" in out_f.lower()
+    # 自由文本（非行模板）原样返回
+    assert condense_appearance("黑发少年，穿校服") == "黑发少年，穿校服"

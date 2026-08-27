@@ -103,7 +103,7 @@ KF_PAIR_CONSTRAINT = ("两帧必须严格同机位、同景别、同构图、同
 def build_keyframe_prompt(db, shot, proj, phase: str) -> str:
     """首/尾关键帧提示词：分镜描述 + 角色外貌文字 + 画风 + 时代 + ZImage 尾缀。"""
     from .era import ERA_SUFFIX
-    from .genref import PHOTO_BOOST, ZIMAGE_TAIL, is_photo_style
+    from .genref import PHOTO_BOOST, ZIMAGE_TAIL, condense_appearance, is_photo_style
     detail = (shot["description"] or "").strip().rstrip("。；;，,") or "按分镜描述"
     prompt = f"漫剧分镜关键帧（{phase}瞬间）：{detail}"
     ledger = json.loads(shot["ledger_json"] or "{}")
@@ -120,6 +120,7 @@ def build_keyframe_prompt(db, shot, proj, phase: str) -> str:
         a = get_asset(db, aid)
         if a:
             appearance = json.loads(a["appearance_json"]).get("detail", "")
+            appearance = condense_appearance(appearance)
             if appearance:
                 prompt += f"。角色「{a['name']}」：{appearance[:150]}"
             break
