@@ -293,3 +293,55 @@ shot.json → [H3 适配器]
 1. remix-reference-video-prompt 技能文件未在本地 skills 目录定位到——v1 仅用其公开分类法设计枚举字段，不影响实施；找到文件后再 vendor
 2. Ollama 本地模型清单待用户确认（默认建议 qwen3 系列量化版）
 3. 线上 LLM 提供商与 API key 待用户配置（deepseek/qwen/gemini 均可，OpenAI 兼容即可）
+
+## 16. P7-D 设计：段间运动上下文 + 整段批量快车道（2026-08-28，待用户确认后实施）
+
+> 调研来源：`E:\Comfy-Desktop\workflows\MinMax-H3-导演台\custom_nodes\ComfyUI_MiniMaxH3_Director-main`
+> （约 1.6 万行 Python；调研报告要点：timeline_data v4 schema、SegmentPlan/DirectorPlan
+> 中间表示、AV-latent 运动上下文、段级指纹缓存、run_indices 选择运行）
+
+### 16.1 目标与现状差距
+
+现状逐镜链路：每镜独立提交 ComfyUI → 下载 mp4 → 下一镜 ffmpeg 抽尾帧作首帧（fl2v）
+或 depends_on 仅作提示词衔接。镜间连贯性依赖关键帧质量，像素级接力有漂移。
+
+导演台方案：**一次提交整部成片的全部段落**，在 ComfyUI 内部完成逐段采样，
+段间用 **AV latent 运动上下文**（上一段 latent 尾部 22 帧钉入下一段 conditioning 头部，
+解码后裁掉）实现 latent 级连贯——不依赖关键帧图像质量。
+
+### 16.2 接入方式（不改 engine 架构）
+
+```
+shots（DB） → segments_builder（新 engine 模块）→ timeline_data JSON（v4）
+           → h3_director 模板（API JSON + manifest，注入 timeline_data STRING 槽）
+           → 现有 gen_shot 队列路径提交（一个 job = 整部）
+```
+
+- 新模板 `templates/workflows/h3_director.api.json`：用户在 ComfyUI 里摆好
+  Director 节点（model/vae/clip 接线）导出 API 格式；manifest 声明唯一注入点
+  `timeline_data`（STRING widget）+ 输出节点。类型 `director`，走 template_map 新键。
+- `engine/director.py`：`build_timeline(db, data_dir, project_id) -> dict`——
+  生效镜（disabled 过滤）按 seq 生成 segments[]：prompt=镜当前提示词、
+  refs=现有参考图槽位、durationSec=镜时长、continuityFromPrev=depends_on 链。
+- `engine/rendershot.py` 加 `handle_gen_director`（@register("gen_director")）：
+  组 timeline → 注入 → 提交 → 轮询（复用 wait_and_collect）→ 拿分段输出落盘
+  `shots/<seq>/video_v1.mp4`（对齐现有目录约定，merge/TTS/字幕链路零改动）。
+- autopilot 加决策分支：项目勾选「整段快车道」→ 渲染阶段发一个 gen_director job
+  替代逐镜 gen_shot。
+
+### 16.3 风险与约束
+
+- Director 节点要求 model/clip/vae 在 ComfyUI 侧已加载接线——模板导出质量决定成败，
+  需用户先在 ComfyUI 验证一次（模板验收标准同 §6.2）。
+- 12GB 显存下整段连跑：依赖导演台的 VRAM 段间清理（vram_cleanup）。
+- 失败粒度变粗（一个 job=整部）：靠分段导出+段缓存做断点（导演台自带
+  seg_XXXX.mp4 增量落盘，我们下载时对账）。
+- 与现有逐镜链路**并存可切**：项目级开关，不删旧路径。
+
+### 16.4 实施拆步（每步 TDD 绿即 commit）
+
+1. segments_builder：shots→timeline v4 JSON（纯函数，FakeClient/comfy_mock 测试）
+2. h3_director 模板 + manifest + 注册（注入点=timeline_data）
+3. gen_director handler：提交/轮询/分段落盘对账
+4. 项目级开关 + autopilot 分支 + 前端（渲染模式加「整段快车道」选项）
+5. 真机验收：与逐镜链路同一项目双跑对比镜间连贯性
