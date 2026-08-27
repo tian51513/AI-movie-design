@@ -152,9 +152,20 @@ def _ollama_root(base_url: str) -> str:
     return u.rstrip("/")
 
 
-def _fetch_ollama_models(root_url: str) -> list[str]:
-    """调 Ollama /api/tags 取模型名清单（网络在此，测试注入点）。"""
-    with httpx.Client(timeout=5) as client:
+def _fetch_ollama_models(root_url: str, transport=None) -> list[str]:
+    """取模型名清单（网络在此，测试注入 transport）。
+    优先 OpenAI 兼容 /v1/models（data[].id）——Ollama/LM Studio/vLLM 通吃；
+    404/非 200/空清单再退回 Ollama 原生 /api/tags（2026-08-27 真机：
+    LM Studio 测试连接通过但取模型失败，因其只服务 /v1/models 无 /api/tags）。"""
+    with httpx.Client(timeout=5, transport=transport) as client:
+        try:
+            r = client.get(f"{root_url}/v1/models")
+            if r.status_code == 200:
+                ids = [m["id"] for m in r.json().get("data", []) if m.get("id")]
+                if ids:
+                    return ids
+        except httpx.HTTPError:
+            pass  # 连接层失败也交由 /api/tags 再试一次，错误统一在下面抛
         resp = client.get(f"{root_url}/api/tags")
         resp.raise_for_status()
         return [m["name"] for m in resp.json().get("models", [])]
@@ -171,8 +182,8 @@ def ollama_models(base_url: str = Query(...), request: Request = None):
     try:
         models = _fetch_ollama_models(root)
     except Exception as e:
-        raise HTTPException(502, f"Ollama 不可达或响应异常（请求了 {root}/api/tags）：{e}；"
-                                 "确认 Ollama 正在运行且地址正确")
+        raise HTTPException(502, f"LLM 服务不可达或响应异常（尝试了 {root}/v1/models "
+                                 f"与 {root}/api/tags）：{e}；确认服务正在运行且地址正确")
     return {"models": models}
 
 

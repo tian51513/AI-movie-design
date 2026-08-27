@@ -72,3 +72,53 @@ def test_ollama_models_rejects_cross_site_browser_request(tmp_path, monkeypatch)
         ok2 = c.get("/api/settings/ollama-models",
                     params={"base_url": "http://localhost:11434/v1"})
         assert ok1.status_code == 200 and ok2.status_code == 200
+
+
+# ===== 2026-08-27 LM Studio 支持：模型清单优先 OpenAI 兼容 /v1/models =====
+# 真机：LM Studio http://127.0.0.1:1234 测试连接通过（走 chat/completions）
+# 但获取模型失败——/api/tags 是 Ollama 原生端点，LM Studio 只服务 /v1/models。
+
+def _mock(handler):
+    import httpx
+    return httpx.MockTransport(handler)
+
+
+def test_fetch_prefers_openai_v1_models_lmstudio_shape():
+    """LM Studio：/v1/models 返回 OpenAI 形状 {"data":[{"id":...}]}，无需 /api/tags。"""
+    import httpx
+    from comic_studio.web.routes_settings import _fetch_ollama_models
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={
+                "data": [{"id": "qwen3-14b"}, {"id": "gemma-3-12b"}]})
+        return httpx.Response(404)  # /api/tags 不存在（LM Studio 就是这样）
+
+    assert _fetch_ollama_models("http://127.0.0.1:1234", transport=_mock(handler)) \
+        == ["qwen3-14b", "gemma-3-12b"]
+
+
+def test_fetch_falls_back_to_ollama_tags():
+    """Ollama：/v1/models 不可用时退回原生 /api/tags（向后兼容）。"""
+    from comic_studio.web import routes_settings as rs
+
+    def handler(request):
+        if request.url.path == "/v1/models":
+            return httpx.Response(404)
+        return httpx.Response(200, json={"models": [{"name": "qwen3:14b"}]})
+
+    import httpx
+    assert rs._fetch_ollama_models("http://localhost:11434", transport=_mock(handler)) \
+        == ["qwen3:14b"]
+
+
+def test_fetch_raises_when_both_endpoints_fail():
+    """两个端点都失败要抛错（走 502 路径），不能静默返回空清单。"""
+    from comic_studio.web.routes_settings import _fetch_ollama_models
+    import pytest, httpx
+
+    def handler(request):
+        return httpx.Response(404)
+
+    with pytest.raises(Exception):
+        _fetch_ollama_models("http://127.0.0.1:1", transport=_mock(handler))
