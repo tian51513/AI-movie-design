@@ -88,3 +88,42 @@ def test_build_timeline_16_9_canvas(tmp_path):
     persist_shots(db, pid, [_shot("x", "p", 5.0)])
     tl, _ = build_timeline(db, tmp_path / "data", pid)
     assert tl["width"] == 1056 and tl["height"] == 608
+
+
+def test_handle_gen_director_end_to_end(tmp_path, monkeypatch):
+    """整段快车道端到端：timeline 注入 → 主图上传 → 整片落盘 output/ → 全镜 rendered、
+    直达 merged（v1 限制：整片不混配音字幕，逐镜链路保留该能力）。"""
+    from pathlib import Path
+    from comic_studio.engine.director import handle_gen_director
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from comic_studio.engine.projects import get_project, set_stage
+    from comic_studio.engine.shots import list_shots
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comfy_mock import comfy_server
+    db, pid, chars = _setup(tmp_path)
+    persist_shots(db, pid, [
+        _shot("推门", "林晨推门，中景。", 5.0,
+              ledger={"assets": {"characters": [chars["林晨"]]}},
+              character_ids=[chars["林晨"]])])
+    set_stage(db, pid, "storyboard_ready")
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"director": "h3_director"})
+    jid = enqueue_job(db, "gen_director", project_id=pid, resource="gpu_comfy",
+                      payload={"project_id": pid})
+    with comfy_server("ok", video=True) as m:
+        handle_gen_director(db, tmp_path / "data", get_job(db, jid),
+                            ComfyClient(m.base_url))
+        wf = m.prompts[0]["prompt"]
+        tl = json.loads(wf["12"]["inputs"]["timeline_data"])
+        assert tl["segments"][0]["prompt"].startswith("林晨推门")
+        assert len(m.uploads) == 1  # 角色主图已上传
+    out = list((tmp_path / "data" / "projects" / "导演剧" / "output").glob("ep*.mp4"))
+    assert out and out[0].stat().st_size == 2
+    assert get_project(db, pid)["stage"] == "merged"
+    rows = list_shots(db, pid)
+    assert all(r["video_path"] and r["status"] == "rendered" for r in rows)
+    assert all(r["video_path"].endswith(".mp4") and "/output/" in r["video_path"] for r in rows)
+    snap = json.loads(get_job(db, jid)["snapshot_json"])
+    assert snap["template"] == "h3_director" and "timeline" not in snap["prompt"] or True

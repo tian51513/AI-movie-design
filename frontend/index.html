@@ -413,6 +413,8 @@
         批量生成提示词</button>
       <button v-if="allShotsReady && project.stage==='assets_ready'" @click="passGate2" style="background:#16a34a">✓ 确认分镜（过门2）</button>
       <button v-if="project.stage==='storyboard_ready'" @click="renderAll">批量渲染</button>
+      <button v-if="project.stage==='storyboard_ready'" @click="renderDirector" style="background:#7c3aed"
+              title="整段快车道（P7-D）：全部生效镜打包一次提交导演台，段间 latent 运动上下文连贯；产整片直达合成（v1 不混配音字幕）">🚄 整段快车道</button>
       <button @click="generateTts" style="font-size:12px;padding:3px 8px"
               title="从台词生成 TTS 配音 + SRT 字幕（合成时自动混入）">🎙 生成配音</button>
       <button @click="autoBind" title="扫描描述文本自动补绑提到的角色" style="font-size:12px;padding:3px 8px">🔗 补绑角色</button>

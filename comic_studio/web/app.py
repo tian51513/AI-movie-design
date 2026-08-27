@@ -150,7 +150,8 @@ def create_app(db_path: str | Path = "./data/studio.db",
                    args=(db, data_dir, waiting_ids,
                          (get_setting(db, "comfy") or {}).get("base_url", ""))).start()
         if start_workers:
-            from ..engine import genref, merge as merge_mod, pipeline_jobs, rendershot  # 注册触发
+            from ..engine import (director, genref,  # noqa: F401 注册触发
+                                  merge as merge_mod, pipeline_jobs, rendershot)
             merge_mod.register_merge_handler()  # merge handler 延迟注册（避免环）
             from ..engine.queue.worker import start_workers as _spawn_workers, stop_workers
             from ..engine.settings import get_setting

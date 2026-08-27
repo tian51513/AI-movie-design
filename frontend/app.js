@@ -643,6 +643,12 @@ const methods = {
     if (!r.ok) { alert(await r.text()); return; }
     this.splitRunning = true;
   },
+  async renderDirector() {
+    if (!confirm('整段快车道：全部生效镜一次提交导演台（段间 latent 连贯），产出整片直达合成。\nv1 限制：不混配音字幕（要配音版请走逐镜「批量渲染」）。继续？')) return;
+    const r = await fetch(`/api/projects/${this.project.id}/render-director`, {method: 'POST'});
+    if (!r.ok) { alert(await r.text()); return; }
+    alert('已入队——整段渲染耗时较长，详情页日志可跟踪');
+  },
   async batchShots(action) {
     const ids = this.shotSel;
     if (!ids.length) return;

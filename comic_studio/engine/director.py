@@ -11,6 +11,10 @@ v1 语义：每段 refs = 该镜绑定角色的主图（index 从 0 起 → <Pic
 fl2v 衔接语义由 continuityFromPrev（latent 运动上下文）承担。
 """
 import json
+import random
+
+from .logbus import emit as emit_log
+from .queue.worker import register
 
 
 def _align_frames(n: int) -> int:
@@ -96,3 +100,54 @@ def build_timeline(db, data_dir, project_id: int, fps: int = 24):
     }
     uploads = [{"path": p, "name": n} for p, n in upload_by_path.items()]
     return timeline, uploads
+
+
+@register("gen_director")
+def handle_gen_director(db, data_dir, job, comfy):
+    """整段快车道 worker：shots → timeline → 一次提交 → 整片落盘 output/epNNN.mp4。
+    v1 限制（设计 §16.3）：整片不混 TTS/字幕（逐镜链路保留该能力）；所有生效镜
+    video_path 指向同一整片、直达 merged。stall 放宽到 2 小时（整部连跑）。"""
+    from .jobs import attach_snapshot
+    from .paths import data_to_abs
+    from .projects import get_project, set_stage
+    from .shots import list_shots, update_shot
+    from .workflows.registry import resolve_template
+
+    payload = json.loads(job["payload_json"] or "{}")
+    pid = payload.get("project_id", job["project_id"])
+    proj = get_project(db, pid)
+    timeline, uploads = build_timeline(db, data_dir, pid)
+    tmpl = resolve_template(db, "director")
+    wf = tmpl.api_json()
+    for key, value in {"timeline_data": json.dumps(timeline, ensure_ascii=False),
+                       "seed": random.randint(0, 2**31 - 1)}.items():
+        ip = tmpl.inject_params.get(key)
+        if ip:
+            wf[ip.node]["inputs"][ip.field] = value
+    attach_snapshot(db, job["id"],
+                    prompt=f"(director：{len(timeline['segments'])} 段整片，"
+                           f"共 {timeline['totalFrames']} 帧)",
+                    workflow=wf, template_id=tmpl.id)
+    for up in uploads:
+        comfy.upload_image(up["path"], up["name"])
+    emit_log(db, "comfy", "info",
+             f"导演台整段提交（{len(timeline['segments'])} 段，模板 {tmpl.id}）",
+             project_id=pid, job_id=job["id"])
+    prompt_id = comfy.submit(wf, client_id=f"cs-dir-{job['id']}")
+    videos = comfy.wait_and_collect(prompt_id, stall_seconds=7200)
+    video = next(v for v in videos
+                 if str(v.get("filename", "")).lower().endswith((".mp4", ".webm", ".mov")))
+    out_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/output")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    n = len(list(out_dir.glob("ep*.mp4"))) + 1
+    dest = out_dir / f"ep{n:03d}.mp4"
+    comfy.download(video["filename"], video.get("subfolder", ""),
+                   video.get("type", "output"), dest)
+    rel = f"projects/{proj['slug']}/output/ep{n:03d}.mp4"
+    for s in list_shots(db, pid):
+        if not s["disabled"]:
+            update_shot(db, s["id"], {"status": "rendered", "video_path": rel})
+    set_stage(db, pid, "merged")
+    emit_log(db, "comfy", "info", f"导演台整片已落盘 {rel}（直达 merged）",
+             project_id=pid, job_id=job["id"])
+    return dest

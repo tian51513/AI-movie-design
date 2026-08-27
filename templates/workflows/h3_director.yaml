@@ -1,0 +1,17 @@
+id: h3_director
+type: director
+name: MiniMax H3 导演台整段快车道（段间 latent 连贯）
+file: h3_director.api.json
+prompt_format: '{prompt}'
+inject:
+  params:
+    timeline_data: {node: '12', field: timeline_data}
+    seed: {node: '12', field: seed}
+outputs:
+  - {node: '7', filename_prefix: 'cs/{project}/director'}
+requires: [ComfyUI_MiniMaxH3_Director]
+models:
+- {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 'UNet 模型'}
+- {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: '文本编码器'}
+- {label: video_vae, node: '3', field: vae_name, cls: VAELoader, label_cn: '视频 VAE'}
+- {label: audio_vae, node: '4', field: vae_name, cls: VAELoader, label_cn: '音频 VAE'}

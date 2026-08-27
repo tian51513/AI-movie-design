@@ -312,6 +312,26 @@ def gate3(request: Request, project_id: int):
     return _gate_resp(request, project_id, 3)
 
 
+@router.post("/api/projects/{project_id}/render-director", status_code=202)
+def render_director(request: Request, project_id: int):
+    """P7-D 整段快车道：全部生效镜打包一次提交导演台（段间 latent 连贯）。
+    v1 产出整片直达 merged，不混 TTS/字幕。"""
+    db = request.app.state.db
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    if proj["stage"] != "storyboard_ready":
+        raise HTTPException(409, f"阶段 {proj['stage']} 不能整段渲染（需 storyboard_ready）")
+    dup = db.connect().execute(
+        "SELECT 1 FROM jobs WHERE type='gen_director' AND project_id=? "
+        "AND status IN ('pending','running')", (project_id,)).fetchone()
+    if dup:
+        raise HTTPException(409, "整段渲染已在队列")
+    jid = enqueue_job(db, "gen_director", project_id=project_id,
+                      resource="gpu_comfy", payload={"project_id": project_id})
+    return {"job_id": jid}
+
+
 @router.get("/api/projects/{project_id}/chapters")
 def chapters_listing(request: Request, project_id: int):
     """P7-E：章节结构（创建时正则识别，供拆分镜按章选择）。"""
