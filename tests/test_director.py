@@ -1,0 +1,90 @@
+# tests/test_director.py
+"""P7-D 整段批量快车道（设计 §16）：shots → Director timeline v5 构建器。"""
+import json
+from types import SimpleNamespace as NS
+
+from comic_studio.engine.db import Database
+from comic_studio.engine.projects import create_project
+from comic_studio.engine.shots import persist_shots, set_disabled_batch
+from comic_studio.engine.assets import persist_assets
+
+
+def _shot(desc, prompt, dur=5.0, **kw):
+    base = dict(text_span="", description=desc, shot_type="", camera={},
+                duration=dur, workflow_type="ref2va", ledger={},
+                character_ids=[], scene_ids=[], prop_ids=[], depends_on=None,
+                prompt=prompt)
+    base.update(kw)
+    return NS(**base)
+
+
+def _setup(tmp_path, aspect="9:16"):
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "导演剧", aspect, "正文")["id"]
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="林晨", appearance="黑发少年", tags=[]),
+                                  NS(name="苏晚", appearance="红发少女", tags=[])],
+                      scenes=[], props=[]))
+    from comic_studio.engine.assets import list_project_assets
+    chars = {a["name"]: a["id"] for a in list_project_assets(db, pid)}
+    # 主图落盘（refs 来源）
+    from comic_studio.engine.paths import data_to_abs
+    for a in list_project_assets(db, pid):
+        main = data_to_abs(tmp_path / "data", a["library_dir"]) / "main.png"
+        main.parent.mkdir(parents=True, exist_ok=True)
+        main.write_bytes(b"\x89PNG")
+    return db, pid, chars
+
+
+def test_build_timeline_from_shots(tmp_path):
+    from comic_studio.engine.director import build_timeline
+    db, pid, chars = _setup(tmp_path)
+    ids = persist_shots(db, pid, [
+        _shot("推门", "林晨推门，<Picture 1> 锁定外貌。", 5.0,
+              ledger={"assets": {"characters": [chars["林晨"]]}},
+              character_ids=[chars["林晨"]]),
+        _shot("对话", "两人对话。", 4.0,
+              ledger={"assets": {"characters": [chars["林晨"], chars["苏晚"]]}},
+              character_ids=[chars["林晨"], chars["苏晚"]]),
+        _shot("无效镜", "不应出现。", 5.0),
+    ])
+    # 第二镜衔接第一镜（生产链路由拆解自动建链，测试手动设）
+    conn = db.connect()
+    conn.execute("UPDATE shots SET depends_on=? WHERE id=?", (ids[0], ids[1]))
+    conn.commit()
+    set_disabled_batch(db, pid, [ids[2]], 1)
+    tl, uploads = build_timeline(db, tmp_path / "data", pid)
+    assert tl["version"] == 5 and tl["timelineMode"] == "prompt_batch"
+    assert tl["editMode"] == "segment"
+    segs = tl["segments"]
+    assert len(segs) == 2  # 无效镜排除
+    # 帧对齐（17k+5）：5s*24=120→124；4s*24=96→107（用户实测 2s*24=48→56 同律）
+    assert segs[0]["frameCount"] == 124 and segs[1]["frameCount"] == 107
+    assert segs[0]["durationSec"] == 5 and segs[1]["durationSec"] == 4
+    assert tl["totalFrames"] == 124 + 107
+    assert segs[0]["start"] == 0 and segs[1]["start"] == 124
+    # 段间连贯：第二段钉上一段 latent
+    assert segs[0]["continuityFromPrev"] is False
+    assert segs[1]["continuityFromPrev"] is True
+    # refs：每段独立、index 从 0 连续（→ <Picture N+1>）
+    assert [r["index"] for r in segs[0]["refs"]] == [0]
+    assert [r["index"] for r in segs[1]["refs"]] == [0, 1]
+    # uploads：角色主图去重后 2 张（林晨、苏晚），确定性命名
+    assert len(uploads) == 2
+    assert all(u["name"].startswith("cs__") for u in uploads)
+    assert all(r["imageFile"] in {u["name"] for u in uploads}
+               for s in segs for r in s["refs"])
+    # 画布 9:16（×32 对齐）与导出模式
+    assert tl["width"] == 608 and tl["height"] == 1056
+    assert tl["output"]["exportMode"] == "all"
+    assert tl["output"]["continuityEnabled"] is True
+    # prompt 原样进段
+    assert "<Picture 1> 锁定外貌" in segs[0]["prompt"]
+
+
+def test_build_timeline_16_9_canvas(tmp_path):
+    from comic_studio.engine.director import build_timeline
+    db, pid, chars = _setup(tmp_path, aspect="16:9")
+    persist_shots(db, pid, [_shot("x", "p", 5.0)])
+    tl, _ = build_timeline(db, tmp_path / "data", pid)
+    assert tl["width"] == 1056 and tl["height"] == 608
