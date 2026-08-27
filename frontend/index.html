@@ -23,6 +23,9 @@
   .film-card { flex: 0 0 min(66vw, 900px); scroll-snap-align: start; max-height: 78vh;
                overflow-y: auto; }
   ul { padding-left: 18px; }
+  .masonry { column-width: 300px; column-gap: 12px; }
+  .masonry > .card { break-inside: avoid; margin: 0 0 12px; width: 100%; min-width: 0; }
+  .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 </style>
 </head>
 <body>
@@ -198,13 +201,19 @@
               style="font-size:12px;padding:3px 10px" title="紧凑列表视图">☰ 列表</button>
     </span></h2>
     <p v-if="!projects.length" class="muted" style="padding:16px 0">还没有项目——点右上角「➕ 创建小说」开始</p>
-    <div v-if="projectsView==='grid'" class="row">
+    <div v-if="projectsView==='grid'" class="masonry">
       <div class="card" v-for="p in projects" :key="p.id" @click="open(p)" style="cursor:pointer">
         <b>{{ p.name }}</b>
+        <span v-if="p.style" class="pill">{{ p.style.slice(0, 10) }}</span>
         <div class="muted">{{ p.aspect_ratio }} · {{ stageName(p.stage) }}
           <span v-if="p.autopilot" class="pill" style="background:#7c2d12;color:#fdba74"
                 :title="'autopilot：' + (p.autopilot_action?.detail || '')">⚡ {{ actionLabel(p.autopilot_action) }}</span></div>
-        <div style="margin-top:8px;text-align:right">
+        <p v-if="p.excerpt" class="muted clamp2" style="margin:6px 0;font-size:13px"
+           :title="p.excerpt">{{ p.excerpt }}…</p>
+        <div class="muted" style="font-size:12px;margin:4px 0">
+          {{ p.char_count }} 字 · {{ p.shot_count }} 镜<br>
+          创建 {{ fmtDate(p.created_at) }} · 活动 {{ fmtDate(p.updated_at) }}</div>
+        <div style="margin-top:6px;text-align:right">
           <button v-if="p.stage==='merged'" disabled title="全流程已完成">✓ 已成片</button>
           <button v-else-if="p.autopilot" @click.stop="setAutopilot(p, false)"
                   style="background:#dc2626">⏹ 停止自动</button>
@@ -216,11 +225,14 @@
       </div>
     </div>
     <div v-else class="card" style="padding:2px 12px">
-      <div v-for="(p, i) in projects" :key="p.id" @click="open(p)"
+      <div v-for="(p, i) in pagedProjects" :key="p.id" @click="open(p)"
            :style="'display:flex;align-items:center;gap:10px;padding:9px 2px;cursor:pointer'
-                   + (i < projects.length - 1 ? ';border-bottom:1px solid #2c3540' : '')">
+                   + (i < pagedProjects.length - 1 ? ';border-bottom:1px solid #2c3540' : '')">
         <b style="min-width:120px">{{ p.name }}</b>
-        <span class="muted" style="font-size:13px">{{ p.aspect_ratio }} · {{ stageName(p.stage) }}</span>
+        <span class="muted" style="font-size:13px;max-width:34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+              :title="p.excerpt">{{ p.excerpt || '（无摘要）' }}</span>
+        <span class="muted" style="font-size:13px">{{ p.aspect_ratio }} · {{ stageName(p.stage) }}
+          · {{ p.char_count }}字 · {{ p.shot_count }}镜 · {{ fmtDate(p.updated_at) }}</span>
         <span v-if="p.autopilot" class="pill" style="background:#7c2d12;color:#fdba74"
               :title="'autopilot：' + (p.autopilot_action?.detail || '')">⚡ {{ actionLabel(p.autopilot_action) }}</span>
         <span style="flex:1"></span>
@@ -231,6 +243,17 @@
                 title="全自动：分析→参考图→门1→拆分镜→提示词→门2→渲染→门3→合成成片">🚀 一键出片</button>
         <button @click.stop="deleteProject(p)" title="删除项目（分镜/任务/产物全清，全局资产库保留）"
                 style="background:#7f1d1d;font-size:12px;padding:3px 8px">🗑</button>
+      </div>
+      <div v-if="projects.length > projPageSize" style="display:flex;gap:8px;align-items:center;padding:8px 2px">
+        <button @click="projPage = Math.max(1, projPage - 1)" :disabled="projPage <= 1"
+                style="font-size:12px;padding:3px 10px">◀ 上一页</button>
+        <span class="muted" style="font-size:13px">第
+          <input type="number" min="1" :max="projTotalPages" v-model.number="projPage"
+                 @change="projPage = Math.min(projTotalPages, Math.max(1, projPage || 1))"
+                 style="width:48px;font-size:12px;padding:2px 4px;text-align:center"> / {{ projTotalPages }} 页
+          · 共 {{ projects.length }} 项</span>
+        <button @click="projPage = Math.min(projTotalPages, projPage + 1)" :disabled="projPage >= projTotalPages"
+                style="font-size:12px;padding:3px 10px">下一页 ▶</button>
       </div>
     </div>
   </main>

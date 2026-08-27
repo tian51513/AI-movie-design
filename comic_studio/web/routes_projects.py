@@ -1,5 +1,6 @@
 # comic_studio/web/routes_projects.py
 """项目 REST：创建（上传小说）、列表、详情。"""
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
@@ -179,13 +180,28 @@ def create(request: Request, name: str = Form(...),
 
 @router.get("")
 def listing(request: Request):
+    db = request.app.state.db
+    data_dir = request.app.state.data_dir
+    # 富信息（2026-08-27 需求）：最近活动=各表最大时间；摘要/字数读小说文件（本地小文件，量级无虞）
+    last_job = {r["project_id"]: r["m"] for r in db.connect().execute(
+        "SELECT project_id, MAX(created_at) m FROM jobs GROUP BY project_id")}
+    shot_counts = {r["project_id"]: r["c"] for r in db.connect().execute(
+        "SELECT project_id, COUNT(*) c FROM shots GROUP BY project_id")}
     out = []
-    for r in list_projects(request.app.state.db):
+    for r in list_projects(db):
         item = _public(r)
+        item["updated_at"] = last_job.get(r["id"]) or r["created_at"]
+        item["shot_count"] = shot_counts.get(r["id"], 0)
+        try:
+            from ..engine.paths import data_to_abs
+            text = data_to_abs(data_dir, r["novel_path"]).read_text(encoding="utf-8")
+            item["char_count"] = len(text)
+            item["excerpt"] = re.sub(r"\s+", " ", text).strip()[:60]
+        except OSError:
+            item["char_count"], item["excerpt"] = 0, ""
         if r["autopilot"]:
             from ..engine.autopilot import next_action
-            item["autopilot_action"] = next_action(
-                request.app.state.db, request.app.state.data_dir, r["id"])
+            item["autopilot_action"] = next_action(db, data_dir, r["id"])
         out.append(item)
     return out
 

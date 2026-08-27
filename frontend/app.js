@@ -32,7 +32,7 @@ function data() {
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '', newWordCount: '',
     newExtraPrompt: '', themePreview: '', themePreviewing: false,
-    createOpen: false,
+    createOpen: false, projPage: 1, projPageSize: 12,
     projectsView: (() => { try { return localStorage.getItem('cs.projectsView') || 'grid'; } catch (e) { return 'grid'; } })(),
     newSegDur: 5, newTotalDur: 0,
     settingsTab: 'llm', wfImportFile: null, wfImporting: false, activeShotSeq: 1,
@@ -75,6 +75,12 @@ const computed = {
     const mo = this.settingsForm.model_overrides;
     if (!mo[this.moTemplate]) mo[this.moTemplate] = {};
     return mo[this.moTemplate];
+  },
+  projTotalPages() { return Math.max(1, Math.ceil(this.projects.length / this.projPageSize)); },
+  pagedProjects() {
+    const pg = Math.min(this.projPage, this.projTotalPages);  // 删除项目后页码越界自动收敛
+    const start = (pg - 1) * this.projPageSize;
+    return this.projects.slice(start, start + this.projPageSize);
   },
 };
 
@@ -746,6 +752,7 @@ const methods = {
   stageName(s) { return { created: '已创建', analyzed: '已分析', assets_ready: '资产就绪',
     storyboard_ready: '分镜就绪', rendering: '渲染中', rendered: '已渲染', merged: '已合成' }[s] || s; },
   kindName(k) { return { character: '角色', scene: '场景', prop: '道具' }[k]; },
+  fmtDate(s) { return s ? String(s).slice(5, 16) : ''; },  // "2026-08-27 20:15" → "08-27 20:15"
 };
 
 /* ===== 可复用组件 ===== */
