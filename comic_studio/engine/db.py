@@ -133,6 +133,10 @@ MIGRATIONS: list[str] = [
     """ALTER TABLE shots ADD COLUMN disabled INTEGER NOT NULL DEFAULT 0;""",
     # 23 projects 加画风视觉子集（方案A：图像生成用视觉词，叙事/剪辑词只留在 style 给视频提示词）
     """ALTER TABLE projects ADD COLUMN style_vis TEXT NOT NULL DEFAULT '';""",
+    # 24 P7-A 审计快照：jobs 存最终注入的提示词+完整工作流；llm_calls 存 prompt/reply 摘要
+    """ALTER TABLE jobs ADD COLUMN snapshot_json TEXT NOT NULL DEFAULT '';""",
+    """ALTER TABLE llm_calls ADD COLUMN prompt_text TEXT NOT NULL DEFAULT '';""",
+    """ALTER TABLE llm_calls ADD COLUMN reply_text TEXT NOT NULL DEFAULT '';""",
 ]
 
 

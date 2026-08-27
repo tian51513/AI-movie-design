@@ -53,4 +53,12 @@ def optimize(request: Request, body: dict):
     reply, _u = client.raw_chat(
         [{"role": "system", "content": system},
          {"role": "user", "content": text}], temperature=0.4)
+    # P7-A 审计：prompt/reply 落 llm_calls（排障回查）
+    from ..engine.llm.provider import log_llm_call
+    from ..engine.settings import get_setting as _gs
+    _providers = _gs(request.app.state.db, "llm_providers")
+    _route = _gs(request.app.state.db, "llm_routing").get("optimize_prompt", "?")
+    log_llm_call(request.app.state.db, "optimize_prompt", _route,
+                 _providers.get(_route, {}).get("model", "?"), _u,
+                 prompt=f"[{kind}] {text}", reply=reply)
     return {"text": (reply or "").strip()}

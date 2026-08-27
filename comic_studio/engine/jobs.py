@@ -1,5 +1,7 @@
 # comic_studio/engine/jobs.py
 """job 记录（最小实现：状态记账；完整队列调度属计划 2）。"""
+import json
+
 from .db import Database
 
 
@@ -41,6 +43,17 @@ def enqueue_job(db, jtype, project_id=None, asset_id=None, shot_id=None,
          json.dumps(payload or {}, ensure_ascii=False)))
     conn.commit()
     return cur.lastrowid
+
+
+def attach_snapshot(db, job_id, prompt, workflow, template_id=None) -> None:
+    """P7-A 审计快照：最终注入的提示词 + 完整工作流 JSON 落 jobs.snapshot_json。
+    排障回查实际提交内容（2026-08-27：提示词方言/对白丢失两次排障都只能靠推测）。"""
+    conn = db.connect()
+    conn.execute(
+        "UPDATE jobs SET snapshot_json=? WHERE id=?",
+        (json.dumps({"template": template_id, "prompt": prompt, "workflow": workflow},
+                    ensure_ascii=False), job_id))
+    conn.commit()
 
 
 _RESOURCE_GROUP = {"gpu_comfy": "gpu", "gpu_llm_local": "gpu"}

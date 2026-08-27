@@ -93,3 +93,15 @@ def test_appearance_template_labels(client):
     for label in ("性别：", "发色发型：", "肤色：", "配饰："):
         assert label in EXTRACT_SYSTEM, label
     assert "未成年" in EXTRACT_SYSTEM and "未成年" in system  # 边界约束入词
+
+
+def test_optimize_logs_prompt_and_reply(client):
+    """P7-A：llm_calls 落 prompt/reply 摘要（排障回查）。"""
+    db, fake, c = client
+    with c:
+        r = c.post("/api/llm/optimize", json={"text": "他走进屋里", "kind": "shot_desc"})
+        assert r.status_code == 200
+        row = db.connect().execute(
+            "SELECT prompt_text, reply_text FROM llm_calls ORDER BY id DESC LIMIT 1").fetchone()
+        assert "他走进屋里" in row["prompt_text"]
+        assert "优化后的描述文本" in row["reply_text"]

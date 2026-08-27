@@ -301,3 +301,16 @@ def render_batch(request: Request, project_id: int):
 @router.post("/api/projects/{project_id}/gate3")
 def gate3(request: Request, project_id: int):
     return _gate_resp(request, project_id, 3)
+
+
+@router.get("/api/jobs/{job_id}/snapshot")
+def job_snapshot(request: Request, job_id: int):
+    """P7-A 审计快照查看：任务实际提交的提示词与完整工作流 JSON。"""
+    row = request.app.state.db.connect().execute(
+        "SELECT id, type, status, snapshot_json FROM jobs WHERE id=?", (job_id,)).fetchone()
+    if row is None:
+        raise HTTPException(404, "任务不存在")
+    if not row["snapshot_json"]:
+        raise HTTPException(404, "该任务无快照（旧任务或非 ComfyUI 任务）")
+    return {"id": row["id"], "type": row["type"], "status": row["status"],
+            "snapshot": json.loads(row["snapshot_json"])}

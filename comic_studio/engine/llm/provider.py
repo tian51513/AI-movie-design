@@ -165,9 +165,13 @@ def client_for_task(db: Database, task: str) -> "LLMClient":
                      model=p["model"], extra_body=p.get("extra_body"))
 
 
-def log_llm_call(db: Database, task: str, provider: str, model: str, usage: Usage) -> None:
+def log_llm_call(db: Database, task: str, provider: str, model: str, usage: Usage,
+                prompt: str = "", reply: str = "") -> None:
+    """P7-A：prompt/reply 摘要一并落库（截断 4000 字），排障回查。"""
     conn = db.connect()
     conn.execute(
-        "INSERT INTO llm_calls (task, provider, model, prompt_tokens, completion_tokens) "
-        "VALUES (?,?,?,?,?)", (task, provider, model, usage.prompt_tokens, usage.completion_tokens))
+        "INSERT INTO llm_calls (task, provider, model, prompt_tokens, completion_tokens, "
+        "prompt_text, reply_text) VALUES (?,?,?,?,?,?,?)",
+        (task, provider, model, usage.prompt_tokens, usage.completion_tokens,
+         (prompt or "")[:4000], (reply or "")[:4000]))
     conn.commit()

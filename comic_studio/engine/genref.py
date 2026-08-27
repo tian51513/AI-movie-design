@@ -208,6 +208,8 @@ def _t2i_to_file(db, comfy, tmpl, prompt, dest, ctx, job, label, images=None):
         model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))
     for up in uploads:
         comfy.upload_image(up["path"], up["name"])
+    from .jobs import attach_snapshot
+    attach_snapshot(db, job["id"], prompt=prompt, workflow=wf, template_id=tmpl.id)
     emit_log(db, "comfy", "info", f"{label}提交（模板 {tmpl.id}）",
              project_id=job["project_id"], job_id=job["id"])
     images = comfy.wait_and_collect(
@@ -292,6 +294,9 @@ def handle_gen_ref(db, data_dir, job, comfy):
                 model_overrides=(get_setting(db, "model_overrides") or {}).get(cv_tmpl.id))
             for up in uploads:
                 comfy.upload_image(up["path"], up["name"])
+            from .jobs import attach_snapshot
+            attach_snapshot(db, job["id"], prompt="(四视图：工作流内置触发词，主图作种子)",
+                            workflow=wf, template_id=cv_tmpl.id)
             emit_log(db, "comfy", "info",
                      f"资产「{asset['name']}」参考图提交（模板 {cv_tmpl.id}，主图派生三视图）",
                      project_id=job["project_id"], job_id=job["id"])

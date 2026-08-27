@@ -256,6 +256,11 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
             model_overrides=overrides)
         for up in uploads:
             comfy.upload_image(Path(up["path"]), up["name"])
+        if job_id:
+            from .jobs import attach_snapshot
+            attach_snapshot(db, job_id,
+                            prompt=build_keyframe_prompt(db, shot, proj, phase) + anchor_line,
+                            workflow=wf, template_id=tmpl.id)
         emit_log(db, "comfy", "info",
                  f"分镜 {shot['seq']} 关键帧（{phase}）提交（模板 {tmpl.id}）",
                  project_id=proj["id"], job_id=job_id)
@@ -347,6 +352,9 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     wf, uploads = fill_workflow(template, prompt=prompt, params=params,
                                 images=images, output_ctx=output_ctx,
                                 model_overrides=model_overrides)
+    if job_id:
+        from .jobs import attach_snapshot
+        attach_snapshot(db, job_id, prompt=prompt, workflow=wf, template_id=template.id)
 
     # I1: 若模板声明图片槽但上传清单为空，快失败
     if template.inject_images and not uploads:

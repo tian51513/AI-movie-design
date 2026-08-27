@@ -425,3 +425,22 @@ def test_keyframe_prompt_prefers_style_vis(tmp_path):
     t = rendershot.build_keyframe_prompt(db, get_shot(db, sid), get_project(db, pid), "start")
     assert "戏剧化光效" in t
     assert "紧凑剪辑感" not in t and "反转节奏" not in t
+
+
+def test_render_shot_attaches_audit_snapshot(tmp_path, monkeypatch):
+    """P7-A：渲染任务提交时落审计快照。"""
+    db, pid, assets = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(
+        character_ids=[assets["林晨"]["id"]])])[0]
+    update_shot(db, sid, {"prompt": "林晨在庭院推门。"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    jid = enqueue_job(db, "gen_shot", project_id=pid, shot_id=sid,
+                      resource="gpu_comfy", payload={"shot_id": sid})
+    import json as _json
+    with comfy_server("ok", video=True) as m:
+        render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url), job_id=jid)
+        snap = _json.loads(get_job(db, jid)["snapshot_json"])
+        assert snap["prompt"].startswith("林晨在庭院推门")
+        assert snap["template"] and "110" in snap["workflow"]

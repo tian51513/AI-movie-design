@@ -352,3 +352,24 @@ def test_handle_gen_ref_dispatches_by_prompt_style(tmp_path, monkeypatch):
         handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
         text = m.prompts[0]["prompt"]["6"]["inputs"]["text"]
         assert "1boy" in text and "black" in text and "萧炎" not in text.split(",")[0]
+
+
+def test_gen_ref_attaches_audit_snapshot(tmp_path, monkeypatch):
+    """P7-A：参考图任务提交时落审计快照（实际注入的提示词+工作流）。"""
+    db, pid = _setup(tmp_path, monkeypatch)
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from types import SimpleNamespace as NS
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="萧炎", appearance="性别：男\n发色发型：黑色短发\n瞳色：无", tags=[])],
+                      scenes=[], props=[]))
+    asset = list_project_assets(db, pid)[0]
+    jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                      resource="gpu_comfy", payload={"asset_id": asset["id"]})
+    with comfy_server("ok") as m:
+        from comic_studio.engine.comfy.client import ComfyClient
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+    import json as _json
+    snap = _json.loads(get_job(db, jid)["snapshot_json"])
+    assert "萧炎" in snap["prompt"] and snap["template"] == "t_t2i_test"
+    assert snap["workflow"]["6"]["inputs"]["text"] == snap["prompt"]
