@@ -21,6 +21,7 @@ outputs:
 - node: '11'
   filename_prefix: cs/{project}/{asset}
 requires: []
+prompt_style: tags_en
 
 # 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
 models:

@@ -44,26 +44,35 @@ def is_photo_style(style_text: str) -> bool:
 _APPEARANCE_LINE = re.compile(r"^([一-龥]{1,5})[：:]\s*(.+)$")
 
 
+def parse_appearance_fields(detail: str) -> list[tuple[str, str]]:
+    """行模板 → 有序 [(label, value)]，「无」值行与空行已滤；非行模板行 label=""。"""
+    out = []
+    for line in (detail or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        m = _APPEARANCE_LINE.match(line)
+        label, value = (m.group(1), m.group(2).strip()) if m else ("", line)
+        if not value or value == "无":
+            continue
+        out.append((label, value))
+    return out
+
+
 def condense_appearance(detail: str) -> str:
     """外貌行模板 → 紧凑自然语言（2026-08-27 真机：majicmix 下男性角色变女性）。
     「无」值行对 CLIP 是噪声，丢弃；性别转强词并加英文锚（CLIP 对 male/man
     token 敏感，majicmix 女性先验强，必须显式压）；年龄/发型/服装并成短句。
     非行模板的自由文本原样返回。"""
-    lines = [l.strip() for l in (detail or "").splitlines() if l.strip()]
-    fields, order = {}, []
-    for line in lines:
-        m = _APPEARANCE_LINE.match(line)
-        if m:
-            label, value = m.group(1), m.group(2).strip()
-        else:
-            label, value = "", line
-        if not value or value == "无":
-            continue
+    fields_list = parse_appearance_fields(detail)
+    if not fields_list:
+        return (detail or "").strip()
+    fields = {}
+    for label, value in fields_list:
         if label and label not in fields:
             fields[label] = value
-        order.append((label, value))
-    if not fields and order:  # 纯自由文本
-        return "，".join(v for _, v in order)
+    if not any(label for label, _ in fields_list):  # 纯自由文本
+        return "，".join(v for _, v in fields_list)
     gender = fields.pop("性别", "")
     age = fields.pop("年龄", "")
     hair = fields.pop("发色发型", "")
@@ -79,12 +88,79 @@ def condense_appearance(detail: str) -> str:
         s += f"（{gender_en}）"
     if clothes:
         s += "，穿" + clothes
-    for label, value in order:
+    for label, value in fields_list:
         if label in ("", "性别", "年龄", "发色发型", "服装"):
             continue
         if fields.get(label) == value:
             s += "，" + value
     return s.strip("，")
+
+
+# ===== 提示词方言：tags_en（SD 系 CLIP 读不懂中文——中文提示词对它是噪声 token，
+# 2026-08-27 真机：t2i_ref 中文提示词 → 输出连人都不是）=====
+_EN_HAIR_COLORS = (("黑", "black"), ("白", "white"), ("金", "blonde"), ("红", "red"),
+                   ("棕", "brown"), ("褐", "brown"), ("蓝", "blue"), ("银", "silver"),
+                   ("灰", "gray"), ("粉", "pink"), ("紫", "purple"), ("绿", "green"))
+_EN_HAIR_STYLES = (("短发", "short hair"), ("长发", "long hair"), ("马尾", "ponytail"),
+                   ("双马尾", "twintails"), ("卷发", "curly hair"), ("直发", "straight hair"),
+                   ("寸头", "buzz cut"), ("刘海", "bangs"), ("辫", "braid"))
+EN_QUALITY_TAIL = "cinematic color grading, sharp focus, ultra-detailed, 8k, best quality"
+EN_PHOTO_BOOST = ("photorealistic, realistic skin texture and pores, natural lighting, "
+                  "35mm depth of field")
+
+
+def _hair_en(text: str) -> str:
+    color = next((en for zh, en in _EN_HAIR_COLORS if zh in text), "")
+    styles = [en for zh, en in _EN_HAIR_STYLES if zh in text]
+    if not color and not styles:
+        return text  # 识别不出原样返回（弱引导好过没有）
+    return " ".join(([color + " colored"] if color else []) + (styles or ["hair"]))
+
+
+def build_gen_prompt_tags_en(asset_row, style: str = "", era: str = "",
+                             variant: str = "views"):
+    """英文标签流组装（prompt_style: tags_en 模板用）。结构化字段确定性映射；
+    服装等自由中文文本无法离线翻译、弱通过；era 为中文后缀此处跳过。"""
+    kind = asset_row["kind"]
+    detail = json.loads(asset_row["appearance_json"]).get("detail", "")
+    fields_list = parse_appearance_fields(detail)
+    d: dict[str, str] = {}
+    for label, value in fields_list:
+        if label and label not in d:
+            d[label] = value
+    tags: list[str] = []
+    if kind == "scene":
+        tags.append("scenery, environment, no humans")
+    elif kind == "prop":
+        tags.append("single prop object, product shot")
+    g = d.get("性别", "")
+    if g in ("男", "男性"):
+        tags += ["1boy", "solo"]
+    elif g in ("女", "女性"):
+        tags += ["1girl", "solo"]
+    age = d.get("年龄", "")
+    if age:
+        tags.append(f"{age} years old" if age.isdigit() else age)
+    if d.get("发色发型"):
+        tags.append(_hair_en(d["发色发型"]))
+    if d.get("服装"):
+        tags.append(d["服装"])  # 中文弱通过——离线无翻译，占位保结构
+    for label, value in fields_list:
+        if label in ("", "性别", "年龄", "发色发型", "服装"):
+            continue
+        if d.get(label) == value:
+            tags.append(value)
+    if kind == "character" and variant == "main":
+        tags += ["full body", "standing", "neutral expression", "simple white background"]
+    elif kind == "character":
+        tags.append("character sheet")
+    if is_photo_style(style):
+        tags.append(EN_PHOTO_BOOST)
+    elif style.strip():
+        tags.append(style.strip().rstrip("。；;，,"))
+    tags.append(EN_QUALITY_TAIL)
+    ctx = {"project": f"p{asset_row['source_project']}", "asset": str(asset_row["id"])}
+    return ", ".join(t for t in tags if t), ctx
 
 
 def build_gen_prompt(asset_row, style: str = "", era: str = "",
@@ -180,8 +256,11 @@ def handle_gen_ref(db, data_dir, job, comfy):
         main_png = data_to_abs(data_dir, asset["library_dir"]) / "main.png"
         ctx = {"project": f"p{asset['source_project']}", "asset": str(asset["id"])}
         if stage in ("all", "main") or not main_png.exists():
-            main_prompt, _ = build_gen_prompt(asset, style=style, era=era,
-                                              variant="main")
+            # 提示词方言（2026-08-27）：按主图模板声明分发——SD 系 CLIP 用英文标签流
+            main_builder = (build_gen_prompt_tags_en
+                            if getattr(resolve_template(db, "t2i"), "prompt_style", "") == "tags_en"
+                            else build_gen_prompt)
+            main_prompt, _ = main_builder(asset, style=style, era=era, variant="main")
             # 主图模板若声明图片槽（文+图重绘类，如 xf_zimage_ti2i）：
             # 有主图 → 作 ref 传入重绘；无主图 → 引导用纯文生图（zimage_t2i）
             main_tmpl = resolve_template(db, "t2i")
@@ -231,8 +310,11 @@ def handle_gen_ref(db, data_dir, job, comfy):
                      data={"path": f"{asset['library_dir']}/views/sheet.png"})
     else:
         # 单段（场景/道具，或 character_views 未映射的角色回退；stage 仅 all 有意义）
-        prompt, ctx = build_gen_prompt(asset, style=style, era=era)
-        _t2i_to_file(db, comfy, resolve_template(db, "t2i"), prompt, dest, ctx, job,
+        _tmpl = resolve_template(db, "t2i")
+        _builder = (build_gen_prompt_tags_en
+                    if getattr(_tmpl, "prompt_style", "") == "tags_en" else build_gen_prompt)
+        prompt, ctx = _builder(asset, style=style, era=era)
+        _t2i_to_file(db, comfy, _tmpl, prompt, dest, ctx, job,
                      label=f"资产「{asset['name']}」参考图")
     if stage == "main":
         return  # 仅换主图：sheet 未变，无需 stale 联动

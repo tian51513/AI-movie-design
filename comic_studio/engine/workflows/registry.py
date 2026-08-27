@@ -51,6 +51,10 @@ class WorkflowTemplate:
     dir: Path
     inject_images: list = field(default_factory=list)
     models: list = field(default_factory=list)
+    # 提示词方言（2026-08-27 需求：不同模板提示风格各自映射）：
+    # natural_zh = 中文自然语言（qwen/lumina2 类编码器，如 zimage_t2i）；
+    # tags_en = 英文标签流（SD 系 CLIP 读不懂中文，如 t2i_ref——中文提示词对它是噪声）
+    prompt_style: str = "natural_zh"
 
     def api_json(self) -> dict:
         import json
@@ -77,7 +81,8 @@ def load_manifest(path: Path) -> WorkflowTemplate:
         requires=list(data.get("requires") or []),
         dir=path.parent,
         inject_images=list(inj.get("images") or []),
-        models=[ModelSlot(**m) for m in (data.get("models") or [])])
+        models=[ModelSlot(**m) for m in (data.get("models") or [])],
+        prompt_style=data.get("prompt_style") or "natural_zh")
 
 
 def scan_templates(root: Path) -> dict:

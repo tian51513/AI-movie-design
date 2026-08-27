@@ -294,3 +294,61 @@ def test_condense_appearance_drops_none_and_strengthens_gender():
     assert "女性" in out_f and "woman" in out_f.lower()
     # 自由文本（非行模板）原样返回
     assert condense_appearance("黑发少年，穿校服") == "黑发少年，穿校服"
+
+
+def test_tags_en_prompt_for_sd_clip(tmp_path, monkeypatch):
+    """模板级提示词方言（2026-08-27 真机：t2i_ref 是 SD 系 CLIP 读不懂中文，
+    中文提示词=噪声 → 输出连人都不是）。tags_en 模板走英文标签流组装。"""
+    from comic_studio.engine.genref import build_gen_prompt_tags_en
+    row = {"kind": "character", "name": "主角", "source_project": 1, "id": 1,
+           "appearance_json": json.dumps({"detail": "性别：男\n年龄：17\n发色发型：黑色短发\n"
+                                        "瞳色：无\n服装：校服衬衫，黑色长裤\n配饰：无"},
+                                        ensure_ascii=False)}
+    p, _ = build_gen_prompt_tags_en(row, style="真人电影质感，写实摄影", variant="main")
+    assert "1boy" in p and "black" in p and "short hair" in p
+    assert "17" in p and "full body" in p and "white background" in p
+    assert "photorealistic" in p and "35mm" in p and "8k" in p
+    assert "避免畸形" not in p and "无" not in p  # 中文纠错尾缀/空值行不进 tags_en
+    # 女性分支 + 非写实风格原样附加
+    row_f = dict(row, appearance_json=json.dumps(
+        {"detail": "性别：女\n发色发型：金色长发\n服装：白裙\n瞳色：无"}, ensure_ascii=False))
+    p_f, _ = build_gen_prompt_tags_en(row_f, style="日系动漫风格")
+    assert "1girl" in p_f and "blonde" in p_f and "long hair" in p_f
+    assert "photorealistic" not in p_f and "日系动漫风格" in p_f
+
+
+def test_manifest_prompt_style_parsed(tmp_path):
+    """registry 解析 prompt_style（默认 natural_zh；tags_en 声明生效）。"""
+    from comic_studio.engine.workflows.registry import load_manifest
+    (tmp_path / "a.api.json").write_text("{}")
+    (tmp_path / "a.yaml").write_text(
+        "id: t_a\ntype: t2i\nname: a\nfile: a.api.json\nprompt_format: x\n"
+        "inject: {prompt: {node: '1', field: text}}\noutputs: [{node: '2', filename_prefix: cs}]\n")
+    (tmp_path / "b.yaml").write_text(
+        "id: t_b\ntype: t2i\nname: b\nfile: a.api.json\nprompt_format: x\n"
+        "prompt_style: tags_en\n"
+        "inject: {prompt: {node: '1', field: text}}\noutputs: [{node: '2', filename_prefix: cs}]\n")
+    assert load_manifest(tmp_path / "a.yaml").prompt_style == "natural_zh"
+    assert load_manifest(tmp_path / "b.yaml").prompt_style == "tags_en"
+
+
+def test_handle_gen_ref_dispatches_by_prompt_style(tmp_path, monkeypatch):
+    """tags_en 模板的主图提交文本是英文标签流。"""
+    db, pid = _setup(tmp_path, monkeypatch)
+    set_setting(db, "template_map", {"t2i": "t_t2i_test"})
+    # 重写 manifest 加 tags_en
+    (tmp_path / "m.yaml").write_text(MANIFEST + "\nprompt_style: tags_en\n")
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.assets import persist_assets, list_project_assets, get_asset
+    from comic_studio.engine.jobs import get_job
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="萧炎", appearance="性别：男\n发色发型：黑色短发\n服装：黑西装\n瞳色：无", tags=[])],
+                      scenes=[], props=[]))
+    asset = list_project_assets(db, pid)[0]
+    jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                      resource="gpu_comfy", payload={"asset_id": asset["id"]})
+    with comfy_server("ok") as m:
+        from comic_studio.engine.comfy.client import ComfyClient
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+        text = m.prompts[0]["prompt"]["6"]["inputs"]["text"]
+        assert "1boy" in text and "black" in text and "萧炎" not in text.split(",")[0]
