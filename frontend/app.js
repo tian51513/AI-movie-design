@@ -763,6 +763,7 @@ const methods = {
     storyboard_ready: '分镜就绪', rendering: '渲染中', rendered: '已渲染', merged: '已合成' }[s] || s; },
   kindName(k) { return { character: '角色', scene: '场景', prop: '道具' }[k]; },
   fmtDate(s) { return s ? String(s).slice(5, 16) : ''; },  // "2026-08-27 20:15" → "08-27 20:15"
+  dialogueOf(s) { return (s.ledger && s.ledger.dialogue) || []; },
 };
 
 /* ===== 可复用组件 ===== */

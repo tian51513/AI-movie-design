@@ -473,6 +473,10 @@
       </div>
       <p><prompt-box v-model="s.description" :rows="2" kind="shot_desc"
              @focus="editingShot=true" @blur="editingShot=false;saveShot(s, {description: s.description})"></prompt-box></p>
+      <p v-if="dialogueOf(s).length" style="margin:4px 0;font-size:13px;color:#93c5fd"
+         title="拆解时从原文照录的对白（TTS 配音与字幕来源；改描述不影响此处）">
+        💬 <span v-for="(d, i) in dialogueOf(s)" :key="i"
+                 style="margin-right:8px"><b>{{ d.speaker }}</b>：「{{ d.line }}」</span></p>
       <div v-if="s.ledger" style="font-size:12px;margin:6px 0">
         <div v-for="(ids, cat) in s.ledger" :key="cat" v-if="cat!=='assets'" class="muted" style="margin:2px 0">
           <b>{{ ledgerLabel(cat) }}：</b><span class="pill" v-for="aid in ids" :key="aid" style="margin:2px 2px 2px 0">{{ assetName(aid) }}</span>
