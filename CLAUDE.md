@@ -84,3 +84,12 @@
 - `engine/llm/storyboard.py` — 对白机械兜底 backfill_dialogue（模型不填 dialogue 字段时从 text_span 引号提取，说话人双向就近匹配角色名册）；拆分镜 target_count 配额注入
 - `engine/shots.py` — 删镜/重拆前清 jobs.shot_id 外键引用（FK=ON 下 DELETE 被 jobs 引用拦下，job 653 教训）
 - 前端：创建入口顶部弹窗（上传/主题两 tab+预览）；项目列表窗格瀑布流/列表分页（12/页，localStorage 记忆）；分镜卡 💬 对白显示；项目参数输入 editingProject 焦点守卫（轮询不再顶回输入值）
+
+## 模块地图（P7 借鉴计划 2026-08-28）
+
+- `engine/director.py` — 整段快车道：build_timeline（shots→Director timeline v5，17k+5 帧对齐、每段 refs=绑定角色主图、continuityFromPrev=depends_on 链）+ @register("gen_director")（一次提交→整片落盘 output/→直达 merged；v1 不混配音字幕）
+- `templates/workflows/h3_director.*` — 导演台聚合节点模板（timeline_data/seed 注入，四模型槽位）；template_map 键 `director`
+- `engine/chapters.py` — P7-E 章节正则切分（中文数字+Chapter N，字符偏移）；projects.chapters_json；split-storyboards 按 chapter_from/to 切片
+- P7-A 审计：jobs.snapshot_json（四处提交点）+ llm_calls.prompt_text/reply_text + GET /api/jobs/{id}/snapshot
+- P7-B 白名单纪律 / P7-C heal_h3_prompt（prompts/gen.py，自愈不耗重试）
+- 注意：整段快车道与逐镜链路并存；「🚄 整段快车道」按钮仅 storyboard_ready；director 项目全镜 video_path 指同一整片
