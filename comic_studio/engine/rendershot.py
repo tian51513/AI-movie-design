@@ -103,7 +103,7 @@ KF_PAIR_CONSTRAINT = ("两帧必须严格同机位、同景别、同构图、同
 def build_keyframe_prompt(db, shot, proj, phase: str) -> str:
     """首/尾关键帧提示词：分镜描述 + 角色外貌文字 + 画风 + 时代 + ZImage 尾缀。"""
     from .era import ERA_SUFFIX
-    from .genref import ZIMAGE_TAIL
+    from .genref import PHOTO_BOOST, ZIMAGE_TAIL, is_photo_style
     detail = (shot["description"] or "").strip().rstrip("。；;，,") or "按分镜描述"
     prompt = f"漫剧分镜关键帧（{phase}瞬间）：{detail}"
     ledger = json.loads(shot["ledger_json"] or "{}")
@@ -123,9 +123,13 @@ def build_keyframe_prompt(db, shot, proj, phase: str) -> str:
             if appearance:
                 prompt += f"。角色「{a['name']}」：{appearance[:150]}"
             break
-    style = ((proj["style"] or "") if proj is not None else "").strip().rstrip("。；;，,")
+    # 画风拆层（方案A）：关键帧是图像——用视觉子集，叙事词不进
+    style = (((proj["style_vis"] or proj["style"]) or "")
+             if proj is not None else "").strip().rstrip("。；;，,")
     if style:
         prompt += "。" + style
+    if is_photo_style(style):
+        prompt += "。" + PHOTO_BOOST  # 写实增强（与主图同款，2026-08-27 真机二次元泄漏）
     era = proj["era"] if proj is not None and "era" in proj.keys() else ""
     if era:
         prompt += "。" + ERA_SUFFIX.format(era=era)

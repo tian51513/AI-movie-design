@@ -21,7 +21,7 @@ GEN_STORY_SYSTEM = """你是漫剧改编用的小说作者。按给定主题写�
 DEFAULT_STORY_WORDS = "8000~12000 字"
 WORD_COUNT_RANGE = (300, 20000)
 
-_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "era",
+_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "style_vis", "era",
                     "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
                     "prompt_mode", "lora_realism", "target_duration", "autopilot")
 
@@ -146,6 +146,7 @@ def create_from_theme(request: Request, body: dict):
         text = _generate_story_text(db, theme, body)
     row = create_project(db, data_dir, body.get("name") or theme["name"], aspect,
                          text, style=(body.get("style") or ""),
+                         style_vis=(body.get("style_vis") or ""),
                          default_shot_duration=float(body.get("default_shot_duration") or 5.0),
                          target_duration=float(body.get("target_duration") or 0.0))
     return _public(row)
@@ -158,7 +159,8 @@ def _public(row) -> dict:
 @router.post("", status_code=201)
 def create(request: Request, name: str = Form(...),
            aspect_ratio: str = Form(...), novel: UploadFile = File(...),
-           style: str = Form(""), video_megapixels: float = Form(0.4),
+           style: str = Form(""), style_vis: str = Form(""),
+           video_megapixels: float = Form(0.4),
            video_multiple: int = Form(32), video_speed: str = Form("标准"),
            default_shot_duration: float = Form(5.0),
            prompt_mode: str = Form("D"), lora_realism: float = Form(0.75),
@@ -170,7 +172,7 @@ def create(request: Request, name: str = Form(...),
     except UnicodeDecodeError:
         raise HTTPException(422, "小说文件需为 UTF-8 编码（请转换后重新上传）")
     row = create_project(request.app.state.db, request.app.state.data_dir,
-                         name, aspect_ratio, text, style=style,
+                         name, aspect_ratio, text, style=style, style_vis=style_vis,
                          video_megapixels=video_megapixels, video_multiple=video_multiple,
                          video_speed=video_speed, default_shot_duration=default_shot_duration,
                          prompt_mode=prompt_mode, lora_realism=lora_realism,
@@ -225,6 +227,7 @@ def patch_style(request: Request, project_id: int, body: dict):
 
     class StylePatch(BaseModel):
         style: str = ""
+        style_vis: str = ""
 
     db = request.app.state.db
     row = get_project(db, project_id)
@@ -232,10 +235,14 @@ def patch_style(request: Request, project_id: int, body: dict):
         raise HTTPException(404, "项目不存在")
 
     # Handle style parameter
-    if "style" in body:
+    if "style" in body or "style_vis" in body:
         patch = StylePatch.model_validate(body)
         conn = db.connect()
-        conn.execute("UPDATE projects SET style=? WHERE id=?", (patch.style.strip(), project_id))
+        if "style" in body:
+            conn.execute("UPDATE projects SET style=? WHERE id=?", (patch.style.strip(), project_id))
+        if "style_vis" in body:
+            conn.execute("UPDATE projects SET style_vis=? WHERE id=?",
+                         (patch.style_vis.strip(), project_id))
         conn.commit()
 
     # Handle autopilot switch (一键出片)

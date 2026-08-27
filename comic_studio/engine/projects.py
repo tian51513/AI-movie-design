@@ -18,6 +18,7 @@ def slugify(name: str) -> str:
 
 def create_project(db: Database, data_dir: Path, name: str,
                    aspect_ratio: str, novel_text: str, style: str = "",
+                   style_vis: str = "",
                    video_megapixels: float = 0.4, video_multiple: int = 32,
                    video_speed: str = "标准", default_shot_duration: float = 5.0,
                    prompt_mode: str = "D", lora_realism: float = 0.75,
@@ -33,8 +34,8 @@ def create_project(db: Database, data_dir: Path, name: str,
     novel_path = project_dir / "novel.txt"
     novel_path.write_text(novel_text, encoding="utf-8")
     conn.execute(
-        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration))
+        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, style_vis, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), style_vis.strip(), video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration))
     conn.commit()
     return get_project(db, conn.execute("SELECT last_insert_rowid() id").fetchone()["id"])
 

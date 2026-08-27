@@ -130,3 +130,23 @@ def test_projects_listing_enriched(tmp_path):
         assert item["shot_count"] == 1
         assert item["created_at"]
         assert item["updated_at"] >= item["created_at"]  # 无任务时回退创建时间
+
+
+def test_style_vis_roundtrip_and_patch(tmp_path):
+    """画风拆层（2026-08-27 方案A）：style_vis 建/PATCH/查。"""
+    import io
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data",
+                               start_workers=False)) as c:
+        pid = c.post("/api/projects", data={
+            "name": "拆层剧", "aspect_ratio": "16:9",
+            "style": "剧情PV风格，叙事性构图，场景切换流畅，情绪递进",
+            "style_vis": "电影质感，叙事性构图"},
+            files={"novel": ("n.txt", io.BytesIO("正文".encode()), "text/plain")}).json()["id"]
+        item = next(p for p in c.get("/api/projects").json() if p["id"] == pid)
+        assert item["style_vis"] == "电影质感，叙事性构图"
+        r = c.patch(f"/api/projects/{pid}", json={"style_vis": "胶片颗粒质感"})
+        assert r.status_code == 200
+        item = next(p for p in c.get("/api/projects").json() if p["id"] == pid)
+        assert item["style_vis"] == "胶片颗粒质感"

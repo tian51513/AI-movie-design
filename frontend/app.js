@@ -1,28 +1,32 @@
 // comic_studio 前端入口（无构建，Vue3 本地 vendor）
 // 分区导航：data → computed → methods(列表/详情/设置/日志/分镜) → 挂载
 const { createApp } = Vue;
+// 画风拆层（2026-08-27 方案A）：v=视觉风格词（主图/关键帧等图像生成用），
+// n=叙事/节奏词（只随完整 style 进视频提示词——"场景切换流畅""剪辑感"对 T2I 是噪声）
 const STYLE_PRESETS = {
   // 通用
-  '动漫': '日系动漫风格，干净线稿，赛璐璐上色，高饱和度，番剧质感',
-  '写实': '写实风格，电影质感，真实皮肤与材质细节，自然光照',
-  '国风仙侠': '国风仙侠风格，飘逸衣袂，古典配色，仙气氛围',
-  '3D': '3D渲染风格，卡通造型，柔和全局光照，精致材质',
+  '动漫':     { v: '日系动漫风格，干净线稿，赛璐璐上色，高饱和度，番剧质感', n: '' },
+  '写实':     { v: '写实风格，电影质感，真实皮肤与材质细节，自然光照', n: '' },
+  '国风仙侠': { v: '国风仙侠风格，飘逸衣袂，古典配色，仙气氛围', n: '' },
+  '3D':       { v: '3D渲染风格，卡通造型，柔和全局光照，精致材质', n: '' },
   // 常规剧情向
-  '剧情PV': '剧情PV风格，叙事构图，角色互动，场景切换流畅，情绪递进',
-  '宣传PV': '宣传PV风格，强视觉冲击，品牌质感，节奏明快，高对比配色',
-  '动画': '卡通动画风格，夸张造型，明快色彩，插画质感',
-  '情感PV': '情感PV风格，柔和光影，人物情绪特写，氛围渲染，浅景深',
-  '风景PV': '风景PV风格，自然风光，广角构图，黄金时刻光线，旅行宣传片质感',
-  '时尚写真': '时尚写真风格，人物造型精致，服饰搭配讲究，棚拍布光设计',
-  '短剧PV': '短剧PV风格，剧情张力，角色冲突，反转节奏，紧凑剪辑感',
-  '文艺': '文艺电影风格，胶片颗粒质感，朦胧氛围，留白构图，自然色调',
-  '科幻': '科幻风格，赛博朋克视觉，霓虹光效，未来都市，冷色调高对比',
-  '古风': '古风风格，传统服饰，水墨意境，古典美学，绢本设色质感',
-  '未来科技': '未来科技风格，机械感，全息光影特效，金属材质，蓝色光晕',
-  '悬疑': '悬疑风格，低调布光，阴影构图，镜头语言克制，情绪张力紧绷',
-  '喜剧': '喜剧风格，夸张肢体动作，幽默表情特写，明快节奏，高饱和色彩',
-  '舞台剧': '舞台剧风格，舞台布光，戏剧化表演，动态构图，剧场质感',
+  '剧情PV':   { v: '电影质感画面，叙事性构图，角色情绪饱满', n: '场景切换流畅，情绪递进' },
+  '宣传PV':   { v: '强视觉冲击，高对比配色，精致品牌质感', n: '节奏明快' },
+  '动画':     { v: '卡通动画风格，夸张造型，明快色彩，插画质感', n: '' },
+  '情感PV':   { v: '柔和光影，人物情绪特写，浅景深', n: '氛围渲染，情绪递进' },
+  '风景PV':   { v: '自然风光，广角构图，黄金时刻光线，旅行宣传片质感', n: '' },
+  '时尚写真': { v: '时尚写真风格，人物造型精致，服饰搭配讲究，棚拍布光设计', n: '' },
+  '短剧PV':   { v: '都市剧集质感，戏剧化光效', n: '剧情张力，反转节奏，紧凑剪辑感' },
+  '文艺':     { v: '文艺电影风格，胶片颗粒质感，朦胧氛围，留白构图，自然色调', n: '' },
+  '科幻':     { v: '科幻风格，赛博朋克视觉，霓虹光效，未来都市，冷色调高对比', n: '' },
+  '古风':     { v: '古风风格，传统服饰，水墨意境，古典美学，绢本设色质感', n: '' },
+  '未来科技': { v: '未来科技风格，机械感，全息光影特效，金属材质，蓝色光晕', n: '' },
+  '悬疑':     { v: '悬疑风格，低调布光，阴影构图', n: '镜头语言克制，情绪张力紧绷' },
+  '喜剧':     { v: '喜剧风格，夸张表情动作，明快高饱和色彩', n: '明快节奏' },
+  '舞台剧':   { v: '舞台剧风格，舞台布光，剧场质感，动态构图', n: '戏剧化表演节奏' },
 };
+const presetStyle = k => { const p = STYLE_PRESETS[k]; return p ? [p.v, p.n].filter(Boolean).join('，') : ''; };
+const presetStyleVis = k => (STYLE_PRESETS[k] && STYLE_PRESETS[k].v) || '';
 
 /* ===== data ===== */
 function data() {
@@ -100,7 +104,8 @@ const methods = {
     this.creating = true;
     const fd = new FormData();
     fd.append('name', this.newName); fd.append('aspect_ratio', this.newRatio);
-    fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : STYLE_PRESETS[this.newStyleKey] || '');
+    fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : presetStyle(this.newStyleKey));
+    fd.append('style_vis', this.newStyleKey === '自定义' ? this.newStyleText : presetStyleVis(this.newStyleKey));
     fd.append('novel', this.newFile);
     fd.append('default_shot_duration', this.newSegDur || 5);
     fd.append('target_duration', this.newTotalDur || 0);
@@ -324,9 +329,14 @@ const methods = {
     const v = prompt('画风描述（留空则不指定，生成时由模型自由发挥）：',
       this.project.style || '');
     if (v === null) return;
+    const vis = prompt('图像画风子集（主图/关键帧用，视觉词；留空=同上）：',
+      this.project.style_vis || '');
+    if (vis === null) return;
+    const body = { style: v };
+    if (vis.trim()) body.style_vis = vis;
     const r = await fetch(`/api/projects/${this.project.id}`, {
       method: 'PATCH', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({style: v})});
+      body: JSON.stringify(body)});
     if (r.ok) { await this.loadDetail(); } else { alert(await r.text()); }
   },
   async editEra() {

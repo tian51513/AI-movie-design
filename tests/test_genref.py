@@ -160,7 +160,7 @@ def test_character_two_stage_main_then_views(tmp_path, monkeypatch):
         handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
         assert len(m.prompts) == 2  # 主图 + 四视图两段
         main_text = m.prompts[0]["prompt"]["57:27"]["inputs"]["text"]
-        assert "萧炎" in main_text and "立绘" in main_text and "三视图" not in main_text
+        assert "萧炎" in main_text and "全身像" in main_text and "三视图" not in main_text
         views_wf = m.prompts[1]["prompt"]
         # 提示词保留工作流内置触发词（不再被中文提示词覆盖）
         assert "Character Sheet" in views_wf["24"]["inputs"]["prompt"]
@@ -192,7 +192,7 @@ def test_two_stage_stage_control(tmp_path, monkeypatch):
                           payload={"asset_id": asset["id"], "stage": "main"})
         handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
         assert len(m.prompts) == 1
-        assert "立绘" in m.prompts[0]["prompt"]["57:27"]["inputs"]["text"]
+        assert "全身像" in m.prompts[0]["prompt"]["57:27"]["inputs"]["text"]
         assert (tmp_path / "data" / lib / "main.png").exists()
         assert not (tmp_path / "data" / lib / "views" / "sheet.png").exists()
         # stage=views：仅一段 character_views（用现有主图作种子）
@@ -238,3 +238,41 @@ def test_main_image_template_with_ref_slot(tmp_path, monkeypatch):
         wf2 = m2.prompts[0]["prompt"]
         assert "萧炎" in wf2["28"]["inputs"]["value"]      # 文本进了文+图模板
         assert wf2["23"]["inputs"]["image"].startswith("cs__")  # 主图作 ref 上传
+
+
+def test_handle_gen_ref_prefers_style_vis(tmp_path, monkeypatch):
+    """画风拆层（2026-08-27 方案A）：主图生成优先用 style_vis（视觉词），
+    style 里的叙事/剪辑词不应进入图像提示词；style_vis 空 → 回退完整 style。"""
+    db, pid = _setup(tmp_path, monkeypatch)
+    conn = db.connect()
+    conn.execute("UPDATE projects SET style=?, style_vis=? WHERE id=?",
+                 ("剧情PV风格，叙事性构图，场景切换流畅，情绪递进", "电影质感，叙事性构图", pid))
+    conn.commit()
+    from comic_studio.engine.genref import build_gen_prompt
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from types import SimpleNamespace as NS
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="萧炎", appearance="黑发少年", tags=[])], scenes=[], props=[]))
+    row = list_project_assets(db, pid)[0]
+    # 视觉词进、叙事词不进（拆层发生在调用方——handle_gen_ref 选词，builder 只管拼接）
+    style_used = "电影质感，叙事性构图"
+    p, _ = build_gen_prompt(row, style=style_used, variant="main")
+    assert "电影质感" in p and "情绪递进" not in p and "场景切换" not in p
+
+
+def test_photo_style_changes_wording_and_boosts(tmp_path, monkeypatch):
+    """写实意图（2026-08-27 真机：自定义"真人电影"出二次元）：
+    ① 不再出现"立绘"（二次元词汇）；② 换"全身照"；③ 追加真人实拍增强词。
+    非写实风格走中性"全身像"，无增强词。"""
+    db, pid = _setup(tmp_path, monkeypatch)
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from types import SimpleNamespace as NS
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="萧炎", appearance="黑发少年", tags=[])], scenes=[], props=[]))
+    row = list_project_assets(db, pid)[0]
+    p_photo, _ = build_gen_prompt(row, style="真人电影", variant="main")
+    assert "立绘" not in p_photo and "全身照" in p_photo
+    assert "真人实拍质感" in p_photo and "真实皮肤纹理" in p_photo
+    p_anime, _ = build_gen_prompt(row, style="日系动漫风格，赛璐璐上色", variant="main")
+    assert "立绘" not in p_anime and "全身像" in p_anime
+    assert "真人实拍质感" not in p_anime

@@ -2,6 +2,7 @@
 """gen_ref 处理器：为资产生成参考图并落库 views/（spec 门1 前置）。"""
 import json
 import random
+import re
 
 from .assets import get_asset
 from .logbus import emit as emit_log
@@ -30,6 +31,15 @@ ZIMAGE_TAIL = {
             "无文字水印，画面干净完整",
 }
 
+# 写实/真人意图检测（2026-08-27 真机：自定义"真人电影"仍出二次元——"立绘"措辞+
+# Turbo cfg=1 文本话语权弱+模型先验偏插画，三方叠加。检测到写实意图即换摄影向措辞+增强词）
+PHOTO_RE = re.compile(r"写实|真人|实拍|摄影|photoreal|realistic|人像|电影质感")
+PHOTO_BOOST = "真人实拍质感，真实皮肤纹理与毛孔细节，自然光影，35mm 镜头景深，照片级真实"
+
+
+def is_photo_style(style_text: str) -> bool:
+    return bool(PHOTO_RE.search(style_text or ""))
+
 
 def build_gen_prompt(asset_row, style: str = "", era: str = "",
                      variant: str = "views"):
@@ -41,13 +51,18 @@ def build_gen_prompt(asset_row, style: str = "", era: str = "",
         base += "。" + detail.strip().rstrip("。；;，,")
     kind = asset_row["kind"]
     if variant == "main" and kind == "character":
-        suffix = ("，角色主图：单人物全身立绘，站姿自然，表情中性，白色干净背景")
+        # "立绘"是二次元词汇（真机教训）；写实意图时用摄影向"全身照"措辞
+        suffix = ("，角色主图：单人物全身照，站姿自然，表情中性，白色干净背景"
+                  if is_photo_style(style) else
+                  "，角色主图：单人物全身像，站姿自然，表情中性，白色干净背景")
     else:
         suffix = KIND_SUFFIX.get(kind, "")
     prompt = base + suffix
     style = style.strip().rstrip("。；;，,").strip()
     if style:
         prompt += "。" + style   # 风格段：主导整体画风
+    if is_photo_style(style):
+        prompt += "。" + PHOTO_BOOST  # 写实增强（cfg=1 下弱文本需强词）
     era = (era or "").strip()
     if era:
         from .era import ERA_SUFFIX
@@ -96,7 +111,9 @@ def handle_gen_ref(db, data_dir, job, comfy):
         raise ValueError(f"资产不存在: {payload['asset_id']}")
     from .projects import get_project
     proj = get_project(db, asset["source_project"])
-    style = proj["style"] if proj else ""
+    # 画风拆层（方案A 2026-08-27）：图像生成优先视觉子集 style_vis，
+    # 叙事/剪辑词留在 style 给视频提示词——"场景切换流畅""剪辑节奏"对 T2I 是噪声
+    style = (proj["style_vis"] or proj["style"]) if proj else ""
     era = proj["era"] if proj is not None and "era" in proj.keys() else ""
     cv_tmpl = None
     if asset["kind"] == "character":

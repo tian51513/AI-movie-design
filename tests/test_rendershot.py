@@ -406,3 +406,22 @@ def test_pick_template_reads_template_map(tmp_path):
     set_setting(db, "template_map", {"ref2va": "h3_t2v", "fl2v": "h3_i2v", "t2v": "h3_t2v"})
     assert pick_template_id({"workflow_type": "ref2va"}, db) == "h3_t2v"  # 切了
     assert pick_template_id({"workflow_type": "fl2v"}, db) == "h3_i2v"
+
+
+def test_keyframe_prompt_prefers_style_vis(tmp_path):
+    """画风拆层（2026-08-27 方案A）：关键帧提示词用视觉子集，叙事/剪辑词不进图。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine import rendershot
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project, get_project
+    from comic_studio.engine.shots import get_shot, persist_shots
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "kf风格剧", "9:16", "t",
+                         style="短剧PV风格，剧情张力，反转节奏，紧凑剪辑感",
+                         style_vis="都市剧集质感，戏剧化光效")["id"]
+    sid = persist_shots(db, pid, [NS(text_span="", description="雨夜推门", shot_type="",
+        camera={}, duration=5.0, workflow_type="fl2v", ledger={},
+        character_ids=[], scene_ids=[], prop_ids=[], depends_on=None, prompt="p")])[0]
+    t = rendershot.build_keyframe_prompt(db, get_shot(db, sid), get_project(db, pid), "start")
+    assert "戏剧化光效" in t
+    assert "紧凑剪辑感" not in t and "反转节奏" not in t
