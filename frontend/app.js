@@ -32,6 +32,8 @@ function data() {
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '', newWordCount: '',
     newExtraPrompt: '', themePreview: '', themePreviewing: false,
+    createOpen: false,
+    projectsView: (() => { try { return localStorage.getItem('cs.projectsView') || 'grid'; } catch (e) { return 'grid'; } })(),
     newSegDur: 5, newTotalDur: 0,
     settingsTab: 'llm', wfImportFile: null, wfImporting: false, activeShotSeq: 1,
     themesManage: [], themeImportFile: null, themeImporting: false,
@@ -80,6 +82,14 @@ const computed = {
 const methods = {
   // ===== 项目列表 =====
   async refresh() { this.projects = await (await fetch('/api/projects')).json(); },
+  openCreate() {
+    this.createOpen = true;
+    if (this.newMode === 'theme') this.loadThemes();
+  },
+  setProjectsView(v) {
+    this.projectsView = v;
+    try { localStorage.setItem('cs.projectsView', v); } catch (e) { /* 无痕模式等 */ }
+  },
   async createProject() {
     this.creating = true;
     const fd = new FormData();
@@ -91,6 +101,7 @@ const methods = {
     const resp = await fetch('/api/projects', { method: 'POST', body: fd });
     if (!resp.ok) { alert(await resp.text()); }
     this.creating = false; this.newName = ''; this.newFile = null;
+    this.createOpen = false;
     await this.refresh();
   },
   async loadThemes() {
@@ -235,7 +246,8 @@ const methods = {
           target_duration: this.newTotalDur || 0 }) });
       if (!resp.ok) { alert(await resp.text()); }
       else { this.newName = ''; this.newProtagonist = ''; this.newThemeId = '';
-             this.newWordCount = ''; this.newExtraPrompt = ''; this.themePreview = ''; }
+             this.newWordCount = ''; this.newExtraPrompt = ''; this.themePreview = '';
+             this.createOpen = false; }
     } catch (e) { alert('生成失败：' + e); }
     this.creating = false;
     await this.refresh();

@@ -28,7 +28,9 @@
 <body>
 <div id="app">
   <header><b>漫剧工坊</b> <span class="muted">comic_studio</span>
-    <button style="float:right" @click="openSettings">设置</button></header>
+    <span style="float:right;display:inline-flex;gap:6px">
+      <button @click="openCreate">➕ 创建小说</button>
+      <button @click="openSettings">设置</button></span></header>
   <main v-if="view==='settings'">
     <p><a href="#" @click.prevent="view='projects'">← 返回</a></p>
         <p style="display:flex;gap:6px;margin:0 0 12px">
@@ -189,8 +191,14 @@
     </p>
   </main>
   <main v-else-if="view==='projects'">
-    <h2>项目</h2>
-    <div class="row">
+    <h2>项目 <span style="float:right;font-size:13px">
+      <button @click="setProjectsView('grid')" :style="projectsView==='grid'?'background:#16a34a':''"
+              style="font-size:12px;padding:3px 10px" title="窗格（卡片）视图">⊞ 窗格</button>
+      <button @click="setProjectsView('list')" :style="projectsView==='list'?'background:#16a34a':''"
+              style="font-size:12px;padding:3px 10px" title="紧凑列表视图">☰ 列表</button>
+    </span></h2>
+    <p v-if="!projects.length" class="muted" style="padding:16px 0">还没有项目——点右上角「➕ 创建小说」开始</p>
+    <div v-if="projectsView==='grid'" class="row">
       <div class="card" v-for="p in projects" :key="p.id" @click="open(p)" style="cursor:pointer">
         <b>{{ p.name }}</b>
         <div class="muted">{{ p.aspect_ratio }} · {{ stageName(p.stage) }}
@@ -206,65 +214,23 @@
                   style="background:#7f1d1d;font-size:12px;padding:4px 8px;margin-left:4px">🗑</button>
         </div>
       </div>
-      <div class="card">
-        <p style="margin:0 0 8px">
-          <button type="button" @click="newMode='upload'"
-                  :style="newMode==='upload'?'background:#16a34a':''">📎 上传小说</button>
-          <button type="button" style="margin-left:4px" @click="newMode='theme'; loadThemes()"
-                  :style="newMode==='theme'?'background:#16a34a':''">🎨 主题生成</button>
-        </p>
-        <form v-if="newMode==='theme'" @submit.prevent="previewFromTheme">
-          <p><select v-model="newThemeId" required>
-               <option value="" disabled>选择主题…</option>
-               <option v-for="t in themes" :key="t.id" :value="t.id"
-                       :title="t.description">{{ t.name }}（{{ t.category }}）</option>
-             </select></p>
-          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select>
-             段时长<input type="number" min="1" max="15" v-model.number="newSegDur" style="width:44px">s
-             总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s</p>
-          <p><input v-model="newName" placeholder="漫剧名称（留空用主题名）"></p>
-          <p><input v-model="newProtagonist" placeholder="主角姓名（可选）"></p>
-          <p><input type="number" min="300" max="20000" v-model.number="newWordCount"
-                    placeholder="目标字数（可选，默认 8000~12000）" style="width:60%"></p>
-          <p><textarea v-model="newExtraPrompt" rows="3" style="width:90%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px"
-                       placeholder="补充描述（可选）：想加入的情节、元素、风格要求……会拼进生成上下文"></textarea></p>
-          <p><button :disabled="themePreviewing || creating || !newThemeId">
-             {{ themePreviewing ? '生成中…（约 1-3 分钟）' : '✨ 生成正文' }}</button></p>
-        </form>
-        <div v-if="themePreview" class="card" style="margin:8px 0;padding:10px 14px">
-          <h3 style="margin:4px 0">📝 正文预览<span class="muted" style="font-size:12px">（可编辑，确认后创建）</span>
-            <span class="pill">{{ themePreview.length }} 字</span></h3>
-          <textarea v-model="themePreview" rows="12" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px"></textarea>
-          <p style="display:flex;gap:8px;align-items:center">
-            <button @click="createFromTheme" :disabled="creating"
-                    style="background:#16a34a">{{ creating ? '创建中…' : '✔ 确认创建项目' }}</button>
-            <button @click="previewFromTheme" :disabled="themePreviewing"
-                    title="不满意？换一版重新生成（补充描述改了会生效）">🔄 重新生成</button>
-            <button @click="themePreview=''">放弃</button>
-          </p>
-        </div>
-        <form v-else @submit.prevent="createProject">
-          <p><input v-model="newName" placeholder="漫剧名称" required></p>
-          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
-        <p><select v-model="newStyleKey">
-             <option value="">不指定（默认）</option>
-             <optgroup label="通用">
-               <option>动漫</option><option>写实</option>
-               <option>国风仙侠</option><option>3D</option></optgroup>
-             <optgroup label="常规剧情向">
-               <option>剧情PV</option><option>宣传PV</option><option>动画</option>
-               <option>情感PV</option><option>风景PV</option><option>时尚写真</option>
-               <option>短剧PV</option><option>文艺</option><option>科幻</option>
-               <option>古风</option><option>未来科技</option><option>悬疑</option>
-               <option>喜剧</option><option>舞台剧</option></optgroup>
-             <option value="自定义">自定义…</option></select></p>
-        <p v-if="newStyleKey==='自定义'"><input v-model="newStyleText" placeholder="自定义画风描述" style="width:90%"></p>
-        <p class="muted" style="margin:2px 0">段时长<input type="number" min="1" max="15" v-model.number="newSegDur" style="width:44px">s
-           总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s
-           （总时长>0 时拆分镜后按镜数均摊）</p>
-          <p><input type="file" accept=".txt" @change="f => newFile = f.target.files[0]" required></p>
-          <p><button :disabled="creating">{{ creating ? '创建中…' : '创建项目' }}</button></p>
-        </form>
+    </div>
+    <div v-else class="card" style="padding:2px 12px">
+      <div v-for="(p, i) in projects" :key="p.id" @click="open(p)"
+           :style="'display:flex;align-items:center;gap:10px;padding:9px 2px;cursor:pointer'
+                   + (i < projects.length - 1 ? ';border-bottom:1px solid #2c3540' : '')">
+        <b style="min-width:120px">{{ p.name }}</b>
+        <span class="muted" style="font-size:13px">{{ p.aspect_ratio }} · {{ stageName(p.stage) }}</span>
+        <span v-if="p.autopilot" class="pill" style="background:#7c2d12;color:#fdba74"
+              :title="'autopilot：' + (p.autopilot_action?.detail || '')">⚡ {{ actionLabel(p.autopilot_action) }}</span>
+        <span style="flex:1"></span>
+        <button v-if="p.stage==='merged'" disabled title="全流程已完成">✓ 已成片</button>
+        <button v-else-if="p.autopilot" @click.stop="setAutopilot(p, false)"
+                style="background:#dc2626;font-size:12px;padding:3px 10px">⏹ 停止自动</button>
+        <button v-else @click.stop="setAutopilot(p, true)" style="background:#16a34a;font-size:12px;padding:3px 10px"
+                title="全自动：分析→参考图→门1→拆分镜→提示词→门2→渲染→门3→合成成片">🚀 一键出片</button>
+        <button @click.stop="deleteProject(p)" title="删除项目（分镜/任务/产物全清，全局资产库保留）"
+                style="background:#7f1d1d;font-size:12px;padding:3px 8px">🗑</button>
       </div>
     </div>
   </main>
@@ -550,6 +516,74 @@
       <div v-if="!logs.length" class="muted">暂无日志——分析等活动产生后此处实时滚动显示</div>
     </div>
   </main>
+
+  <!-- 创建小说弹窗（2026-08-27：入口移顶部，与设置并列） -->
+  <div v-if="createOpen" @click.self="createOpen=false"
+       style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:105;display:flex;align-items:flex-start;justify-content:center;overflow:auto">
+    <div class="card" style="width:min(760px,94vw);margin:36px 0">
+      <h3 style="margin:0 0 10px">➕ 创建小说
+        <button @click="createOpen=false" style="float:right;font-size:12px;padding:2px 8px">✕ 关闭</button></h3>
+        <p style="margin:0 0 8px">
+          <button type="button" @click="newMode='upload'"
+                  :style="newMode==='upload'?'background:#16a34a':''">📎 上传小说</button>
+          <button type="button" style="margin-left:4px" @click="newMode='theme'; loadThemes()"
+                  :style="newMode==='theme'?'background:#16a34a':''">🎨 主题生成</button>
+        </p>
+        <form v-if="newMode==='theme'" @submit.prevent="previewFromTheme">
+          <p><select v-model="newThemeId" required>
+               <option value="" disabled>选择主题…</option>
+               <option v-for="t in themes" :key="t.id" :value="t.id"
+                       :title="t.description">{{ t.name }}（{{ t.category }}）</option>
+             </select></p>
+          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select>
+             段时长<input type="number" min="1" max="15" v-model.number="newSegDur" style="width:44px">s
+             总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s</p>
+          <p><input v-model="newName" placeholder="漫剧名称（留空用主题名）"></p>
+          <p><input v-model="newProtagonist" placeholder="主角姓名（可选）"></p>
+          <p><input type="number" min="300" max="20000" v-model.number="newWordCount"
+                    placeholder="目标字数（可选，默认 8000~12000）" style="width:60%"></p>
+          <p><textarea v-model="newExtraPrompt" rows="3" style="width:90%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px"
+                       placeholder="补充描述（可选）：想加入的情节、元素、风格要求……会拼进生成上下文"></textarea></p>
+          <p><button :disabled="themePreviewing || creating || !newThemeId">
+             {{ themePreviewing ? '生成中…（约 1-3 分钟）' : '✨ 生成正文' }}</button></p>
+        </form>
+        <div v-if="themePreview" class="card" style="margin:8px 0;padding:10px 14px">
+          <h3 style="margin:4px 0">📝 正文预览<span class="muted" style="font-size:12px">（可编辑，确认后创建）</span>
+            <span class="pill">{{ themePreview.length }} 字</span></h3>
+          <textarea v-model="themePreview" rows="12" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px"></textarea>
+          <p style="display:flex;gap:8px;align-items:center">
+            <button @click="createFromTheme" :disabled="creating"
+                    style="background:#16a34a">{{ creating ? '创建中…' : '✔ 确认创建项目' }}</button>
+            <button @click="previewFromTheme" :disabled="themePreviewing"
+                    title="不满意？换一版重新生成（补充描述改了会生效）">🔄 重新生成</button>
+            <button @click="themePreview=''">放弃</button>
+          </p>
+        </div>
+        <form v-else @submit.prevent="createProject">
+          <p><input v-model="newName" placeholder="漫剧名称" required></p>
+          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
+        <p><select v-model="newStyleKey">
+             <option value="">不指定（默认）</option>
+             <optgroup label="通用">
+               <option>动漫</option><option>写实</option>
+               <option>国风仙侠</option><option>3D</option></optgroup>
+             <optgroup label="常规剧情向">
+               <option>剧情PV</option><option>宣传PV</option><option>动画</option>
+               <option>情感PV</option><option>风景PV</option><option>时尚写真</option>
+               <option>短剧PV</option><option>文艺</option><option>科幻</option>
+               <option>古风</option><option>未来科技</option><option>悬疑</option>
+               <option>喜剧</option><option>舞台剧</option></optgroup>
+             <option value="自定义">自定义…</option></select></p>
+        <p v-if="newStyleKey==='自定义'"><input v-model="newStyleText" placeholder="自定义画风描述" style="width:90%"></p>
+        <p class="muted" style="margin:2px 0">段时长<input type="number" min="1" max="15" v-model.number="newSegDur" style="width:44px">s
+           总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s
+           （总时长>0 时拆分镜后按镜数均摊）</p>
+          <p><input type="file" accept=".txt" @change="f => newFile = f.target.files[0]" required></p>
+          <p><button :disabled="creating">{{ creating ? '创建中…' : '创建项目' }}</button></p>
+        </form>
+    </div>
+  </div>
+
   <div v-if="editAssetOpen" @click.self="editAssetOpen=false"
        style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:110;display:flex;align-items:center;justify-content:center">
     <div class="card" style="width:min(720px,92vw)">
