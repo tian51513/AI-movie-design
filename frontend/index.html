@@ -213,7 +213,7 @@
           <button type="button" style="margin-left:4px" @click="newMode='theme'; loadThemes()"
                   :style="newMode==='theme'?'background:#16a34a':''">🎨 主题生成</button>
         </p>
-        <form v-if="newMode==='theme'" @submit.prevent="createFromTheme">
+        <form v-if="newMode==='theme'" @submit.prevent="previewFromTheme">
           <p><select v-model="newThemeId" required>
                <option value="" disabled>选择主题…</option>
                <option v-for="t in themes" :key="t.id" :value="t.id"
@@ -226,9 +226,23 @@
           <p><input v-model="newProtagonist" placeholder="主角姓名（可选）"></p>
           <p><input type="number" min="300" max="20000" v-model.number="newWordCount"
                     placeholder="目标字数（可选，默认 8000~12000）" style="width:60%"></p>
-          <p><button :disabled="creating || !newThemeId">
-             {{ creating ? '生成中…（约 1-3 分钟）' : '✨ 生成并创建' }}</button></p>
+          <p><textarea v-model="newExtraPrompt" rows="3" style="width:90%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px"
+                       placeholder="补充描述（可选）：想加入的情节、元素、风格要求……会拼进生成上下文"></textarea></p>
+          <p><button :disabled="themePreviewing || creating || !newThemeId">
+             {{ themePreviewing ? '生成中…（约 1-3 分钟）' : '✨ 生成正文' }}</button></p>
         </form>
+        <div v-if="themePreview" class="card" style="margin:8px 0;padding:10px 14px">
+          <h3 style="margin:4px 0">📝 正文预览<span class="muted" style="font-size:12px">（可编辑，确认后创建）</span>
+            <span class="pill">{{ themePreview.length }} 字</span></h3>
+          <textarea v-model="themePreview" rows="12" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px"></textarea>
+          <p style="display:flex;gap:8px;align-items:center">
+            <button @click="createFromTheme" :disabled="creating"
+                    style="background:#16a34a">{{ creating ? '创建中…' : '✔ 确认创建项目' }}</button>
+            <button @click="previewFromTheme" :disabled="themePreviewing"
+                    title="不满意？换一版重新生成（补充描述改了会生效）">🔄 重新生成</button>
+            <button @click="themePreview=''">放弃</button>
+          </p>
+        </div>
         <form v-else @submit.prevent="createProject">
           <p><input v-model="newName" placeholder="漫剧名称" required></p>
           <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>

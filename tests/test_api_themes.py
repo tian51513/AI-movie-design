@@ -143,3 +143,61 @@ def test_create_from_theme_word_count_out_of_range_422(app_client, monkeypatch):
         r = c.post("/api/projects/from-theme", json={
             "theme_id": themes[0]["id"], "aspect_ratio": "9:16", "word_count": 50})
         assert r.status_code == 422
+
+
+def test_preview_from_theme_generates_without_creating(app_client, monkeypatch):
+    """两步创建第一步：预览只生成正文不建项目（2026-08-27 需求：用户确认文本再创建）。"""
+    db, c = app_client
+    captured = {}
+
+    class CapLLM(FakeLLM):
+        def raw_chat(self, messages, temperature=0.3):
+            captured["system"] = messages[0]["content"]
+            return super().raw_chat(messages, temperature=temperature)
+    fake = CapLLM(STORY)
+    import comic_studio.web.routes_projects as rp
+    monkeypatch.setattr(rp, "client_for_task", lambda db, task: fake)
+    with c:
+        themes = c.get("/api/themes").json()
+        before = db.connect().execute("SELECT COUNT(*) c FROM projects").fetchone()["c"]
+        r = c.post("/api/projects/from-theme/preview", json={
+            "theme_id": themes[0]["id"], "aspect_ratio": "9:16",
+            "protagonist": "林晨", "word_count": 3000,
+            "extra_prompt": "加入雨天告白情节"})
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["text"].startswith("晨光穿过林间")
+        assert "3000" in captured["system"]  # 字数要求进了 system
+        assert "雨天告白" in fake.last_user  # 用户补充描述进了上下文
+        after = db.connect().execute("SELECT COUNT(*) c FROM projects").fetchone()["c"]
+        assert before == after  # 没建项目
+
+
+def test_create_from_theme_with_confirmed_text_skips_llm(app_client, monkeypatch):
+    """两步创建第二步：带确认/编辑后的 text 直接建项目，不再调 LLM。"""
+    db, c = app_client
+    import comic_studio.web.routes_projects as rp
+
+    class Boom(LLMClient):
+        def __init__(self): super().__init__("http://x", "k", "fake")
+        def raw_chat(self, *a, **k): raise AssertionError("确认文本后不应再调 LLM")
+    monkeypatch.setattr(rp, "client_for_task", lambda db, task: Boom())
+    with c:
+        themes = c.get("/api/themes").json()
+        edited = "用户改过的正文开头。\n\n" + "确认后的内容。" * 40
+        r = c.post("/api/projects/from-theme", json={
+            "theme_id": themes[0]["id"], "aspect_ratio": "9:16",
+            "name": "确认剧", "text": edited})
+        assert r.status_code == 201, r.text
+        from pathlib import Path
+        texts = list((Path(c.app.state.data_dir) / "projects" / "确认剧").rglob("*.txt"))
+        assert texts and texts[0].read_text(encoding="utf-8") == edited
+
+
+def test_create_from_theme_confirmed_text_too_short_422(app_client):
+    _, c = app_client
+    with c:
+        themes = c.get("/api/themes").json()
+        r = c.post("/api/projects/from-theme", json={
+            "theme_id": themes[0]["id"], "text": "太短"})
+        assert r.status_code == 422

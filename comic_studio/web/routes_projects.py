@@ -76,11 +76,8 @@ def delete_project(request: Request, project_id: int):
     return {"deleted": project_id}
 
 
-@router.post("/from-theme", status_code=201)
-def create_from_theme(request: Request, body: dict):
-    """LLM 实时生成项目正文：主题模板 + 可选主角名 → gen_story 路由生成 → 建项目。"""
-    db = request.app.state.db
-    data_dir = request.app.state.data_dir
+def _theme_story_common(db, body) -> tuple:
+    """from-theme 预览/创建共用：校验参数、定位主题。返回 (theme, aspect)。"""
     from ..engine.themes import list_themes
     tid = body.get("theme_id")
     theme = next((t for t in list_themes(db) if t["id"] == tid), None)
@@ -89,7 +86,15 @@ def create_from_theme(request: Request, body: dict):
     aspect = body.get("aspect_ratio") or "9:16"
     if aspect not in ("9:16", "16:9"):
         raise HTTPException(422, "aspect_ratio 只能是 9:16 或 16:9")
+    return theme, aspect
+
+
+def _generate_story_text(db, theme, body) -> str:
+    """按主题生成正文（预览与直建共用）。用户补充描述（extra_prompt）拼进上下文。"""
     protagonist = (body.get("protagonist") or "").strip()
+    extra = (body.get("extra_prompt") or "").strip()
+    if len(extra) > 2000:
+        raise HTTPException(422, f"补充描述过长（{len(extra)} 字，上限 2000）")
     word_count = body.get("word_count")
     if word_count is not None:
         try:
@@ -105,6 +110,8 @@ def create_from_theme(request: Request, body: dict):
     user = (f"主题《{theme['name']}》（{theme['category']}）：{theme['description']}")
     if protagonist:
         user += f"\n主角姓名用「{protagonist}」。"
+    if extra:
+        user += f"\n用户补充要求（务必体现）：{extra}"
     client = client_for_task(db, "gen_story")
     text, _u = client.raw_chat(
         [{"role": "system", "content": system},
@@ -112,6 +119,30 @@ def create_from_theme(request: Request, body: dict):
     text = (text or "").strip()
     if len(text) < 500:
         raise HTTPException(422, f"生成的正文过短（{len(text)} 字），请重试或换主题")
+    return text
+
+
+@router.post("/from-theme/preview")
+def preview_from_theme(request: Request, body: dict):
+    """两步创建第一步（2026-08-27 需求）：只生成正文给用户确认/编辑，不建项目。"""
+    theme, aspect = _theme_story_common(request.app.state.db, body)
+    text = _generate_story_text(request.app.state.db, theme, body)
+    return {"text": text, "name": (body.get("name") or theme["name"])}
+
+
+@router.post("/from-theme", status_code=201)
+def create_from_theme(request: Request, body: dict):
+    """主题建项目。两步流：body 带 text（用户确认/编辑后的正文）则直接建项目不再调 LLM；
+    不带 text 则一步到位生成+创建（兼容旧流程）。"""
+    db = request.app.state.db
+    data_dir = request.app.state.data_dir
+    theme, aspect = _theme_story_common(db, body)
+    text = (body.get("text") or "").strip()
+    if text:
+        if len(text) < 100:
+            raise HTTPException(422, f"正文过短（{len(text)} 字，至少 100 字）")
+    else:
+        text = _generate_story_text(db, theme, body)
     row = create_project(db, data_dir, body.get("name") or theme["name"], aspect,
                          text, style=(body.get("style") or ""),
                          default_shot_duration=float(body.get("default_shot_duration") or 5.0),

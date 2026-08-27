@@ -31,6 +31,7 @@ function data() {
     views: {}, queue: {running:0, pending:0, failed:0, comfy_ok:false},
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '', newWordCount: '',
+    newExtraPrompt: '', themePreview: '', themePreviewing: false,
     newSegDur: 5, newTotalDur: 0,
     settingsTab: 'llm', wfImportFile: null, wfImporting: false, activeShotSeq: 1,
     themesManage: [], themeImportFile: null, themeImporting: false,
@@ -204,6 +205,21 @@ const methods = {
     if (!r.ok) alert(await r.text());
     else { this.themes = []; await this.loadThemesManage(); }
   },
+  async previewFromTheme() {
+    this.themePreviewing = true;
+    try {
+      const resp = await fetch('/api/projects/from-theme/preview', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          theme_id: this.newThemeId, aspect_ratio: this.newRatio,
+          protagonist: this.newProtagonist,
+          word_count: this.newWordCount || undefined,
+          extra_prompt: this.newExtraPrompt || undefined }) });
+      if (!resp.ok) { alert(await resp.text()); }
+      else { this.themePreview = (await resp.json()).text; }
+    } catch (e) { alert('生成失败：' + e); }
+    this.themePreviewing = false;
+  },
   async createFromTheme() {
     this.creating = true;
     try {
@@ -213,11 +229,13 @@ const methods = {
           theme_id: this.newThemeId, aspect_ratio: this.newRatio,
           name: this.newName || undefined, protagonist: this.newProtagonist,
           word_count: this.newWordCount || undefined,
+          extra_prompt: this.newExtraPrompt || undefined,
+          text: this.themePreview || undefined,  // 两步流：确认/编辑后的正文直建，不再调 LLM
           default_shot_duration: this.newSegDur || 5,
           target_duration: this.newTotalDur || 0 }) });
       if (!resp.ok) { alert(await resp.text()); }
       else { this.newName = ''; this.newProtagonist = ''; this.newThemeId = '';
-             this.newWordCount = ''; }
+             this.newWordCount = ''; this.newExtraPrompt = ''; this.themePreview = ''; }
     } catch (e) { alert('生成失败：' + e); }
     this.creating = false;
     await this.refresh();
