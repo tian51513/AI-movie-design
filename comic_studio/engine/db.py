@@ -137,6 +137,8 @@ MIGRATIONS: list[str] = [
     """ALTER TABLE jobs ADD COLUMN snapshot_json TEXT NOT NULL DEFAULT '';""",
     """ALTER TABLE llm_calls ADD COLUMN prompt_text TEXT NOT NULL DEFAULT '';""",
     """ALTER TABLE llm_calls ADD COLUMN reply_text TEXT NOT NULL DEFAULT '';""",
+    # 25 P7-E 多章节：章节结构（[{idx,title,start,end}] 字符偏移），拆分镜可按章范围
+    """ALTER TABLE projects ADD COLUMN chapters_json TEXT NOT NULL DEFAULT '';""",
 ]
 
 

@@ -186,7 +186,7 @@ def auto_bind_characters(db, project_id):
 
 
 def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2000,
-                      target_count=None):
+                      target_count=None, chapter_range=None):
     """max_chars=2000：按上下文容量实证取值（2026-08-27 job 582 真机教训：
     8127 字块输出撞 Ollama 16384 num_ctx 硬截断；最密拆解 6.28 completion tok/输入字
     + prompt 0.82 tok/字 + ~350 开销 → 块 ≤ ~2100 字才稳妥）。
@@ -199,6 +199,10 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2
         raise ValueError(f"项目不存在: {project_id}")
     from ..paths import data_to_abs
     text = data_to_abs(data_dir, proj["novel_path"]).read_text(encoding="utf-8")
+    # P7-E 按章范围拆分：只吃选定章的文本（无章节结构/无范围 → 全文）
+    from ..chapters import parse_chapters, slice_chapters
+    if chapter_range:
+        text = slice_chapters(text, parse_chapters(text), tuple(chapter_range))
     _content_guard(text)
     chunks = split_chunks(text, max_chars=max_chars)
     # 配额分配：按字数占比 round，最后一块兜底补齐/削减到总数

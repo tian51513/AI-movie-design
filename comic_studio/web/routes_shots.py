@@ -88,6 +88,15 @@ def start_split(request: Request, project_id: int, body: dict | None = Body(defa
     payload = {"project_id": project_id}
     if target:
         payload["target_count"] = target
+    cf, ct = body.get("chapter_from"), body.get("chapter_to")
+    if cf is not None or ct is not None:
+        try:
+            cf, ct = int(cf or 1), int(ct or cf or 1)
+        except (TypeError, ValueError):
+            raise HTTPException(422, "chapter_from/chapter_to 需为整数章号")
+        if cf < 1 or ct < cf:
+            raise HTTPException(422, "章节范围非法（需 1 ≤ from ≤ to）")
+        payload["chapter_range"] = [cf, ct]
     jid = enqueue_llm_job(db, "split_storyboards", project_id=project_id,
                           payload=payload)
     return {"job_id": jid}
@@ -301,6 +310,17 @@ def render_batch(request: Request, project_id: int):
 @router.post("/api/projects/{project_id}/gate3")
 def gate3(request: Request, project_id: int):
     return _gate_resp(request, project_id, 3)
+
+
+@router.get("/api/projects/{project_id}/chapters")
+def chapters_listing(request: Request, project_id: int):
+    """P7-E：章节结构（创建时正则识别，供拆分镜按章选择）。"""
+    proj = get_project(request.app.state.db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    chapters = json.loads(proj["chapters_json"] or "[]") if "chapters_json" in proj.keys() else []
+    return [{"idx": c["idx"], "title": c["title"], "chars": c["end"] - c["start"]}
+            for c in chapters]
 
 
 @router.get("/api/jobs/{job_id}/snapshot")

@@ -58,6 +58,7 @@ function data() {
       optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文' },
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     splitTargetCount: null, shotSel: [], editingProject: false,
+    chapters: [], splitChFrom: null, splitChTo: null, splitAllChapters: true,
     paramsOpen: false, merges: [],
   };
 }
@@ -282,6 +283,14 @@ const methods = {
     if (!this.editingProject) {
       this.project = await (await fetch(`/api/projects/${this.project.id}`)).json();
     }
+    // P7-E 章节结构（有章节才显示章节选择；默认全选范围）
+    try {
+      this.chapters = await (await fetch(`/api/projects/${this.project.id}/chapters`)).json();
+      if (this.chapters && !this.splitChFrom) {
+        this.splitChFrom = this.chapters[0]?.idx ?? null;
+        this.splitChTo = this.chapters[this.chapters.length - 1]?.idx ?? null;
+      }
+    } catch (e) { this.chapters = []; }
     this.assets = await (await fetch(`/api/projects/${this.project.id}/assets`)).json();
     this.views = {}; (await Promise.all(this.assets.map(async a => [a.id, await (await fetch(`/api/assets/${a.id}/views`)).json()]))).forEach(([k,v]) => this.views[k]=v);
     const s = await fetch(`/api/projects/${this.project.id}/analyze/status`);
@@ -620,8 +629,15 @@ const methods = {
   },
   async startSplit() {
     if (this.shots.length && !confirm('已存在分镜，重新拆解将覆盖（提示词会丢失）。继续？')) return;
-    // 分镜数可选：填了按全文目标数分配各块配额，不填自动拆分
-    const body = this.splitTargetCount ? JSON.stringify({target_count: this.splitTargetCount}) : null;
+    // 分镜数可选：填了按全文目标数分配各块配额，不填自动拆分；
+    // 章节范围：勾"全部章"不传（=全文），否则按 from–to 切片（P7-E）
+    const payload = {};
+    if (this.splitTargetCount) payload.target_count = this.splitTargetCount;
+    if (this.chapters.length && !this.splitAllChapters && this.splitChFrom && this.splitChTo) {
+      payload.chapter_from = Math.min(this.splitChFrom, this.splitChTo);
+      payload.chapter_to = Math.max(this.splitChFrom, this.splitChTo);
+    }
+    const body = Object.keys(payload).length ? JSON.stringify(payload) : null;
     const r = await fetch(`/api/projects/${this.project.id}/split-storyboards`,
       {method:'POST', headers: body ? {'Content-Type': 'application/json'} : undefined, body});
     if (!r.ok) { alert(await r.text()); return; }

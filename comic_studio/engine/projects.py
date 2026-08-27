@@ -1,5 +1,6 @@
 # comic_studio/engine/projects.py
 """项目仓库（spec §4.1 projects/<slug>/ 目录 + projects 表）。"""
+import json
 import re
 import sqlite3
 from pathlib import Path
@@ -33,9 +34,11 @@ def create_project(db: Database, data_dir: Path, name: str,
     project_dir.mkdir(parents=True, exist_ok=True)
     novel_path = project_dir / "novel.txt"
     novel_path.write_text(novel_text, encoding="utf-8")
+    from .chapters import parse_chapters
+    chapters_json = json.dumps(parse_chapters(novel_text), ensure_ascii=False)
     conn.execute(
-        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, style_vis, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), style_vis.strip(), video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration))
+        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, style_vis, chapters_json, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), style_vis.strip(), chapters_json, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration))
     conn.commit()
     return get_project(db, conn.execute("SELECT last_insert_rowid() id").fetchone()["id"])
 

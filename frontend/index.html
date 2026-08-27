@@ -394,6 +394,16 @@
         <input type="number" v-model.number="splitTargetCount" min="1" placeholder="自动"
                style="width:60px;font-size:12px;padding:2px 4px;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;text-align:center"
                title="留空=LLM 自动拆分；填数字=按全文目标数分配各块配额"></label>
+      <template v-if="chapters.length">
+        <label class="muted" style="font-size:12px;margin-left:6px" title="按章节范围拆分镜（整本长篇时逐章出片）">章节
+          <select v-model.number="splitChFrom" style="font-size:12px;padding:2px 4px">
+            <option v-for="c in chapters" :key="'f'+c.idx" :value="c.idx">{{ c.idx }}.{{ c.title || '未命名' }}</option>
+          </select> –
+          <select v-model.number="splitChTo" style="font-size:12px;padding:2px 4px">
+            <option v-for="c in chapters" :key="'t'+c.idx" :value="c.idx">{{ c.idx }}.{{ c.title || '未命名' }}</option>
+          </select></label>
+        <label class="muted" style="font-size:12px" title="不勾选=按上面章节范围拆"><input type="checkbox" v-model="splitAllChapters"> 全部章</label>
+      </template>
       <span class="muted" v-if="splitRunning">正在拆解分镜，请稍候…</span>
     </p>
     <p v-if="shots.length" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
