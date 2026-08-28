@@ -201,3 +201,12 @@ def test_create_from_theme_confirmed_text_too_short_422(app_client):
         r = c.post("/api/projects/from-theme", json={
             "theme_id": themes[0]["id"], "text": "太短"})
         assert r.status_code == 422
+
+
+def test_gen_story_system_contains_drama_craft(app_client):
+    """P7-I 第三批编剧层（借鉴短剧厂）：钩子/情绪流变/断章/语速公式入 system。"""
+    import comic_studio.web.routes_projects as rp
+    s = rp.GEN_STORY_SYSTEM
+    for token in ("黄金开头", "钩子", "情绪流变", "断章卡点", "3.5~4.5 字/秒",
+                  "12~18 字", "反向灌输"):
+        assert token in s, token
