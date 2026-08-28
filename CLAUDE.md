@@ -102,3 +102,11 @@
 - `engine/storyboard_checks.py` — 拆解后机械审计（时长守恒/画面换挡>30s/台词>25字，warn 不拦截）；`engine/textfix.py` — 敏感词机械转译（gen_story）
 - `engine/logbus.py` — 首拉（after=0）最新 N 条倒序；前端日志轮询整体兜底防猝死
 - prompts 借鉴第一批（XiaoLuo/短剧厂）：反代词具名/可拍摄性约束/分级英文运镜标签入 system；heal 增加 Meta 词剥离+结尾后缀「无字幕，无背景音乐」；截断→压缩输出反馈重试
+
+## 模块地图（P7 收官 2026-08-29）
+
+- `engine/director_mix.py` — P7-J 整片混音：帧数轴 spans TTS 音轨替换（有台词镜换配音/无台词镜留原声切片）+ SRT 烧录；`subtitles.generate_srt(spans=)`；comfy.director_mix 开关
+- `engine/director.py` 扩展 — P7-H 批间首帧接力（上批末帧→genImage 起始画面槽，开关 director_batch_relay）；画布按项目兆像素档（×32 ceil 对齐）
+- `routes_projects.GEN_STORY_SYSTEM` — P7-I 短剧结构规范（钩子/情绪流变/断章/语速公式/微表情/禁反向灌输）
+- jobs.cancel_project_jobs + POST stop-jobs — ⏹ 项目级停止；genref 道具/场景双重禁人物（道具产品静物框架）
+- 注意：快车道画布/性能开关（清显存/源帧/接力/混音）全部在 settings comfy.* 可调；gen_director 单 job 多批提交
