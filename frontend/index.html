@@ -135,7 +135,12 @@
          <option v-for="t in templatesOfType('director')" :key="t.id" :value="t.id"
                  :title="t.id">{{ t.name }}</option>
        </select>
-       <span class="muted">🚄 整段快车道用（从视频展示工作流抽离；段间 latent 连贯）</span></p>
+       <span class="muted">🚄 整段快车道用（从视频展示工作流抽离；段间 latent 连贯）</span>
+       <label class="muted" style="margin-left:10px;font-size:12px"
+              title="段间清显存+重预热每镜多几十秒；12GB 专跑默认关，OOM 时打开"><input
+              type="checkbox" v-model="settingsForm.comfy.director_clear_vram"> 段间清显存</label>
+       <label class="muted" style="font-size:12px"><input
+              type="checkbox" v-model="settingsForm.comfy.director_export_source"> 导出源帧图</label></p>
        <label class="muted" style="margin-left:8px">文生视频模板：</label>
        <select v-model="settingsForm.t2vTm" style="width:280px">
          <option v-for="t in templatesOfType('t2v')" :key="t.id" :value="t.id">{{ t.name }}</option>

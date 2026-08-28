@@ -149,7 +149,8 @@ def handle_gen_director(db, data_dir, job, comfy):
     if not shots:
         raise ValueError("无生效分镜")
     tmpl = resolve_template(db, "director")
-    budget = int((get_setting(db, "comfy") or {}).get("director_batch_frames") or 512)
+    comfy_cfg = get_setting(db, "comfy") or {}
+    budget = int(comfy_cfg.get("director_batch_frames") or 512)
     batches = _batch_shots(shots, budget)
     upload_by_path: dict[str, str] = {}
     parts_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/director_parts")
@@ -165,6 +166,12 @@ def handle_gen_director(db, data_dir, job, comfy):
             _start += seg["frameCount"]
         timeline = _timeline_shell(proj, segments)
         wf = tmpl.api_json()
+        # 性能开关（设置页可调，引擎注入覆盖模板值）：段间清显存/源帧导出
+        dir_node = tmpl.inject_params["timeline_data"].node
+        wf[dir_node]["inputs"]["clear_vram_between_segments"] = bool(
+            comfy_cfg.get("director_clear_vram"))
+        wf[dir_node]["inputs"]["export_source_images"] = bool(
+            comfy_cfg.get("director_export_source"))
         for key, value in {"timeline_data": json.dumps(timeline, ensure_ascii=False),
                            "seed": random.randint(0, 2**31 - 1)}.items():
             ip = tmpl.inject_params.get(key)

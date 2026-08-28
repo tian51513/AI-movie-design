@@ -174,3 +174,44 @@ def test_gen_director_batches_by_frame_budget(tmp_path, monkeypatch):
     assert get_project(db, pid)["stage"] == "merged"
     out = list((tmp_path / "data" / "projects" / "导演剧" / "output").glob("ep*.mp4"))
     assert out
+
+
+def test_gen_director_switches_from_settings(tmp_path, monkeypatch):
+    """段间清显存/源帧导出走设置开关（2026-08-28 需求），引擎注入覆盖模板值。"""
+    from pathlib import Path
+    from comic_studio.engine import director as D
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comfy_mock import comfy_server
+    db, pid, chars = _setup(tmp_path)
+    persist_shots(db, pid, [
+        _shot("推门", "林晨推门。", 5.0,
+              ledger={"assets": {"characters": [chars["林晨"]]}},
+              character_ids=[chars["林晨"]])])
+    set_stage(db, pid, "storyboard_ready")
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"director": "h3_director"})
+    set_setting(db, "comfy", {"base_url": "http://x:8188", "min_free_vram_gb": 0,
+                              "director_clear_vram": True, "director_export_source": True})
+    jid = enqueue_job(db, "gen_director", project_id=pid, resource="gpu_comfy",
+                      payload={"project_id": pid})
+    with comfy_server("ok", video=True) as m:
+        D.handle_gen_director(db, tmp_path / "data", get_job(db, jid),
+                              ComfyClient(m.base_url))
+        n = m.prompts[0]["prompt"]["12"]["inputs"]
+        assert n["clear_vram_between_segments"] is True   # 设置开 → 注入 True
+        assert n["export_source_images"] is True
+    # 不设（默认关）→ 注入 False
+    set_setting(db, "comfy", {"base_url": "http://x:8188", "min_free_vram_gb": 0})
+    set_stage(db, pid, "storyboard_ready")
+    jid2 = enqueue_job(db, "gen_director", project_id=pid, resource="gpu_comfy",
+                       payload={"project_id": pid})
+    with comfy_server("ok", video=True) as m2:
+        D.handle_gen_director(db, tmp_path / "data", get_job(db, jid2),
+                              ComfyClient(m2.base_url))
+        n2 = m2.prompts[0]["prompt"]["12"]["inputs"]
+        assert n2["clear_vram_between_segments"] is False
+        assert n2["export_source_images"] is False

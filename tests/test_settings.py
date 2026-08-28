@@ -55,4 +55,6 @@ def test_comfy_setting_default(tmp_path):
     # min_free_vram_gb：LLM 让位后的显存门槛（2026-08-28，12GB 共享决策）
     assert get_setting(db, "comfy") == {"base_url": "http://127.0.0.1:8188",
                                         "min_free_vram_gb": 8,
-                                        "director_batch_frames": 512}
+                                        "director_batch_frames": 512,
+                                        "director_clear_vram": False,
+                                        "director_export_source": False}
