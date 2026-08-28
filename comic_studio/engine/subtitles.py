@@ -21,35 +21,42 @@ def _fmt_srt_time(seconds: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
-def generate_srt(db, data_dir, project_id) -> Path:
+def generate_srt(db, data_dir, project_id, spans=None) -> Path:
     """为项目所有含台词的分镜生成 SRT 字幕文件。
-    产出 projects/<slug>/output/subtitles.srt"""
+    产出 projects/<slug>/output/subtitles.srt
+    spans：快车道帧数轴（[(seq, start_sec, dur_sec)]，2026-08-29 混音需求——
+    导演台实际时长=帧数/24，与 duration 有对齐漂移且累计；不传则按 duration）。"""
     proj = get_project(db, project_id)
     if proj is None:
         raise ValueError(f"项目不存在: {project_id}")
 
     shots = list_shots(db, project_id)
+    span_map = {s[0]: (s[1], s[2]) for s in spans} if spans else None
     entries = []  # [(start, end, speaker, line)]
     timeline = 0.0  # 当前时间轴位置（秒）
 
     for shot in shots:
         ledger = json.loads(shot["ledger_json"] or "{}")
         dialogue = ledger.get("dialogue") or []
-        duration = float(shot["duration"] or 5.0)
+        if span_map is not None and shot["seq"] in span_map:
+            start_base, duration = span_map[shot["seq"]]
+        else:
+            start_base, duration = timeline, float(shot["duration"] or 5.0)
 
         if dialogue:
             # 镜内多句均分时长
             n = len(dialogue)
             per = duration / n
             for i, d in enumerate(dialogue):
-                start = timeline + i * per
-                end = timeline + (i + 1) * per
+                start = start_base + i * per
+                end = start_base + (i + 1) * per
                 line = d.get("line", "").strip()
                 speaker = d.get("speaker", "")
                 if line:
                     entries.append((start, end, speaker, line))
 
-        timeline += duration
+        if span_map is None:
+            timeline += duration
 
     # 写 SRT
     out_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/output")

@@ -43,3 +43,26 @@ def test_no_dialogue_empty_srt(tmp_path):
     from comic_studio.engine.subtitles import generate_srt
     srt_path = generate_srt(db, tmp_path / "data", pid)
     assert srt_path.read_text(encoding="utf-8").strip() == ""
+
+
+def test_generate_srt_accepts_frame_spans(tmp_path):
+    """快车道混音（2026-08-29）：导演台实际时长=帧数/24（对齐后 5s→5.167s），
+    与 duration 漂移累计——SRT 必须能用外部 spans（(seq,start,dur) 列表）。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.shots import persist_shots
+    from comic_studio.engine.subtitles import generate_srt
+    from types import SimpleNamespace as NS
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "跨度剧", "9:16", "t")["id"]
+    persist_shots(db, pid, [
+        NS(text_span="", description="a", shot_type="", camera={}, duration=5.0,
+           workflow_type="ref2va", ledger={"dialogue": [{"speaker": "甲", "line": "你好"}]},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None),
+        NS(text_span="", description="b", shot_type="", camera={}, duration=5.0,
+           workflow_type="ref2va", ledger={}, character_ids=[], scene_ids=[],
+           prop_ids=[], depends_on=None)])
+    spans = [(1, 0.0, 124 / 24), (2, 124 / 24, 107 / 24)]  # 帧数轴
+    srt = generate_srt(db, tmp_path / "data", pid, spans=spans)
+    text = srt.read_text(encoding="utf-8")
+    assert "00:00:00,000 --> 00:00:05,166" in text  # 镜1 帧数时长（124/24）

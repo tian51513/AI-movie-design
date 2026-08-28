@@ -31,6 +31,7 @@ class ComfyConfig(BaseModel):
     director_clear_vram: bool = False
     director_export_source: bool = False
     director_batch_relay: bool = True  # P7-H 批间首帧接力
+    director_mix: bool = True  # P7-J 整片混音（TTS+字幕）
 
 
 TEMPLATE_MAP_KEYS = {"character_views", "t2i", "ref2va", "fl2v", "t2v", "i2v",

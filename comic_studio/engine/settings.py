@@ -38,7 +38,9 @@ DEFAULT_SETTINGS = {
               "director_clear_vram": False, "director_export_source": False,
               # P7-H 批间首帧接力（2026-08-29）：上批末帧作下批首段起始画面，
               # 介于批内 latent 连贯与硬切之间；失败自动退化为硬切
-              "director_batch_relay": True},
+              "director_batch_relay": True,
+              # P7-J 整片混音：TTS 配音（有台词镜）+ SRT 烧录；失败退化纯画面
+              "director_mix": True},
     # 工作流模型槽位覆盖（计划5B 任务6）：{模板 id: {label: 文件名}}
     "model_overrides": {},
 }

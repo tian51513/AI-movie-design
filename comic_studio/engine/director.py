@@ -164,9 +164,12 @@ def handle_gen_director(db, data_dir, job, comfy):
     comfy_cfg = get_setting(db, "comfy") or {}
     budget = int(comfy_cfg.get("director_batch_frames") or 512)
     batch_relay = comfy_cfg.get("director_batch_relay", True)  # P7-H 手动开关（默认开）
+    fps_hint = 24.0
     batches = _batch_shots(shots, budget)
     upload_by_path: dict[str, str] = {}
     _relay_name = ""  # 上批末帧上传名（P7-H 批间首帧接力）
+    shot_spans = []   # (seq, start_sec, dur_sec) 帧数轴（P7-J 混音时间基准）
+    _base_frames = 0
     parts_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/director_parts")
     parts_dir.mkdir(parents=True, exist_ok=True)
     parts = []
@@ -188,6 +191,11 @@ def handle_gen_director(db, data_dir, job, comfy):
             seg["start"] = _start
             _start += seg["frameCount"]
         timeline = _timeline_shell(proj, segments)
+        for seg in segments:  # 帧数轴累计（跨批连续）
+            shot_spans.append((int(seg["id"].rsplit("-", 1)[1]),
+                               (_base_frames + seg["start"]) / fps_hint,
+                               seg["frameCount"] / fps_hint))
+        _base_frames += timeline["totalFrames"]
         wf = tmpl.api_json()
         # 性能开关（设置页可调，引擎注入覆盖模板值）：段间清显存/源帧导出
         dir_node = tmpl.inject_params["timeline_data"].node
@@ -244,6 +252,37 @@ def handle_gen_director(db, data_dir, job, comfy):
         from . import merge
         merge.concat(parts, dest)
     rel = f"projects/{proj['slug']}/output/ep{n:03d}.mp4"
+    # P7-J 整片混音（开关默认开，失败退化为纯画面不阻塞）：
+    # TTS 逐镜生成 → 帧数轴重建音轨（有台词镜换配音/无台词镜留原声）→ 烧 SRT
+    if comfy_cfg.get("director_mix", True):
+        try:
+            from .tts import generate_dialogue_audio
+            from .paths import data_to_abs as _dta
+            tts_shots = generate_dialogue_audio(db, data_dir, pid) or []
+            tts_by_seq = {t["seq"] for t in tts_shots}
+            if tts_by_seq:
+                from .director_mix import mix_director_audio
+                spans = [(seq, st, du,
+                          _dta(data_dir, f"projects/{proj['slug']}/shots/{seq}/dialogue.mp3")
+                          if seq in tts_by_seq and _dta(data_dir,
+                              f"projects/{proj['slug']}/shots/{seq}/dialogue.mp3").exists()
+                          else None)
+                         for seq, st, du in shot_spans]
+                mixed = mix_director_audio(dest, spans, dest.with_suffix(".mix.mp4"))
+                if mixed != dest:
+                    mixed.replace(dest)
+            from .subtitles import generate_srt
+            srt = generate_srt(db, data_dir, pid, spans=shot_spans)
+            if srt.exists() and srt.stat().st_size > 20:
+                from .merge import _burn_subtitles
+                _burn_subtitles(dest, srt)
+            emit_log(db, "comfy", "info",
+                     f"导演台整片混音完成（{len(tts_by_seq)} 镜配音+字幕烧录）",
+                     project_id=pid, job_id=job["id"])
+        except Exception as exc:
+            emit_log(db, "comfy", "warn",
+                     f"整片混音失败（成片保留纯画面）：{exc}",
+                     project_id=pid, job_id=job["id"])
     for s in list_shots(db, pid):
         if not s["disabled"]:
             update_shot(db, s["id"], {"status": "rendered", "video_path": rel})
