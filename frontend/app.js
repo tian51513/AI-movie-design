@@ -36,7 +36,7 @@ function data() {
     newName: '', newRatio: '9:16', newFile: null, creating: false,
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '', newWordCount: '',
     newExtraPrompt: '', themePreview: '', themePreviewing: false,
-    createOpen: false, projPage: 1, projPageSize: 12,
+    createOpen: false, projPage: 1, projPageSize: 12, comicFiles: [], describing: false,
     projectsView: (() => { try { return localStorage.getItem('cs.projectsView') || 'grid'; } catch (e) { return 'grid'; } })(),
     newSegDur: 5, newTotalDur: 0,
     settingsTab: 'llm', wfImportFile: null, wfImporting: false, activeShotSeq: 1,
@@ -689,6 +689,27 @@ const methods = {
     const r = await fetch(`/api/projects/${this.project.id}/render-director`, {method: 'POST'});
     if (!r.ok) { alert(await r.text()); return; }
     alert('已入队——整段渲染耗时较长，详情页日志可跟踪');
+  },
+  async createFromComic() {
+    if (!this.comicFiles.length) return;
+    this.creating = true;
+    const fd = new FormData();
+    fd.append('name', this.newName || `漫画${this.comicFiles.length}页`);
+    fd.append('aspect_ratio', this.newRatio);
+    this.comicFiles.sort((a, b) => a.name.localeCompare(b.name, 'zh'))
+      .forEach(f => fd.append('images', f, f.name));
+    const resp = await fetch('/api/projects/from-comic', { method: 'POST', body: fd });
+    this.creating = false;
+    if (!resp.ok) { alert(await resp.text()); return; }
+    this.newName = ''; this.comicFiles = []; this.createOpen = false;
+    await this.refresh();
+  },
+  async describeShots() {
+    if (!confirm('VLM 读图生成全部缺失提示词？（本地视觉模型逐镜调用，页多较慢）')) return;
+    const r = await fetch(`/api/projects/${this.project.id}/describe-shots`, {method: 'POST'});
+    if (!r.ok) { alert(await r.text()); return; }
+    this.describing = true;
+    setTimeout(() => { this.describing = false; this.loadShots(); }, 3000);  // 简易轮询：稍后刷新
   },
   async batchShots(action) {
     const ids = this.shotSel;

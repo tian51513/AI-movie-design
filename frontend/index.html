@@ -447,6 +447,10 @@
       <button @click="generateTts" style="font-size:12px;padding:3px 8px"
               title="从台词生成 TTS 配音 + SRT 字幕（合成时自动混入）">🎙 生成配音</button>
       <button @click="autoBind" title="扫描描述文本自动补绑提到的角色" style="font-size:12px;padding:3px 8px">🔗 补绑角色</button>
+      <button @click="describeShots" :disabled="describing"
+              title="P8 漫画项目：VLM 读首/尾帧自动生成缺失的视频提示词"
+              style="font-size:12px;padding:3px 8px;background:#0e7490">
+        {{ describing ? '读图中…' : '👁 读图生成提示词' }}</button>
       <template v-if="shotSel.length">
         <span class="pill" style="border:1px solid #f59e0b;color:#f59e0b">已选 {{ shotSel.length }}</span>
         <button @click="batchShots('disable')" style="font-size:12px;padding:3px 8px;background:#7c3aed"
@@ -596,7 +600,19 @@
                   :style="newMode==='upload'?'background:#16a34a':''">📎 上传小说</button>
           <button type="button" style="margin-left:4px" @click="newMode='theme'; loadThemes()"
                   :style="newMode==='theme'?'background:#16a34a':''">🎨 主题生成</button>
+          <button type="button" style="margin-left:4px" @click="newMode='comic'"
+                  :style="newMode==='comic'?'background:#16a34a':''">🖼 漫画导入</button>
         </p>
+        <form v-if="newMode==='comic'" @submit.prevent="createFromComic">
+          <p><input v-model="newName" placeholder="漫剧名称" required></p>
+          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
+          <p><input type="file" accept="image/*" multiple required @change="f => comicFiles = [...f.target.files]"
+                    style="width:90%"
+                    title="按页序多选（每图一镜：本页=首帧、下页=尾帧，fl2v 翻页过渡）"></p>
+          <p class="muted" style="font-size:12px">已选 {{ comicFiles.length }} 页（一图一镜，多格页暂按整页处理）</p>
+          <p><button :disabled="creating || !comicFiles.length">
+             {{ creating ? '创建中…' : '🖼 导入漫画' }}</button></p>
+        </form>
         <form v-if="newMode==='theme'" @submit.prevent="previewFromTheme">
           <p><select v-model="newThemeId" required>
                <option value="" disabled>选择主题…</option>

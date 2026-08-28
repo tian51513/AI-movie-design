@@ -142,6 +142,52 @@ def _generate_story_text(db, theme, body) -> str:
     return text
 
 
+@router.post("/from-comic", status_code=201)
+def create_from_comic(request: Request,
+                      name: str = Form(...), aspect_ratio: str = Form("9:16"),
+                      images: list[UploadFile] = File(...)):
+    """P8 漫画导入：每图一镜（fl2v 翻页链），直达分镜就绪等提示词。"""
+    blobs = []
+    for f in images:
+        data = f.file.read()
+        if len(data) > 20 * 1024 * 1024:
+            raise HTTPException(422, f"{f.filename} 超过 20MB 上限")
+        blobs.append((f.filename or "page.png", data))
+    try:
+        from ..engine.comic import import_comic
+        proj = import_comic(request.app.state.db, request.app.state.data_dir,
+                            name, aspect_ratio, blobs)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    return _public(proj)
+
+
+@router.post("/{project_id}/describe-shots", status_code=202)
+def describe_shots_route(project_id: int, request: Request):
+    """P8 VLM 读图生成提示词（后台任务，逐镜多模态调用）。"""
+    db = request.app.state.db
+    from ..engine.projects import get_project
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    from ..engine.comic import describe_shots as _describe
+    from ..engine.llm.provider import client_for_task
+    data_dir = request.app.state.data_dir
+
+    def _run():
+        try:
+            client = client_for_task(db, "gen_video_prompt")  # 视觉提示词共用该路由
+            _describe(db, data_dir, project_id, client)
+        except Exception as exc:
+            emit_log(db, "llm", "error", f"VLM 读图失败：{exc}", project_id=project_id)
+
+    from fastapi import BackgroundTasks
+    # BackgroundTasks 需在签名里——这里直接起线程更省事
+    import threading
+    threading.Thread(target=_run, daemon=True).start()
+    return {"status": "started"}
+
+
 @router.post("/from-theme/preview")
 def preview_from_theme(request: Request, body: dict):
     """两步创建第一步（2026-08-27 需求）：只生成正文给用户确认/编辑，不建项目。"""
