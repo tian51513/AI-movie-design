@@ -74,8 +74,8 @@ def test_build_timeline_from_shots(tmp_path):
     assert all(u["name"].startswith("cs__") for u in uploads)
     assert all(r["imageFile"] in {u["name"] for u in uploads}
                for s in segs for r in s["refs"])
-    # 画布 9:16（×32 对齐）与导出模式
-    assert tl["width"] == 608 and tl["height"] == 1056
+    # 画布 9:16 按项目 0.4MP 档（×32 对齐 ceil，2026-08-28 跟随预设）
+    assert tl["width"] == 480 and tl["height"] == 864
     assert tl["output"]["exportMode"] == "all"
     assert tl["output"]["continuityEnabled"] is True
     # prompt 原样进段
@@ -87,7 +87,7 @@ def test_build_timeline_16_9_canvas(tmp_path):
     db, pid, chars = _setup(tmp_path, aspect="16:9")
     persist_shots(db, pid, [_shot("x", "p", 5.0)])
     tl, _ = build_timeline(db, tmp_path / "data", pid)
-    assert tl["width"] == 1056 and tl["height"] == 608
+    assert tl["width"] == 864 and tl["height"] == 480
 
 
 def test_handle_gen_director_end_to_end(tmp_path, monkeypatch):
@@ -215,3 +215,22 @@ def test_gen_director_switches_from_settings(tmp_path, monkeypatch):
         n2 = m2.prompts[0]["prompt"]["12"]["inputs"]
         assert n2["clear_vram_between_segments"] is False
         assert n2["export_source_images"] is False
+
+
+def test_canvas_follows_project_megapixels(tmp_path):
+    """快车道画布按项目兆像素档（2026-08-28 需求）：×32 对齐、按画幅取比。"""
+    from comic_studio.engine.director import build_timeline
+    from comic_studio.engine.projects import get_project
+    db, pid, chars = _setup(tmp_path)  # 默认 0.4MP 9:16
+    persist_shots(db, pid, [_shot("x", "p", 5.0)])
+    tl, _ = build_timeline(db, tmp_path / "data", pid)
+    assert tl["width"] == 480 and tl["height"] == 864   # 0.4MP @9:16（0.415MP 实际）
+    assert tl["width"] % 32 == 0 and tl["height"] % 32 == 0
+    assert tl["refMaxSize"] == 864
+    # 调高兆像素 → 画布变大
+    conn = db.connect()
+    conn.execute("UPDATE projects SET video_megapixels=? WHERE id=?", (0.8, pid))
+    conn.commit()
+    tl2, _ = build_timeline(db, tmp_path / "data", pid)
+    assert tl2["width"] * tl2["height"] > tl["width"] * tl["height"]
+    assert tl2["width"] % 32 == 0 and tl2["height"] % 32 == 0

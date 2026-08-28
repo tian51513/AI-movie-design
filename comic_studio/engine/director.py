@@ -24,9 +24,19 @@ def _align_frames(n: int) -> int:
     return n
 
 
-def _canvas(aspect: str) -> tuple[int, int]:
-    """×32 对齐画布（用户实测模板值：9:16 → 608×1056）。"""
-    return (608, 1056) if aspect == "9:16" else (1056, 608)
+def _align32(v: float) -> int:
+    import math
+    return max(32, math.ceil(v / 32) * 32)  # ceil：不低于目标像素档
+
+
+def _canvas(aspect: str, megapixels: float = 0.4) -> tuple[int, int]:
+    """按项目兆像素档计算 ×32 对齐画布（2026-08-28 需求：跟随项目预设；
+    此前固定 608×1056=0.64MP，比逐镜 0.4MP 档多耗 ~25% 采样）。"""
+    mp = max(0.1, float(megapixels or 0.4)) * 1e6
+    r = 9 / 16 if aspect == "9:16" else 16 / 9  # w/h
+    w = (mp * r) ** 0.5
+    h = w / r
+    return _align32(w), _align32(h)
 
 
 def _segments_for_shots(db, data_dir, proj, shots, upload_by_path, fps=24):
@@ -66,7 +76,9 @@ def _segments_for_shots(db, data_dir, proj, shots, upload_by_path, fps=24):
 
 
 def _timeline_shell(proj, segments, fps=24):
-    width, height = _canvas(proj["aspect_ratio"])
+    width, height = _canvas(proj["aspect_ratio"],
+                            float(proj["video_megapixels"] or 0.4)
+                            if "video_megapixels" in proj.keys() else 0.4)
     total = sum(s["frameCount"] for s in segments)
     return {
         "version": 5, "editMode": "segment",
