@@ -592,10 +592,13 @@ const methods = {
         this.queue = await (await fetch(`/api/projects/${this.project.id}/queue`)).json();
         const dj = (this.queue.jobs || []).find(j => j.type === 'gen_director');
         if (dj) {
-          if (dj.status === 'failed' && this._dirStatus !== 'failed') {
+          // 只在「页面打开期间发生的新失败」弹窗——首次观测到的旧失败（如刷新前
+          // 的 job 721）不弹，避免打开页面就被历史错误轰炸
+          const prev = this._dirStatus;
+          this._dirStatus = dj.status;
+          if (dj.status === 'failed' && prev && prev !== 'failed') {
             alert('🚄 整段快车道失败：' + (dj.error || '详见日志'));
           }
-          this._dirStatus = dj.status;
         }
         const done = this.queue.jobs.filter(j => j.status === 'done').length;
         const busy = this.queue.running > 0 || this.queue.pending > 0;
