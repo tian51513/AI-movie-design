@@ -373,3 +373,18 @@ def test_gen_ref_attaches_audit_snapshot(tmp_path, monkeypatch):
     snap = _json.loads(get_job(db, jid)["snapshot_json"])
     assert "萧炎" in snap["prompt"] and snap["template"] == "t_t2i_test"
     assert snap["workflow"]["6"]["inputs"]["text"] == snap["prompt"]
+
+
+def test_prop_scene_forbid_persons_double():
+    """2026-08-28 真机：道具重试数次仍含人物（旧 suffix 零禁令）、场景多次后
+    勉强达标——强禁令双重强调（suffix+尾缀），道具再叠加「产品静物摄影」框架
+    压制人物先验。"""
+    from comic_studio.engine.genref import build_gen_prompt
+    row = {"kind": "prop", "name": "眼镜", "source_project": 1, "id": 3,
+           "appearance_json": '{"detail":"金丝圆框眼镜"}'}
+    p = build_gen_prompt(row)[0]
+    assert "产品静物摄影" in p
+    assert p.count("无人物") + p.count("禁止出现任何人物") >= 2
+    s = build_gen_prompt(dict(row, kind="scene",
+                              appearance_json='{"detail":"学校保健室"}'))[0]
+    assert s.count("无人物") + s.count("禁止出现任何人物") >= 2
