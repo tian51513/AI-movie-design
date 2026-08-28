@@ -31,7 +31,7 @@ DEFAULT_SETTINGS = {
         "optimize_prompt": "online",
         "gen_story": "online",
     },
-    "comfy": {"base_url": "http://127.0.0.1:8188"},
+    "comfy": {"base_url": "http://127.0.0.1:8188", "min_free_vram_gb": 8},
     # 工作流模型槽位覆盖（计划5B 任务6）：{模板 id: {label: 文件名}}
     "model_overrides": {},
 }

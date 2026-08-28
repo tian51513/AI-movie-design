@@ -74,6 +74,11 @@ class Worker(threading.Thread):
                 comfy = self._comfy()
                 if comfy is not None and self.last_template and template_id != self.last_template:
                     comfy.free()  # 模型切换释放（spec §8.3）
+                if comfy is not None and job["resource"] == "gpu_comfy":
+                    # 12GB 共享显存（2026-08-28 决策）：LLM 与 ComfyUI 不并行——
+                    # 先请求 Ollama 让位，轮询显存回升至门槛再跑；不达标显式失败
+                    from ..llm.local import ensure_vram_for_comfy
+                    ensure_vram_for_comfy(db, comfy)
                 HANDLERS[job["type"]](db, self.data_dir, job, comfy)
                 finish_job(db, job["id"], None)
             except ComfyUnreachable as e:

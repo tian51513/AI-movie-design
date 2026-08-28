@@ -34,6 +34,11 @@ class ComfyClient:
         except (httpx.ConnectError, httpx.ConnectTimeout) as e:
             raise ComfyUnreachable(f"ComfyUI 不可达 {self.base_url}: {e}") from e
 
+    def vram_free(self) -> float:
+        """首个 GPU 当前可用显存（GB）——LLM 让位后的释放轮询依据。"""
+        dev = (self.health().get("devices") or [{}])[0]
+        return float(dev.get("vram_free") or 0) / 2**30
+
     def upload_image(self, path: Path, name: str) -> None:
         with self._client() as c:
             with open(path, "rb") as f:
