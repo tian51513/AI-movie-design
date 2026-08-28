@@ -29,26 +29,11 @@ def _canvas(aspect: str) -> tuple[int, int]:
     return (608, 1056) if aspect == "9:16" else (1056, 608)
 
 
-def build_timeline(db, data_dir, project_id: int, fps: int = 24):
-    """生效镜（disabled 过滤）→ (timeline_dict, uploads)。
-    uploads = [{path, name}]：角色主图待 ComfyUI /upload/image（确定性命名），
-    refs[].imageFile 即上传名。"""
+def _segments_for_shots(db, data_dir, proj, shots, upload_by_path, fps=24):
     from .paths import data_to_abs
-    from .projects import get_project
-    from .shots import list_shots
     from .assets import get_asset
 
-    proj = get_project(db, project_id)
-    if proj is None:
-        raise ValueError(f"项目不存在: {project_id}")
-    shots = [s for s in list_shots(db, project_id) if not s["disabled"]]
-    if not shots:
-        raise ValueError("无生效分镜")
-
-    width, height = _canvas(proj["aspect_ratio"])
-    upload_by_path: dict[str, str] = {}
-
-    def _ref_entry(index: int, asset_id: int) -> dict:
+    def _ref_entry(index, asset_id):
         a = get_asset(db, asset_id)
         if a is None:
             raise ValueError(f"资产不存在: {asset_id}")
@@ -77,10 +62,15 @@ def build_timeline(db, data_dir, project_id: int, fps: int = 24):
             "continuityFromPrev": shot["depends_on"] is not None,
         })
         start += frames
+    return segments
 
-    timeline = {
+
+def _timeline_shell(proj, segments, fps=24):
+    width, height = _canvas(proj["aspect_ratio"])
+    total = sum(s["frameCount"] for s in segments)
+    return {
         "version": 5, "editMode": "segment",
-        "totalFrames": start, "frameRate": fps,
+        "totalFrames": total, "frameRate": fps,
         "width": width, "height": height, "refMaxSize": max(width, height),
         "timelineMode": "prompt_batch",
         "video": {"fileName": "", "videoFile": "", "subfolder": "", "type": "input",
@@ -98,56 +88,124 @@ def build_timeline(db, data_dir, project_id: int, fps: int = 24):
         "segments": segments,
         "keyframes": [], "shots": [], "videoClips": [],
     }
+
+
+def build_timeline(db, data_dir, project_id: int, fps: int = 24):
+    """生效镜（disabled 过滤）→ (timeline_dict, uploads)。
+    uploads = [{path, name}]：角色主图待 ComfyUI /upload/image（确定性命名），
+    refs[].imageFile 即上传名。"""
+    from .projects import get_project
+    from .shots import list_shots
+
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise ValueError(f"项目不存在: {project_id}")
+    shots = [s for s in list_shots(db, project_id) if not s["disabled"]]
+    if not shots:
+        raise ValueError("无生效分镜")
+    upload_by_path: dict[str, str] = {}
+    segments = _segments_for_shots(db, data_dir, proj, shots, upload_by_path, fps)
+    timeline = _timeline_shell(proj, segments, fps)
     uploads = [{"path": p, "name": n} for p, n in upload_by_path.items()]
     return timeline, uploads
 
 
+def _batch_shots(shots, frame_budget: int, fps: int = 24) -> list[list]:
+    """按帧预算切块（真机 2026-08-28 job 721：41 镜 5084 帧的灰占位画布在 CPU
+    一次性物化 39GB → DefaultCPUAllocator 爆。Director prompt_batch 的画布 =
+    帧数×W×H×3ch×4B，512 帧 ≈ 3.9GB 上限内）。每批至少 1 镜。"""
+    batches, cur, cur_frames = [], [], 0
+    for s in shots:
+        frames = _align_frames(max(5, round(float(s["duration"]) * fps)))
+        if cur and cur_frames + frames > frame_budget:
+            batches.append(cur)
+            cur, cur_frames = [], 0
+        cur.append(s)
+        cur_frames += frames
+    if cur:
+        batches.append(cur)
+    return batches
+
+
 @register("gen_director")
 def handle_gen_director(db, data_dir, job, comfy):
-    """整段快车道 worker：shots → timeline → 一次提交 → 整片落盘 output/epNNN.mp4。
-    v1 限制（设计 §16.3）：整片不混 TTS/字幕（逐镜链路保留该能力）；所有生效镜
-    video_path 指向同一整片、直达 merged。stall 放宽到 2 小时（整部连跑）。"""
+    """整段快车道 worker：shots → 按帧预算分批 → 每批一次提交（批内 latent 连贯）
+    → 批间 ffmpeg 拼接 → 整片落盘 output/epNNN.mp4。
+    真机 2026-08-28 job 721 教训：整部一次提交时 Director 会在 CPU 物化全时间轴
+    灰画布（5084 帧 ≈ 39GB）→ 分批（默认 512 帧/批，批间断开是 v1 已知限制）。
+    v1 限制（设计 §16.3）：整片不混 TTS/字幕；所有生效镜 video_path 指向整片、
+    直达 merged。"""
     from .jobs import attach_snapshot
     from .paths import data_to_abs
     from .projects import get_project, set_stage
+    from .settings import get_setting
     from .shots import list_shots, update_shot
     from .workflows.registry import resolve_template
 
     payload = json.loads(job["payload_json"] or "{}")
     pid = payload.get("project_id", job["project_id"])
     proj = get_project(db, pid)
-    timeline, uploads = build_timeline(db, data_dir, pid)
+    shots = [s for s in list_shots(db, pid) if not s["disabled"]]
+    if not shots:
+        raise ValueError("无生效分镜")
     tmpl = resolve_template(db, "director")
-    wf = tmpl.api_json()
-    for key, value in {"timeline_data": json.dumps(timeline, ensure_ascii=False),
-                       "seed": random.randint(0, 2**31 - 1)}.items():
-        ip = tmpl.inject_params.get(key)
-        if ip:
-            wf[ip.node]["inputs"][ip.field] = value
-    attach_snapshot(db, job["id"],
-                    prompt=f"(director：{len(timeline['segments'])} 段整片，"
-                           f"共 {timeline['totalFrames']} 帧)",
-                    workflow=wf, template_id=tmpl.id)
-    for up in uploads:
-        comfy.upload_image(up["path"], up["name"])
-    emit_log(db, "comfy", "info",
-             f"导演台整段提交（{len(timeline['segments'])} 段，模板 {tmpl.id}）",
-             project_id=pid, job_id=job["id"])
-    prompt_id = comfy.submit(wf, client_id=f"cs-dir-{job['id']}")
-    videos = comfy.wait_and_collect(prompt_id, stall_seconds=7200)
-    video = next(v for v in videos
-                 if str(v.get("filename", "")).lower().endswith((".mp4", ".webm", ".mov")))
+    budget = int((get_setting(db, "comfy") or {}).get("director_batch_frames") or 512)
+    batches = _batch_shots(shots, budget)
+    upload_by_path: dict[str, str] = {}
+    parts_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/director_parts")
+    parts_dir.mkdir(parents=True, exist_ok=True)
+    parts = []
+    for i, batch in enumerate(batches, 1):
+        segments = _segments_for_shots(db, data_dir, proj, batch, upload_by_path)
+        segments[0]["continuityFromPrev"] = False  # 批间断开（无跨提交 latent 接力）
+        # 批内 start 重排
+        _start = 0
+        for seg in segments:
+            seg["start"] = _start
+            _start += seg["frameCount"]
+        timeline = _timeline_shell(proj, segments)
+        wf = tmpl.api_json()
+        for key, value in {"timeline_data": json.dumps(timeline, ensure_ascii=False),
+                           "seed": random.randint(0, 2**31 - 1)}.items():
+            ip = tmpl.inject_params.get(key)
+            if ip:
+                wf[ip.node]["inputs"][ip.field] = value
+        attach_snapshot(db, job["id"],
+                        prompt=f"(director 批次 {i}/{len(batches)}：{len(segments)} 段 "
+                               f"{timeline['totalFrames']} 帧，budget={budget})",
+                        workflow=wf, template_id=tmpl.id)
+        for up in ({"path": p, "name": n} for p, n in upload_by_path.items()):
+            comfy.upload_image(up["path"], up["name"])
+        emit_log(db, "comfy", "info",
+                 f"导演台批次 {i}/{len(batches)} 提交（{len(segments)} 段 "
+                 f"{timeline['totalFrames']} 帧，模板 {tmpl.id}）",
+                 project_id=pid, job_id=job["id"])
+        prompt_id = comfy.submit(wf, client_id=f"cs-dir-{job['id']}-{i}")
+        videos = comfy.wait_and_collect(prompt_id, stall_seconds=7200)
+        video = next(v for v in videos
+                     if str(v.get("filename", "")).lower().endswith((".mp4", ".webm", ".mov")))
+        part = parts_dir / f"part{i:03d}.mp4"
+        comfy.download(video["filename"], video.get("subfolder", ""),
+                       video.get("type", "output"), part)
+        parts.append(part)
+        emit_log(db, "comfy", "info", f"导演台批次 {i}/{len(batches)} 完成",
+                 project_id=pid, job_id=job["id"])
     out_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/output")
     out_dir.mkdir(parents=True, exist_ok=True)
     n = len(list(out_dir.glob("ep*.mp4"))) + 1
     dest = out_dir / f"ep{n:03d}.mp4"
-    comfy.download(video["filename"], video.get("subfolder", ""),
-                   video.get("type", "output"), dest)
+    if len(parts) == 1:
+        import shutil
+        shutil.copyfile(parts[0], dest)
+    else:
+        from . import merge
+        merge.concat(parts, dest)
     rel = f"projects/{proj['slug']}/output/ep{n:03d}.mp4"
     for s in list_shots(db, pid):
         if not s["disabled"]:
             update_shot(db, s["id"], {"status": "rendered", "video_path": rel})
     set_stage(db, pid, "merged")
-    emit_log(db, "comfy", "info", f"导演台整片已落盘 {rel}（直达 merged）",
+    emit_log(db, "comfy", "info",
+             f"导演台整片已落盘 {rel}（{len(batches)} 批拼接，直达 merged）",
              project_id=pid, job_id=job["id"])
     return dest

@@ -127,3 +127,50 @@ def test_handle_gen_director_end_to_end(tmp_path, monkeypatch):
     assert all(r["video_path"].endswith(".mp4") and "/output/" in r["video_path"] for r in rows)
     snap = json.loads(get_job(db, jid)["snapshot_json"])
     assert snap["template"] == "h3_director" and "timeline" not in snap["prompt"] or True
+
+
+def test_gen_director_batches_by_frame_budget(tmp_path, monkeypatch):
+    """job 721 教训：整部一次提交 → CPU 灰画布 39GB 爆。按帧预算分批：
+    多次提交、批首 continuity 断开、批间 ffmpeg 拼接。"""
+    from pathlib import Path
+    from comic_studio.engine import director as D
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from comic_studio.engine.projects import get_project, set_stage
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comfy_mock import comfy_server
+    db, pid, chars = _setup(tmp_path)
+    ids = persist_shots(db, pid, [
+        _shot("甲", "甲镜。", 5.0, ledger={"assets": {"characters": [chars["林晨"]]}},
+              character_ids=[chars["林晨"]]) for _ in range(3)])
+    conn = db.connect()
+    conn.execute("UPDATE shots SET depends_on=? WHERE id=?", (ids[0], ids[1]))
+    conn.execute("UPDATE shots SET depends_on=? WHERE id=?", (ids[1], ids[2]))
+    conn.commit()
+    set_stage(db, pid, "storyboard_ready")
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"director": "h3_director"})
+    set_setting(db, "comfy", {"base_url": "http://x:8188", "min_free_vram_gb": 0,
+                              "director_batch_frames": 256})  # 124×2=248≤256 → 前两镜一批
+    concat_calls = []
+    monkeypatch.setattr("comic_studio.engine.merge.concat",
+                        lambda parts, out: concat_calls.append(len(parts))
+                        or out.write_bytes(b"v") or out)
+    jid = enqueue_job(db, "gen_director", project_id=pid, resource="gpu_comfy",
+                      payload={"project_id": pid})
+    import json as _json
+    with comfy_server("ok", video=True) as m:
+        D.handle_gen_director(db, tmp_path / "data", get_job(db, jid),
+                              ComfyClient(m.base_url))
+        assert len(m.prompts) == 2  # 分了两批
+        t1 = _json.loads(m.prompts[0]["prompt"]["12"]["inputs"]["timeline_data"])
+        t2 = _json.loads(m.prompts[1]["prompt"]["12"]["inputs"]["timeline_data"])
+        assert len(t1["segments"]) == 2 and len(t2["segments"]) == 1
+        assert t1["segments"][1]["continuityFromPrev"] is True   # 批内保持
+        assert t2["segments"][0]["continuityFromPrev"] is False  # 批间断开
+        assert t2["segments"][0]["start"] == 0                   # 批内重排
+    assert concat_calls == [2]
+    assert get_project(db, pid)["stage"] == "merged"
+    out = list((tmp_path / "data" / "projects" / "导演剧" / "output").glob("ep*.mp4"))
+    assert out

@@ -82,6 +82,10 @@ const computed = {
     return mo[this.moTemplate];
   },
   projTotalPages() { return Math.max(1, Math.ceil(this.projects.length / this.projPageSize)); },
+  directorBusy() {  // 快车道状态由队列轮询驱动（刷新页面可恢复）
+    return ((this.queue && this.queue.jobs) || []).some(
+      j => j.type === 'gen_director' && (j.status === 'pending' || j.status === 'running'));
+  },
   pagedProjects() {
     const pg = Math.min(this.projPage, this.projTotalPages);  // 删除项目后页码越界自动收敛
     const start = (pg - 1) * this.projPageSize;
@@ -586,6 +590,13 @@ const methods = {
       } catch (e) { /* 瞬时失败不杀轮询 */ }
       try {
         this.queue = await (await fetch(`/api/projects/${this.project.id}/queue`)).json();
+        const dj = (this.queue.jobs || []).find(j => j.type === 'gen_director');
+        if (dj) {
+          if (dj.status === 'failed' && this._dirStatus !== 'failed') {
+            alert('🚄 整段快车道失败：' + (dj.error || '详见日志'));
+          }
+          this._dirStatus = dj.status;
+        }
         const done = this.queue.jobs.filter(j => j.status === 'done').length;
         const busy = this.queue.running > 0 || this.queue.pending > 0;
         this._tickBusy = busy || (this.project && this.project.autopilot);
