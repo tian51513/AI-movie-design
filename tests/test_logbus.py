@@ -21,8 +21,8 @@ def test_emit_and_fetch_roundtrip(tmp_path):
     emit(db, "llm", "warn", "校验重试：JSON 解析失败", project_id=pid)
     rows = fetch_logs(db, project_id=pid)
     assert len(rows) == 2
-    assert rows[0]["source"] == "analyze" and rows[0]["level"] == "info"
-    assert rows[1]["level"] == "warn"
+    # 首拉时间降序（2026-08-28）：最新在顶
+    assert rows[0]["level"] == "warn" and rows[1]["source"] == "analyze"
 
 
 def test_after_cursor(tmp_path):

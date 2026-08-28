@@ -24,7 +24,13 @@ def emit(db: Database, source: str, level: str, message: str, *,
 
 def fetch_logs(db: Database, project_id: int, after_id: int = 0,
                limit: int = 200) -> list:
-    """游标式增量读取：after_id 之后的日志，按 id 升序。"""
+    """游标式读取：after_id=0（首拉）→ 最新 limit 条**倒序**（时间降序，最新在顶
+    ——旧库不再先翻到上古日志，2026-08-28 需求）；after_id>0（增量）→ 升序供前端
+    unshift。两种模式下"已读游标"都取返回集的最大 id（路由层计算）。"""
+    if after_id:
+        return db.connect().execute(
+            "SELECT * FROM logs WHERE project_id=? AND id>? ORDER BY id LIMIT ?",
+            (project_id, after_id, limit)).fetchall()
     return db.connect().execute(
-        "SELECT * FROM logs WHERE project_id=? AND id>? ORDER BY id LIMIT ?",
-        (project_id, after_id, limit)).fetchall()
+        "SELECT * FROM logs WHERE project_id=? ORDER BY id DESC LIMIT ?",
+        (project_id, limit)).fetchall()

@@ -55,7 +55,7 @@ def test_yield_silent_when_unreachable(tmp_path):
 
 class _FakeComfy:
     def __init__(self, free_seq):
-        self.free_seq, self.calls = list(free_seq), 0
+        self.free_seq, self.calls, self.freed = list(free_seq), 0, 0
 
     def vram_free(self):
         self.calls += 1
@@ -64,15 +64,20 @@ class _FakeComfy:
             raise v
         return v
 
+    def free(self):
+        self.freed += 1
+
 
 def test_ensure_vram_waits_until_free(tmp_path):
-    """卸载有延迟（秒~几十秒可接受）：先让位 → 轮询等待显存回升 → 达标放行。"""
+    """卸载有延迟（秒~几十秒可接受）：先让位 → 仍不足自动 comfy.free()（真机
+    job 720：占用方是 ComfyUI 自驻留模型）→ 轮询等待显存回升 → 达标放行。"""
     from comic_studio.engine.llm.local import ensure_vram_for_comfy
     db = _db(tmp_path)
     comfy = _FakeComfy([3.0, 5.5, 8.2])  # 第三次回升达标
     t = _Transport(ps_models=[{"name": "m"}])
     free = ensure_vram_for_comfy(db, comfy, transport=t, poll=0)
     assert free >= 8 and comfy.calls == 3
+    assert comfy.freed == 1  # 首读不足 → 自动补了一发 /free
     assert any(m == "POST" for m, u, b in t.calls)  # 已请求让位
 
 

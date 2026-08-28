@@ -60,6 +60,10 @@ def ensure_vram_for_comfy(db, comfy, min_gb: float | None = None,
         min_gb = float(cfg.get("min_free_vram_gb") or 8)
     deadline = time.monotonic() + wait_s
     free = comfy.vram_free()
+    if free < min_gb and hasattr(comfy, "free"):
+        # 让位后仍不足：多为 ComfyUI 自驻留模型（2026-08-28 真机 job 720，
+        # 用户手点清理即恢复）——自动补一发 /free 再等
+        comfy.free()
     while free < min_gb and time.monotonic() < deadline:
         time.sleep(poll)
         free = comfy.vram_free()

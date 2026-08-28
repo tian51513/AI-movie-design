@@ -568,12 +568,22 @@ const methods = {
     let wasBusy = false;
     this._tickBusy = true;  // 首拍按忙等（1s），随后自适应
     const tick = async () => {
-      const r = await fetch(`/api/projects/${this.project.id}/logs?after=${this.lastLogId}`);
-      if (!r.ok || !this.project) return;
-      const body = await r.json();
-      if (body.logs.length) {
-        this.logs.unshift(...body.logs); this.lastLogId = body.last_id;  // 时间降序：最新在顶
-      }
+      // 日志拉取整体包 try/catch——此前裸 fetch 一旦网络抖动/服务重启，
+      // loop() 直接抛异常死掉，日志轮询永久停止（2026-08-28 真机：看不到日志了）
+      try {
+        const r = await fetch(`/api/projects/${this.project.id}/logs?after=${this.lastLogId}`);
+        if (r.ok && this.project) {
+          const body = await r.json();
+          if (body.logs.length) {
+            if (this.lastLogId === 0) {
+              this.logs = body.logs;  // 首拉：后端已按时间降序（最新在顶）
+            } else {
+              this.logs.unshift(...body.logs.slice().reverse());  // 增量升序 → 倒序后 unshift 保持最新在顶
+            }
+            this.lastLogId = body.last_id;
+          }
+        }
+      } catch (e) { /* 瞬时失败不杀轮询 */ }
       try {
         this.queue = await (await fetch(`/api/projects/${this.project.id}/queue`)).json();
         const done = this.queue.jobs.filter(j => j.status === 'done').length;
@@ -609,7 +619,7 @@ const methods = {
     };
     this._doneSeen = 0;
     const loop = async () => {          // 自适应轮询：忙 1s / 闲 4s（减少空转请求）
-      await tick();
+      try { await tick(); } catch (e) { /* tick 内部已兜底，双保险 */ }
       this.logsTimer = setTimeout(loop, this._tickBusy ? 1000 : 4000);
     };
     loop();

@@ -21,5 +21,6 @@ def listing(request: Request, project_id: int, after: int = 0, limit: int = 200)
             "level": r["level"], "message": r["message"],
             "data": json.loads(r["data_json"]),
         } for r in rows],
-        "last_id": rows[-1]["id"] if rows else after,
+        # 首拉（after=0）rows 为倒序，游标取最大 id
+        "last_id": max((r["id"] for r in rows), default=after),
     }
