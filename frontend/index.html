@@ -436,6 +436,8 @@
         {{ directorBusy ? '🚄 整段渲染中…' : '🚄 整段快车道' }}</button>
       <span v-if="directorBusy" class="pill" style="background:#7c2d12;color:#fdba74"
             title="分批提交（批内 latent 连贯），完成直达成片">⚡ 快车道运行中</span>
+      <button v-if="hasActiveJobs" @click="stopJobs" style="background:#dc2626;font-size:12px;padding:3px 10px"
+              title="取消本项目全部待跑任务 + ComfyUI 清队中断在跑的（不影响其他项目）">⏹ 停止任务</button>
       <button @click="generateTts" style="font-size:12px;padding:3px 8px"
               title="从台词生成 TTS 配音 + SRT 字幕（合成时自动混入）">🎙 生成配音</button>
       <button @click="autoBind" title="扫描描述文本自动补绑提到的角色" style="font-size:12px;padding:3px 8px">🔗 补绑角色</button>

@@ -312,6 +312,31 @@ def gate3(request: Request, project_id: int):
     return _gate_resp(request, project_id, 3)
 
 
+@router.post("/api/projects/{project_id}/stop-jobs")
+def stop_jobs(request: Request, project_id: int):
+    """项目级停止（2026-08-28 需求）：取消全部待跑任务 + ComfyUI 清队中断在跑的。"""
+    db = request.app.state.db
+    if get_project(db, project_id) is None:
+        raise HTTPException(404, "项目不存在")
+    from ..engine.jobs import cancel_project_jobs
+    result = cancel_project_jobs(db, project_id)
+    comfy_err = ""
+    try:
+        from ..engine.comfy.client import ComfyClient
+        from ..engine.settings import get_setting
+        base = (get_setting(db, "comfy") or {}).get("base_url")
+        if base:
+            comfy = ComfyClient(base)
+            comfy.clear_queue()
+            comfy.interrupt()
+    except Exception as exc:  # ComfyUI 不在线也允许取消本地任务
+        comfy_err = f"（ComfyUI 侧清理失败：{exc}）"
+    emit_log(db, "system", "info",
+             f"项目任务停止：取消待跑 {result['cancelled']}、停止在跑 {result['stopping']}{comfy_err}",
+             project_id=project_id)
+    return result
+
+
 @router.post("/api/projects/{project_id}/render-director", status_code=202)
 def render_director(request: Request, project_id: int):
     """P7-D 整段快车道：全部生效镜打包一次提交导演台（段间 latent 连贯）。

@@ -128,6 +128,11 @@ class ComfyClient:
         with self._client() as c:
             c.post(f"{self.base_url}/interrupt")
 
+    def clear_queue(self) -> None:
+        """清空 ComfyUI 等待队列（停止任务用：pending 全弃 + interrupt 在跑的）。"""
+        with self._client() as c:
+            c.post(f"{self.base_url}/queue", json={"clear": True})
+
     def download(self, filename: str, subfolder: str, type_: str, dest: Path) -> None:
         with self._client() as c:
             resp = c.get(f"{self.base_url}/view",

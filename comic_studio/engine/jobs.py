@@ -56,6 +56,21 @@ def attach_snapshot(db, job_id, prompt, workflow, template_id=None) -> None:
     conn.commit()
 
 
+def cancel_project_jobs(db: Database, project_id: int) -> dict:
+    """项目级停止（2026-08-28 需求）：pending → cancelled（永不被认领）；
+    running → attempts 打满（worker 异常收尾时 retry_or_fail 不再重排，
+    直接落 failed，配合 ComfyUI interrupt 实现真正的停）。"""
+    conn = db.connect()
+    cur1 = conn.execute(
+        "UPDATE jobs SET status='cancelled' WHERE project_id=? AND status='pending'",
+        (project_id,))
+    cur2 = conn.execute(
+        "UPDATE jobs SET attempts=99 WHERE project_id=? AND status='running'",
+        (project_id,))
+    conn.commit()
+    return {"cancelled": cur1.rowcount, "stopping": cur2.rowcount}
+
+
 _RESOURCE_GROUP = {"gpu_comfy": "gpu", "gpu_llm_local": "gpu"}
 
 

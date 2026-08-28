@@ -86,6 +86,9 @@ const computed = {
     return ((this.queue && this.queue.jobs) || []).some(
       j => j.type === 'gen_director' && (j.status === 'pending' || j.status === 'running'));
   },
+  hasActiveJobs() {
+    return this.directorBusy || (this.queue && (this.queue.pending > 0 || this.queue.running > 0));
+  },
   pagedProjects() {
     const pg = Math.min(this.projPage, this.projTotalPages);  // 删除项目后页码越界自动收敛
     const start = (pg - 1) * this.projPageSize;
@@ -670,6 +673,14 @@ const methods = {
       {method:'POST', headers: body ? {'Content-Type': 'application/json'} : undefined, body});
     if (!r.ok) { alert(await r.text()); return; }
     this.splitRunning = true;
+  },
+  async stopJobs() {
+    if (!confirm('停止本项目全部任务？\n待跑的直接取消；在跑的向 ComfyUI 发中断（约几秒内停止）。')) return;
+    const r = await fetch(`/api/projects/${this.project.id}/stop-jobs`, {method: 'POST'});
+    if (!r.ok) { alert(await r.text()); return; }
+    const b = await r.json();
+    alert(`已取消待跑 ${b.cancelled} 项、停止在跑 ${b.stopping} 项`);
+    this._dirStatus = '';
   },
   async renderDirector() {
     if (!confirm('整段快车道：全部生效镜一次提交导演台（段间 latent 连贯），产出整片直达合成。\nv1 限制：不混配音字幕（要配音版请走逐镜「批量渲染」）。继续？')) return;
