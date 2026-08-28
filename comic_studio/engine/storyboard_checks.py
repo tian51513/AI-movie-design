@@ -28,8 +28,10 @@ def audit_storyboard(db, project_id: int) -> list[str]:
     # 换挡检测：记录每次「景别或场景资产变化」的时间点，末段超 30s 告警
     change_at = [0.0]
     t, prev = 0.0, None
+    scales_seen = set()
     for s in shots:
         cam = json.loads(s["camera_json"] or "{}")
+        scales_seen.add(cam.get("景别"))
         scenes = tuple(sorted((json.loads(s["ledger_json"] or "{}")
                                .get("assets") or {}).get("scenes") or []))
         cur = (cam.get("景别"), scenes)
@@ -40,6 +42,12 @@ def audit_storyboard(db, project_id: int) -> list[str]:
     if t - change_at[-1] > 30:
         warns.append(f"画面换挡：自 {change_at[-1]:.0f}s 起超过 30s 无景别/场景大变化"
                      f"（最后一段易单调，可调整镜头语言）")
+    # 景别池单一（2026-08-28 真机：41 镜全中近特 → 人物撑满画面）：
+    # 全程无全景/远景环境镜即告警（换挡检测测不出——中近交替也算变化）
+    if not (scales_seen & {"全景", "远景", "大全景"}):
+        warns.append(f"景别池单一：{len(shots)} 镜全部为 "
+                     f"{sorted(x for x in scales_seen if x)}，无全景/远景环境镜"
+                     f"（人物易撑满画面缺空间呼吸；拆解规则 3 已要求每 3~5 镜一个环境镜）")
 
     for s in shots:
         for d in (json.loads(s["ledger_json"] or "{}").get("dialogue") or []):
