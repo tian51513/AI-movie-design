@@ -93,3 +93,12 @@
 - P7-A 审计：jobs.snapshot_json（四处提交点）+ llm_calls.prompt_text/reply_text + GET /api/jobs/{id}/snapshot
 - P7-B 白名单纪律 / P7-C heal_h3_prompt（prompts/gen.py，自愈不耗重试）
 - 注意：整段快车道与逐镜链路并存；「🚄 整段快车道」按钮仅 storyboard_ready；director 项目全镜 video_path 指同一整片
+
+## 模块地图（P7 后半 2026-08-28 晚）
+
+- `engine/director.py` 扩展 — 分批提交（job 721：整部一次 CPU 灰画布 39GB 爆 → `_batch_shots` 按 `comfy.director_batch_frames`（默认 512 帧）切块，批内 latent 连贯、批间 ffmpeg concat；前端 directorBusy 队列驱动状态+新失败才弹窗）
+- `engine/llm/local.py` — LLM 让位（Ollama /api/ps + keep_alive=0）+ `ensure_vram_for_comfy`（gpu_comfy 前置：让位→不足自动 comfy.free()→轮询 vram_free 至 `comfy.min_free_vram_gb` 默认 8GB，超时 VramShortage）
+- `engine/llm/provider.py` 扩展 — 路由值支持 `provider:model` 点对点钉模型（首冒号切分）
+- `engine/storyboard_checks.py` — 拆解后机械审计（时长守恒/画面换挡>30s/台词>25字，warn 不拦截）；`engine/textfix.py` — 敏感词机械转译（gen_story）
+- `engine/logbus.py` — 首拉（after=0）最新 N 条倒序；前端日志轮询整体兜底防猝死
+- prompts 借鉴第一批（XiaoLuo/短剧厂）：反代词具名/可拍摄性约束/分级英文运镜标签入 system；heal 增加 Meta 词剥离+结尾后缀「无字幕，无背景音乐」；截断→压缩输出反馈重试
