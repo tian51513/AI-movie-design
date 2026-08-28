@@ -106,8 +106,8 @@
       "shift_video": 12,
       "shift_audio": 3,
       "bd_grp_perf": "性能",
-      "clear_vram_between_segments": true,
-      "export_source_images": true,
+      "clear_vram_between_segments": false,
+      "export_source_images": false,
       "minimax_director_ui": "",
       "model": [
         "45",
