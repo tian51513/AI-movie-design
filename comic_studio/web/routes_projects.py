@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 
 from ..engine.llm.provider import client_for_task
+from ..engine.logbus import emit as emit_log
 from ..engine.projects import create_project, get_project, list_projects
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -118,6 +119,11 @@ def _generate_story_text(db, theme, body) -> str:
         [{"role": "system", "content": system},
          {"role": "user", "content": user}], temperature=0.7)
     text = (text or "").strip()
+    # P7-G 敏感词机械转译（借鉴短剧厂替换库）：修复而非拦截，预览里可见可改
+    from ..engine.textfix import apply_sensitive_replacements
+    text, n_fixed = apply_sensitive_replacements(text)
+    if n_fixed:
+        emit_log(db, "llm", "info", f"生成正文敏感词转译 {n_fixed} 处", project_id=None)
     if len(text) < 500:
         raise HTTPException(422, f"生成的正文过短（{len(text)} 字），请重试或换主题")
     return text

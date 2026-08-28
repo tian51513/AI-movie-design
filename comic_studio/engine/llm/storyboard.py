@@ -281,4 +281,8 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2
                  project_id=project_id)
     emit_log(db, "storyboard", "info", f"分镜落库 {len(ids)} 镜（已替换旧分镜）",
              project_id=project_id)
+    # P7-G 拆解后机械审计（时长守恒/换挡/台词字数）：只告警不拦截
+    from ..storyboard_checks import audit_storyboard
+    for w in audit_storyboard(db, project_id):
+        emit_log(db, "storyboard", "warn", w, project_id=project_id)
     return ids
