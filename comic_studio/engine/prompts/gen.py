@@ -246,7 +246,19 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
                 {"role": "user", "content": ctx}]
     last_err = ""
     for _ in range(max_attempts):
-        text, _u = client.raw_chat(messages, temperature=0.4)
+        try:
+            text, _u = client.raw_chat(messages, temperature=0.4)
+        except Exception as exc:
+            # 思考模型 × 16k ctx（真机 2026-08-28 job 682：同输入两截断一成功，
+            # 纯碰运气）：截断时追加「压缩思考直接输出」反馈再试，其余异常照抛
+            from ..llm.provider import LLMError
+            if isinstance(exc, LLMError) and "截断" in str(exc):
+                last_err = str(exc)
+                messages += [{"role": "user", "content":
+                              "上次输出被上下文长度截断。请极度压缩思考过程，"
+                              "跳过推理展开，直接输出最终提示词本体。"}]
+                continue
+            raise
         text = (text or "").strip()
         if backend == "h3":
             # P7-C 自愈：机械可修的问题直接修，不消耗重试（占位语/超界引用/

@@ -274,3 +274,30 @@ def test_generate_prompt_uses_healed_version(tmp_path):
     assert "<d>Chinese</d>" in out and "<Picture 9>" not in out
     assert "可自行补充" not in out
     """自愈成功 → 不再消耗 LLM 重试次数。"""
+
+
+def test_generate_retry_with_thinking_squeeze_on_truncation(tmp_path):
+    """思考模型 × 16k ctx（真机 2026-08-28 job 682：同输入两截断一成功）：
+    raw_chat 抛长度截断 → 追加「压缩思考直接输出」反馈再试，不盲重试。"""
+    from comic_studio.engine.llm.provider import LLMError
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "p", "9:16", "t")["id"]
+    sid = persist_shots(db, pid, [NS(text_span="", description="推门",
+        shot_type="", camera={}, duration=5.0, workflow_type="ref2va",
+        ledger={}, character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
+    seen_feedback = []
+    replies = iter([None, "林晨推开木门，晨光，推进镜头，写实。"])
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            r = next(replies)
+            if r is None:
+                raise LLMError("输出被长度上限截断（finish_reason=length）：请减小单次输入")
+            if any("压缩思考" in m.get("content", "") or "直接输出" in m.get("content", "")
+                   for m in messages if m.get("role") == "user"):
+                seen_feedback.append(1)
+            return r, Usage(1, 1)
+
+    out = generate_video_prompt(db, sid, FakeLLM(), backend="h3", mode="A")
+    assert "木门" in out and seen_feedback, "第二次调用应带压缩思考反馈"
