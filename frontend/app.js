@@ -428,6 +428,7 @@ const methods = {
       r2vaTm: s.template_map?.ref2va || 'h3_ref2va',
       fl2vTm: s.template_map?.fl2v || 'h3_fl2v',
       t2vTm: s.template_map?.t2v || 'h3_t2v',
+      dirTm: s.template_map?.director || 'h3_director',
       model_overrides: JSON.parse(JSON.stringify(s.model_overrides || {})),
       model_templates: s.model_templates || [],
     };
@@ -550,7 +551,8 @@ const methods = {
                       keyframe: this.settingsForm.kfTm || null,
                       ref2va: this.settingsForm.r2vaTm || null,
                       fl2v: this.settingsForm.fl2vTm || null,
-                      t2v: this.settingsForm.t2vTm || null },
+                      t2v: this.settingsForm.t2vTm || null,
+                      director: this.settingsForm.dirTm || null },
       model_overrides: this.settingsForm.model_overrides,
     };
     const resp = await fetch('/api/settings', {

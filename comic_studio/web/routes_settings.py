@@ -75,7 +75,9 @@ def update(request: Request, body: SettingsUpdate):
         if bad_tasks:
             raise HTTPException(422, f"未知任务: {sorted(bad_tasks)}，只允许 {list(TASK_NAMES)}")
         providers = get_setting(db, "llm_providers")
-        bad_targets = {v for v in body.llm_routing.values() if v not in providers}
+        # 路由值可为 "provider" 或 "provider:model"（点对点钉具体模型，首冒号切分）
+        bad_targets = {v for v in body.llm_routing.values()
+                       if (v.split(":", 1)[0] if v else v) not in providers}
         if bad_targets:
             raise HTTPException(422, f"路由目标不存在: {sorted(bad_targets)}，可选 {list(providers)}")
         merged = get_setting(db, "llm_routing")

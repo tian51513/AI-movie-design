@@ -156,13 +156,16 @@ def client_for_task(db: Database, task: str) -> "LLMClient":
     routing = get_setting(db, "llm_routing")
     providers = get_setting(db, "llm_providers")
     name = routing.get(task)
+    model_override = None
+    if ":" in name:  # "provider:model" 点对点（2026-08-28：长文本用对话模型/精确用思考模型；
+        name, model_override = name.split(":", 1)  # Ollama tag 自带冒号，只切首个）
     if not name or name not in providers:
         raise LLMError(f"任务 {task} 的路由 {name!r} 不在 llm_providers 中")
     p = providers[name]
     if not p.get("base_url"):
         raise LLMError(f"线上 LLM 未配置：settings.llm_providers.{name}.base_url 为空")
     return LLMClient(base_url=p["base_url"], api_key=p.get("api_key") or "none",
-                     model=p["model"], extra_body=p.get("extra_body"))
+                     model=model_override or p["model"], extra_body=p.get("extra_body"))
 
 
 def log_llm_call(db: Database, task: str, provider: str, model: str, usage: Usage,

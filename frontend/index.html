@@ -130,6 +130,12 @@
        <select v-model="settingsForm.fl2vTm" style="width:280px">
          <option v-for="t in templatesOfType('fl2v')" :key="t.id" :value="t.id">{{ t.name }}</option>
        </select>
+    <p><label class="muted">导演台快车道模板：</label>
+       <select v-model="settingsForm.dirTm" style="width:320px">
+         <option v-for="t in templatesOfType('director')" :key="t.id" :value="t.id"
+                 :title="t.id">{{ t.name }}</option>
+       </select>
+       <span class="muted">🚄 整段快车道用（从视频展示工作流抽离；段间 latent 连贯）</span></p>
        <label class="muted" style="margin-left:8px">文生视频模板：</label>
        <select v-model="settingsForm.t2vTm" style="width:280px">
          <option v-for="t in templatesOfType('t2v')" :key="t.id" :value="t.id">{{ t.name }}</option>
@@ -178,11 +184,17 @@
 </div>
     <div v-show="settingsTab==='route'">
     <h3>任务路由</h3>
+    <p class="muted" style="font-size:13px">长文本任务（分镜拆解/提示词生成/主题正文）建议选<b>对话模型</b>——思考模型 🧠 的推理会挤占输出预算；
+    精确小任务（外貌优化/提取）可考虑思考模型。点「本地」行首「获取模型」刷新可选清单。</p>
     <p v-for="(label, task) in taskLabels" :key="task">
       {{ label }}：
       <select v-model="settingsForm.routing[task]">
-        <option value="local">本地（Ollama / LM Studio）</option>
-        <option value="online">线上 API</option>
+        <option value="local">本地 · 默认模型</option>
+        <option v-for="m in displayOllamaModels" :key="'l'+task+m" :value="'local:'+m"
+                :title="'local:'+m">{{ m.toLowerCase().includes('think') ? '🧠 ' : '' }}{{ m }}</option>
+        <option value="online">线上 · 默认模型</option>
+        <option v-if="settingsForm.online.model" :value="'online:'+settingsForm.online.model"
+                :title="'online:'+settingsForm.online.model">线上 · {{ settingsForm.online.model }}</option>
       </select>
     </p>
     </div>

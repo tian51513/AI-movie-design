@@ -96,7 +96,10 @@ def scan_templates(root: Path) -> dict:
 
 
 def resolve_template(db: Database, tmpl_type: str) -> WorkflowTemplate:
-    tmpl_id = get_setting(db, "template_map").get(tmpl_type)
+    from ..settings import DEFAULT_SETTINGS
+    # 旧库存量 template_map 可能缺新类型键（如 director）→ 用默认映射兜底合并
+    mapping = {**DEFAULT_SETTINGS["template_map"], **get_setting(db, "template_map")}
+    tmpl_id = mapping.get(tmpl_type)
     reg = scan_templates(TEMPLATE_ROOT)
     if not tmpl_id or tmpl_id not in reg:
         raise ManifestError(f"类型 {tmpl_type} 未映射到已注册模板（映射={tmpl_id!r}，已注册={sorted(reg)}）")

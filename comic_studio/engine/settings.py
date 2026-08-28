@@ -15,6 +15,7 @@ DEFAULT_SETTINGS = {
         "ref2va": "h3_ref2va",
         "fl2v": "h3_fl2v",
         "t2v": "h3_t2v",
+        "director": "h3_director",  # P7-D 整段快车道（从视频展示工作流抽离的专属模板）
     },
     "llm_providers": {
         "local": {"base_url": "http://localhost:11434/v1", "api_key": "ollama",
