@@ -24,6 +24,16 @@ def build_h3_system() -> str:
         p = H3_DIR / rel
         if p.exists():
             parts.append(p.read_text(encoding="utf-8"))
+    # 借鉴 XiaoLuo 规范（2026-08-28 第一批）：反代词具名 + 分级英文运镜标签
+    parts.append(
+        "【输出卫生规范（必须遵守）】\n"
+        "1. 叙述中严禁使用「他/她/它」等代词指代角色——一律写角色名（多角色画面"
+        "主体绑定的关键，代词会让模型换人）。\n"
+        "2. 按景别混入固定英文运镜标签，每镜 2~4 个不堆砌：\n"
+        "   - 特写/近景：locked-off tripod shot, ultra-stable micro-jitter\n"
+        "   - 对峙/台词戏：subtle cinematic handheld, realistic camera inertia\n"
+        "   - 全景/空镜/环境：documentary-style cinematic handheld, ambient light drift\n"
+        "3. 禁止 Meta 词：电影级、9:16 画幅、生成模型、短片节奏、HEX 色码、导演/明星名。")
     return "\n\n---\n\n".join(parts)
 
 
@@ -183,15 +193,24 @@ def _dedup_sentences(line: str) -> tuple[str, bool]:
     return "。".join(out), changed
 
 
+_META_WORDS_RE = _re.compile(r"电影级|9[:：]16\s*画幅|生成模型|短片节奏")
+
+
 def heal_h3_prompt(text: str, shot_row, max_pics: int = 2):
     """P7-C 提示词 token 自愈（借鉴 Director reinforce 思想）：机械可修的问题
     直接修，不消耗 LLM 重试——①占位语删除 ②超界 <Picture N> 引用删除
-    ③行内重复句子去重 ④有对白缺 <d>Chinese</d> 补标记。返回 (healed, fixes)。"""
+    ③行内重复句子去重 ④有对白缺 <d>Chinese</d> 补标记
+    ⑤Meta 词剥离（借鉴 XiaoLuo：电影级/9:16画幅/生成模型/短片节奏）
+    ⑥结尾后缀协议（「无字幕，无背景音乐」固定收尾，抑制自动配乐字幕）。
+    返回 (healed, fixes)。"""
     fixes = []
     t = text or ""
     if "可自行补充" in t:
         t = "\n".join(l for l in t.splitlines() if "可自行补充" not in l)
         fixes.append("删除占位语")
+    if _META_WORDS_RE.search(t):
+        t = _META_WORDS_RE.sub("", t)
+        fixes.append("删 Meta 词")
     bad_refs = sorted({int(n) for n in _re.findall(r"<Picture (\d+)>", t)
                        if int(n) > max_pics})
     if bad_refs:
@@ -214,6 +233,9 @@ def heal_h3_prompt(text: str, shot_row, max_pics: int = 2):
     if ledger.get("dialogue") and "<d>" not in t:
         t = t.rstrip() + "\n<d>Chinese</d>"
         fixes.append("补 <d>Chinese</d>")
+    if "无字幕" not in t:
+        t = t.rstrip() + "\n无字幕，无背景音乐"
+        fixes.append("补结尾后缀")
     return t, fixes
 
 

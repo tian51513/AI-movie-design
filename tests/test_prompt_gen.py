@@ -246,10 +246,10 @@ def test_heal_h3_prompt_common_fixes():
     assert healed.count("禁止出现：多余手指。") == 1
     assert "可自行补充" not in healed
     assert len(fixes) >= 4
-    # 无对白不补 <d>；无问题的文本原样返回
+    # 无对白不补 <d>；干净文本只补结尾后缀协议（2026-08-28 起 By 设计）
     ok_text = "summary: 空镜。subject_definitions: 无。"
     h2, f2 = heal_h3_prompt(ok_text, {"ledger_json": "{}"}, max_pics=2)
-    assert h2 == ok_text and f2 == []
+    assert h2 == ok_text + "\n无字幕，无背景音乐" and f2 == ["补结尾后缀"]
 
 
 def test_generate_prompt_uses_healed_version(tmp_path):
@@ -301,3 +301,16 @@ def test_generate_retry_with_thinking_squeeze_on_truncation(tmp_path):
 
     out = generate_video_prompt(db, sid, FakeLLM(), backend="h3", mode="A")
     assert "木门" in out and seen_feedback, "第二次调用应带压缩思考反馈"
+
+
+def test_heal_strips_meta_and_appends_suffix():
+    """借鉴 XiaoLuo（2026-08-28 第一批）：Meta 词机械剥离；固定结尾后缀协议。"""
+    from comic_studio.engine.prompts.gen import heal_h3_prompt
+    bad = "summary: 电影级光影，9:16画幅竖屏。subject_definitions: 无。"
+    h, fixes = heal_h3_prompt(bad, {"ledger_json": "{}"})
+    assert "电影级" not in h and "9:16画幅" not in h
+    assert h.rstrip().endswith("无字幕，无背景音乐")
+    assert "删 Meta 词" in fixes and "补结尾后缀" in fixes
+    # 已带后缀不重复追加
+    h2, f2 = heal_h3_prompt("summary: x。\n无字幕，无背景音乐", {"ledger_json": "{}"})
+    assert h2.count("无字幕，无背景音乐") == 1
