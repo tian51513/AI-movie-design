@@ -234,3 +234,89 @@ def test_canvas_follows_project_megapixels(tmp_path):
     tl2, _ = build_timeline(db, tmp_path / "data", pid)
     assert tl2["width"] * tl2["height"] > tl["width"] * tl["height"]
     assert tl2["width"] % 32 == 0 and tl2["height"] % 32 == 0
+
+
+def test_gen_director_batch_relay_first_frame(tmp_path, monkeypatch):
+    """P7-H 批间首帧接力：批次 N 末帧 → 批次 N+1 首段 genImage 起始画面 +
+    提示词前置唯一起始画面指令（像素级接力，介于批内 latent 与硬切之间）。"""
+    from pathlib import Path
+    from comic_studio.engine import director as D
+    from comic_studio.engine import video as video_mod
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comfy_mock import comfy_server
+
+    def _fake_extract(video_path, out_png, timeout=30):
+        out_png.write_bytes(b"\x89PNG")
+        return out_png
+    monkeypatch.setattr(video_mod, "extract_last_frame", _fake_extract)
+
+    db, pid, chars = _setup(tmp_path)
+    ids = persist_shots(db, pid, [
+        _shot("甲", "甲镜。", 5.0, ledger={"assets": {"characters": [chars["林晨"]]}},
+              character_ids=[chars["林晨"]]) for _ in range(3)])
+    set_stage(db, pid, "storyboard_ready")
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"director": "h3_director"})
+    set_setting(db, "comfy", {"base_url": "http://x:8188", "min_free_vram_gb": 0,
+                              "director_batch_frames": 256})  # 3 镜 → 2 批
+    monkeypatch.setattr("comic_studio.engine.merge.concat",
+                        lambda parts, out: out.write_bytes(b"v") or out)
+    jid = enqueue_job(db, "gen_director", project_id=pid, resource="gpu_comfy",
+                      payload={"project_id": pid})
+    import json as _json
+    with comfy_server("ok", video=True) as m:
+        D.handle_gen_director(db, tmp_path / "data", get_job(db, jid),
+                              ComfyClient(m.base_url))
+        assert len(m.prompts) == 2
+        t1 = _json.loads(m.prompts[0]["prompt"]["12"]["inputs"]["timeline_data"])
+        t2 = _json.loads(m.prompts[1]["prompt"]["12"]["inputs"]["timeline_data"])
+        # 首批不接力
+        assert t1["segments"][0]["genImage"]["imageFile"] == ""
+        # 第二批首段：挂起始画面 + 提示词前置唯一起始画面指令
+        seg = t2["segments"][0]
+        assert seg["genImage"]["imageFile"].startswith("cs__导演剧__relay")
+        assert seg["prompt"].startswith("【最高优先级")
+        assert "<Picture 2>作为唯一起始画面" in seg["prompt"]  # 1 角色ref(index0=图1) → 起始画面=图2
+        # 接力帧已上传
+        assert any(u.startswith("cs__导演剧__relay") for u in m.uploads)
+
+
+def test_gen_director_batch_relay_switch_off(tmp_path, monkeypatch):
+    """P7-H 手动开关：director_batch_relay=false → 批间不接力（硬切）。"""
+    from pathlib import Path
+    from comic_studio.engine import director as D
+    from comic_studio.engine import video as video_mod
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comfy_mock import comfy_server
+    monkeypatch.setattr(video_mod, "extract_last_frame",
+                        lambda v, o, timeout=30: o.write_bytes(b"p") or o)
+    db, pid, chars = _setup(tmp_path)
+    persist_shots(db, pid, [
+        _shot("甲", "甲镜。", 5.0, ledger={"assets": {"characters": [chars["林晨"]]}},
+              character_ids=[chars["林晨"]]) for _ in range(3)])
+    set_stage(db, pid, "storyboard_ready")
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"director": "h3_director"})
+    set_setting(db, "comfy", {"base_url": "http://x:8188", "min_free_vram_gb": 0,
+                              "director_batch_frames": 256,
+                              "director_batch_relay": False})
+    monkeypatch.setattr("comic_studio.engine.merge.concat",
+                        lambda parts, out: out.write_bytes(b"v") or out)
+    jid = enqueue_job(db, "gen_director", project_id=pid, resource="gpu_comfy",
+                      payload={"project_id": pid})
+    import json as _json
+    with comfy_server("ok", video=True) as m:
+        D.handle_gen_director(db, tmp_path / "data", get_job(db, jid),
+                              ComfyClient(m.base_url))
+        t2 = _json.loads(m.prompts[1]["prompt"]["12"]["inputs"]["timeline_data"])
+        assert t2["segments"][0]["genImage"]["imageFile"] == ""
+        assert not t2["segments"][0]["prompt"].startswith("【最高优先级")
+        assert not any("relay" in u for u in m.uploads)

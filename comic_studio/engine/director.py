@@ -163,14 +163,25 @@ def handle_gen_director(db, data_dir, job, comfy):
     tmpl = resolve_template(db, "director")
     comfy_cfg = get_setting(db, "comfy") or {}
     budget = int(comfy_cfg.get("director_batch_frames") or 512)
+    batch_relay = comfy_cfg.get("director_batch_relay", True)  # P7-H 手动开关（默认开）
     batches = _batch_shots(shots, budget)
     upload_by_path: dict[str, str] = {}
+    _relay_name = ""  # 上批末帧上传名（P7-H 批间首帧接力）
     parts_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/director_parts")
     parts_dir.mkdir(parents=True, exist_ok=True)
     parts = []
     for i, batch in enumerate(batches, 1):
         segments = _segments_for_shots(db, data_dir, proj, batch, upload_by_path)
         segments[0]["continuityFromPrev"] = False  # 批间断开（无跨提交 latent 接力）
+        if i > 1 and batch_relay and _relay_name:
+            # P7-H 批间首帧接力：上批末帧作本批首段起始画面（genImage 占 refs
+            # 之后的下一个 <Picture> 槽：k 个角色 ref 后即 <Picture k+1>）
+            k = len(segments[0]["refs"])
+            segments[0]["genImage"] = {"imageFile": _relay_name}
+            segments[0]["prompt"] = (
+                f"【最高优先级：以<Picture {k + 1}>作为唯一起始画面继续生成】"
+                f"保持人物位置、外貌、服装、场景、光线与构图延续，"
+                f"仅动作与镜头自然推进。\n" + segments[0]["prompt"])
         # 批内 start 重排
         _start = 0
         for seg in segments:
@@ -207,6 +218,19 @@ def handle_gen_director(db, data_dir, job, comfy):
         comfy.download(video["filename"], video.get("subfolder", ""),
                        video.get("type", "output"), part)
         parts.append(part)
+        if batch_relay and i < len(batches):
+            # 抽本批末帧上传，供下批首段作起始画面
+            from .video import extract_last_frame
+            relay_png = parts_dir / f"relay{i:03d}.png"
+            try:
+                extract_last_frame(part, relay_png)
+                _relay_name = f"cs__{proj['slug']}__relay-{i:03d}.png"
+                comfy.upload_image(str(relay_png), _relay_name)
+            except Exception as exc:  # 接力失败不阻塞——退化为批间硬切
+                emit_log(db, "comfy", "warn",
+                         f"批间首帧接力失败（批次 {i}→{i+1} 退化为硬切）：{exc}",
+                         project_id=pid, job_id=job["id"])
+                _relay_name = ""
         emit_log(db, "comfy", "info", f"导演台批次 {i}/{len(batches)} 完成",
                  project_id=pid, job_id=job["id"])
     out_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/output")

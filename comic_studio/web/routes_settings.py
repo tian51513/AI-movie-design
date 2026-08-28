@@ -30,6 +30,7 @@ class ComfyConfig(BaseModel):
     # 导演台性能开关（引擎注入覆盖模板值；OOM 时开清显存）
     director_clear_vram: bool = False
     director_export_source: bool = False
+    director_batch_relay: bool = True  # P7-H 批间首帧接力
 
 
 TEMPLATE_MAP_KEYS = {"character_views", "t2i", "ref2va", "fl2v", "t2v", "i2v",

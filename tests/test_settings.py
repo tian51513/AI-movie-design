@@ -57,4 +57,5 @@ def test_comfy_setting_default(tmp_path):
                                         "min_free_vram_gb": 8,
                                         "director_batch_frames": 512,
                                         "director_clear_vram": False,
-                                        "director_export_source": False}
+                                        "director_export_source": False,
+                                        "director_batch_relay": True}

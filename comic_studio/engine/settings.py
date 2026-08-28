@@ -35,7 +35,10 @@ DEFAULT_SETTINGS = {
               "director_batch_frames": 512,
               # 导演台性能开关（2026-08-28 需求）：段间清显存+重预热每镜多几十秒，
               # 12GB 专跑默认关；OOM 时打开。源帧对比图导出默认关。
-              "director_clear_vram": False, "director_export_source": False},
+              "director_clear_vram": False, "director_export_source": False,
+              # P7-H 批间首帧接力（2026-08-29）：上批末帧作下批首段起始画面，
+              # 介于批内 latent 连贯与硬切之间；失败自动退化为硬切
+              "director_batch_relay": True},
     # 工作流模型槽位覆盖（计划5B 任务6）：{模板 id: {label: 文件名}}
     "model_overrides": {},
 }
