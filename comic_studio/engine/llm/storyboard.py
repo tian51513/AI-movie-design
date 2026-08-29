@@ -235,8 +235,8 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2
                  f"split_storyboards 完成 · {getattr(client, 'model', '?')} · "
                  f"{usage.prompt_tokens}+{usage.completion_tokens} tok · {time.monotonic()-t0:.1f}s · "
                  f"{len(result.shots)} 镜", project_id=project_id)
-        for d in result.shots:
-            # _content_guard(d.description + " " + d.text_span)
+        # for d in result.shots:
+        #     _content_guard(d.description + " " + d.text_span)
         if result.shots[0].continue_prev and staged:
             link_first_of_block.append(len(staged))
         from ..projects import get_project as _gp
