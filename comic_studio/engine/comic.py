@@ -5,6 +5,7 @@
 → 渲染走既有 fl2v 首尾帧插值 = 翻页过渡动画；门禁/渲染/合成/多版本全复用。
 提示词由 VLM 读图生成（describe_shots，多模态 raw_chat）或人工填写。"""
 import base64
+import json
 
 from .logbus import emit as emit_log
 
