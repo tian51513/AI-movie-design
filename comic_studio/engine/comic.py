@@ -204,60 +204,126 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                      project_id=project_id)
     if n:
         emit_log(db, "llm", "info", f"VLM 读图生成提示词 {n} 镜", project_id=project_id)
-        # 读图顺手提取角色（2026-08-29 用户需求重构：一遍完成，不需单独采样）
-        _extract_characters_from_prompts(db, data_dir, project_id)
-        # 自动绑定角色到分镜
-        from .llm.storyboard import auto_bind_characters
-        bound = auto_bind_characters(db, project_id)
-        if bound:
-            emit_log(db, "llm", "info", f"角色自动绑定：{bound} 处",
-                     project_id=project_id)
+        # 读图顺手提取角色——仅漫改（2026-08-29 真机教训：动态漫 fl2v 用漫画原页
+        # 渲染，角色资产毫无用处，还提取出 83 个旁白/叙述垃圾资产 + 1195 处绑定）
+        if comic_mode == "film_adaptation":
+            _extract_characters_from_prompts(db, data_dir, project_id)
+            # 自动绑定角色到分镜
+            from .llm.storyboard import auto_bind_characters
+            bound = auto_bind_characters(db, project_id)
+            if bound:
+                emit_log(db, "llm", "info", f"角色自动绑定：{bound} 处",
+                         project_id=project_id)
     return n
 
 
 def _extract_characters_from_prompts(db, data_dir, project_id) -> int:
-    """从已生成的提示词中提取角色名 → 建资产（2026-08-29 用户需求重构：
-    读图的同时顺手提取，不需单独采样步骤）。扫描所有 prompt 中的
-    「角色名：」「角色名「」格式，去重后创建资产。"""
+    """从已生成的提示词对白中提取角色名 → 建资产（仅漫改调用）。
+    过滤规则（2026-08-29 真机教训：旧正则把旁白/对白标签、「随后前夫问道」类
+    叙述短语全当人名，83 个资产里只有 1 个真名）：
+    说话人须全篇出现 ≥2 次 + 长度 ≤4 + 叙述词黑名单 + 动词后缀排除。"""
+    from collections import Counter
     from .shots import list_shots
     from .assets import list_project_assets, persist_assets
     from types import SimpleNamespace as NS
-    import re as _re
 
     # 已有角色名集合（不重复创建）
     existing = {a["name"] for a in list_project_assets(db, project_id)
                 if a["kind"] == "character"}
 
-    # 从所有提示词中提取角色名
-    name_re = _re.compile(r"([一-龥A-Za-z·]{2,6})[：:「]")
-    found = {}
+    # 从对白提取说话人（_extract_dialogue 要求 名字+引号台词 严格格式，
+    # 比裸正则可靠：不再匹配「随后前夫问道：「」前的叙述前缀以外的噪音）
+    counts = Counter()
+    contexts = {}
     for s in list_shots(db, project_id):
         prompt = s["prompt"] or ""
-        for m in name_re.finditer(prompt):
-            name = m.group(1)
-            if name and name not in existing and name not in ("背景", "镜头", "画面", "角色", "模型"):
-                if name not in found:
-                    # 从提示词上下文提取外貌线索
-                    ctx = prompt[max(0, m.start() - 20):m.end() + 80]
-                    found[name] = ctx
+        for d in _extract_dialogue(prompt):
+            name = (d.get("speaker") or "").strip()
+            if not name or name in existing:
+                continue
+            counts[name] += 1
+            if name not in contexts:
+                contexts[name] = prompt[:80]
 
+    found = {n: c for n, c in counts.items() if _is_real_character_name(n, c)}
     if not found:
         return 0
 
     # 建资产（外貌从上下文推断）
-    char_ns = []
-    for name, ctx in found.items():
-        # 尝试从上下文提取外貌描述
-        appearance = f"性别：待确认\n来源：VLM 读图提取\n上下文：{ctx[:60]}"
-        char_ns.append(NS(name=name, appearance=appearance, tags=["comic"]))
-
-    if char_ns:
-        persist_assets(db, data_dir, project_id,
-                       NS(characters=char_ns, scenes=[], props=[]))
-        emit_log(db, "llm", "info",
-                 f"读图顺手提取角色：{len(char_ns)} 个（{', '.join(c.name for c in char_ns)}）",
-                 project_id=project_id)
+    char_ns = [NS(name=n,
+                  appearance=f"性别：待确认\n来源：VLM 读图提取\n上下文：{contexts[n][:60]}",
+                  tags=["comic"])
+               for n in found]
+    persist_assets(db, data_dir, project_id,
+                   NS(characters=char_ns, scenes=[], props=[]))
+    emit_log(db, "llm", "info",
+             f"读图顺手提取角色：{len(char_ns)} 个（{', '.join(found)}）",
+             project_id=project_id)
     return len(char_ns)
+
+
+# 叙述词黑名单：VLM 提示词里的高频非人名说话人/标签（子串匹配）
+_NARRATION_WORDS = ("旁白", "对白", "画外", "独白", "心声", "字幕", "文字", "气泡",
+                    "伴随", "镜头", "画面", "背景", "角色", "女性", "男性", "音效",
+                    "标题", "旁白说道")
+# 动词后缀：叙述句尾缀被切成"名字"（儿子心想/贴榻榻米喊出）
+_SPEAK_VERBS = ("说道", "问道", "喊出", "心想", "感叹", "回应", "低语", "开口",
+                "回答", "自语", "大喊", "轻声")
+
+
+def _is_real_character_name(name: str, count: int) -> bool:
+    """机械过滤：≥2 次出现（复发性=真角色）+ ≤4 字 + 非叙述词。"""
+    if len(name) > 4 or count < 2:
+        return False
+    if any(w in name for w in _NARRATION_WORDS):
+        return False
+    if name.endswith(_SPEAK_VERBS):
+        return False
+    return name not in ("背景", "镜头", "画面", "角色", "模型")
+
+
+def purge_comic_assets(db, data_dir, project_id) -> int:
+    """清理读图提取的资产（2026-08-29 动态漫误提取善后）：
+    删资产行 + project_assets 引用 + library 目录 + 分镜 ledger 角色绑定。
+    只清 tags 含 comic 的——LLM 分析来的资产不动。返回清理数。"""
+    import shutil
+    from .assets import list_project_assets
+    from .paths import data_to_abs
+    from .shots import list_shots
+    rows = []
+    for a in list_project_assets(db, project_id):
+        try:
+            tags = json.loads(a["tags_json"] or "[]")
+        except Exception:
+            tags = []
+        if "comic" in tags:
+            rows.append(a)
+    if not rows:
+        return 0
+    ids = {a["id"] for a in rows}
+    for a in rows:
+        if a["library_dir"]:
+            d = data_to_abs(data_dir, a["library_dir"])
+            if d.is_dir():
+                shutil.rmtree(d, ignore_errors=True)
+    conn = db.connect()
+    ph = ",".join("?" * len(ids))
+    conn.execute(f"DELETE FROM project_assets WHERE asset_id IN ({ph})", sorted(ids))
+    conn.execute(f"DELETE FROM assets WHERE id IN ({ph})", sorted(ids))
+    # 分镜绑定同步清理（对白等其他 ledger 字段不动）
+    for s in list_shots(db, project_id):
+        ledger = json.loads(s["ledger_json"] or "{}")
+        assets = ledger.setdefault("assets", {})
+        chars = assets.get("characters") or []
+        rest = [c for c in chars if c not in ids]
+        if rest != chars:
+            assets["characters"] = rest
+            conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
+                         (json.dumps(ledger, ensure_ascii=False), s["id"]))
+    conn.commit()
+    emit_log(db, "llm", "info",
+             f"清理提取资产 {len(rows)} 个（含分镜绑定）", project_id=project_id)
+    return len(rows)
 
 
 def _sample_shot_indices(total: int, sample_size: int = 9) -> list[int]:
@@ -336,6 +402,15 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> i
         "SELECT id FROM assets WHERE source_project=?", (project_id,)).fetchall()]
     if old_ids:
         ph = ",".join("?" * len(old_ids))
+        # 连目录一起删（2026-08-29 幽灵图教训：删行不删目录，id 复用后新资产继承旧图）
+        import shutil
+        for r in conn.execute(
+                f"SELECT library_dir FROM assets WHERE id IN ({ph})",
+                old_ids).fetchall():
+            if r["library_dir"]:
+                d = data_to_abs(data_dir, r["library_dir"])
+                if d.is_dir():
+                    shutil.rmtree(d, ignore_errors=True)
         conn.execute(f"DELETE FROM project_assets WHERE asset_id IN ({ph})", old_ids)
         conn.execute(f"DELETE FROM assets WHERE id IN ({ph})", old_ids)
         conn.commit()

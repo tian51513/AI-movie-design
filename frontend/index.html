@@ -568,6 +568,9 @@
         {{ analyzeState.status==='running' ? '分析中…' : 'LLM 分析资产' }}</button>
       <span v-if="analyzeState.status==='failed'" style="color:#f87171">
         失败：{{ analyzeState.error }}</span>
+      <button v-if="project.comic_mode && assets.length" @click="purgeComicAssets"
+              style="background:#dc2626;font-size:12px;padding:3px 10px"
+              title="删除全部读图提取的资产（含参考图目录与分镜绑定）——动态漫不需要角色资产，误提取的旁白/叙述垃圾用它清理">🗑 清理提取资产</button>
     </p>
     <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button v-for="k in ['全部','character','scene','prop']" :key="k"

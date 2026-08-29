@@ -35,6 +35,11 @@ def persist_assets(db: Database, data_dir: Path, project_id: int, analysis) -> l
                      "", project_id))
                 asset_id = cur.lastrowid
                 lib_dir = Path(data_dir) / "library" / f"{kind}s" / str(asset_id)
+                if lib_dir.exists():
+                    # id 复用防幽灵图（2026-08-29 真机：删行/回滚后 id 复用，
+                    # 新资产继承了旧目录残留的 main.png/views——清空重建）
+                    import shutil
+                    shutil.rmtree(lib_dir)
                 (lib_dir / "views").mkdir(parents=True, exist_ok=True)
                 (lib_dir / "meta.json").write_text(json.dumps({
                     "name": item.name, "kind": kind,

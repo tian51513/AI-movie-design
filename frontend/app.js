@@ -772,6 +772,15 @@ const methods = {
     if (!r.ok) { alert(await r.text()); return; }
     // 202 入队，状态由队列轮询驱动
   },
+  async purgeComicAssets() {
+    if (!confirm(`清理全部读图提取的资产（${this.assets.length} 个，含参考图与分镜绑定）？LLM 分析的资产不受影响。`)) return;
+    const r = await fetch(`/api/projects/${this.project.id}/assets/purge-comic`, {method: 'POST'});
+    if (!r.ok) { alert(await r.text()); return; }
+    const d = await r.json();
+    await this.loadDetail();
+    this.refreshShots?.();
+    alert(`已清理 ${d.purged} 个提取资产`);
+  },
   async describeShots() {
     if (!confirm('VLM 读图生成全部缺失提示词？（本地视觉模型逐镜调用，页多较慢）')) return;
     const r = await fetch(`/api/projects/${this.project.id}/describe-shots`, {method: 'POST'});
