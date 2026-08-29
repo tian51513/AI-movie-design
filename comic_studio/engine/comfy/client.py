@@ -23,7 +23,9 @@ class ComfyClient:
         self.timeout = timeout
 
     def _client(self) -> httpx.Client:
-        return httpx.Client(timeout=self.timeout)
+        # trust_env=False：ComfyUI 永远在 localhost，不走代理/不读环境变量
+        # （2026-08-29 真机：Windows 侧代理劫持 object_info 响应致 JSON 解析碎裂）
+        return httpx.Client(timeout=self.timeout, trust_env=False)
 
     def health(self) -> dict:
         try:
