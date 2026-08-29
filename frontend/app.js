@@ -422,12 +422,12 @@ const methods = {
     this.view = 'settings'; this.checkComfy();
     this.llmTestResult = {local: null, online: null};
     this.llmTestManual = {local: false, online: false};
-    // 从 base_url 反推服务商类型（选下拉用）
+    const s = await (await fetch('/api/settings')).json();
+    // 从 base_url 反推服务商类型（选下拉用——必须在 s 赋值之后！）
     const _bu = (s.llm_providers.local?.base_url || '').toLowerCase();
     this.localProviderType = _bu.includes('11434') ? 'ollama'
       : _bu.includes('1234') ? 'lmstudio'
       : _bu ? 'custom' : '';
-    const s = await (await fetch('/api/settings')).json();
     this.settingsForm = {
       local: { ...s.llm_providers.local,
                extra_body_json: s.llm_providers.local?.extra_body ? JSON.stringify(s.llm_providers.local.extra_body) : '' },
