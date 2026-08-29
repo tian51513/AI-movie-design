@@ -80,3 +80,9 @@ def set_setting(db: Database, key: str, value) -> None:
         "ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json",
         (key, json.dumps(value, ensure_ascii=False)))
     conn.commit()
+    # 立即 checkpoint 进主库——防 WAL 被清时丢数据（2026-08-29 真机：
+    # force_recover 删 WAL → 用户刚保存的设置全丢）
+    try:
+        conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+    except Exception:
+        pass
