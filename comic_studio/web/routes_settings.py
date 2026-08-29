@@ -138,7 +138,15 @@ def model_choices(template: str = Query(...), request: Request = None):
     for slot in reg[template].models:
         try:
             with comfy._client() as c:
-                info = c.get(f"{base_url}/object_info/{slot.cls}").json()[slot.cls]
+                resp = c.get(f"{base_url}/object_info/{slot.cls}")
+                try:
+                    info = resp.json()[slot.cls]
+                except Exception as json_exc:
+                    # 调试：输出实际收到的响应前 200 字符（2026-08-29 枚举碎裂排查）
+                    raise HTTPException(502,
+                        f"ComfyUI 响应异常（{slot.cls}）：解析失败 {json_exc}；"
+                        f"status={resp.status_code} content_type={resp.headers.get('content-type')} "
+                        f"body前200字符={resp.text[:200]!r}")
             choices = (info["input"]["required"].get(slot.field)
                        or info["input"].get("optional", {}).get(slot.field))
             choices = choices[0]
