@@ -73,9 +73,16 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
     if proj is None:
         raise ValueError(f"项目不存在: {project_id}")
     slug = proj["slug"]
-    system = ("你是视频提示词工程师。给定漫画当前页（首帧）与下一页（尾帧），"
-              "写一段可直接用于图生视频的中文提示词：描述从首帧画面到尾帧画面的"
-              "自然过渡（人物动作/镜头微动/环境变化），80 字内单段，不解释。")
+    system = (
+        "你是漫画转视频的分镜导演。你会收到同一漫画的两格画面（第一张=首帧，第二张=尾帧）。\n"
+        "你的任务：分析两格之间的剧情变化，写出视频生成提示词。\n\n"
+        "分析步骤（内部完成，不要输出）：\n"
+        "1. 看第一张图：谁在做什么？什么表情？什么场景？\n"
+        "2. 看第二张图：发生了什么变化？（人物动作变了？位置变了？来了新人物？场景切换了？）\n"
+        "3. 推导：从第一格到第二格，人物做了什么动作？镜头怎么动？\n\n"
+        "输出格式（直接输出，不解释）：\n"
+        "一段中文提示词，100 字以内，包含：人物名字+动作+表情变化+镜头运动+环境变化。\n"
+        "必须描述「从第一格状态到第二格状态的具体过渡过程」，不能只描述单帧静态画面。")
     n = 0
     for s in list_shots(db, project_id):
         if shot_id is not None and s["id"] != shot_id:
@@ -88,7 +95,10 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
         if not start_png.exists():
             continue
         content = [{"type": "text", "text":
-                    f"第 {s['seq']} 页（首帧）→ 第 {s['seq'] + 1} 页（尾帧）"}]
+                    (f"第一张图=第 {s['seq']} 格（视频首帧），"
+                     f"第二张图=第 {s['seq'] + 1} 格（视频尾帧）。"
+                     if end_png.exists() else
+                     f"只有一张图=第 {s['seq']} 格（最后一页，无下一格）。请描述这一格画面的动态延展。")}]
         for png in (start_png, end_png):
             if png.exists():
                 b64 = base64.b64encode(png.read_bytes()).decode()
