@@ -162,10 +162,11 @@ def create_from_comic(request: Request,
     return _public(proj)
 
 
-@router.post("/{project_id}/describe-shots", status_code=202)
+@router.post("/{project_id}/describe-shots")
 def describe_shots_route(project_id: int, request: Request,
                          shot_id: int = 0):
-    """P8 VLM 读图生成提示词（后台任务，逐镜多模态调用）。"""
+    """P8 VLM 读图生成提示词。shot_id>0 时同步等结果（单镜按钮，10-30s）；
+    不带 shot_id 时 202 后台跑（批量模式）。"""
     db = request.app.state.db
     from ..engine.projects import get_project
     proj = get_project(db, project_id)
@@ -177,21 +178,22 @@ def describe_shots_route(project_id: int, request: Request,
 
     def _run():
         try:
-            # describe_shot 可独立路由（如指到 LM Studio 的视觉模型——
-            # Ollama 量化版缺 mmproj 时图片输入 500，2026-08-29 真机）
             try:
                 client = client_for_task(db, "describe_shot")
             except Exception:
-                client = client_for_task(db, "gen_video_prompt")  # 未配置时回退
-            _describe(db, data_dir, project_id, client,
-                      shot_id=shot_id if shot_id else None)
+                client = client_for_task(db, "gen_video_prompt")
+            return _describe(db, data_dir, project_id, client,
+                             shot_id=shot_id if shot_id else None)
         except Exception as exc:
             emit_log(db, "llm", "error", f"VLM 读图失败：{exc}", project_id=project_id)
+            return 0
 
-    from fastapi import BackgroundTasks
-    # BackgroundTasks 需在签名里——这里直接起线程更省事
+    if shot_id:
+        n = _run()  # 同步等结果（单镜 10-30s，前端有反馈）
+        return {"generated": n}
     import threading
     threading.Thread(target=_run, daemon=True).start()
+    return {"status": "background"}
     return {"status": "started"}
 
 

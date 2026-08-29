@@ -733,14 +733,22 @@ const methods = {
     setTimeout(() => { this.describing = false; this.loadShots(); }, 3000);  // 简易轮询：稍后刷新
   },
   async describeOneShot(s) {
-    // 逐镜 VLM 读图（漫画项目）：只跑这一镜，覆盖已有提示词
-    this.describing = true;
+    // 逐镜 VLM 读图（漫画项目）：同步等待结果（10-30s），有明确反馈
+    this.describing = s.id;  // 记录正在读图的镜 id（按钮显示状态）
     try {
       const r = await fetch(`/api/projects/${this.project.id}/describe-shots?shot_id=${s.id}`, {method: 'POST'});
-      if (!r.ok) alert(await r.text());
+      if (!r.ok) { alert('读图失败：' + (await r.text())); return; }
+      const b = await r.json();
       await this.loadShots();
+      if (b.generated > 0) {
+        // 短暂高亮提示成功
+        s._justRead = true;
+        setTimeout(() => { s._justRead = false; }, 2000);
+      } else {
+        alert('模型没有生成提示词（看日志排查）');
+      }
     } catch (e) { alert('读图失败：' + e); }
-    this.describing = false;
+    this.describing = null;
   },
   async batchShots(action) {
     const ids = this.shotSel;
