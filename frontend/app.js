@@ -89,6 +89,10 @@ const computed = {
     return ((this.queue && this.queue.jobs) || []).some(
       j => j.type === 'gen_director' && (j.status === 'pending' || j.status === 'running'));
   },
+  extractCharsBusy() {  // 角色提取状态由队列驱动
+    return ((this.queue && this.queue.jobs) || []).some(
+      j => j.type === 'extract_comic_characters' && (j.status === 'pending' || j.status === 'running'));
+  },
   batchVlmBusy() {  // 批量 VLM 读图状态由队列驱动（替换原来的 3s setTimeout hack）
     return ((this.queue && this.queue.jobs) || []).some(
       j => j.type === 'describe_shots' && (j.status === 'pending' || j.status === 'running'));
@@ -761,6 +765,12 @@ const methods = {
       await this.refresh();
     } catch (e) { alert('导入失败：' + e); }
     this.creating = false;
+  },
+  async extractCharacters() {
+    if (!confirm('VLM 读前3页漫画提取角色？（建资产后可生成参考图，ref2va 渲染需要）')) return;
+    const r = await fetch(`/api/projects/${this.project.id}/extract-comic-characters`, {method: 'POST'});
+    if (!r.ok) { alert(await r.text()); return; }
+    // 202 入队，状态由队列轮询驱动
   },
   async describeShots() {
     if (!confirm('VLM 读图生成全部缺失提示词？（本地视觉模型逐镜调用，页多较慢）')) return;

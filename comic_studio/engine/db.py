@@ -139,6 +139,8 @@ MIGRATIONS: list[str] = [
     """ALTER TABLE llm_calls ADD COLUMN reply_text TEXT NOT NULL DEFAULT '';""",
     # 25 P7-E 多章节：章节结构（[{idx,title,start,end}] 字符偏移），拆分镜可按章范围
     """ALTER TABLE projects ADD COLUMN chapters_json TEXT NOT NULL DEFAULT '';""",
+    # 26 P8-B 漫画双模式：motion_comic（动态漫/fl2v）| film_adaptation（漫改/ref2va）
+    """ALTER TABLE projects ADD COLUMN comic_mode TEXT NOT NULL DEFAULT 'motion_comic';""",
 ]
 
 

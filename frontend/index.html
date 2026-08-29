@@ -459,6 +459,10 @@
               title="P8 漫画项目：VLM 读首/尾帧自动生成缺失的视频提示词"
               style="font-size:12px;padding:3px 8px;background:#0e7490">
         {{ batchVlmBusy ? '⏳ 读图中…' : '👁 读图生成提示词' }}</button>
+      <button v-if="project.comic_mode==='film_adaptation'" @click="extractCharacters"
+              :disabled="extractCharsBusy" style="font-size:12px;padding:3px 8px;background:#7c3aed"
+              :title="'漫改模式：VLM 读前3页提取角色 → 建资产 → 可生成参考图'">
+        {{ extractCharsBusy ? '⏳ 提取中…' : '🎭 提取角色' }}</button>
       <template v-if="shotSel.length">
         <span class="pill" style="border:1px solid #f59e0b;color:#f59e0b">已选 {{ shotSel.length }}</span>
         <button @click="batchShots('disable')" style="font-size:12px;padding:3px 8px;background:#7c3aed"

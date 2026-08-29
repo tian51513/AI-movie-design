@@ -79,3 +79,20 @@ def handle_describe_shots(db, data_dir, job, comfy):
                        client, shot_id=payload.get("shot_id"))
     emit_log(db, "llm", "info", f"VLM 读图任务完成：{n} 镜",
              project_id=job["project_id"], job_id=job["id"])
+
+
+@register("extract_comic_characters")
+def handle_extract_comic_characters(db, data_dir, job, comfy):
+    """P8-B 漫改模式角色提取（VLM 读前几页 → 建资产）。"""
+    import json as _json
+    payload = _json.loads(job["payload_json"] or "{}")
+    from .comic import extract_comic_characters
+    from .llm.provider import client_for_task
+    try:
+        client = client_for_task(db, "describe_shot")
+    except Exception:
+        client = client_for_task(db, "gen_video_prompt")
+    n = extract_comic_characters(db, data_dir,
+                                 payload.get("project_id", job["project_id"]), client)
+    emit_log(db, "llm", "info", f"角色提取任务完成：{n} 个角色",
+             project_id=job["project_id"], job_id=job["id"])

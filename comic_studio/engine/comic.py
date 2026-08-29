@@ -16,9 +16,9 @@ _VLM_LOCK = threading.Lock()
 
 
 def import_comic(db, data_dir, name: str, aspect: str,
-                 image_blobs: list) -> dict:
-    """image_blobs：[(filename, bytes)]，顺序即页序。建项目（跳过分析/拆解，
-    stage 直达 storyboard_ready）+ 每图一镜（fl2v）+ 关键帧落位。"""
+                 image_blobs: list, comic_mode: str = "motion_comic") -> dict:
+    """image_blobs：[(filename, bytes)]，顺序即页序。comic_mode：
+    motion_comic（动态漫/fl2v 翻页）| film_adaptation（漫改/ref2va 动画）。"""
     if not image_blobs:
         raise ValueError("至少需要一张漫画页")
     if aspect not in ("9:16", "16:9"):
@@ -30,9 +30,13 @@ def import_comic(db, data_dir, name: str, aspect: str,
 
     n = len(image_blobs)
     placeholder = f"（漫画导入：{n} 页，画面见各镜关键帧）"
-    proj = create_project(db, data_dir, name, aspect, placeholder)
+    proj = create_project(db, data_dir, name, aspect, placeholder,
+                          comic_mode=comic_mode)
     pid = proj["id"]
     slug = proj["slug"]
+
+    # 渲染方式按模式：动态漫=fl2v（翻页插值），漫改=ref2va（参考图动画）
+    workflow = "fl2v" if comic_mode != "film_adaptation" else "ref2va"
 
     # 页落盘为各镜关键帧
     from pathlib import Path
@@ -43,7 +47,7 @@ def import_comic(db, data_dir, name: str, aspect: str,
         p = shot_dir / "kf_start.png"
         p.write_bytes(blob)
         page_files.append(p)
-    # 页 i+1 → 镜 i 尾帧（最后一镜无）
+    # 页 i+1 → 镜 i 尾帧（最后一镜无）——动态漫用，漫改模式仅供参考
     for i in range(1, n):
         end = page_files[i - 1].parent / "kf_end.png"
         end.write_bytes(page_files[i].read_bytes())
@@ -51,7 +55,7 @@ def import_comic(db, data_dir, name: str, aspect: str,
     drafts = [NS(text_span="", description=f"漫画第{i}页",
                  shot_type="", camera={"景别": "中景", "机位": "平视",
                                        "运镜": "固定", "转场": "切"},
-                 duration=5.0, workflow_type="fl2v", ledger={},
+                 duration=5.0, workflow_type=workflow, ledger={},
                  character_ids=[], scene_ids=[], prop_ids=[],
                  depends_on=None, prompt="")
               for i in range(1, n + 1)]
@@ -79,21 +83,42 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
     if proj is None:
         raise ValueError(f"项目不存在: {project_id}")
     slug = proj["slug"]
-    system = (
-        "你是漫画转视频的分镜导演。你会收到同一漫画的两格画面（第一张=首帧，第二张=尾帧）。\n"
-        "你的任务：分析两格之间的剧情变化（含对白），写出视频生成提示词。\n\n"
-        "分析步骤（内部完成，不要输出）：\n"
-        "1. 看第一张图：谁在做什么？什么表情？什么场景？有什么对白气泡？\n"
-        "2. 看第二张图：发生了什么变化？有什么对白气泡？\n"
-        "3. 对白排序：按漫画阅读顺序（从上到下、从右到左）整理两格中出现的所有对白，"
-        "标注说话人；多段对白按先后顺序排列\n"
-        "4. 推导：从第一格到第二格，人物做了什么动作？说了什么话？镜头怎么动？\n\n"
-        "输出格式（直接输出，不解释）：\n"
-        "一段中文提示词，120 字以内，包含：\n"
-        "- 人物名字+动作+表情变化+镜头运动+环境变化\n"
-        "- 对白：如果有对白气泡，按顺序写出「角色名：「台词」」\n"
-        "必须描述「从第一格到第二格的具体过渡过程」，不能只描述单帧静态画面。\n"
-        "对白必须按漫画中的实际顺序排列，不能乱序。")
+    comic_mode = proj["comic_mode"] if "comic_mode" in proj.keys() else "motion_comic"
+
+    if comic_mode == "film_adaptation":
+        # 漫改电影模式：动画描述（角色动起来、镜头运动、背景变化）
+        system = (
+            "你是漫改电影的动画导演。你会收到漫画的一格画面。\n"
+            "你的任务：将这格静态漫画转化为动态动画场景的视频提示词。\n\n"
+            "分析步骤（内部完成，不要输出）：\n"
+            "1. 看画面：谁在做什么？什么表情？什么场景？\n"
+            "2. 思考：如果要「活起来」，角色会做什么动作？镜头怎么运动？背景有什么变化？\n"
+            "3. 对白：如有对白气泡，按阅读顺序整理\n\n"
+            "输出（直接输出，不解释）：\n"
+            "一段中文提示词，120 字以内，必须包含：\n"
+            "- 具体的角色动作（如「缓步向前走」「转头看向」「伸手拿取」）\n"
+            "- 镜头运动（如「镜头缓缓推近」「横移跟拍」「轻微俯仰」）\n"
+            "- 背景/环境动态（如「风吹动树叶」「光线渐变」「雨滴落下」）\n"
+            "- 表情变化过程（如「从微笑到惊讶」）\n"
+            "- 对白（如有）：「角色名：「台词」」\n"
+            "关键：描述「正在发生的动画」，不是静态画面描述。")
+    else:
+        # 动态漫模式：翻页过渡（现有行为）
+        system = (
+            "你是漫画转视频的分镜导演。你会收到同一漫画的两格画面（第一张=首帧，第二张=尾帧）。\n"
+            "你的任务：分析两格之间的剧情变化（含对白），写出视频生成提示词。\n\n"
+            "分析步骤（内部完成，不要输出）：\n"
+            "1. 看第一张图：谁在做什么？什么表情？什么场景？有什么对白气泡？\n"
+            "2. 看第二张图：发生了什么变化？有什么对白气泡？\n"
+            "3. 对白排序：按漫画阅读顺序（从上到下、从右到左）整理两格中出现的所有对白，"
+            "标注说话人；多段对白按先后顺序排列\n"
+            "4. 推导：从第一格到第二格，人物做了什么动作？说了什么话？镜头怎么动？\n\n"
+            "输出格式（直接输出，不解释）：\n"
+            "一段中文提示词，120 字以内，包含：\n"
+            "- 人物名字+动作+表情变化+镜头运动+环境变化\n"
+            "- 对白：如果有对白气泡，按顺序写出「角色名：「台词」」\n"
+            "必须描述「从第一格到第二格的具体过渡过程」，不能只描述单帧静态画面。\n"
+            "对白必须按漫画中的实际顺序排列，不能乱序。")
     n = 0
     for s in list_shots(db, project_id):
         if shot_id is not None and s["id"] != shot_id:
@@ -161,6 +186,61 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
     if n:
         emit_log(db, "llm", "info", f"VLM 读图生成提示词 {n} 镜", project_id=project_id)
     return n
+
+
+def extract_comic_characters(db, data_dir, project_id, client, max_pages=3) -> int:
+    """P8-B 漫改模式：VLM 读前几页漫画 → 提取角色（名字+外貌）→ 建资产。
+    之后生成参考图（gen_ref），ref2va 渲染用。返回提取的角色数。"""
+    from .paths import data_to_abs
+    from .projects import get_project
+    from .shots import list_shots
+    from .assets import persist_assets
+    from types import SimpleNamespace as NS
+    import re as _re
+
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise ValueError(f"项目不存在: {project_id}")
+    slug = proj["slug"]
+    shots = list_shots(db, project_id)[:max_pages]
+    if not shots:
+        raise ValueError("无分镜可提取")
+
+    emit_log(db, "llm", "info", f"VLM 读前 {len(shots)} 页提取角色…",
+             project_id=project_id)
+    system = (
+        "你是角色设计师。给定漫画页面，提取所有出现的角色。\n"
+        '输出 JSON 数组：[{"name":"角色名","appearance":"外貌行模板"}]\n'
+        "外貌行模板格式（每行一项）：性别：\\n年龄：\\n发色发型：\\n服装：\\n…\n"
+        "只输出 JSON，不解释。")
+    content = [{"type": "text", "text": "提取这些漫画页面中的所有角色："}]
+    for s in shots:
+        png = data_to_abs(data_dir, f"projects/{slug}/shots/{s['seq']}/kf_start.png")
+        if png.exists():
+            b64 = base64.b64encode(png.read_bytes()).decode()
+            content.append({"type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{b64}"}})
+
+    with _VLM_LOCK:
+        text, _u = client.raw_chat(
+            [{"role": "system", "content": system},
+             {"role": "user", "content": content}], temperature=0.3)
+    text = (text or "").strip()
+
+    m = _re.search(r"\[.*\]", text, _re.DOTALL)
+    if not m:
+        raise ValueError(f"VLM 未返回角色 JSON：{text[:100]}")
+    chars = json.loads(m.group())
+
+    char_ns = [NS(name=c["name"], appearance=c.get("appearance", ""), tags=["comic"])
+               for c in chars if c.get("name")]
+    if not char_ns:
+        return 0
+    persist_assets(db, data_dir, project_id, NS(characters=char_ns, scenes=[], props=[]))
+    emit_log(db, "llm", "info",
+             f"角色提取完成：{len(char_ns)} 个（{', '.join(c.name for c in char_ns)}）",
+             project_id=project_id)
+    return len(char_ns)
 
 
 _DIALOGUE_RE = None

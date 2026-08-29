@@ -35,7 +35,7 @@ GEN_STORY_SYSTEM = """你是漫剧改编用的小说作者。按给定主题写�
 DEFAULT_STORY_WORDS = "8000~12000 字"
 WORD_COUNT_RANGE = (300, 20000)
 
-_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "style_vis", "era",
+_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "style_vis", "era", "comic_mode",
                     "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
                     "prompt_mode", "lora_realism", "target_duration", "autopilot")
 
@@ -145,8 +145,12 @@ def _generate_story_text(db, theme, body) -> str:
 @router.post("/from-comic", status_code=201)
 def create_from_comic(request: Request,
                       name: str = Form(...), aspect_ratio: str = Form("9:16"),
+                      comic_mode: str = Form("motion_comic"),
                       images: list[UploadFile] = File(...)):
-    """P8 漫画导入：每图一镜（fl2v 翻页链），直达分镜就绪等提示词。"""
+    """P8 漫画导入：每图一镜，直达分镜就绪。comic_mode：
+    motion_comic（动态漫/fl2v）| film_adaptation（漫改/ref2va）。"""
+    if comic_mode not in ("motion_comic", "film_adaptation"):
+        comic_mode = "motion_comic"
     blobs = []
     for f in images:
         data = f.file.read()
@@ -156,10 +160,23 @@ def create_from_comic(request: Request,
     try:
         from ..engine.comic import import_comic
         proj = import_comic(request.app.state.db, request.app.state.data_dir,
-                            name, aspect_ratio, blobs)
+                            name, aspect_ratio, blobs, comic_mode=comic_mode)
     except ValueError as exc:
         raise HTTPException(422, str(exc))
     return _public(proj)
+
+
+@router.post("/{project_id}/extract-comic-characters", status_code=202)
+def extract_comic_characters_route(project_id: int, request: Request):
+    """P8-B 漫改模式：VLM 读前几页提取角色 → 建资产（队列任务）。"""
+    db = request.app.state.db
+    from ..engine.projects import get_project
+    if get_project(db, project_id) is None:
+        raise HTTPException(404, "项目不存在")
+    from ..engine.jobs import enqueue_job
+    jid = enqueue_job(db, "extract_comic_characters", project_id=project_id,
+                      resource="gpu_llm_local", payload={"project_id": project_id})
+    return {"job_id": jid}
 
 
 @router.post("/{project_id}/describe-shots", status_code=202)
