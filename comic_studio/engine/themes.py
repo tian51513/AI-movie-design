@@ -13,7 +13,7 @@ from pathlib import Path
 
 THEME_ROOT = Path("templates/tpl")
 
-_SKIP_SECTION = re.compile(r"成人向|情欲")
+_SKIP_SECTION = re.compile(r"adult")
 _ENTRY = re.compile(
     r"\d+\.\s*\*\*主题名称：?\*\*\s*《(.+?)》\s*\n+\*\*描述：?\*\*\s*(.+?)"
     r"(?=\n\s*\d+\.|\n---|\Z)",
