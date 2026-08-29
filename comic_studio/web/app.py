@@ -125,6 +125,10 @@ def create_app(db_path: str | Path = "./data/studio.db",
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        # 本地地址豁免代理（2026-08-29 真机：WSL 挂 http_proxy=127.0.0.1:1092 时
+        # Ollama/ComfyUI 的 127.0.0.1 请求全被代理掐线——必须第一位执行）
+        from ..engine.netenv import ensure_local_no_proxy
+        ensure_local_no_proxy()
         db.migrate()
         # 主题模板同步入库（幂等 upsert；templates/tpl/*.md）
         try:
