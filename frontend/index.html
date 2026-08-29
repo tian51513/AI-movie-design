@@ -520,6 +520,11 @@
                 style="background:#dc2626;font-size:13px;padding:3px 10px">⏹ 停止自动</button></h2>
     <div v-if="paramsOpen" class="card"
          style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:8px 0;padding:10px 14px">
+      <label>画幅
+        <select :value="project.aspect_ratio" @change="patchVideoParam('aspect_ratio', $event.target.value)"
+                title="渲染时按此画幅出片；已渲染的旧尺寸视频保留，重渲即出新尺寸（混幅合成可能有黑边）">
+          <option value="9:16">9:16 竖屏</option>
+          <option value="16:9">16:9 横屏</option></select></label>
       <label>兆像素
         <select :value="project.video_megapixels" @change="patchVideoParam('video_megapixels', Number($event.target.value))">
           <option v-for="m in [0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.5,1.8,2.0]" :value="m">{{ m }}MP</option>

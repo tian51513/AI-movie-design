@@ -75,6 +75,34 @@ def test_update_video_params_validation(tmp_path):
         update_video_params(db, row["id"], default_shot_duration=0)
 
 
+def test_update_aspect_ratio(tmp_path):
+    """画幅创建后可改（2026-08-29 用户需求：详情页下拉改画幅，渲染按新尺寸出片）。"""
+    db = _db(tmp_path)
+    row = create_project(db, tmp_path / "data", "画幅剧", "9:16", "t")
+    upd = update_video_params(db, row["id"], aspect_ratio="16:9")
+    assert upd["aspect_ratio"] == "16:9"
+    assert upd["video_megapixels"] == row["video_megapixels"]  # 其他参数不动
+    with pytest.raises(ValueError):
+        update_video_params(db, row["id"], aspect_ratio="4:3")
+
+
+def test_patch_aspect_ratio_api(tmp_path):
+    import io
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+    with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data",
+                               start_workers=False)) as c:
+        pid = c.post("/api/projects/from-comic",
+                     data={"name": "接口画幅", "aspect_ratio": "9:16"},
+                     files=[("images", ("a.png", io.BytesIO(PNG), "image/png"))]).json()["id"]
+        r = c.patch(f"/api/projects/{pid}",
+                    json={"aspect_ratio": "16:9"})
+        assert r.status_code == 200 and r.json()["aspect_ratio"] == "16:9"
+        assert c.patch(f"/api/projects/{pid}",
+                       json={"aspect_ratio": "1:1"}).status_code == 422
+
+
 def test_prompt_mode_and_lora_columns(tmp_path):
     import pytest
     db = _db(tmp_path)

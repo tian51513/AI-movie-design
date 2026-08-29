@@ -64,9 +64,16 @@ def update_video_params(db: Database, project_id: int, *, video_megapixels: floa
                         video_multiple: int | None = None, video_speed: str | None = None,
                         default_shot_duration: float | None = None,
                         prompt_mode: str | None = None, lora_realism: float | None = None,
-                        target_duration: float | None = None) -> sqlite3.Row:
-    """更新项目视频参数。仅非 None 参数会更新；非法值抛 ValueError。"""
+                        target_duration: float | None = None,
+                        aspect_ratio: str | None = None) -> sqlite3.Row:
+    """更新项目视频参数。仅非 None 参数会更新；非法值抛 ValueError。
+    aspect_ratio：创建后改画幅（2026-08-29 用户需求）——渲染时读项目画幅注入工作流，
+    已渲染的旧尺寸视频保留不动（用户决策），重渲即出新尺寸。"""
     updates = {}
+    if aspect_ratio is not None:
+        if aspect_ratio not in ("9:16", "16:9"):
+            raise ValueError("aspect_ratio 只能是 9:16 或 16:9")
+        updates["aspect_ratio"] = aspect_ratio
     if video_megapixels is not None:
         if not (0.1 <= video_megapixels <= 3.0):
             raise ValueError("video_megapixels 必须在 0.1~3.0 范围内")

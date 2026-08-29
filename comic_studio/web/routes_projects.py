@@ -348,10 +348,12 @@ def patch_style(request: Request, project_id: int, body: dict):
         conn.commit()
 
     # Handle video parameters (composable with style)
-    if any(k in body for k in ("video_megapixels", "video_multiple", "video_speed", "default_shot_duration", "prompt_mode", "lora_realism", "target_duration")):
+    if any(k in body for k in ("video_megapixels", "video_multiple", "video_speed", "default_shot_duration", "prompt_mode", "lora_realism", "target_duration", "aspect_ratio")):
         try:
             from ..engine.projects import update_video_params
             kwargs = {}
+            if "aspect_ratio" in body:
+                kwargs["aspect_ratio"] = body["aspect_ratio"]
             if "video_megapixels" in body:
                 kwargs["video_megapixels"] = body["video_megapixels"]
             if "video_multiple" in body:

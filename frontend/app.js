@@ -896,7 +896,7 @@ const methods = {
   videoParamsLabel() {
     const p = this.project;
     if (!p) return '';
-    return `${p.video_megapixels}MP · ${p.video_multiple}倍 · ${p.video_speed} · 段${p.default_shot_duration}s${p.target_duration ? ` · 总${p.target_duration}s` : ''} · ${p.prompt_mode||'D'}模式 · LoRA${p.lora_realism}`;
+    return `${p.aspect_ratio} · ${p.video_megapixels}MP · ${p.video_multiple}倍 · ${p.video_speed} · 段${p.default_shot_duration}s${p.target_duration ? ` · 总${p.target_duration}s` : ''} · ${p.prompt_mode||'D'}模式 · LoRA${p.lora_realism}`;
   },
   async selectVersion(s, file) {
     const r = await fetch(`/api/shots/${s.id}/version`, {
