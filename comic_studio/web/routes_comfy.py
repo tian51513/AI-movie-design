@@ -8,10 +8,14 @@ router = APIRouter(prefix="/api/comfy", tags=["comfy"])
 
 
 @router.get("/status")
-def status(request: Request):
+def status(request: Request, base_url: str = ""):
+    """ComfyUI 连接检测。传 base_url 参数时用表单值（用户输的地址立即可测，
+    不依赖先保存——2026-08-29 用户反馈：库为空时手输地址也应能测通）。"""
+    url = base_url.strip() or (get_setting(request.app.state.db, "comfy") or {}).get("base_url")
+    if not url:
+        return {"ok": False}
     try:
-        ComfyClient(get_setting(request.app.state.db, "comfy")["base_url"],
-                    timeout=2).health()
+        ComfyClient(url, timeout=2).health()
         return {"ok": True}
     except ComfyError:
         return {"ok": False}

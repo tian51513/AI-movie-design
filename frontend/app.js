@@ -514,7 +514,9 @@ const methods = {
   },
   async checkComfy() {
     this.comfyStatus = null;
-    try { this.comfyStatus = (await (await fetch('/api/comfy/status')).json()).ok; }
+    // 传表单值：手输地址立即可测，不依赖先保存（2026-08-29 用户需求）
+    const bu = encodeURIComponent((this.settingsForm?.comfy?.base_url) || '');
+    try { this.comfyStatus = (await (await fetch(`/api/comfy/status?base_url=${bu}`)).json()).ok; }
     catch (e) { this.comfyStatus = false; }
   },
   async freeComfy() {
