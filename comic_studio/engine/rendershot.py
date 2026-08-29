@@ -321,17 +321,23 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         params["aspect"] = aspect_val
 
     # Images
-    # P8-B 漫改模式：漫画原页直接作 ref2va 参考图（画风+角色=原作，
-    # 跳过"提取角色→t2i 生成参考图"链条——AI 想象的角色≠漫画原作角色）
+    # P8-B 漫改模式参考图优先级（2026-08-29 用户需求）：
+    # ① 有绑定角色资产+参考图 → 用角色参考图（用户确认过，优先）
+    # ② 无角色资产 → 漫画原页直接作参考（兜底，画风+角色=原作）
     comic_mode = proj["comic_mode"] if "comic_mode" in proj.keys() else ""
-    if comic_mode == "film_adaptation" and kf_start.exists():
-        images = [{"slot": "ref0", "path": str(kf_start)}]
-        if kf_end.exists():
-            images.append({"slot": "ref1", "path": str(kf_end)})
-        emit_log(db, "comfy", "info",
-                 f"分镜 {shot['seq']} 漫改模式：漫画原页作参考图（ref2va）",
-                 shot_id=shot["id"])
-    elif first_frame_png is None and tmpl_id in ("h3_fl2v", "h3_i2v") and kf_start.exists():
+    if comic_mode == "film_adaptation":
+        asset_refs = collect_ref_images(db, shot)
+        if asset_refs:
+            # 用户已提取角色+生成参考图 → 正常 ref2va 流程（走下方通用代码）
+            pass
+        elif kf_start.exists():
+            images = [{"slot": "ref0", "path": str(kf_start)}]
+            if kf_end.exists():
+                images.append({"slot": "ref1", "path": str(kf_end)})
+            emit_log(db, "comfy", "info",
+                     f"分镜 {shot['seq']} 漫改模式：无角色资产，漫画原页作参考",
+                     shot_id=shot["id"])
+    if first_frame_png is None and tmpl_id in ("h3_fl2v", "h3_i2v") and kf_start.exists():
         first_frame_png = kf_start  # 无上镜衔接时，本镜关键帧首图兜底
     if first_frame_png and tmpl_id in ("h3_fl2v", "h3_i2v"):
         images = [{"slot": "first", "path": str(first_frame_png)}]

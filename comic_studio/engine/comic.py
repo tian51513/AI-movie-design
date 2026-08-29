@@ -204,6 +204,13 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                      project_id=project_id)
     if n:
         emit_log(db, "llm", "info", f"VLM 读图生成提示词 {n} 镜", project_id=project_id)
+        # 自动绑定角色（2026-08-29 用户需求：提取的角色资产优先处理）
+        # VLM 提示词里提到的角色名 → 自动绑定到该镜 ledger
+        from .llm.storyboard import auto_bind_characters
+        bound = auto_bind_characters(db, project_id)
+        if bound:
+            emit_log(db, "llm", "info", f"角色自动绑定：{bound} 处",
+                     project_id=project_id)
     return n
 
 
