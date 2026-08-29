@@ -263,11 +263,17 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=3) -> i
         raise ValueError(f"VLM 未返回资产 JSON：{text[:100]}")
     data = json.loads(m.group())
 
-    char_ns = [NS(name=c["name"], appearance=c.get("appearance", ""), tags=["comic"])
+    def _to_str(v):
+        """VLM 可能返回列表而非字符串——统一转为换行分隔的字符串。"""
+        if isinstance(v, list):
+            return "\n".join(str(x) for x in v)
+        return str(v or "")
+
+    char_ns = [NS(name=c["name"], appearance=_to_str(c.get("appearance")), tags=["comic"])
                for c in (data.get("characters") or []) if c.get("name")]
-    scene_ns = [NS(name=s["name"], appearance=s.get("appearance", ""), tags=["comic"])
+    scene_ns = [NS(name=s["name"], appearance=_to_str(s.get("appearance")), tags=["comic"])
                 for s in (data.get("scenes") or []) if s.get("name")]
-    prop_ns = [NS(name=p["name"], appearance=p.get("appearance", ""), tags=["comic"])
+    prop_ns = [NS(name=p["name"], appearance=_to_str(p.get("appearance")), tags=["comic"])
                for p in (data.get("props") or []) if p.get("name")]
 
     total = len(char_ns) + len(scene_ns) + len(prop_ns)
