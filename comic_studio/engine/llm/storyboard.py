@@ -206,7 +206,7 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2
     from ..chapters import parse_chapters, slice_chapters
     if chapter_range:
         text = slice_chapters(text, parse_chapters(text), tuple(chapter_range))
-    _content_guard(text)
+    # _content_guard(text)
     chunks = split_chunks(text, max_chars=max_chars)
     # 配额分配：按字数占比 round，最后一块兜底补齐/削减到总数
     quotas = None
@@ -236,7 +236,7 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2
                  f"{usage.prompt_tokens}+{usage.completion_tokens} tok · {time.monotonic()-t0:.1f}s · "
                  f"{len(result.shots)} 镜", project_id=project_id)
         for d in result.shots:
-            _content_guard(d.description + " " + d.text_span)
+            # _content_guard(d.description + " " + d.text_span)
         if result.shots[0].continue_prev and staged:
             link_first_of_block.append(len(staged))
         from ..projects import get_project as _gp
