@@ -100,6 +100,10 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
         end_png = shot_dir / "kf_end.png"
         if not start_png.exists():
             continue
+        emit_log(db, "llm", "info",
+                 f"镜 {s['seq']} 读图中（"
+                 + ("首尾两帧" if end_png.exists() else "仅首帧") + "）…",
+                 project_id=project_id)
         content = [{"type": "text", "text":
                     (f"第一张图=第 {s['seq']} 格（视频首帧），"
                      f"第二张图=第 {s['seq'] + 1} 格（视频尾帧）。"
@@ -139,6 +143,15 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                 "prompt": text, "description": text,
                 "ledger_json": json.dumps(ledger, ensure_ascii=False)})
             n += 1
+            # 逐镜日志（用户需求：每个操作都要可见——批量跑 16 镜不能只看最终汇总）
+            emit_log(db, "llm", "info",
+                     f"镜 {s['seq']} 提示词就绪（{len(text)} 字"
+                     + (f"，{len(dialogue)} 句对白" if dialogue else "") + "）",
+                     project_id=project_id)
+        else:
+            emit_log(db, "llm", "warn",
+                     f"镜 {s['seq']}：模型返回空结果，跳过",
+                     project_id=project_id)
     if n:
         emit_log(db, "llm", "info", f"VLM 读图生成提示词 {n} 镜", project_id=project_id)
     return n
