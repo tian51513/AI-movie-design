@@ -49,9 +49,9 @@ function data() {
     moTemplate: '', modelChoices: [], moError: '',
     ollamaModels: [], showThink: false, loadingModels: false,
     activeKind: '全部', perRow: 2, lightbox: null,
-    comfyStatus: null, llmTesting: '', llmTestResult: {local: null, online: null},
+    comfyStatus: null, llmTesting: '', llmTestResult: {local: null, local2: null, online: null},
     freeingComfy: false,
-    llmTestManual: {local: false, online: false},
+    llmTestManual: {local: false, local2: false, online: false},
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
@@ -474,7 +474,7 @@ const methods = {
   llmLamp(provider) {
     const r = this.llmTestResult[provider];
     if (this.llmTesting === provider) return {color: '#8b949e', text: '检测中…'};
-    if (r === null) return {color: '#8b949e', text: ''};
+    if (r == null) return {color: '#8b949e', text: ''};  // null/undefined 都安全
     if (r.unconfigured) return {color: '#8b949e', text: '未配置'};
     return r.ok ? {color: '#4ade80', text: '在线'}
                 : {color: '#f87171', text: '离线'};
