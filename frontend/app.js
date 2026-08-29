@@ -61,6 +61,7 @@ function data() {
       optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文' },
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     splitTargetCount: null, shotSel: [], editingProject: false,
+    marquee: null,  // 分镜框选拖拽状态 {x0,y0,x1,y1, add, base[], moved}，null=未拖拽
     chapters: [], splitChFrom: null, splitChTo: null, splitAllChapters: true,
     paramsOpen: false, merges: [],
   };
@@ -85,6 +86,12 @@ const computed = {
     return mo[this.moTemplate];
   },
   projTotalPages() { return Math.max(1, Math.ceil(this.projects.length / this.projPageSize)); },
+  marqueeStyle() {  // 选框覆盖层几何（fixed 定位，随鼠标更新）
+    const m = this.marquee;
+    if (!m) return {};
+    return { left: Math.min(m.x0, m.x1) + 'px', top: Math.min(m.y0, m.y1) + 'px',
+             width: Math.abs(m.x1 - m.x0) + 'px', height: Math.abs(m.y1 - m.y0) + 'px' };
+  },
   directorBusy() {  // 快车道状态由队列轮询驱动（刷新页面可恢复）
     return ((this.queue && this.queue.jobs) || []).some(
       j => j.type === 'gen_director' && (j.status === 'pending' || j.status === 'running'));
@@ -162,6 +169,74 @@ const methods = {
     const idx = Math.round(stripLeft / cardW);
     if (idx >= 0 && idx < this.shots.length) {
       this.activeShotSeq = this.shots[idx].seq;
+    }
+  },
+  // ===== 分镜框选（marquee）：胶片条空白处拖拽批量勾选，复用 shotSel =====
+  marqueeDown(e) {
+    if (e.button !== 0) return;  // 只认左键
+    // 按在交互元素上不启动（图片允许：真实拖拽会吞掉 click，不会误开灯箱）
+    if (e.target.closest('button,input,select,textarea,label,a,video')) return;
+    e.preventDefault();  // 阻止文本选择与原生图片拖拽
+    e.currentTarget.classList.add('no-snap');  // 拖拽期间关掉 scroll-snap（否则边缘自动滚动被吸附拉回）
+    this.marquee = { x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY,
+                     add: e.shiftKey, base: e.shiftKey ? [...this.shotSel] : [], moved: false };
+    window.addEventListener('mousemove', this.marqueeMove);
+    window.addEventListener('mouseup', this.marqueeUp);
+    window.addEventListener('blur', this.marqueeUp);
+    this._marqueeRaf = requestAnimationFrame(this.marqueeAutoScroll);
+  },
+  marqueeMove(e) {
+    const m = this.marquee;
+    if (!m) return;
+    m.x1 = e.clientX; m.y1 = e.clientY;
+    if (!m.moved && Math.hypot(m.x1 - m.x0, m.y1 - m.y0) < 4) return;  // 4px 阈值防误触
+    m.moved = true;
+    this.marqueeApply();
+  },
+  marqueeApply() {  // 选框与卡片 viewport 矩形相交（交叠即选中）→ 写回 shotSel
+    const m = this.marquee;
+    if (!m || !m.moved) return;
+    const strip = document.getElementById('shotStrip');
+    if (!strip) return;
+    const L = Math.min(m.x0, m.x1), R = Math.max(m.x0, m.x1);
+    const T = Math.min(m.y0, m.y1), B = Math.max(m.y0, m.y1);
+    const hits = [];
+    Array.from(strip.children).forEach((c, i) => {  // 卡片顺序 = shots 顺序（同 scrollToShot 假设）
+      const s = this.shots[i];
+      if (!s) return;
+      const r = c.getBoundingClientRect();
+      if (r.left < R && r.right > L && r.top < B && r.bottom > T) hits.push(s.id);
+    });
+    this.shotSel = m.add ? [...new Set([...m.base, ...hits])] : hits;
+  },
+  marqueeAutoScroll() {  // 拖拽中鼠标靠近左右边缘自动横滚（分镜多时跨视野连选）
+    const m = this.marquee;
+    if (!m) return;
+    if (m.moved) {
+      const strip = document.getElementById('shotStrip');
+      if (strip) {
+        const r = strip.getBoundingClientRect(), EDGE = 40, STEP = 16;
+        const before = strip.scrollLeft;
+        if (m.x1 < r.left + EDGE) strip.scrollLeft -= STEP;
+        else if (m.x1 > r.right - EDGE) strip.scrollLeft += STEP;
+        if (strip.scrollLeft !== before) this.marqueeApply();  // 卡片动了，重算命中
+      }
+    }
+    this._marqueeRaf = requestAnimationFrame(this.marqueeAutoScroll);
+  },
+  marqueeUp() {
+    const m = this.marquee;
+    this.marquee = null;
+    const strip = document.getElementById('shotStrip');
+    if (strip) strip.classList.remove('no-snap');
+    window.removeEventListener('mousemove', this.marqueeMove);
+    window.removeEventListener('mouseup', this.marqueeUp);
+    window.removeEventListener('blur', this.marqueeUp);
+    if (this._marqueeRaf) { cancelAnimationFrame(this._marqueeRaf); this._marqueeRaf = null; }
+    if (m && m.moved && strip) {  // 真实拖拽后吞掉紧随的一次 click（防误开图片灯箱等）
+      const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      strip.addEventListener('click', swallow, { capture: true, once: true });
+      setTimeout(() => strip.removeEventListener('click', swallow, { capture: true }), 0);
     }
   },
   kfUrl(s, phase) {

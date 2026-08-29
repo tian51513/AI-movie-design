@@ -106,6 +106,7 @@
 ## 模块地图（P7 收官 2026-08-29）
 
 - `engine/director_mix.py` — P7-J 整片混音：帧数轴 spans TTS 音轨替换（有台词镜换配音/无台词镜留原声切片）+ SRT 烧录；`subtitles.generate_srt(spans=)`；comfy.director_mix 开关
+- 前端分镜框选（2026-08-30）— `app.js marquee*` 五方法：胶片条空白处拖拽批量勾选（交叠即选中、4px 阈值、Shift 追加、边缘 rAF 自动横滚、真实拖拽吞 click 防误开灯箱）；拖拽中加 `.no-snap` 关 scroll-snap（否则自动滚动被吸附拉回）；无效镜也参与框选（批量生效场景）
 - `engine/director.py` 扩展 — P7-H 批间首帧接力（上批末帧→genImage 起始画面槽，开关 director_batch_relay）；画布按项目兆像素档（×32 ceil 对齐）
 - `routes_projects.GEN_STORY_SYSTEM` — P7-I 短剧结构规范（钩子/情绪流变/断章/语速公式/微表情/禁反向灌输）
 - jobs.cancel_project_jobs + POST stop-jobs — ⏹ 项目级停止；genref 道具/场景双重禁人物（道具产品静物框架）

@@ -22,6 +22,12 @@
   .film-strip::-webkit-scrollbar-thumb { background: #2c3540; border-radius: 4px; }
   .film-card { flex: 0 0 min(66vw, 900px); scroll-snap-align: start; max-height: 78vh;
                overflow-y: auto; }
+  .film-card.sel { border-color: #f59e0b; box-shadow: 0 0 0 1px #f59e0b; }
+  .film-strip { cursor: crosshair; }  /* 空白处可拖拽框选 */
+  .film-strip.no-snap { scroll-snap-type: none; }  /* 拖拽框选中关掉吸附，边缘自动滚动才能停在中间位置 */
+  .film-strip button, .film-strip input, .film-strip select,
+  .film-strip textarea, .film-strip label, .film-strip a { cursor: pointer; }
+  .film-strip video { cursor: default; }
   ul { padding-left: 18px; }
   .masonry { column-width: 300px; column-gap: 12px; }
   .masonry > .card { break-inside: avoid; margin: 0 0 12px; width: 100%; min-width: 0; }
@@ -696,6 +702,9 @@
               style="background:#7c3aed">🎬 合成成片</button>
     </p>
     </div><!-- /film-strip -->
+    <!-- 框选选框覆盖层（拖拽分镜批量选择；fixed 定位跟随鼠标，不拦截事件） -->
+    <div v-if="marquee && marquee.moved" :style="marqueeStyle"
+         style="position:fixed;z-index:90;border:1px dashed #f59e0b;background:rgba(245,158,11,.12);pointer-events:none;border-radius:2px"></div>
     <div v-if="shots.length === 0 && !splitRunning" class="muted" style="padding:20px 0">暂无分镜——点击上方「拆分分镜」开始</div>
     <!-- 分镜导览条（快速跳转） -->
     <div v-if="shots.length > 3" style="display:flex;gap:4px;flex-wrap:wrap;padding:4px 0;margin-bottom:8px">
@@ -707,8 +716,9 @@
               :title="`镜${s.seq} ${s.status}${s.disabled ? '（无效）' : ''}`">{{ s.seq }}</button>
     </div>
     <!-- 横向胶片式分镜卡 -->
-    <div class="film-strip" id="shotStrip" @scroll="onStripScroll">
+    <div class="film-strip" id="shotStrip" @scroll="onStripScroll" @mousedown="marqueeDown">
     <div v-for="s in shots" :key="s.id" class="card film-card"
+         :class="shotSel.includes(s.id) ? 'sel' : ''"
          :style="s.disabled ? 'opacity:.45' : ''">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <label style="display:flex;align-items:center;cursor:pointer" title="勾选后可批量 无效/生效/删除">
