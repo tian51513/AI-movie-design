@@ -49,7 +49,8 @@ function data() {
     moTemplate: '', modelChoices: [], moError: '',
     ollamaModels: [], showThink: false, loadingModels: false,
     activeKind: '全部', perRow: 2, lightbox: null,
-    comfyStatus: null, llmTesting: '', llmTestResult: {local: null, local2: null, online: null},
+    comfyStatus: null, llmTesting: '', llmTestResult: {local: null, online: null},
+    localProviderType: '',  // ollama / lmstudio / custom（从 base_url 反推）
     freeingComfy: false,
     llmTestManual: {local: false, local2: false, online: false},
     logs: [], lastLogId: 0, logsTimer: null,
@@ -419,14 +420,17 @@ const methods = {
     clearInterval(this.pollTimer); this.pollTimer = null;
     this.stopLogsPolling(); this.project = null;
     this.view = 'settings'; this.checkComfy();
-    this.llmTestResult = {local: null, local2: null, online: null};
-    this.llmTestManual = {local: false, local2: false, online: false};
+    this.llmTestResult = {local: null, online: null};
+    this.llmTestManual = {local: false, online: false};
+    // 从 base_url 反推服务商类型（选下拉用）
+    const _bu = (s.llm_providers.local?.base_url || '').toLowerCase();
+    this.localProviderType = _bu.includes('11434') ? 'ollama'
+      : _bu.includes('1234') ? 'lmstudio'
+      : _bu ? 'custom' : '';
     const s = await (await fetch('/api/settings')).json();
     this.settingsForm = {
       local: { ...s.llm_providers.local,
                extra_body_json: s.llm_providers.local?.extra_body ? JSON.stringify(s.llm_providers.local.extra_body) : '' },
-      local2: { ...(s.llm_providers.local2 || {}),
-                extra_body_json: s.llm_providers.local2?.extra_body ? JSON.stringify(s.llm_providers.local2.extra_body) : '' },
       online: { ...s.llm_providers.online,
                 extra_body_json: s.llm_providers.online?.extra_body ? JSON.stringify(s.llm_providers.online.extra_body) : '' },
       routing: { ...s.llm_routing },
@@ -538,9 +542,8 @@ const methods = {
   },
   async saveSettings() {
     const ebLocal = this._parseExtra(this.settingsForm.local);
-    const ebLocal2 = this._parseExtra(this.settingsForm.local2 || {});
     const ebOnline = this._parseExtra(this.settingsForm.online);
-    if (ebLocal === undefined || ebOnline === undefined || ebLocal2 === undefined) {
+    if (ebLocal === undefined || ebOnline === undefined) {
       alert('extra_body 不是合法 JSON（各 provider 检查）'); return;
     }
     this.saving = true;      const payload = {
@@ -549,10 +552,6 @@ const methods = {
                  api_key: this.settingsForm.local.api_key || 'ollama',
                  model: this.settingsForm.local.model || '',
                  extra_body: ebLocal },
-        local2: { base_url: (this.settingsForm.local2 || {}).base_url || '',
-                  api_key: (this.settingsForm.local2 || {}).api_key || 'lmstudio',
-                  model: (this.settingsForm.local2 || {}).model || '',
-                  extra_body: ebLocal2 },
         online: { base_url: this.settingsForm.online.base_url || '',
                   api_key: this.settingsForm.online.api_key || '',
                   model: this.settingsForm.online.model || '',
@@ -682,6 +681,20 @@ const methods = {
       {method:'POST', headers: body ? {'Content-Type': 'application/json'} : undefined, body});
     if (!r.ok) { alert(await r.text()); return; }
     this.splitRunning = true;
+  },
+  // 本地服务商切换：自动填预设地址（可手改），切换后清模型待重选
+  switchLocalProvider(type) {
+    this.localProviderType = type;
+    if (type === 'ollama') {
+      this.settingsForm.local.base_url = 'http://127.0.0.1:11434';
+      this.settingsForm.local.api_key = 'ollama';
+    } else if (type === 'lmstudio') {
+      this.settingsForm.local.base_url = 'http://127.0.0.1:1234';
+      this.settingsForm.local.api_key = 'lmstudio';
+    }
+    // custom 不动地址（用户自己填）
+    this.settingsForm.local.model = '';  // 切服务商后旧模型名无意义
+    this.ollamaModels = [];  // 清模型清单待重新获取
   },
   async stopJobs() {
     if (!confirm('停止本项目全部任务？\n待跑的直接取消；在跑的向 ComfyUI 发中断（约几秒内停止）。')) return;
