@@ -37,6 +37,7 @@ function data() {
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '', newWordCount: '',
     newExtraPrompt: '', themePreview: '', themePreviewing: false,
     createOpen: false, projPage: 1, projPageSize: 12, comicFiles: [],
+    comicMode: 'motion_comic',
     describingShots: new Set(),  // 正在读图的镜 id 集合（支持多镜并发提交）
     projectsView: (() => { try { return localStorage.getItem('cs.projectsView') || 'grid'; } catch (e) { return 'grid'; } })(),
     newSegDur: 5, newTotalDur: 0,
@@ -87,6 +88,10 @@ const computed = {
   directorBusy() {  // 快车道状态由队列轮询驱动（刷新页面可恢复）
     return ((this.queue && this.queue.jobs) || []).some(
       j => j.type === 'gen_director' && (j.status === 'pending' || j.status === 'running'));
+  },
+  batchVlmBusy() {  // 批量 VLM 读图状态由队列驱动（替换原来的 3s setTimeout hack）
+    return ((this.queue && this.queue.jobs) || []).some(
+      j => j.type === 'describe_shots' && (j.status === 'pending' || j.status === 'running'));
   },
   hasActiveJobs() {
     return this.directorBusy || (this.queue && (this.queue.pending > 0 || this.queue.running > 0));
@@ -742,6 +747,7 @@ const methods = {
       const fd = new FormData();
       fd.append('name', this.newName || `漫画${this.comicFiles.length}页`);
       fd.append('aspect_ratio', this.newRatio);
+      fd.append('comic_mode', this.comicMode);
       // 自然排序 + 压缩后上传（解决大图超时）
       const sorted = [...this.comicFiles].sort((a, b) =>
         a.name.localeCompare(b.name, undefined, {numeric: true}));
@@ -760,8 +766,7 @@ const methods = {
     if (!confirm('VLM 读图生成全部缺失提示词？（本地视觉模型逐镜调用，页多较慢）')) return;
     const r = await fetch(`/api/projects/${this.project.id}/describe-shots`, {method: 'POST'});
     if (!r.ok) { alert(await r.text()); return; }
-    this.describing = true;
-    setTimeout(() => { this.describing = false; this.loadShots(); }, 3000);  // 简易轮询：稍后刷新
+    // 202 入队成功，状态由 queue 轮询驱动（batchVlmBusy computed）
   },
   async describeOneShot(s) {
     if (this.describingShots.has(s.id)) return;

@@ -455,10 +455,10 @@
       <button @click="generateTts" style="font-size:12px;padding:3px 8px"
               title="从台词生成 TTS 配音 + SRT 字幕（合成时自动混入）">🎙 生成配音</button>
       <button @click="autoBind" title="扫描描述文本自动补绑提到的角色" style="font-size:12px;padding:3px 8px">🔗 补绑角色</button>
-      <button @click="describeShots" :disabled="describing"
+      <button @click="describeShots" :disabled="batchVlmBusy"
               title="P8 漫画项目：VLM 读首/尾帧自动生成缺失的视频提示词"
               style="font-size:12px;padding:3px 8px;background:#0e7490">
-        {{ describing ? '读图中…' : '👁 读图生成提示词' }}</button>
+        {{ batchVlmBusy ? '⏳ 读图中…' : '👁 读图生成提示词' }}</button>
       <template v-if="shotSel.length">
         <span class="pill" style="border:1px solid #f59e0b;color:#f59e0b">已选 {{ shotSel.length }}</span>
         <button @click="batchShots('disable')" style="font-size:12px;padding:3px 8px;background:#7c3aed"
@@ -625,10 +625,19 @@
            <span class="muted" style="font-size:12px">（总时长>0 时拆分镜后按镜数均摊）</span></p>
 
         <form v-if="newMode==='comic'" @submit.prevent="createFromComic">
+          <p>模式
+             <select v-model="comicMode" style="font-size:13px;padding:4px 8px">
+               <option value="motion_comic">📖 动态漫（快，翻页过渡）</option>
+               <option value="film_adaptation">🎬 漫改电影（慢，角色动画）</option>
+             </select></p>
+          <p class="muted" style="font-size:12px" v-if="comicMode==='motion_comic'">
+             fl2v 首尾帧插值 · ~100s/镜 · 翻页/动态漫效果</p>
+          <p class="muted" style="font-size:12px" v-if="comicMode==='film_adaptation'">
+             ref2va 参考图动画 · ~3-5min/镜 · 角色动起来、镜头运动（需先提取角色）</p>
           <p><input type="file" accept="image/*" multiple required @change="f => comicFiles = [...f.target.files]"
                     style="width:90%"
-                    title="按页序多选（每图一镜：本页=首帧、下页=尾帧，fl2v 翻页过渡）"></p>
-          <p class="muted" style="font-size:12px">已选 {{ comicFiles.length }} 页（一图一镜，多格页暂按整页处理）</p>
+                    title="按页序多选（每图一镜）"></p>
+          <p class="muted" style="font-size:12px">已选 {{ comicFiles.length }} 页（一图一镜）</p>
           <p><button :disabled="creating || !comicFiles.length">
              {{ creating ? '创建中…' : '🖼 导入漫画' }}</button></p>
         </form>
