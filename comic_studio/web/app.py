@@ -130,6 +130,14 @@ def create_app(db_path: str | Path = "./data/studio.db",
         from ..engine.netenv import ensure_local_no_proxy
         ensure_local_no_proxy()
         db.migrate()
+        # 日志自动清理（保留 7 天，防止 logs 表无限膨胀）
+        try:
+            conn = db.connect()
+            conn.execute(
+                "DELETE FROM logs WHERE created_at < datetime('now', '-7 days')")
+            conn.commit()
+        except Exception:
+            pass
         # 主题模板同步入库（幂等 upsert；templates/tpl/*.md）
         try:
             from ..engine.themes import sync_themes
