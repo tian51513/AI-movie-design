@@ -711,20 +711,42 @@ const methods = {
     if (!r.ok) { alert(await r.text()); return; }
     alert('已入队——整段渲染耗时较长，详情页日志可跟踪');
   },
+  // 压缩图片到 1080p JPEG（漫画导入上传前——原文件可能几十 MB 致超时）
+  async _compressImage(file, maxDim = 1080, quality = 0.85) {
+    const img = await new Promise((res, rej) => {
+      const u = URL.createObjectURL(file);
+      const i = new Image();
+      i.onload = () => { URL.revokeObjectURL(u); res(i); };
+      i.onerror = rej;
+      i.src = u;
+    });
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    return new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+  },
   async createFromComic() {
     if (!this.comicFiles.length) return;
     this.creating = true;
-    const fd = new FormData();
-    fd.append('name', this.newName || `漫画${this.comicFiles.length}页`);
-    fd.append('aspect_ratio', this.newRatio);
-    // 自然排序（numeric:true）：1.png < 2.png < 10.png（字符串排序会 1<10<2 乱序）
-    this.comicFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}))
-      .forEach(f => fd.append('images', f, f.name));
-    const resp = await fetch('/api/projects/from-comic', { method: 'POST', body: fd });
+    try {
+      const fd = new FormData();
+      fd.append('name', this.newName || `漫画${this.comicFiles.length}页`);
+      fd.append('aspect_ratio', this.newRatio);
+      // 自然排序 + 压缩后上传（解决大图超时）
+      const sorted = [...this.comicFiles].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, {numeric: true}));
+      for (const f of sorted) {
+        const compressed = await this._compressImage(f);
+        fd.append('images', compressed, f.name.replace(/\.\w+$/, '.jpg'));
+      }
+      const resp = await fetch('/api/projects/from-comic', { method: 'POST', body: fd });
+      if (!resp.ok) { alert(await resp.text()); return; }
+      this.newName = ''; this.comicFiles = []; this.createOpen = false;
+      await this.refresh();
+    } catch (e) { alert('导入失败：' + e); }
     this.creating = false;
-    if (!resp.ok) { alert(await resp.text()); return; }
-    this.newName = ''; this.comicFiles = []; this.createOpen = false;
-    await this.refresh();
   },
   async describeShots() {
     if (!confirm('VLM 读图生成全部缺失提示词？（本地视觉模型逐镜调用，页多较慢）')) return;
