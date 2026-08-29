@@ -603,9 +603,14 @@
           <button type="button" style="margin-left:4px" @click="newMode='comic'"
                   :style="newMode==='comic'?'background:#16a34a':''">🖼 漫画导入</button>
         </p>
+        <!-- 三 tab 公共字段（名称/画幅/段时长/总时长）——原来每个表单各一份 -->
+        <p><input v-model="newName" :placeholder="newMode==='theme' ? '漫剧名称（留空用主题名）' : '漫剧名称'"></p>
+        <p>画幅<select v-model="newRatio"><option>9:16</option><option>16:9</option></select>
+           段时长<input type="number" min="1" max="15" v-model.number="newSegDur" style="width:44px">s
+           总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s
+           <span class="muted" style="font-size:12px">（总时长>0 时拆分镜后按镜数均摊）</span></p>
+
         <form v-if="newMode==='comic'" @submit.prevent="createFromComic">
-          <p><input v-model="newName" placeholder="漫剧名称" required></p>
-          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
           <p><input type="file" accept="image/*" multiple required @change="f => comicFiles = [...f.target.files]"
                     style="width:90%"
                     title="按页序多选（每图一镜：本页=首帧、下页=尾帧，fl2v 翻页过渡）"></p>
@@ -613,16 +618,14 @@
           <p><button :disabled="creating || !comicFiles.length">
              {{ creating ? '创建中…' : '🖼 导入漫画' }}</button></p>
         </form>
-        <form v-if="newMode==='theme'" @submit.prevent="previewFromTheme">
+
+        <template v-if="newMode==='theme'">
+        <form @submit.prevent="previewFromTheme">
           <p><select v-model="newThemeId" required>
                <option value="" disabled>选择主题…</option>
                <option v-for="t in themes" :key="t.id" :value="t.id"
                        :title="t.description">{{ t.name }}（{{ t.category }}）</option>
              </select></p>
-          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select>
-             段时长<input type="number" min="1" max="15" v-model.number="newSegDur" style="width:44px">s
-             总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s</p>
-          <p><input v-model="newName" placeholder="漫剧名称（留空用主题名）"></p>
           <p><input v-model="newProtagonist" placeholder="主角姓名（可选）"></p>
           <p><input type="number" min="300" max="20000" v-model.number="newWordCount"
                     placeholder="目标字数（可选，默认 8000~12000）" style="width:60%"></p>
@@ -643,10 +646,10 @@
             <button @click="themePreview=''">放弃</button>
           </p>
         </div>
-        <form v-else @submit.prevent="createProject">
-          <p><input v-model="newName" placeholder="漫剧名称" required></p>
-          <p><select v-model="newRatio"><option>9:16</option><option>16:9</option></select></p>
-        <p><select v-model="newStyleKey">
+        </template>
+
+        <form v-if="newMode==='upload'" @submit.prevent="createProject">
+          <p><select v-model="newStyleKey">
              <option value="">不指定（默认）</option>
              <optgroup label="通用">
                <option>动漫</option><option>写实</option>
@@ -658,10 +661,7 @@
                <option>古风</option><option>未来科技</option><option>悬疑</option>
                <option>喜剧</option><option>舞台剧</option></optgroup>
              <option value="自定义">自定义…</option></select></p>
-        <p v-if="newStyleKey==='自定义'"><input v-model="newStyleText" placeholder="自定义画风描述" style="width:90%"></p>
-        <p class="muted" style="margin:2px 0">段时长<input type="number" min="1" max="15" v-model.number="newSegDur" style="width:44px">s
-           总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s
-           （总时长>0 时拆分镜后按镜数均摊）</p>
+          <p v-if="newStyleKey==='自定义'"><input v-model="newStyleText" placeholder="自定义画风描述" style="width:90%"></p>
           <p><input type="file" accept=".txt" @change="f => newFile = f.target.files[0]" required></p>
           <p><button :disabled="creating">{{ creating ? '创建中…' : '创建项目' }}</button></p>
         </form>
