@@ -263,6 +263,19 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=3) -> i
         raise ValueError(f"VLM 未返回资产 JSON：{text[:100]}")
     data = json.loads(m.group())
 
+    # 清理旧资产（用户需求：多次提取只保留最后一次）
+    conn = db.connect()
+    old_ids = [r["id"] for r in conn.execute(
+        "SELECT id FROM assets WHERE source_project=?", (project_id,)).fetchall()]
+    if old_ids:
+        ph = ",".join("?" * len(old_ids))
+        conn.execute(f"DELETE FROM project_assets WHERE asset_id IN ({ph})", old_ids)
+        conn.execute(f"DELETE FROM assets WHERE id IN ({ph})", old_ids)
+        conn.commit()
+        emit_log(db, "llm", "info",
+                 f"清理旧资产 {len(old_ids)} 个（重新提取）",
+                 project_id=project_id)
+
     def _to_str(v):
         """VLM 可能返回列表而非字符串——统一转为换行分隔的字符串。"""
         if isinstance(v, list):
