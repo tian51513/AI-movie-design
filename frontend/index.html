@@ -498,6 +498,12 @@
 
     <h2>{{ project.name }} <span class="pill">{{ project.aspect_ratio }}</span>
         <span class="pill">{{ stageName(project.stage) }}</span>
+        <span v-if="project.comic_mode==='motion_comic'" class="pill"
+              style="background:#164e63;color:#67e8f9"
+              title="动态漫模式：fl2v 翻页插值，画风跟随漫画原页">📖 动态漫</span>
+        <span v-else-if="project.comic_mode==='film_adaptation'" class="pill"
+              style="background:#4c1d95;color:#c4b5fd"
+              title="漫改电影模式：ref2va 角色动画，画风可指定转换目标">🎬 漫改电影</span>
         <span v-if="project.style" class="pill" style="cursor:pointer"
               title="点击修改画风（改后重新生成资产参考图生效）"
               @click="editStyle">{{ project.style.slice(0, 12) }}…</span>
