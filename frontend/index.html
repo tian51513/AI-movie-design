@@ -506,6 +506,10 @@
           <option value="t2v">文生视频 t2v</option>
         </select>
         <span style="flex:1"></span>
+        <button v-if="s.kf_start_url" @click="describeOneShot(s)"
+                :disabled="describing"
+                title="VLM 读首尾帧生成本镜提示词（覆盖现有，漫画项目逐镜控制）"
+                style="font-size:12px;padding:3px 8px;background:#0e7490">👁</button>
         <button @click="regenPrompt(s, !!s.prompt)"
                 :disabled="(s.prompt_job && s.prompt_job.status==='running') || !['assets_ready','storyboard_ready'].includes(project.stage)"
                 :title="!['assets_ready','storyboard_ready'].includes(project.stage)

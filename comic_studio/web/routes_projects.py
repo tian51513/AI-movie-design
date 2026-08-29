@@ -163,7 +163,8 @@ def create_from_comic(request: Request,
 
 
 @router.post("/{project_id}/describe-shots", status_code=202)
-def describe_shots_route(project_id: int, request: Request):
+def describe_shots_route(project_id: int, request: Request,
+                         shot_id: int = 0):
     """P8 VLM 读图生成提示词（后台任务，逐镜多模态调用）。"""
     db = request.app.state.db
     from ..engine.projects import get_project
@@ -182,7 +183,8 @@ def describe_shots_route(project_id: int, request: Request):
                 client = client_for_task(db, "describe_shot")
             except Exception:
                 client = client_for_task(db, "gen_video_prompt")  # 未配置时回退
-            _describe(db, data_dir, project_id, client)
+            _describe(db, data_dir, project_id, client,
+                      shot_id=shot_id if shot_id else None)
         except Exception as exc:
             emit_log(db, "llm", "error", f"VLM 读图失败：{exc}", project_id=project_id)
 

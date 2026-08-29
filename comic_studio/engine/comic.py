@@ -62,9 +62,9 @@ def import_comic(db, data_dir, name: str, aspect: str,
     return proj
 
 
-def describe_shots(db, data_dir, project_id, client) -> int:
+def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
     """VLM 读图生成每镜视频提示词（多模态 raw_chat：首帧必带、尾帧可选）。
-    已有提示词的镜跳过。返回生成数。"""
+    shot_id 指定时只跑该镜（已有提示词也覆盖）；否则跑全部缺失的镜。返回生成数。"""
     from .paths import data_to_abs
     from .projects import get_project
     from .shots import list_shots, update_shot
@@ -78,8 +78,10 @@ def describe_shots(db, data_dir, project_id, client) -> int:
               "自然过渡（人物动作/镜头微动/环境变化），80 字内单段，不解释。")
     n = 0
     for s in list_shots(db, project_id):
-        if (s["prompt"] or "").strip():
-            continue
+        if shot_id is not None and s["id"] != shot_id:
+            continue  # 逐镜模式：只跑指定镜
+        if shot_id is None and (s["prompt"] or "").strip():
+            continue  # 批量模式：跳过已有提示词的镜
         shot_dir = data_to_abs(data_dir, f"projects/{slug}/shots/{s['seq']}")
         start_png = shot_dir / "kf_start.png"
         end_png = shot_dir / "kf_end.png"

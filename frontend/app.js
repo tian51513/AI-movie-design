@@ -732,6 +732,16 @@ const methods = {
     this.describing = true;
     setTimeout(() => { this.describing = false; this.loadShots(); }, 3000);  // 简易轮询：稍后刷新
   },
+  async describeOneShot(s) {
+    // 逐镜 VLM 读图（漫画项目）：只跑这一镜，覆盖已有提示词
+    this.describing = true;
+    try {
+      const r = await fetch(`/api/projects/${this.project.id}/describe-shots?shot_id=${s.id}`, {method: 'POST'});
+      if (!r.ok) alert(await r.text());
+      await this.loadShots();
+    } catch (e) { alert('读图失败：' + e); }
+    this.describing = false;
+  },
   async batchShots(action) {
     const ids = this.shotSel;
     if (!ids.length) return;
