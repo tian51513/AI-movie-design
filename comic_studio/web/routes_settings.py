@@ -129,7 +129,7 @@ def model_choices(template: str = Query(...), request: Request = None):
     reg = registry.scan_templates(registry.TEMPLATE_ROOT)
     if template not in reg:
         raise HTTPException(404, f"模板不存在: {template}（已注册 {sorted(reg)}）")
-    base_url = (get_setting(request.app.state.db, "comfy") or {}).get("base_url")
+    base_url = ((get_setting(request.app.state.db, "comfy") or {}).get("base_url") or "").rstrip("/")
     if not base_url:
         raise HTTPException(409, "未配置 ComfyUI 地址（设置页先填 comfy.base_url）")
     comfy = ComfyClient(base_url)
