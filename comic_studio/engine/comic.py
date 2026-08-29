@@ -204,14 +204,60 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                      project_id=project_id)
     if n:
         emit_log(db, "llm", "info", f"VLM 读图生成提示词 {n} 镜", project_id=project_id)
-        # 自动绑定角色（2026-08-29 用户需求：提取的角色资产优先处理）
-        # VLM 提示词里提到的角色名 → 自动绑定到该镜 ledger
+        # 读图顺手提取角色（2026-08-29 用户需求重构：一遍完成，不需单独采样）
+        _extract_characters_from_prompts(db, data_dir, project_id)
+        # 自动绑定角色到分镜
         from .llm.storyboard import auto_bind_characters
         bound = auto_bind_characters(db, project_id)
         if bound:
             emit_log(db, "llm", "info", f"角色自动绑定：{bound} 处",
                      project_id=project_id)
     return n
+
+
+def _extract_characters_from_prompts(db, data_dir, project_id) -> int:
+    """从已生成的提示词中提取角色名 → 建资产（2026-08-29 用户需求重构：
+    读图的同时顺手提取，不需单独采样步骤）。扫描所有 prompt 中的
+    「角色名：」「角色名「」格式，去重后创建资产。"""
+    from .shots import list_shots
+    from .assets import list_project_assets, persist_assets
+    from types import SimpleNamespace as NS
+    import re as _re
+
+    # 已有角色名集合（不重复创建）
+    existing = {a["name"] for a in list_project_assets(db, project_id)
+                if a["kind"] == "character"}
+
+    # 从所有提示词中提取角色名
+    name_re = _re.compile(r"([一-龥A-Za-z·]{2,6})[：:「]")
+    found = {}
+    for s in list_shots(db, project_id):
+        prompt = s["prompt"] or ""
+        for m in name_re.finditer(prompt):
+            name = m.group(1)
+            if name and name not in existing and name not in ("背景", "镜头", "画面", "角色", "模型"):
+                if name not in found:
+                    # 从提示词上下文提取外貌线索
+                    ctx = prompt[max(0, m.start() - 20):m.end() + 80]
+                    found[name] = ctx
+
+    if not found:
+        return 0
+
+    # 建资产（外貌从上下文推断）
+    char_ns = []
+    for name, ctx in found.items():
+        # 尝试从上下文提取外貌描述
+        appearance = f"性别：待确认\n来源：VLM 读图提取\n上下文：{ctx[:60]}"
+        char_ns.append(NS(name=name, appearance=appearance, tags=["comic"]))
+
+    if char_ns:
+        persist_assets(db, data_dir, project_id,
+                       NS(characters=char_ns, scenes=[], props=[]))
+        emit_log(db, "llm", "info",
+                 f"读图顺手提取角色：{len(char_ns)} 个（{', '.join(c.name for c in char_ns)}）",
+                 project_id=project_id)
+    return len(char_ns)
 
 
 def _sample_shot_indices(total: int, sample_size: int = 9) -> list[int]:

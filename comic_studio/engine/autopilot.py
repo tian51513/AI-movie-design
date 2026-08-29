@@ -127,11 +127,11 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
 
 
 def _comic_flow(db, data_dir, project_id, proj) -> dict:
-    """漫画项目流程（P9 2026-08-29 通用化）：
-    导入时直达 storyboard_ready（跳过分析/拆解）
-    → [漫改] extract_characters → gen_refs（自动角色资产+参考图）
-    → describe_shots（VLM 读图提示词）
-    → gate2 → render（fl2v 翻页 或 ref2va 动画）
+    """漫画项目流程（P9 2026-08-29 重构：读图顺便提取角色）：
+    导入时直达 storyboard_ready
+    → describe_shots（VLM 读所有页 + 顺手提取角色 + 生成提示词 + 绑定）
+    → [漫改] gen_refs（角色参考图）
+    → gate2 → render（fl2v 翻页 或 ref2va 角色动画）
     → gate3 → rendered → TTS+字幕 → merge → merged"""
     stage = proj["stage"]
     _cm = proj["comic_mode"] if "comic_mode" in proj.keys() else ""
@@ -145,22 +145,19 @@ def _comic_flow(db, data_dir, project_id, proj) -> dict:
         if total == 0:
             return {"action": "wait", "detail": "无分镜（漫画导入异常）"}
 
-        # ── 漫改模式：自动角色资产链路 ──
-        if is_film:
-            # ① 提取角色（VLM 读前几页）
-            has_assets = db.connect().execute(
-                "SELECT 1 FROM project_assets WHERE project_id=? LIMIT 1",
-                (project_id,)).fetchone() is not None
-            if not has_assets:
-                if _has_active_job(db, project_id, "extract_comic_characters"):
-                    return {"action": "wait", "detail": "角色提取中"}
-                return {"action": "extract_comic_characters",
-                        "detail": "漫改模式：提取角色资产"}
+        # ① VLM 读图（含角色提取——2026-08-29 用户需求重构：一遍完成）
+        missing = _shots_missing_prompt(db, project_id)
+        if missing > 0:
+            if _has_active_job(db, project_id, "describe_shots"):
+                return {"action": "wait", "detail": f"VLM 读图+角色提取中（缺 {missing} 镜）"}
+            return {"action": "describe_shots", "detail": f"缺 {missing} 条提示词（VLM 读图+提取角色）"}
+        if _has_active_job(db, project_id, "describe_shots"):
+            return {"action": "wait", "detail": "VLM 读图收尾中"}
 
-            # ② 生成参考图（角色有资产但没图）
+        # ② 漫改模式：角色参考图（读图提取的角色可能还没有图）
+        if is_film:
             from .assets import list_project_assets
             from .paths import data_to_abs
-            from pathlib import Path
             missing_refs = []
             for a in list_project_assets(db, project_id):
                 if a["kind"] == "character":
@@ -170,19 +167,10 @@ def _comic_flow(db, data_dir, project_id, proj) -> dict:
                         missing_refs.append(a["id"])
             if missing_refs:
                 if _has_active_job(db, project_id, "gen_ref"):
-                    return {"action": "wait", "detail": f"参考图生成中（缺 {len(missing_refs)} 个）"}
-                return {"action": "gen_refs", "detail": f"漫改模式：生成 {len(missing_refs)} 个角色参考图"}
+                    return {"action": "wait", "detail": f"角色参考图生成中（{len(missing_refs)} 个）"}
+                return {"action": "gen_refs", "detail": f"漫改：生成 {len(missing_refs)} 个角色参考图"}
 
-        # ── 共通：VLM 读图提示词 ──
-        missing = _shots_missing_prompt(db, project_id)
-        if missing > 0:
-            if _has_active_job(db, project_id, "describe_shots"):
-                return {"action": "wait", "detail": f"VLM 读图中（缺 {missing} 镜）"}
-            return {"action": "describe_shots", "detail": f"缺 {missing} 条提示词（VLM 读图）"}
-        if _has_active_job(db, project_id, "describe_shots"):
-            return {"action": "wait", "detail": "VLM 读图收尾中"}
-
-        # ── 渲染 → 门3 → 合成 ──
+        # ③ 渲染 → 门3 → 合成
         if not _all_shots_have_video(db, project_id):
             if _has_active_job(db, project_id, "gen_shot"):
                 return {"action": "wait", "detail": "渲染中"}
