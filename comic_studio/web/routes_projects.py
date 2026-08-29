@@ -194,7 +194,6 @@ def describe_shots_route(project_id: int, request: Request,
     import threading
     threading.Thread(target=_run, daemon=True).start()
     return {"status": "background"}
-    return {"status": "started"}
 
 
 @router.post("/from-theme/preview")
