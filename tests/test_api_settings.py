@@ -10,6 +10,7 @@ ROUTING_DEFAULTS = {
     "gen_video_prompt": "online",
     "optimize_prompt": "online",
     "gen_story": "online",
+    "describe_shot": "local",
 }
 
 

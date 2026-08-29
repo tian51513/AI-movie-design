@@ -176,7 +176,12 @@ def describe_shots_route(project_id: int, request: Request):
 
     def _run():
         try:
-            client = client_for_task(db, "gen_video_prompt")  # 视觉提示词共用该路由
+            # describe_shot 可独立路由（如指到 LM Studio 的视觉模型——
+            # Ollama 量化版缺 mmproj 时图片输入 500，2026-08-29 真机）
+            try:
+                client = client_for_task(db, "describe_shot")
+            except Exception:
+                client = client_for_task(db, "gen_video_prompt")  # 未配置时回退
             _describe(db, data_dir, project_id, client)
         except Exception as exc:
             emit_log(db, "llm", "error", f"VLM 读图失败：{exc}", project_id=project_id)

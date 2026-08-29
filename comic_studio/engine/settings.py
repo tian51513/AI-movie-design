@@ -20,9 +20,11 @@ DEFAULT_SETTINGS = {
     "llm_providers": {
         "local": {"base_url": "http://localhost:11434/v1", "api_key": "ollama",
                   "model": "qwen3:14b"},
+        "local2": {"base_url": "http://localhost:1234/v1", "api_key": "lmstudio",
+                   "model": ""},
         "online": {"base_url": "", "api_key": "", "model": ""},
     },
-    # 任务路由（spec §9.1：轻活本地、重活线上）
+    # 任务路由（spec §9.1：轻活本地、重活线上）；local2=LM Studio（视觉模型等）
     "llm_routing": {
         "extract_assets": "local",
         "fix_appearance": "local",
@@ -30,6 +32,7 @@ DEFAULT_SETTINGS = {
         "gen_video_prompt": "online",
         "optimize_prompt": "online",
         "gen_story": "online",
+        "describe_shot": "local",
     },
     "comfy": {"base_url": "http://127.0.0.1:8188", "min_free_vram_gb": 8,
               "director_batch_frames": 512,

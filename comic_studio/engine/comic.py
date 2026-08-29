@@ -92,9 +92,23 @@ def describe_shots(db, data_dir, project_id, client) -> int:
                 b64 = base64.b64encode(png.read_bytes()).decode()
                 content.append({"type": "image_url",
                                 "image_url": {"url": f"data:image/png;base64,{b64}"}})
-        text, _u = client.raw_chat(
-            [{"role": "system", "content": system},
-             {"role": "user", "content": content}], temperature=0.4)
+        try:
+            text, _u = client.raw_chat(
+                [{"role": "system", "content": system},
+                 {"role": "user", "content": content}], temperature=0.4)
+        except Exception as img_exc:
+            # 图片不被支持（Ollama 量化缺 mmproj 等）→ 文字降级不硬卡
+            if "image" not in str(img_exc).lower() and "mmproj" not in str(img_exc).lower():
+                raise  # 非图片类异常照常抛
+            emit_log(db, "llm", "warn",
+                     f"镜 {s['seq']}：模型不支持图片输入（{str(img_exc)[:60]}…），"
+                     f"降级为纯文字描述", project_id=project_id)
+            text, _u = client.raw_chat(
+                [{"role": "system", "content": system},
+                 {"role": "user", "content":
+                  f"第 {s['seq']} 页漫画（无图可看，按页码推断）："
+                  f"从当前画面到下一页的自然过渡，写一段视频提示词。"}],
+                temperature=0.4)
         text = (text or "").strip()
         if text:
             update_shot(db, s["id"], {"prompt": text, "description": text})

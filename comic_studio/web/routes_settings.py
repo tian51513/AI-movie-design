@@ -11,9 +11,9 @@ from ..engine.settings import get_setting, set_setting
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
-PROVIDER_NAMES = ("local", "online")
+PROVIDER_NAMES = ("local", "local2", "online")
 TASK_NAMES = ("extract_assets", "fix_appearance", "split_storyboards", "gen_video_prompt",
-              "optimize_prompt", "gen_story")
+              "optimize_prompt", "gen_story", "describe_shot")
 
 
 class ProviderConfig(BaseModel):
@@ -211,8 +211,8 @@ def llm_test(body: LLMTestBody, request: Request = None):
     # 与 ollama-models 相同的跨站盲发守卫
     if request and request.headers.get("sec-fetch-site") == "cross-site":
         raise HTTPException(403, "拒绝跨站请求")
-    if body.provider not in ("local", "online"):
-        raise HTTPException(422, "provider 只能是 local 或 online")
+    if body.provider not in ("local", "local2", "online"):
+        raise HTTPException(422, "provider 只能是 local / local2 / online")
     if not (body.base_url.strip() and body.model.strip()):
         return {"ok": False, "detail": "base_url 与模型名不能为空"}
     try:

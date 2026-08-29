@@ -419,12 +419,14 @@ const methods = {
     clearInterval(this.pollTimer); this.pollTimer = null;
     this.stopLogsPolling(); this.project = null;
     this.view = 'settings'; this.checkComfy();
-    this.llmTestResult = {local: null, online: null};
-    this.llmTestManual = {local: false, online: false};
+    this.llmTestResult = {local: null, local2: null, online: null};
+    this.llmTestManual = {local: false, local2: false, online: false};
     const s = await (await fetch('/api/settings')).json();
     this.settingsForm = {
       local: { ...s.llm_providers.local,
                extra_body_json: s.llm_providers.local?.extra_body ? JSON.stringify(s.llm_providers.local.extra_body) : '' },
+      local2: { ...(s.llm_providers.local2 || {}),
+                extra_body_json: s.llm_providers.local2?.extra_body ? JSON.stringify(s.llm_providers.local2.extra_body) : '' },
       online: { ...s.llm_providers.online,
                 extra_body_json: s.llm_providers.online?.extra_body ? JSON.stringify(s.llm_providers.online.extra_body) : '' },
       routing: { ...s.llm_routing },
@@ -536,9 +538,10 @@ const methods = {
   },
   async saveSettings() {
     const ebLocal = this._parseExtra(this.settingsForm.local);
+    const ebLocal2 = this._parseExtra(this.settingsForm.local2 || {});
     const ebOnline = this._parseExtra(this.settingsForm.online);
-    if (ebLocal === undefined || ebOnline === undefined) {
-      alert('extra_body 不是合法 JSON（两个 provider 各自检查）'); return;
+    if (ebLocal === undefined || ebOnline === undefined || ebLocal2 === undefined) {
+      alert('extra_body 不是合法 JSON（各 provider 检查）'); return;
     }
     this.saving = true;      const payload = {
       llm_providers: {
@@ -546,6 +549,10 @@ const methods = {
                  api_key: this.settingsForm.local.api_key || 'ollama',
                  model: this.settingsForm.local.model || '',
                  extra_body: ebLocal },
+        local2: { base_url: (this.settingsForm.local2 || {}).base_url || '',
+                  api_key: (this.settingsForm.local2 || {}).api_key || 'lmstudio',
+                  model: (this.settingsForm.local2 || {}).model || '',
+                  extra_body: ebLocal2 },
         online: { base_url: this.settingsForm.online.base_url || '',
                   api_key: this.settingsForm.online.api_key || '',
                   model: this.settingsForm.online.model || '',

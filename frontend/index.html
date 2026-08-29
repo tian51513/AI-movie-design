@@ -50,10 +50,12 @@
     <h2>LLM 设置</h2>
     <div class="row">
       <div class="card" style="flex:1;min-width:320px">
-        <h3>本地（Ollama / LM Studio）
+        <h3>本地 · Ollama<span class="muted" style="font-size:12px">（主 LLM）</span>
           <span :style="{color: llmLamp('local').color}">●</span>
           <span class="muted">{{ llmLamp('local').text }}</span></h3>
-        <p><input v-model="settingsForm.local.base_url" placeholder="根地址，如 http://127.0.0.1:11434（带不带 /v1、误粘 /api/tags 均可）" style="width:70%">
+        <p><input v-model="settingsForm.local.base_url" placeholder="如 http://127.0.0.1:11434（任意写法均自动归一 /v1）" style="width:55%">
+           <button @click="settingsForm.local.base_url = 'http://127.0.0.1:11434'" style="font-size:11px;padding:2px 8px"
+                   title="一键填入 Ollama 默认地址">Ollama 预设</button>
            <button @click="fetchOllamaModels" :disabled="loadingModels">
              {{ loadingModels ? '获取中…' : '获取模型' }}</button>
            <button @click="llmTest('local')" :disabled="llmTesting==='local'">
@@ -72,6 +74,23 @@
         <p><input v-model="settingsForm.local.extra_body_json"
                   placeholder="附加参数 JSON（可选，如 {&quot;chat_template_kwargs&quot;:{&quot;enable_thinking&quot;:false}} 屏蔽思考）" style="width:90%"></p>
         <p><label class="muted"><input type="checkbox" v-model="showThink"> 显示推理模型（含 think）</label></p>
+      </div>
+      <div class="card" style="flex:1;min-width:320px">
+        <h3>本地 · LM Studio<span class="muted" style="font-size:12px">（视觉模型 / 第二本地）</span>
+          <span :style="{color: llmLamp('local2').color}">●</span>
+          <span class="muted">{{ llmLamp('local2').text }}</span></h3>
+        <p><input v-model="settingsForm.local2.base_url" placeholder="如 http://127.0.0.1:1234（自动归一 /v1）" style="width:55%">
+           <button @click="settingsForm.local2.base_url = 'http://127.0.0.1:1234'" style="font-size:11px;padding:2px 8px"
+                   title="一键填入 LM Studio 默认地址">LM Studio 预设</button>
+           <button @click="llmTest('local2')" :disabled="llmTesting==='local2'">
+             {{ llmTesting==='local2' ? '测试中…' : '测试' }}</button>
+           <span v-if="llmTestManual.local2 && llmTestResult.local2 !== null"
+                 :style="{color: llmTestResult.local2?.ok ? '#4ade80' : '#f87171'}">
+             {{ llmTestResult.local2?.ok ? '✓ ' + (llmTestResult.local2?.detail || 'OK') : '✗ ' + llmTestResult.local2?.detail }}</span></p>
+        <p><input v-model="settingsForm.local2.model"
+                  placeholder="模型名（视觉模型如 qwen3vl / minicpm-v）" style="width:90%"></p>
+        <p><input v-model="settingsForm.local2.extra_body_json"
+                  placeholder="附加参数 JSON（可选）" style="width:90%"></p>
       </div>
       <div class="card" style="flex:1;min-width:320px">
         <h3>线上 API
@@ -200,7 +219,10 @@
     <p v-for="(label, task) in taskLabels" :key="task">
       {{ label }}：
       <select v-model="settingsForm.routing[task]">
-        <option value="local">本地 · 默认模型</option>
+        <option value="local">Ollama · 默认模型</option>
+        <option v-if="settingsForm.local2.model" value="local2">LM Studio · 默认模型</option>
+        <option v-if="settingsForm.local2.model" :value="'local2:'+settingsForm.local2.model"
+                :title="'local2:'+settingsForm.local2.model">LM Studio · {{ settingsForm.local2.model }}</option>
         <option v-for="m in displayOllamaModels" :key="'l'+task+m" :value="'local:'+m"
                 :title="'local:'+m">{{ m.toLowerCase().includes('think') ? '🧠 ' : '' }}{{ m }}</option>
         <option value="online">线上 · 默认模型</option>
