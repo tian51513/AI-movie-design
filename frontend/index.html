@@ -33,7 +33,135 @@
   <header><b>漫剧工坊</b> <span class="muted">comic_studio</span>
     <span style="float:right;display:inline-flex;gap:6px">
       <button @click="openCreate">➕ 创建小说</button>
+      <button @click="view='guide'">📖 导引</button>
       <button @click="openSettings">设置</button></span></header>
+  <!-- ═══════════ 📖 操作导引 ═══════════ -->
+  <main v-if="view==='guide'" style="max-width:960px;margin:0 auto;padding:20px">
+    <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);border-radius:16px;padding:32px 28px;margin-bottom:20px;border:1px solid #2a2a4a;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+      <h1 style="margin:0;font-size:28px;background:linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🎬 漫剧工坊</h1>
+      <p style="margin:8px 0 0;font-size:15px;color:#94a3b8">小说 / 主题 / 漫画 → 全自动漫剧视频生产线</p>
+      <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+        <span style="background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#60a5fa">📚 小说改编</span>
+        <span style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#a78bfa">🎨 主题生成</span>
+        <span style="background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#f472b6">🖼 漫画转视频</span>
+      </div>
+    </div>
+
+    <!-- 三种项目类型 -->
+    <h2 style="color:#e2e8f0;border-left:4px solid #60a5fa;padding-left:12px;margin:24px 0 12px">📁 项目类型与操作流程</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:24px">
+      <!-- 小说改编 -->
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:12px;padding:18px;border-top:3px solid #60a5fa">
+        <h3 style="margin:0 0 10px;color:#60a5fa">📎 上传小说</h3>
+        <div style="font-size:13px;color:#cbd5e1;line-height:2">
+          <div>① <b>上传</b> txt 章节文件</div>
+          <div>② 选画风 / 画幅 / 时长参数</div>
+          <div style="color:#64748b">─────────</div>
+          <div>③ LLM 分析 → 提取<b>角色/场景/道具</b></div>
+          <div>④ 生成参考图（主图+三视图）</div>
+          <div>⑤ <b>✓ 确认资产</b>（门1）</div>
+          <div>⑥ 拆分镜 + 生成提示词</div>
+          <div>⑦ <b>✓ 确认分镜</b>（门2）</div>
+          <div>⑧ 逐镜渲染 → 合成成片</div>
+        </div>
+        <div style="margin-top:10px;padding:8px;background:rgba(96,165,250,.08);border-radius:6px;font-size:12px;color:#93c5fd">
+          💡 支持<b>多章节</b>（第X章切分）和<b>分镜数</b>指定
+        </div>
+      </div>
+
+      <!-- 主题生成 -->
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:12px;padding:18px;border-top:3px solid #a78bfa">
+        <h3 style="margin:0 0 10px;color:#a78bfa">🎨 主题生成</h3>
+        <div style="font-size:13px;color:#cbd5e1;line-height:2">
+          <div>① 选预设主题（或自建）</div>
+          <div>② 可加<b>补充描述</b> / 主角名 / 字数</div>
+          <div>③ <b>✨ 生成正文</b>（1-3分钟）</div>
+          <div>④ 预览 / 编辑 → <b>✔ 确认创建</b></div>
+          <div style="color:#64748b">─────────</div>
+          <div>⑤ 后续流程同小说（分析→渲染）</div>
+        </div>
+        <div style="margin-top:10px;padding:8px;background:rgba(167,139,250,.08);border-radius:6px;font-size:12px;color:#c4b5fd">
+          💡 内置<b>短剧结构规范</b>：黄金3秒钩子 / 情绪流变 / 断章卡点 / 对白语速公式
+        </div>
+      </div>
+
+      <!-- 漫画 -->
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:12px;padding:18px;border-top:3px solid #f472b6">
+        <h3 style="margin:0 0 10px;color:#f472b6">🖼 漫画导入</h3>
+        <div style="font-size:13px;color:#cbd5e1;line-height:2">
+          <div style="color:#f472b6;font-weight:bold">📖 动态漫模式（快）</div>
+          <div>① 导入漫画页（自动排序+压缩）</div>
+          <div>② 👁 读图生成提示词（VLM 看图）</div>
+          <div>③ ✓ 确认 → fl2v 翻页渲染</div>
+          <div style="color:#64748b">──── ~100s/镜 ────</div>
+          <div style="color:#f472b6;font-weight:bold;margin-top:6px">🎬 漫改电影模式（慢）</div>
+          <div>① 导入 + 选「漫改电影」</div>
+          <div>② 🎭 提取角色（可选，多次只留最新）</div>
+          <div>③ 生成参考图 → 👁 读图提示词</div>
+          <div>④ ✓ 确认 → ref2va 角色动画渲染</div>
+          <div style="color:#64748b">──── ~3-5min/镜 ────</div>
+        </div>
+        <div style="margin-top:10px;padding:8px;background:rgba(244,114,182,.08);border-radius:6px;font-size:12px;color:#f9a8d4">
+          💡 漫改自动<b>画风转换</b>（二次元↔真人）+ <b>多角色</b>识别
+        </div>
+      </div>
+    </div>
+
+    <!-- 核心功能 -->
+    <h2 style="color:#e2e8f0;border-left:4px solid #a78bfa;padding-left:12px;margin:24px 0 12px">⚡ 核心功能</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:24px">
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:10px;padding:14px">
+        <div style="font-size:20px;margin-bottom:6px">🚀</div>
+        <b style="color:#4ade80">一键出片</b>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">全自动：分析→参考图→拆镜→提示词→渲染→配音→字幕→合成</div>
+      </div>
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:10px;padding:14px">
+        <div style="font-size:20px;margin-bottom:6px">🚄</div>
+        <b style="color:#f59e0b">整段快车道</b>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">导演台批量渲染（分批 latent 连贯 + 批间首帧接力 + 整片混音）</div>
+      </div>
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:10px;padding:14px">
+        <div style="font-size:20px;margin-bottom:6px">🎙</div>
+        <b style="color:#06b6d4">配音+字幕</b>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">Edge-TTS 按性别分配声音 + SRT 字幕烧录（自动混入成片）</div>
+      </div>
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:10px;padding:14px">
+        <div style="font-size:20px;margin-bottom:6px">👁</div>
+        <b style="color:#0e7490">VLM 读图</b>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">视觉模型看漫画页 → 生成动画提示词 + 提取对白（逐镜/批量）</div>
+      </div>
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:10px;padding:14px">
+        <div style="font-size:20px;margin-bottom:6px">⏹</div>
+        <b style="color:#f87171">停止任务</b>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">项目级一键停止（取消待跑 + ComfyUI 清队中断在跑的）</div>
+      </div>
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:10px;padding:14px">
+        <div style="font-size:20px;margin-bottom:6px">🔄</div>
+        <b style="color:#8b5cf6">分镜控制</b>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">批量 无效/生效/删除 · 无效镜不进渲染和合成 · 分镜数指定</div>
+      </div>
+    </div>
+
+    <!-- 设置速查 -->
+    <h2 style="color:#e2e8f0;border-left:4px solid #f472b6;padding-left:12px;margin:24px 0 12px">⚙️ 设置速查</h2>
+    <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:12px;padding:18px;font-size:13px;color:#cbd5e1;line-height:2.2">
+      <div><b style="color:#60a5fa">🤖 LLM 设置</b>：本地服务商切换（Ollama/LM Studio/自定义，预设地址一键填）+ 线上 API</div>
+      <div><b style="color:#60a5fa">🔀 任务路由</b>：每个任务可独立选服务商/模型（长文本建议对话模型）</div>
+      <div><b style="color:#60a5fa">🎬 工作流</b>：模板映射（主图/三视图/视频/导演台）+ 模型切换 + 性能开关</div>
+      <div><b style="color:#60a5fa">📚 预设主题</b>：主题模板管理（导入/删除/自定义）</div>
+    </div>
+
+    <!-- 提示 -->
+    <div style="margin-top:20px;padding:14px;background:rgba(250,204,21,.06);border:1px solid rgba(250,204,21,.15);border-radius:10px;font-size:13px;color:#fde047">
+      💡 <b>提示</b>：操作日志在项目详情页底部实时滚动 · 队列状态在工具栏（运行/排队/失败）· 修改 Python 代码后需重启服务
+    </div>
+
+    <p style="text-align:center;margin-top:20px">
+      <button @click="view='projects'" style="padding:8px 24px;font-size:14px">← 返回项目列表</button>
+    </p>
+  </main>
+
   <main v-if="view==='settings'">
     <p><a href="#" @click.prevent="view='projects'">← 返回</a></p>
         <p style="display:flex;gap:6px;margin:0 0 12px">
