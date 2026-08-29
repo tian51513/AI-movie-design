@@ -157,6 +157,83 @@
       💡 <b>提示</b>：操作日志在项目详情页底部实时滚动 · 队列状态在工具栏（运行/排队/失败）· 修改 Python 代码后需重启服务
     </div>
 
+    <!-- 一键出片流程图 -->
+    <h2 style="color:#e2e8f0;border-left:4px solid #4ade80;padding-left:12px;margin:24px 0 12px">🚀 一键出片流程图</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px">
+      <!-- 小说流程 -->
+      <div style="background:linear-gradient(180deg,#1a1f27 0%,#1e2632 100%);border:1px solid #2c3540;border-radius:12px;padding:18px">
+        <h3 style="margin:0 0 12px;color:#60a5fa">📚 小说 / 主题项目</h3>
+        <div style="font-size:12px;color:#cbd5e1">
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(96,165,250,.06);border-radius:6px">
+            <span style="color:#60a5fa">①</span> LLM 分析 → 提取角色/场景/道具
+          </div>
+          <div style="text-align:center;color:#475569">↓</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(96,165,250,.06);border-radius:6px">
+            <span style="color:#60a5fa">②</span> 生成参考图（主图 + 三视图）
+          </div>
+          <div style="text-align:center;color:#475569">↓ 门1</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(96,165,250,.06);border-radius:6px">
+            <span style="color:#60a5fa">③</span> 拆分镜 + 文本提示词生成
+          </div>
+          <div style="text-align:center;color:#475569">↓ 门2</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(96,165,250,.06);border-radius:6px">
+            <span style="color:#60a5fa">④</span> 逐镜渲染（ref2va / fl2v / t2v）
+          </div>
+          <div style="text-align:center;color:#475569">↓ 门3</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(96,165,250,.06);border-radius:6px">
+            <span style="color:#60a5fa">⑤</span> TTS 配音 + SRT 字幕
+          </div>
+          <div style="text-align:center;color:#475569">↓</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(74,222,128,.08);border-radius:6px">
+            <span style="color:#4ade80">✓</span> FFmpeg 合成成片
+          </div>
+        </div>
+      </div>
+
+      <!-- 漫画流程 -->
+      <div style="background:linear-gradient(180deg,#1a1f27 0%,#251a2e 100%);border:1px solid #2c3540;border-radius:12px;padding:18px">
+        <h3 style="margin:0 0 12px;color:#f472b6">🖼 漫画项目</h3>
+        <div style="font-size:12px;color:#cbd5e1">
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(244,114,182,.06);border-radius:6px">
+            <span style="color:#f472b6">①</span> 导入漫画页（直达分镜就绪）
+            <span v-if="project && project.comic_mode==='film_adaptation'" style="color:#a78bfa">🎬 漫改模式</span>
+            <span v-else style="color:#60a5fa">📖 动态漫</span>
+          </div>
+          <div v-if="!project || project.comic_mode!=='motion_comic'" style="text-align:center;color:#64748b;font-size:11px">
+            ⤷ 漫改可选：🎭 提取角色 → 生成参考图
+          </div>
+          <div style="text-align:center;color:#475569">↓</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(244,114,182,.06);border-radius:6px">
+            <span style="color:#f472b6">②</span> VLM 读图生成动画提示词
+            <span style="color:#94a3b8">（含对白提取 + 画风转换）</span>
+          </div>
+          <div style="text-align:center;color:#475569">↓ 门2</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(244,114,182,.06);border:6px;border-radius:6px">
+            <span style="color:#f472b6">③</span> 逐镜渲染
+            <span v-if="project && project.comic_mode==='film_adaptation'" style="color:#a78bfa">ref2va 角色动画</span>
+            <span v-else style="color:#60a5fa">fl2v 翻页插值</span>
+          </div>
+          <div style="text-align:center;color:#475569">↓ 门3</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(244,114,182,.06);border-radius:6px">
+            <span style="color:#f472b6">④</span> TTS 配音 + 字幕（有对白时）
+          </div>
+          <div style="text-align:center;color:#475569">↓</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(74,222,128,.08);border-radius:6px">
+            <span style="color:#4ade80">✓</span> FFmpeg 合成成片
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 暂停/续跑说明 -->
+    <div style="background:rgba(250,204,21,.04);border:1px solid rgba(250,204,21,.12);border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px;color:#fde047;line-height:1.8">
+      ⏸ <b>暂停与续跑</b>：<br>
+      · 点「⏹ 停止自动」暂停 → 可手动编辑任何内容（提示词/分镜/资产）<br>
+      · 点「🚀 一键出片」恢复 → 系统重新评估当前状态，从断点继续<br>
+      · 全程无需人工介入（小说和漫画项目均支持）
+    </div>
+
     <p style="text-align:center;margin-top:20px">
       <button @click="view='projects'" style="padding:8px 24px;font-size:14px">← 返回项目列表</button>
     </p>
