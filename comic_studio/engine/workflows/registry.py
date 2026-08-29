@@ -97,8 +97,10 @@ def scan_templates(root: Path) -> dict:
 
 def resolve_template(db: Database, tmpl_type: str) -> WorkflowTemplate:
     from ..settings import DEFAULT_SETTINGS
-    # 旧库存量 template_map 可能缺新类型键（如 director）→ 用默认映射兜底合并
-    mapping = {**DEFAULT_SETTINGS["template_map"], **get_setting(db, "template_map")}
+    # 旧库缺新键或值被清成 null → 默认兜底（null 视同未设置，不覆盖默认；
+    # 2026-08-29 真机：设置页崩掉时保存动作把 template_map 全清成 null）
+    stored = {k: v for k, v in (get_setting(db, "template_map") or {}).items() if v}
+    mapping = {**DEFAULT_SETTINGS["template_map"], **stored}
     tmpl_id = mapping.get(tmpl_type)
     reg = scan_templates(TEMPLATE_ROOT)
     if not tmpl_id or tmpl_id not in reg:
