@@ -99,12 +99,18 @@ def next_action(db, data_dir, project_id) -> dict:
             if _has_active_job(db, project_id, "split_storyboards"):
                 return {"action": "wait", "detail": "分镜拆解中"}
             return {"action": "split", "detail": "无分镜，先拆解"}
+        # P9 漫画感知（2026-08-29）：漫画项目提示词走 VLM 读图，不走文本 gen_prompt
+        _cm = proj["comic_mode"] if "comic_mode" in proj.keys() else ""
+        is_comic = _cm in ("motion_comic", "film_adaptation")
+        prompt_job_type = "describe_shots" if is_comic else "gen_prompt"
         missing = _shots_missing_prompt(db, project_id)
         if missing > 0:
-            if _has_active_job(db, project_id, "gen_prompt"):
-                return {"action": "wait", "detail": "提示词生成中"}
+            if _has_active_job(db, project_id, prompt_job_type):
+                return {"action": "wait", "detail": "提示词生成中" + ("（VLM 读图）" if is_comic else "")}
+            if is_comic:
+                return {"action": "describe_shots", "detail": f"缺 {missing} 条提示词（VLM 读图）"}
             return {"action": "gen_prompts", "detail": f"缺 {missing} 条提示词"}
-        if _has_active_job(db, project_id, "gen_prompt"):
+        if _has_active_job(db, project_id, prompt_job_type):
             return {"action": "wait", "detail": "提示词生成中"}
         if not _all_shots_have_video(db, project_id):
             if _has_active_job(db, project_id, "gen_shot"):
@@ -149,6 +155,13 @@ def tick(db, data_dir, project_id) -> dict:
     elif action == "split":
         from .pipeline_jobs import enqueue_llm_job
         enqueue_llm_job(db, "split_storyboards", project_id=project_id, payload={"project_id": project_id})
+    elif action == "describe_shots":
+        # P9 漫画项目：VLM 读图生成提示词（一个 job 批量跑全部缺失的镜）
+        from .jobs import enqueue_job
+        enqueue_job(db, "describe_shots", project_id=project_id,
+                    resource="gpu_llm_local", payload={"project_id": project_id})
+        emit_log(db, "autopilot", "info", "autopilot 入队 VLM 读图（批量）",
+                 project_id=project_id)
     elif action == "gen_prompts":
         from .pipeline_jobs import enqueue_llm_job
         conn = db.connect()

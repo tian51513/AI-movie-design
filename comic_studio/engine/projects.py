@@ -38,7 +38,7 @@ def create_project(db: Database, data_dir: Path, name: str,
     chapters_json = json.dumps(parse_chapters(novel_text), ensure_ascii=False)
     conn.execute(
         "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, style_vis, chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), style_vis.strip(), chapters_json, comic_mode or "motion_comic", video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration))
+        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), style_vis.strip(), chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration))
     conn.commit()
     return get_project(db, conn.execute("SELECT last_insert_rowid() id").fetchone()["id"])
 
