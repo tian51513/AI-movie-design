@@ -209,11 +209,16 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=3) -> i
     emit_log(db, "llm", "info", f"VLM 读前 {len(shots)} 页提取角色…",
              project_id=project_id)
     system = (
-        "你是角色设计师。给定漫画页面，提取所有出现的角色。\n"
-        '输出 JSON 数组：[{"name":"角色名","appearance":"外貌行模板"}]\n'
+        "你是漫改电影的美术指导。给定漫画页面，提取角色、场景和重要道具。\n"
+        "输出 JSON：\n"
+        '{"characters":[{"name":"角色名","appearance":"外貌行模板"}],\n'
+        ' "scenes":[{"name":"场景名","appearance":"场景描述"}],\n'
+        ' "props":[{"name":"道具名","appearance":"道具描述"}]}\n'
         "外貌行模板格式（每行一项）：性别：\\n年龄：\\n发色发型：\\n服装：\\n…\n"
+        "场景描述：空间结构、光线氛围、色调、时代风格。\n"
+        "道具描述：外观形状、材质质感、颜色纹样。\n"
         "只输出 JSON，不解释。")
-    content = [{"type": "text", "text": "提取这些漫画页面中的所有角色："}]
+    content = [{"type": "text", "text": "提取这些漫画页面中的所有角色、场景和重要道具："}]
     for s in shots:
         png = data_to_abs(data_dir, f"projects/{slug}/shots/{s['seq']}/kf_start.png")
         if png.exists():
@@ -227,20 +232,33 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=3) -> i
              {"role": "user", "content": content}], temperature=0.3)
     text = (text or "").strip()
 
-    m = _re.search(r"\[.*\]", text, _re.DOTALL)
+    m = _re.search(r"\{.*\}", text, _re.DOTALL)
     if not m:
-        raise ValueError(f"VLM 未返回角色 JSON：{text[:100]}")
-    chars = json.loads(m.group())
+        raise ValueError(f"VLM 未返回资产 JSON：{text[:100]}")
+    data = json.loads(m.group())
 
     char_ns = [NS(name=c["name"], appearance=c.get("appearance", ""), tags=["comic"])
-               for c in chars if c.get("name")]
-    if not char_ns:
+               for c in (data.get("characters") or []) if c.get("name")]
+    scene_ns = [NS(name=s["name"], appearance=s.get("appearance", ""), tags=["comic"])
+                for s in (data.get("scenes") or []) if s.get("name")]
+    prop_ns = [NS(name=p["name"], appearance=p.get("appearance", ""), tags=["comic"])
+               for p in (data.get("props") or []) if p.get("name")]
+
+    total = len(char_ns) + len(scene_ns) + len(prop_ns)
+    if total == 0:
         return 0
-    persist_assets(db, data_dir, project_id, NS(characters=char_ns, scenes=[], props=[]))
-    emit_log(db, "llm", "info",
-             f"角色提取完成：{len(char_ns)} 个（{', '.join(c.name for c in char_ns)}）",
+    persist_assets(db, data_dir, project_id,
+                   NS(characters=char_ns, scenes=scene_ns, props=prop_ns))
+    parts = []
+    if char_ns:
+        parts.append(f"角色 {len(char_ns)}：{', '.join(c.name for c in char_ns)}")
+    if scene_ns:
+        parts.append(f"场景 {len(scene_ns)}：{', '.join(s.name for s in scene_ns)}")
+    if prop_ns:
+        parts.append(f"道具 {len(prop_ns)}：{', '.join(p.name for p in prop_ns)}")
+    emit_log(db, "llm", "info", f"资产提取完成——{'；'.join(parts)}",
              project_id=project_id)
-    return len(char_ns)
+    return total
 
 
 _DIALOGUE_RE = None
