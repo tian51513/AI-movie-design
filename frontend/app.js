@@ -717,7 +717,8 @@ const methods = {
     const fd = new FormData();
     fd.append('name', this.newName || `漫画${this.comicFiles.length}页`);
     fd.append('aspect_ratio', this.newRatio);
-    this.comicFiles.sort((a, b) => a.name.localeCompare(b.name, 'zh'))
+    // 自然排序（numeric:true）：1.png < 2.png < 10.png（字符串排序会 1<10<2 乱序）
+    this.comicFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}))
       .forEach(f => fd.append('images', f, f.name));
     const resp = await fetch('/api/projects/from-comic', { method: 'POST', body: fd });
     this.creating = false;
