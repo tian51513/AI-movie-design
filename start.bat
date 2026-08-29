@@ -1,5 +1,5 @@
 @echo off
-rem comic_studio Windows launcher - keep this window OPEN while using the app
+rem comic_studio Windows launcher - auto-kills old instance, then starts
 cd /d %~dp0
 where python >nul 2>nul || (echo [ERROR] python not found & pause & exit /b 1)
 if not exist .venv-win (
@@ -9,6 +9,9 @@ if not exist .venv-win\Scripts\uvicorn.exe (
   echo Installing deps (a few minutes)...
   .venv-win\Scripts\python -m pip install -e ".[dev]" || (echo [ERROR] install failed & pause & exit /b 1)
 )
+rem Kill any existing instance (silent or console) - safe to re-click start.bat
+taskkill /f /im uvicorn.exe >nul 2>nul
+timeout /t 1 /nobreak >nul
 echo ====================================
 echo   comic_studio running at http://localhost:8190
 echo   Keep this window OPEN. Close it to stop.
