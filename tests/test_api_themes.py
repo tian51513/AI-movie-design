@@ -34,8 +34,10 @@ def test_themes_listing(app_client):
         r = c.get("/api/themes")
         assert r.status_code == 200
         items = r.json()
-        assert len(items) >= 10
-        assert not any("NTR" in t["name"] or "催眠" in t["name"] for t in items)
+        # 2026-08-29 用户决策：成人向不再跳过，常规+成人全部入库显示
+        assert len(items) >= 20
+        cats = {t["category"] for t in items}
+        assert "常规项" in cats and "成人向" in cats
 
 
 def test_create_project_from_theme(app_client, monkeypatch):
@@ -93,12 +95,15 @@ def test_import_and_delete(app_client):
         assert c.delete(f"/api/themes/{tid}").status_code == 404
 
 
-def test_import_skips_adult_section(app_client):
+def test_import_adult_section_imported(app_client):
+    """2026-08-29 用户决策：成人向节不再跳过——导入成功并归到「成人向」分类。"""
     _, c = app_client
     with c:
         r = c.post("/api/themes/import",
                    files={"file": ("x.md", MD_ADULT.encode(), "text/markdown")})
-        assert r.status_code == 422  # 成人向节被跳过后无条目
+        assert r.status_code == 200 and r.json()["imported"] == 1
+        row = next(t for t in c.get("/api/themes").json() if t["name"] == "不良主题")
+        assert row["category"] == "成人向"
 
 
 def test_import_rejects_non_md(app_client):

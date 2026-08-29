@@ -17,7 +17,7 @@ def themes(request: Request):
 @router.post("/import")
 def import_themes(request: Request, file: UploadFile = File(...)):
     """导入 .md 模板（default_theme.md 同格式）：解析后按 name upsert。
-    含「成人向/情欲」字样的节整节跳过（与启动同步同一约定）。"""
+    成人向节同样导入（2026-08-29 用户决策：放开显示）。"""
     if not (file.filename or "").lower().endswith(".md"):
         raise HTTPException(422, "只接受 .md 模板文件")
     try:

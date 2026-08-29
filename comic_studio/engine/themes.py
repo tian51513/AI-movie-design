@@ -13,7 +13,6 @@ from pathlib import Path
 
 THEME_ROOT = Path("templates/tpl")
 
-_SKIP_SECTION = re.compile(r"adult")
 _ENTRY = re.compile(
     r"\d+\.\s*\*\*主题名称：?\*\*\s*《(.+?)》\s*\n+\*\*描述：?\*\*\s*(.+?)"
     r"(?=\n\s*\d+\.|\n---|\Z)",
@@ -30,12 +29,11 @@ def parse_theme_file(path: Path) -> list[dict]:
 
 
 def parse_text(text: str) -> list[dict]:
-    """解析 default_theme.md 格式文本（上传导入与文件同步共用）。"""
+    """解析 default_theme.md 格式文本（上传导入与文件同步共用）。
+    2026-08-29 用户决策：成人向节不再跳过，全部入库（分类=成人向）。"""
     items: list[dict] = []
     for section in re.split(r"\n###\s*", "\n" + text):
         header = section.split("\n", 1)[0]
-        if _SKIP_SECTION.search(header):
-            continue
         for name, desc in _ENTRY.findall(section):
             items.append({"name": name.strip(),
                           "category": _category(header),
