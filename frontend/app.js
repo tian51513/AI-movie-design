@@ -682,7 +682,8 @@ const methods = {
     if (!r.ok) { alert(await r.text()); return; }
     this.splitRunning = true;
   },
-  // 本地服务商切换：自动填预设地址（可手改），切换后清模型待重选
+  // 本地服务商切换：自动填预设地址（可手改）；不清模型（防误保存空值——
+  // 真机 2026-08-29：清了模型用户直接保存 → 库里 base_url/model 全空）
   switchLocalProvider(type) {
     this.localProviderType = type;
     if (type === 'ollama') {
@@ -692,9 +693,7 @@ const methods = {
       this.settingsForm.local.base_url = 'http://127.0.0.1:1234';
       this.settingsForm.local.api_key = 'lmstudio';
     }
-    // custom 不动地址（用户自己填）
-    this.settingsForm.local.model = '';  // 切服务商后旧模型名无意义
-    this.ollamaModels = [];  // 清模型清单待重新获取
+    // custom 不动地址（用户自己填）；模型保留——切后点「获取模型」重选即可
   },
   async stopJobs() {
     if (!confirm('停止本项目全部任务？\n待跑的直接取消；在跑的向 ComfyUI 发中断（约几秒内停止）。')) return;
