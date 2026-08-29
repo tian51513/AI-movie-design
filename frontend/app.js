@@ -606,6 +606,13 @@ const methods = {
       } catch (e) { /* 瞬时失败不杀轮询 */ }
       try {
         this.queue = await (await fetch(`/api/projects/${this.project.id}/queue`)).json();
+        // VLM 读图 job 完成检测：无活跃 describe_shots 任务且有等待中的镜 → 清 ⏳ 刷分镜
+        const hasDescribeJob = (this.queue.jobs || []).some(j =>
+          j.type === 'describe_shots' && (j.status === 'pending' || j.status === 'running'));
+        if (!hasDescribeJob && this.describingShots.size > 0) {
+          this.describingShots.clear();
+          await this.loadShots();
+        }
         const dj = (this.queue.jobs || []).find(j => j.type === 'gen_director');
         if (dj) {
           // 只在「页面打开期间发生的新失败」弹窗——首次观测到的旧失败（如刷新前
@@ -757,19 +764,17 @@ const methods = {
     setTimeout(() => { this.describing = false; this.loadShots(); }, 3000);  // 简易轮询：稍后刷新
   },
   async describeOneShot(s) {
-    if (this.describingShots.has(s.id)) return;  // 已在处理中
+    if (this.describingShots.has(s.id)) return;
     this.describingShots.add(s.id);
     try {
       const r = await fetch(`/api/projects/${this.project.id}/describe-shots?shot_id=${s.id}`, {method: 'POST'});
-      if (!r.ok) { alert('读图失败：' + (await r.text())); return; }
-      const b = await r.json();
-      await this.loadShots();
-      if (b.generated > 0) {
-        s._justRead = true;
-        setTimeout(() => { s._justRead = false; }, 2000);
-      }
-    } catch (e) { alert('读图失败：' + e); }
-    this.describingShots.delete(s.id);
+      if (!r.ok) { alert('读图失败：' + (await r.text())); this.describingShots.delete(s.id); return; }
+      // 队列模式：202 立即返回 job_id，状态由 queue 轮询驱动
+      // describingShots 在 tick 里检测 job 完成后自动清除
+    } catch (e) {
+      alert('读图失败：' + e);
+      this.describingShots.delete(s.id);
+    }
   },
   async batchShots(action) {
     const ids = this.shotSel;

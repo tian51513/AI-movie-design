@@ -162,38 +162,25 @@ def create_from_comic(request: Request,
     return _public(proj)
 
 
-@router.post("/{project_id}/describe-shots")
+@router.post("/{project_id}/describe-shots", status_code=202)
 def describe_shots_route(project_id: int, request: Request,
                          shot_id: int = 0):
-    """P8 VLM 读图生成提示词。shot_id>0 时同步等结果（单镜按钮，10-30s）；
-    不带 shot_id 时 202 后台跑（批量模式）。"""
+    """P8 VLM 读图生成提示词（队列任务化，2026-08-29 用户需求：
+    队列状态可见）。shot_id>0 单镜；否则批量跑全部空提示词镜。"""
     db = request.app.state.db
     from ..engine.projects import get_project
     proj = get_project(db, project_id)
     if proj is None:
         raise HTTPException(404, "项目不存在")
-    from ..engine.comic import describe_shots as _describe
-    from ..engine.llm.provider import client_for_task
-    data_dir = request.app.state.data_dir
-
-    def _run():
-        try:
-            try:
-                client = client_for_task(db, "describe_shot")
-            except Exception:
-                client = client_for_task(db, "gen_video_prompt")
-            return _describe(db, data_dir, project_id, client,
-                             shot_id=shot_id if shot_id else None)
-        except Exception as exc:
-            emit_log(db, "llm", "error", f"VLM 读图失败：{exc}", project_id=project_id)
-            return 0
-
+    from ..engine.jobs import enqueue_job
+    payload = {"project_id": project_id}
     if shot_id:
-        n = _run()  # 同步等结果（单镜 10-30s，前端有反馈）
-        return {"generated": n}
-    import threading
-    threading.Thread(target=_run, daemon=True).start()
-    return {"status": "background"}
+        payload["shot_id"] = shot_id
+    jid = enqueue_job(db, "describe_shots", project_id=project_id,
+                      shot_id=shot_id if shot_id else None,
+                      resource="gpu_llm_local",
+                      payload=payload)
+    return {"job_id": jid}
 
 
 @router.post("/from-theme/preview")

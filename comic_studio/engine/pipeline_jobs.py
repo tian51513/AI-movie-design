@@ -62,3 +62,20 @@ def handle_gen_prompt(db, data_dir, job, comfy):
     emit_log(db, "llm", "info",
              f"镜头 {shot['seq']} 提示词就绪（{backend}，{len(text)} 字，"
              f"{time.monotonic()-t0:.1f}s）", project_id=job["project_id"], job_id=job["id"])
+
+
+@register("describe_shots")
+def handle_describe_shots(db, data_dir, job, comfy):
+    """P8 VLM 读图（队列任务化 2026-08-29）：单镜（payload.shot_id）或批量。"""
+    import json as _json
+    payload = _json.loads(job["payload_json"] or "{}")
+    from .comic import describe_shots
+    from .llm.provider import client_for_task
+    try:
+        client = client_for_task(db, "describe_shot")
+    except Exception:
+        client = client_for_task(db, "gen_video_prompt")
+    n = describe_shots(db, data_dir, payload.get("project_id", job["project_id"]),
+                       client, shot_id=payload.get("shot_id"))
+    emit_log(db, "llm", "info", f"VLM 读图任务完成：{n} 镜",
+             project_id=job["project_id"], job_id=job["id"])
