@@ -75,14 +75,19 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
     slug = proj["slug"]
     system = (
         "你是漫画转视频的分镜导演。你会收到同一漫画的两格画面（第一张=首帧，第二张=尾帧）。\n"
-        "你的任务：分析两格之间的剧情变化，写出视频生成提示词。\n\n"
+        "你的任务：分析两格之间的剧情变化（含对白），写出视频生成提示词。\n\n"
         "分析步骤（内部完成，不要输出）：\n"
-        "1. 看第一张图：谁在做什么？什么表情？什么场景？\n"
-        "2. 看第二张图：发生了什么变化？（人物动作变了？位置变了？来了新人物？场景切换了？）\n"
-        "3. 推导：从第一格到第二格，人物做了什么动作？镜头怎么动？\n\n"
+        "1. 看第一张图：谁在做什么？什么表情？什么场景？有什么对白气泡？\n"
+        "2. 看第二张图：发生了什么变化？有什么对白气泡？\n"
+        "3. 对白排序：按漫画阅读顺序（从上到下、从右到左）整理两格中出现的所有对白，"
+        "标注说话人；多段对白按先后顺序排列\n"
+        "4. 推导：从第一格到第二格，人物做了什么动作？说了什么话？镜头怎么动？\n\n"
         "输出格式（直接输出，不解释）：\n"
-        "一段中文提示词，100 字以内，包含：人物名字+动作+表情变化+镜头运动+环境变化。\n"
-        "必须描述「从第一格状态到第二格状态的具体过渡过程」，不能只描述单帧静态画面。")
+        "一段中文提示词，120 字以内，包含：\n"
+        "- 人物名字+动作+表情变化+镜头运动+环境变化\n"
+        "- 对白：如果有对白气泡，按顺序写出「角色名：「台词」」\n"
+        "必须描述「从第一格到第二格的具体过渡过程」，不能只描述单帧静态画面。\n"
+        "对白必须按漫画中的实际顺序排列，不能乱序。")
     n = 0
     for s in list_shots(db, project_id):
         if shot_id is not None and s["id"] != shot_id:
@@ -123,8 +128,30 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                 temperature=0.4)
         text = (text or "").strip()
         if text:
-            update_shot(db, s["id"], {"prompt": text, "description": text})
+            # 从提示词中提取对白（「角色名：「台词」」格式）→ ledger.dialogue
+            # 联动 TTS 配音 + 字幕烧录链路（2026-08-29 漫画对白需求）
+            dialogue = _extract_dialogue(text)
+            ledger = json.loads(s["ledger_json"] or "{}")
+            if dialogue:
+                ledger["dialogue"] = dialogue
+            update_shot(db, s["id"], {
+                "prompt": text, "description": text,
+                "ledger_json": json.dumps(ledger, ensure_ascii=False)})
             n += 1
     if n:
         emit_log(db, "llm", "info", f"VLM 读图生成提示词 {n} 镜", project_id=project_id)
     return n
+
+
+_DIALOGUE_RE = None
+
+
+def _extract_dialogue(text: str) -> list:
+    """从 VLM 输出中提取「角色名：「台词」」格式的对白，按出现顺序返回。"""
+    global _DIALOGUE_RE
+    if _DIALOGUE_RE is None:
+        import re
+        _DIALOGUE_RE = re.compile(
+            r"([一-龥A-Za-z·]{1,8})[：:]\s*[「“]([^」”]{1,80})[」”]")
+    return [{"speaker": m.group(1), "line": m.group(2)}
+            for m in _DIALOGUE_RE.finditer(text)]
