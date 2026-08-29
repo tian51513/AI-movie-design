@@ -6,8 +6,13 @@
 提示词由 VLM 读图生成（describe_shots，多模态 raw_chat）或人工填写。"""
 import base64
 import json
+import threading
 
 from .logbus import emit as emit_log
+
+# LM Studio 不支持并发请求（两个同时进去 → terminated，2026-08-29 真机）
+# 全局锁串行化所有 VLM 调用——多镜并发提交自然排队
+_VLM_LOCK = threading.Lock()
 
 
 def import_comic(db, data_dir, name: str, aspect: str,
@@ -115,9 +120,10 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                 content.append({"type": "image_url",
                                 "image_url": {"url": f"data:image/png;base64,{b64}"}})
         try:
-            text, _u = client.raw_chat(
-                [{"role": "system", "content": system},
-                 {"role": "user", "content": content}], temperature=0.4)
+            with _VLM_LOCK:  # LM Studio 串行化
+                text, _u = client.raw_chat(
+                    [{"role": "system", "content": system},
+                     {"role": "user", "content": content}], temperature=0.4)
         except Exception as img_exc:
             # 图片不被支持（Ollama 量化缺 mmproj 等）→ 文字降级不硬卡
             if "image" not in str(img_exc).lower() and "mmproj" not in str(img_exc).lower():
