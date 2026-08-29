@@ -214,9 +214,26 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
     return n
 
 
-def extract_comic_characters(db, data_dir, project_id, client, max_pages=3) -> int:
-    """P8-B 漫改模式：VLM 读前几页漫画 → 提取角色（名字+外貌）→ 建资产。
-    之后生成参考图（gen_ref），ref2va 渲染用。返回提取的角色数。"""
+def _sample_shot_indices(total: int, sample_size: int = 9) -> list[int]:
+    """全篇均匀采样（2026-08-29 用户需求：后面出场的人物不能漏）：
+    开头密、中间稀、结尾密——覆盖故事弧度变化最大的位置。"""
+    if total <= sample_size:
+        return list(range(1, total + 1))
+    # 位置：前 1/4 取 3 页 + 中间取 3 页 + 后 1/4 取 3 页
+    q1 = max(1, total // 4)
+    q3 = max(q1 + 1, total * 3 // 4)
+    picks = sorted(set([
+        1, min(2, total), min(3, total),           # 开头
+        max(4, total // 2 - 1), total // 2, total // 2 + 1,  # 中间
+        max(q3, total - 2), max(q3 + 1, total - 1), total,   # 结尾
+    ]))
+    return [i for i in picks if 1 <= i <= total][:sample_size]
+
+
+def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> int:
+    """P8-B 漫改模式：VLM 全篇采样读漫画 → 提取角色（名字+外貌）→ 建资产。
+    之后生成参考图（gen_ref），ref2va 渲染用。返回提取的角色数。
+    采样策略：开头+中间+结尾均匀取页，覆盖后面出场的人物。"""
     from .paths import data_to_abs
     from .projects import get_project
     from .shots import list_shots
@@ -228,11 +245,15 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=3) -> i
     if proj is None:
         raise ValueError(f"项目不存在: {project_id}")
     slug = proj["slug"]
-    shots = list_shots(db, project_id)[:max_pages]
-    if not shots:
+    all_shots = list_shots(db, project_id)
+    if not all_shots:
         raise ValueError("无分镜可提取")
-
-    emit_log(db, "llm", "info", f"VLM 读前 {len(shots)} 页提取角色…",
+    # 全篇采样（不只前几页——后面出场的人物不能漏）
+    indices = _sample_shot_indices(len(all_shots), sample_size=max_pages)
+    shots = [all_shots[i - 1] for i in indices]  # seq 从 1 起
+    emit_log(db, "llm", "info",
+             f"VLM 采样 {len(shots)} 页提取角色（全篇 {len(all_shots)} 页，"
+             f"采样位置：{indices}）",
              project_id=project_id)
     system = (
         "你是漫改电影的美术指导。给定漫画页面，提取角色、场景和重要道具。\n"
