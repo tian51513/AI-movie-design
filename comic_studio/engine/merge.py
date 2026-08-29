@@ -71,7 +71,15 @@ def concat(parts: list, out: Path) -> Path:
 
 
 def _canvas(aspect_ratio: str) -> tuple:
-    return (1920, 1080) if aspect_ratio == "16:9" else (1080, 1920)
+    """合成画布：长边 1920 按画幅取比，短边偶数对齐（yuv420p 要求）。
+    五档画幅通用解析（2026-08-30）；不支持的画幅回落默认 16:9（用户决策）。"""
+    from .projects import ASPECT_RATIOS
+    if aspect_ratio not in ASPECT_RATIOS:
+        aspect_ratio = "16:9"
+    w, h = (float(x) for x in aspect_ratio.split(":"))
+    if w >= h:
+        return (1920, int(1920 * h / w) // 2 * 2)
+    return (int(1920 * w / h) // 2 * 2, 1920)
 
 
 def _replace_audio(video: Path, audio: Path, output: Path) -> Path:

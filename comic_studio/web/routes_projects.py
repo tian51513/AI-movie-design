@@ -99,8 +99,9 @@ def _theme_story_common(db, body) -> tuple:
     if theme is None:
         raise HTTPException(404, f"主题不存在: {tid}")
     aspect = body.get("aspect_ratio") or "9:16"
-    if aspect not in ("9:16", "16:9"):
-        raise HTTPException(422, "aspect_ratio 只能是 9:16 或 16:9")
+    from ..engine.projects import ASPECT_RATIOS
+    if aspect not in ASPECT_RATIOS:
+        raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
     return theme, aspect
 
 
@@ -242,8 +243,9 @@ def create(request: Request, name: str = Form(...),
            default_shot_duration: float = Form(5.0),
            prompt_mode: str = Form("D"), lora_realism: float = Form(0.75),
            target_duration: float = Form(0.0)):
-    if aspect_ratio not in ("9:16", "16:9"):
-        raise HTTPException(422, "aspect_ratio 只能是 9:16 或 16:9")
+    from ..engine.projects import ASPECT_RATIOS
+    if aspect_ratio not in ASPECT_RATIOS:
+        raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
     try:
         text = novel.file.read().decode("utf-8")
     except UnicodeDecodeError:

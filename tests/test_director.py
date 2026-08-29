@@ -320,3 +320,14 @@ def test_gen_director_batch_relay_switch_off(tmp_path, monkeypatch):
         assert t2["segments"][0]["genImage"]["imageFile"] == ""
         assert not t2["segments"][0]["prompt"].startswith("【最高优先级")
         assert not any("relay" in u for u in m.uploads)
+
+
+def test_canvas_five_ratios_and_fallback():
+    """五档画幅通用 a:b 解析（2026-08-30 需求）；不支持的画幅回落 16:9（用户决策）。"""
+    from comic_studio.engine.director import _canvas
+    w, h = _canvas("3:4")
+    assert abs(w / h - 0.75) < 0.05 and w % 32 == 0 and h % 32 == 0
+    w, h = _canvas("1:1")
+    assert w == h and w % 32 == 0
+    assert _canvas("4:3") == tuple(reversed(_canvas("3:4")))  # 对称
+    assert _canvas("21:9") == _canvas("16:9")  # 回落默认

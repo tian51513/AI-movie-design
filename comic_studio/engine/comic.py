@@ -21,8 +21,9 @@ def import_comic(db, data_dir, name: str, aspect: str,
     motion_comic（动态漫/fl2v 翻页）| film_adaptation（漫改/ref2va 动画）。"""
     if not image_blobs:
         raise ValueError("至少需要一张漫画页")
-    if aspect not in ("9:16", "16:9"):
-        raise ValueError(f"aspect_ratio 只能是 9:16/16:9: {aspect}")
+    from .projects import ASPECT_RATIOS
+    if aspect not in ASPECT_RATIOS:
+        raise ValueError(f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}: {aspect}")
     from .projects import create_project, set_stage
     from .shots import persist_shots
     from .paths import data_to_abs

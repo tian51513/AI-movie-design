@@ -17,6 +17,9 @@ def slugify(name: str) -> str:
     return re.sub(r"^\\.+", "_", s)  # 防路径穿越：项目名 ".." 等不得逃出 projects/
 
 
+ASPECT_RATIOS = ("9:16", "16:9", "3:4", "4:3", "1:1")  # 五档画幅（2026-08-30；DB CHECK/各校验点同步）
+
+
 def create_project(db: Database, data_dir: Path, name: str,
                    aspect_ratio: str, novel_text: str, style: str = "",
                    style_vis: str = "", comic_mode: str = "",
@@ -24,7 +27,7 @@ def create_project(db: Database, data_dir: Path, name: str,
                    video_speed: str = "标准", default_shot_duration: float = 5.0,
                    prompt_mode: str = "D", lora_realism: float = 0.75,
                    target_duration: float = 0.0) -> sqlite3.Row:
-    assert aspect_ratio in ("9:16", "16:9")
+    assert aspect_ratio in ASPECT_RATIOS, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}"
     conn = db.connect()
     base = slugify(name) or "project"
     slug, n = base, 2
@@ -71,8 +74,8 @@ def update_video_params(db: Database, project_id: int, *, video_megapixels: floa
     已渲染的旧尺寸视频保留不动（用户决策），重渲即出新尺寸。"""
     updates = {}
     if aspect_ratio is not None:
-        if aspect_ratio not in ("9:16", "16:9"):
-            raise ValueError("aspect_ratio 只能是 9:16 或 16:9")
+        if aspect_ratio not in ASPECT_RATIOS:
+            raise ValueError(f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
         updates["aspect_ratio"] = aspect_ratio
     if video_megapixels is not None:
         if not (0.1 <= video_megapixels <= 3.0):

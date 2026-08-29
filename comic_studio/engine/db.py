@@ -141,6 +141,42 @@ MIGRATIONS: list[str] = [
     """ALTER TABLE projects ADD COLUMN chapters_json TEXT NOT NULL DEFAULT '';""",
     # 26 P8-B 漫画双模式：motion_comic（动态漫/fl2v）| film_adaptation（漫改/ref2va）
     """ALTER TABLE projects ADD COLUMN comic_mode TEXT NOT NULL DEFAULT 'motion_comic';""",
+    # 27 projects 画幅放宽五档（2026-08-30 需求）——SQLite 不能改 CHECK，重建表；
+    # id 显式拷贝保外键引用，PRAGMA foreign_keys=OFF 让 DROP/RENAME 安全通过
+    """PRAGMA foreign_keys=OFF;
+    CREATE TABLE projects_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        aspect_ratio TEXT NOT NULL CHECK (aspect_ratio IN ('9:16','16:9','3:4','4:3','1:1')),
+        novel_path TEXT NOT NULL,
+        stage TEXT NOT NULL DEFAULT 'created',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        style TEXT NOT NULL DEFAULT '',
+        video_megapixels REAL NOT NULL DEFAULT 0.4,
+        video_multiple INTEGER NOT NULL DEFAULT 32,
+        video_speed TEXT NOT NULL DEFAULT '标准',
+        default_shot_duration REAL NOT NULL DEFAULT 5,
+        prompt_mode TEXT NOT NULL DEFAULT 'D',
+        lora_realism REAL NOT NULL DEFAULT 0.75,
+        autopilot INTEGER NOT NULL DEFAULT 0,
+        era TEXT NOT NULL DEFAULT '',
+        target_duration REAL NOT NULL DEFAULT 0,
+        style_vis TEXT NOT NULL DEFAULT '',
+        chapters_json TEXT NOT NULL DEFAULT '',
+        comic_mode TEXT NOT NULL DEFAULT 'motion_comic'
+    );
+    INSERT INTO projects_new (id, slug, name, aspect_ratio, novel_path, stage, created_at,
+        style, video_megapixels, video_multiple, video_speed, default_shot_duration,
+        prompt_mode, lora_realism, autopilot, era, target_duration, style_vis,
+        chapters_json, comic_mode)
+    SELECT id, slug, name, aspect_ratio, novel_path, stage, created_at,
+        style, video_megapixels, video_multiple, video_speed, default_shot_duration,
+        prompt_mode, lora_realism, autopilot, era, target_duration, style_vis,
+        chapters_json, comic_mode FROM projects;
+    DROP TABLE projects;
+    ALTER TABLE projects_new RENAME TO projects;
+    PRAGMA foreign_keys=ON;""",
 ]
 
 

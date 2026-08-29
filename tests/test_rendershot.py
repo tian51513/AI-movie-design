@@ -444,3 +444,13 @@ def test_render_shot_attaches_audit_snapshot(tmp_path, monkeypatch):
         snap = _json.loads(get_job(db, jid)["snapshot_json"])
         assert snap["prompt"].startswith("林晨在庭院推门")
         assert snap["template"] and "110" in snap["workflow"]
+
+
+def test_aspect_enum_five_ratios():
+    """五档画幅映射到 ResolutionSelector 枚举（2026-08-30 需求，本机 ComfyUI 实测值）。"""
+    from comic_studio.engine.rendershot import ASPECT_ENUM
+    assert ASPECT_ENUM["3:4"] == "3:4 (Portrait Standard)"
+    assert ASPECT_ENUM["4:3"] == "4:3 (Standard)"
+    assert ASPECT_ENUM["1:1"] == "1:1 (Square)"
+    assert ASPECT_ENUM["9:16"] == "9:16 (Portrait Widescreen)"
+    assert ASPECT_ENUM["16:9"] == "16:9 (Widescreen)"

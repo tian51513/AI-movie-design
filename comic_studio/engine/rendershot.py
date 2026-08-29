@@ -15,7 +15,11 @@ from .video import extract_last_frame
 from .workflows import registry
 from .workflows.filler import fill_workflow
 
-ASPECT_ENUM = {"16:9": "16:9 (Widescreen)", "9:16": "9:16 (Portrait Widescreen)"}
+# 项目画幅 → ResolutionSelector 节点枚举（2026-08-30 五档，本机 ComfyUI /object_info 实测值）
+ASPECT_ENUM = {
+    "16:9": "16:9 (Widescreen)", "9:16": "9:16 (Portrait Widescreen)",
+    "3:4": "3:4 (Portrait Standard)", "4:3": "4:3 (Standard)", "1:1": "1:1 (Square)",
+}
 
 
 def pick_template_id(shot_row, db=None) -> str:
@@ -316,9 +320,8 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     camera = json.loads(shot["camera_json"] or "{}")
     if camera.get("景别") in ("远景", "大全景"):
         params["megapixels"] = min(1.2, float(proj["video_megapixels"]) + 0.4)
-    aspect_val = ASPECT_ENUM.get(proj["aspect_ratio"])
-    if aspect_val is not None:
-        params["aspect"] = aspect_val
+    # 工作流不支持的画幅回落默认 16:9（2026-08-30 用户决策）
+    params["aspect"] = ASPECT_ENUM.get(proj["aspect_ratio"], ASPECT_ENUM["16:9"])
 
     # Images
     # P8-B 漫改模式参考图优先级（2026-08-29 用户需求）：

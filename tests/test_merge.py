@@ -77,3 +77,14 @@ def test_merge_missing_video_raises(tmp_path):
         prompt="a")])
     with pytest.raises(ValueError, match="无视频"):
         merge_project(db, tmp_path / "data", pid)
+
+
+def test_merge_canvas_five_ratios():
+    """合成画布五档（2026-08-30 需求）；未知画幅回落 16:9（用户决策）。"""
+    from comic_studio.engine.merge import _canvas
+    assert _canvas("16:9") == (1920, 1080)
+    assert _canvas("9:16") == (1080, 1920)
+    assert _canvas("3:4") == (1440, 1920)
+    assert _canvas("4:3") == (1920, 1440)
+    assert _canvas("1:1") == (1920, 1920)
+    assert _canvas("21:9") == (1920, 1080)  # 回落默认

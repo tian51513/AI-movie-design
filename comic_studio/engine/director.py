@@ -31,9 +31,14 @@ def _align32(v: float) -> int:
 
 def _canvas(aspect: str, megapixels: float = 0.4) -> tuple[int, int]:
     """按项目兆像素档计算 ×32 对齐画布（2026-08-28 需求：跟随项目预设；
-    此前固定 608×1056=0.64MP，比逐镜 0.4MP 档多耗 ~25% 采样）。"""
+    此前固定 608×1056=0.64MP，比逐镜 0.4MP 档多耗 ~25% 采样）。
+    画幅通用 a:b 解析（2026-08-30 五档）；不支持的画幅回落默认 16:9（用户决策）。"""
+    from .projects import ASPECT_RATIOS
+    if aspect not in ASPECT_RATIOS:
+        aspect = "16:9"
+    aw, ah = (float(x) for x in aspect.split(":"))
     mp = max(0.1, float(megapixels or 0.4)) * 1e6
-    r = 9 / 16 if aspect == "9:16" else 16 / 9  # w/h
+    r = aw / ah  # w/h
     w = (mp * r) ** 0.5
     h = w / r
     return _align32(w), _align32(h)

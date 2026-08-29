@@ -39,8 +39,22 @@ def test_list_and_get(tmp_path):
 
 def test_invalid_ratio_rejected(tmp_path):
     with _client(tmp_path) as c:
-        resp = _upload(c, ratio="4:3")
+        resp = _upload(c, ratio="5:4")
         assert resp.status_code == 422
+
+
+def test_five_aspect_ratios_accepted(tmp_path):
+    """五档画幅（2026-08-30 需求）：9:16/16:9/3:4/4:3/1:1 建项目与创建后改画幅都放行。"""
+    with _client(tmp_path) as c:
+        for ratio in ("9:16", "16:9", "3:4", "4:3", "1:1"):
+            r = _upload(c, name=f"剧{ratio}", ratio=ratio)
+            assert r.status_code == 201, (ratio, r.text)
+            assert r.json()["aspect_ratio"] == ratio
+        pid = _upload(c, name="改画幅剧").json()["id"]
+        r = c.patch(f"/api/projects/{pid}", json={"aspect_ratio": "3:4"})
+        assert r.status_code == 200
+        assert c.get(f"/api/projects/{pid}").json()["aspect_ratio"] == "3:4"
+        assert c.patch(f"/api/projects/{pid}", json={"aspect_ratio": "5:4"}).status_code == 422
 
 
 def test_gbk_upload_rejected_422(tmp_path):

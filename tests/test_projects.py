@@ -82,8 +82,9 @@ def test_update_aspect_ratio(tmp_path):
     upd = update_video_params(db, row["id"], aspect_ratio="16:9")
     assert upd["aspect_ratio"] == "16:9"
     assert upd["video_megapixels"] == row["video_megapixels"]  # 其他参数不动
+    assert update_video_params(db, row["id"], aspect_ratio="4:3")["aspect_ratio"] == "4:3"  # 五档
     with pytest.raises(ValueError):
-        update_video_params(db, row["id"], aspect_ratio="4:3")
+        update_video_params(db, row["id"], aspect_ratio="5:4")
 
 
 def test_patch_aspect_ratio_api(tmp_path):
@@ -100,7 +101,9 @@ def test_patch_aspect_ratio_api(tmp_path):
                     json={"aspect_ratio": "16:9"})
         assert r.status_code == 200 and r.json()["aspect_ratio"] == "16:9"
         assert c.patch(f"/api/projects/{pid}",
-                       json={"aspect_ratio": "1:1"}).status_code == 422
+                       json={"aspect_ratio": "1:1"}).status_code == 200  # 五档（2026-08-30）
+        assert c.patch(f"/api/projects/{pid}",
+                       json={"aspect_ratio": "21:9"}).status_code == 422
 
 
 def test_prompt_mode_and_lora_columns(tmp_path):
