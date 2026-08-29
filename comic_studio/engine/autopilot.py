@@ -55,10 +55,21 @@ def _all_shots_have_video(db, project_id) -> bool:
 
 
 def next_action(db, data_dir, project_id) -> dict:
-    """纯决策：返回 {"action": str, "detail": str} 或 None（项目不存在）。"""
+    """纯决策：按项目类型分发到对应流程。返回 {"action": str, "detail": str} 或 None。"""
     proj = get_project(db, project_id)
     if proj is None:
         return None
+    _cm = proj["comic_mode"] if "comic_mode" in proj.keys() else ""
+    if _cm in ("motion_comic", "film_adaptation"):
+        return _comic_flow(db, data_dir, project_id, proj)
+    return _novel_flow(db, data_dir, project_id, proj)
+
+
+def _novel_flow(db, data_dir, project_id, proj) -> dict:
+    """小说/主题项目流程：
+    created → analyze → analyzed → gen_refs → gate1 → assets_ready
+    → split → gen_prompts → gate2 → storyboard_ready
+    → render → gate3 → rendered → merge → merged"""
     stage = proj["stage"]
     if stage == "merged":
         return {"action": "done", "detail": "已成片"}
@@ -67,7 +78,6 @@ def next_action(db, data_dir, project_id) -> dict:
             return {"action": "wait", "detail": "分析进行中"}
         last = jobs_mod.latest_job(db, project_id, "analyze")
         if last is not None and last["status"] == "failed":
-            # 失败不无限重烧（2026-08-25 真机：上下文爆掉后 autopilot 秒级重跑烧 token）
             return {"action": "wait", "detail": "上次分析失败，重试请手动发起"}
         return {"action": "analyze", "detail": "开始资产分析"}
     if stage == "analyzed":
@@ -84,8 +94,6 @@ def next_action(db, data_dir, project_id) -> dict:
             (project_id,)).fetchone() is not None
         if not has_shots:
             return {"action": "split", "detail": "开始分镜拆解"}
-        # 桥接（2026-08-25 真机：拆完无桥接会无限重拆烧 token）：
-        # 拆完 → 补提示词 → 齐全 → gate2（assets_ready → storyboard_ready）
         missing = _shots_missing_prompt(db, project_id)
         if missing > 0:
             if _has_active_job(db, project_id, "gen_prompt"):
@@ -99,18 +107,12 @@ def next_action(db, data_dir, project_id) -> dict:
             if _has_active_job(db, project_id, "split_storyboards"):
                 return {"action": "wait", "detail": "分镜拆解中"}
             return {"action": "split", "detail": "无分镜，先拆解"}
-        # P9 漫画感知（2026-08-29）：漫画项目提示词走 VLM 读图，不走文本 gen_prompt
-        _cm = proj["comic_mode"] if "comic_mode" in proj.keys() else ""
-        is_comic = _cm in ("motion_comic", "film_adaptation")
-        prompt_job_type = "describe_shots" if is_comic else "gen_prompt"
         missing = _shots_missing_prompt(db, project_id)
         if missing > 0:
-            if _has_active_job(db, project_id, prompt_job_type):
-                return {"action": "wait", "detail": "提示词生成中" + ("（VLM 读图）" if is_comic else "")}
-            if is_comic:
-                return {"action": "describe_shots", "detail": f"缺 {missing} 条提示词（VLM 读图）"}
+            if _has_active_job(db, project_id, "gen_prompt"):
+                return {"action": "wait", "detail": "提示词生成中"}
             return {"action": "gen_prompts", "detail": f"缺 {missing} 条提示词"}
-        if _has_active_job(db, project_id, prompt_job_type):
+        if _has_active_job(db, project_id, "gen_prompt"):
             return {"action": "wait", "detail": "提示词生成中"}
         if not _all_shots_have_video(db, project_id):
             if _has_active_job(db, project_id, "gen_shot"):
@@ -122,6 +124,42 @@ def next_action(db, data_dir, project_id) -> dict:
             return {"action": "wait", "detail": "合成中"}
         return {"action": "merge", "detail": "开始合成成片"}
     return {"action": "wait", "detail": f"未知阶段 {stage}"}
+
+
+def _comic_flow(db, data_dir, project_id, proj) -> dict:
+    """漫画项目流程（P9 2026-08-29 通用化）：
+    导入时直达 storyboard_ready（跳过分析/拆解）
+    → describe_shots（VLM 读图提示词）
+    → gate2 → render（fl2v 翻页 或 ref2va 动画）
+    → gate3 → rendered → TTS+字幕 → merge → merged
+
+    漫改模式（film_adaptation）可选前置：extract_characters → gen_ref
+    （不强制——渲染有漫画原页兜底）"""
+    stage = proj["stage"]
+    if stage == "merged":
+        return {"action": "done", "detail": "已成片"}
+    if stage == "storyboard_ready":
+        total = db.connect().execute("SELECT COUNT(*) c FROM shots WHERE project_id=?",
+                                     (project_id,)).fetchone()["c"]
+        if total == 0:
+            return {"action": "wait", "detail": "无分镜（漫画导入异常）"}
+        missing = _shots_missing_prompt(db, project_id)
+        if missing > 0:
+            if _has_active_job(db, project_id, "describe_shots"):
+                return {"action": "wait", "detail": f"VLM 读图中（缺 {missing} 镜）"}
+            return {"action": "describe_shots", "detail": f"缺 {missing} 条提示词（VLM 读图）"}
+        if _has_active_job(db, project_id, "describe_shots"):
+            return {"action": "wait", "detail": "VLM 读图收尾中"}
+        if not _all_shots_have_video(db, project_id):
+            if _has_active_job(db, project_id, "gen_shot"):
+                return {"action": "wait", "detail": "渲染中"}
+            return {"action": "render", "detail": "批量渲染"}
+        return {"action": "gate3", "detail": "全部有视频，过门3"}
+    if stage == "rendered":
+        if _has_active_job(db, project_id, "merge"):
+            return {"action": "wait", "detail": "合成中"}
+        return {"action": "merge", "detail": "开始合成成片"}
+    return {"action": "wait", "detail": f"漫画项目不应处于阶段 {stage}"}
 
 
 def tick(db, data_dir, project_id) -> dict:
