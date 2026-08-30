@@ -218,6 +218,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
     from .routes_assets_edit import router as assets_edit_router
     app.include_router(assets_edit_router)
 
+    from .routes_voices import router as voices_router
+    app.include_router(voices_router)
+
     from .routes_projects import router as projects_router
     app.include_router(projects_router)
 

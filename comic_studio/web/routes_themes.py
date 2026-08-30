@@ -1,6 +1,6 @@
 # comic_studio/web/routes_themes.py
 """预设主题管理（2026-08-25 需求）：列表 / 导入（default_theme.md 格式）/ 删除。"""
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile, Body
 
 router = APIRouter(prefix="/api/themes", tags=["themes"])
 
@@ -47,3 +47,25 @@ def delete_theme(request: Request, theme_id: int):
     if cur.rowcount == 0:
         raise HTTPException(404, f"主题不存在: {theme_id}")
     return {"deleted": theme_id}
+
+
+@router.patch("/{theme_id}")
+def update_theme(request: Request, theme_id: int, body: dict = Body(...)):
+    """预设主题编辑（2026-08-30 用户需求：可预览/编辑）——name/category/description
+    均可选更新；description 即主题正文（from-theme 生成小说的素材）。"""
+    from ..engine.themes import get_theme
+    theme = get_theme(request.app.state.db, theme_id)
+    if theme is None:
+        raise HTTPException(404, f"主题不存在: {theme_id}")
+    fields, vals = [], []
+    for k in ("name", "category", "description"):
+        if k in body and str(body[k] or "").strip():
+            fields.append(f"{k}=?")
+            vals.append(str(body[k]).strip())
+    if not fields:
+        raise HTTPException(422, "无可更新字段（name/category/description）")
+    vals.append(theme_id)
+    conn = request.app.state.db.connect()
+    conn.execute(f"UPDATE theme_templates SET {', '.join(fields)} WHERE id=?", vals)
+    conn.commit()
+    return get_theme(request.app.state.db, theme_id)

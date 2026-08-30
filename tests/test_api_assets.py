@@ -32,7 +32,8 @@ def test_assets_endpoint(tmp_path, monkeypatch):
             time.sleep(0.05)
         assets = c.get(f"/api/projects/{pid}/assets").json()
         assert assets == [{"id": assets[0]["id"], "kind": "character",
-                           "name": "萧炎", "detail": "黑发少年", "tags": []}]
+                           "name": "萧炎", "detail": "黑发少年", "tags": [],
+                           "voice": "", "source_project": pid}]  # P2 音色字段
 
 
 def test_frontend_served(tmp_path):

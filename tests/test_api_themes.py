@@ -215,3 +215,21 @@ def test_gen_story_system_contains_drama_craft(app_client):
     for token in ("黄金开头", "钩子", "情绪流变", "断章卡点", "3.5~4.5 字/秒",
                   "12~18 字", "反向灌输"):
         assert token in s, token
+
+
+def test_update_theme(tmp_path):
+    """预设主题编辑（2026-08-30 用户需求）：PATCH name/category/description。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "d",
+                               start_workers=False)) as c:
+        themes = c.get("/api/themes").json()
+        assert themes, "模板目录应已同步出主题"
+        row = themes[0]
+        r = c.patch(f"/api/themes/{row['id']}", json={
+            "description": "编辑后的主题正文描述"})
+        assert r.status_code == 200 and r.json()["description"] == "编辑后的主题正文描述"
+        r2 = c.patch(f"/api/themes/{row['id']}", json={"category": "武侠"})
+        assert r2.json()["category"] == "武侠" and r2.json()["name"] == row["name"]
+        assert c.patch(f"/api/themes/{row['id']}", json={}).status_code == 422
+        assert c.patch("/api/themes/99999", json={"name": "x"}).status_code == 404

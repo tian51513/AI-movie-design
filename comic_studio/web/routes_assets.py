@@ -29,5 +29,7 @@ def listing(request: Request, project_id: int):
             "id": r["id"], "kind": r["kind"], "name": r["name"],
             "detail": json.loads(r["appearance_json"]).get("detail", ""),
             "tags": json.loads(r["tags_json"]),
+            "voice": r["voice"] if "voice" in r.keys() else "",
+            "source_project": r["source_project"],
         })
     return out

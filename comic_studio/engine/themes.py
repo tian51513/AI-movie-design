@@ -60,3 +60,10 @@ def list_themes(db) -> list[dict]:
     return [dict(r) for r in db.connect().execute(
         "SELECT id, name, category, description FROM theme_templates "
         "ORDER BY category, id")]
+
+
+def get_theme(db, theme_id: int) -> dict | None:
+    row = db.connect().execute(
+        "SELECT id, name, category, description FROM theme_templates WHERE id=?",
+        (theme_id,)).fetchone()
+    return dict(row) if row else None

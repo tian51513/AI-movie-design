@@ -51,6 +51,11 @@ function data() {
     moTemplate: '', modelChoices: [], moError: '',
     ollamaModels: [], showThink: false, loadingModels: false,
     activeKind: '全部', perRow: 2, lightbox: null,
+    voices: [], voicesBusy: '', vUpBusy: false, vUpErr: '',
+    vUp: { file: null, name: '', start: 45, dur: 60 },
+    pUp: { file: null, name: '', start: 45, dur: 60 }, projVoiceOpen: false,
+    editAssetVoice: '',
+    themeEditOpen: false, themeEdit: {}, themeEditErr: '',
     viewer: null,  // 分镜媒体查看器 {kind:'image'|'video', list:[{url,label}], idx}
     comfyStatus: null, llmTesting: '', llmTestResult: {local: null, online: null},
     localProviderType: '',  // ollama / lmstudio / custom（从 base_url 反推）
@@ -161,8 +166,7 @@ const methods = {
     try { this.themesManage = await (await fetch('/api/themes')).json(); }
     catch (e) { /* 忽略 */ }
   },
-  scrollToShot(seq) {
-    this.activeShotSeq = seq;
+  scrollToShot(seq) {    this.activeShotSeq = seq;
     const strip = document.getElementById('shotStrip');
     if (!strip) return;
     const card = strip.children[seq - 1];
@@ -1060,7 +1064,87 @@ const methods = {
     this.editAssetName = a.name;
     this.editAssetKind = a.kind || 'character';
     this.editAssetDraft = a.detail || '';
+    this.editAssetVoice = a.voice || '';
     this.editAssetOpen = true;
+    // 音色下拉数据源（项目视角：预设+全局+本项目项目级）
+    this.loadVoices(a.source_project || (this.project && this.project.id));
+  },
+  // ===== Phase 2 音色库（2026-08-30）=====
+  async loadVoices(projectId) {
+    try {
+      const q = projectId ? `?project_id=${projectId}` : '';
+      this.voices = await (await fetch(`/api/voices${q}`)).json();
+    } catch (e) { /* 忽略 */ }
+  },
+  async genPreset(name) {
+    this.voicesBusy = `生成 ${name}…`;
+    try {
+      const r = await fetch('/api/voices/presets/generate', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name }) });
+      if (!r.ok) alert(`生成失败：${(await r.json()).detail || r.status}`);
+    } finally {
+      this.voicesBusy = '';
+      await this.loadVoices(this.project && this.project.id);
+    }
+  },
+  async genMissingPresets() {
+    const missing = this.voices.filter(v => v.origin === 'preset' && v.missing);
+    for (const v of missing) {
+      this.voicesBusy = `生成 ${v.name}（${missing.indexOf(v) + 1}/${missing.length}）…`;
+      try {
+        const r = await fetch('/api/voices/presets/generate', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ name: v.name }) });
+        if (!r.ok) { alert(`${v.name} 生成失败：${(await r.json()).detail || r.status}`); break; }
+      } catch (e) { alert(`${v.name} 生成异常: ${e}`); break; }
+    }
+    this.voicesBusy = '';
+    await this.loadVoices(this.project && this.project.id);
+  },
+  async submitVoiceUpload(scope) {
+    const f = scope === 'project' ? this.pUp : this.vUp;
+    this.vUpBusy = true; this.vUpErr = '';
+    try {
+      const fd = new FormData();
+      fd.append('file', f.file); fd.append('name', f.name);
+      fd.append('scope', scope); fd.append('start', f.start); fd.append('dur', f.dur);
+      if (scope === 'project') fd.append('project_id', this.project.id);
+      const r = await fetch('/api/voices/upload', { method: 'POST', body: fd });
+      if (!r.ok) { this.vUpErr = `失败：${(await r.json()).detail || r.status}`; return; }
+      f.file = null; f.name = '';
+      this.projVoiceOpen = false;
+      await this.loadVoices(this.project && this.project.id);
+    } finally { this.vUpBusy = false; }
+  },
+  async delVoice(v, scope) {
+    if (!confirm(`删除音色「${v.name}」？`)) return;
+    const q = scope === 'project' ? `?scope=project&project_id=${this.project.id}` : '?scope=global';
+    await fetch(`/api/voices/${encodeURIComponent(v.name)}${q}`, { method: 'DELETE' });
+    await this.loadVoices(this.project && this.project.id);
+  },
+  async saveAssetVoice() {
+    const r = await fetch(`/api/assets/${this.editAssetId}/voice`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ voice: this.editAssetVoice }) });
+    if (!r.ok) { alert(`绑定失败：${(await r.json()).detail || r.status}`); return; }
+    await this.open(this.project);  // 刷新资产列表（voice 字段）
+  },
+  // ===== 预设主题编辑（2026-08-30 用户需求：可预览/编辑）=====
+  openThemeEdit(t) {
+    this.themeEdit = { id: t.id, name: t.name, category: t.category,
+                       description: t.description || '' };
+    this.themeEditErr = '';
+    this.themeEditOpen = true;
+  },
+  async saveThemeEdit() {
+    this.themeEditErr = '';
+    const r = await fetch(`/api/themes/${this.themeEdit.id}`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(this.themeEdit) });
+    if (!r.ok) { this.themeEditErr = `保存失败：${(await r.json()).detail || r.status}`; return; }
+    this.themeEditOpen = false;
+    await this.loadThemesManage();
   },
   async saveAssetDetail() {
     const v = (this.editAssetDraft || '').trim();
