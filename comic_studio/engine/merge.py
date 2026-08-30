@@ -144,9 +144,12 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
             if not src.exists():
                 raise ValueError(f"镜头 {s['seq']} 视频文件缺失: {src}")
             part = normalize(src, td / f"{s['seq']:04d}.mp4", w, h, 25)
-            # P6：TTS 音轨替换（dialogue.mp3 存在时替换 H3 原生音频）
+            # P6：TTS 音轨替换（dialogue.mp3 存在时替换 H3 原生音频）；
+            # Phase 2 音色（2026-08-30）：渲染时注入过音色样本（H3 原生配音口型
+            # 同步）→ 跳过替换保原声
             tts_audio = src.parent / "dialogue.mp3"
-            if tts_audio.exists():
+            native_voice = json.loads(s["ledger_json"] or "{}").get("h3_native_voice")
+            if tts_audio.exists() and not native_voice:
                 tts_part = td / f"{s['seq']:04d}_tts.mp4"
                 _replace_audio(part, tts_audio, tts_part)
                 part = tts_part

@@ -177,6 +177,8 @@ MIGRATIONS: list[str] = [
     DROP TABLE projects;
     ALTER TABLE projects_new RENAME TO projects;
     PRAGMA foreign_keys=ON;""",
+    # 29 角色绑定音色（2026-08-30 Phase 2）：音色名（预设/全局/项目级）或样本相对路径
+    """ALTER TABLE assets ADD COLUMN voice TEXT NOT NULL DEFAULT '';""",
 ]
 
 

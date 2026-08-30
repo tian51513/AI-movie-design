@@ -120,3 +120,26 @@ def test_merge_mutes_quiet_shots_when_enabled(tmp_path):
     set_setting(db, "comfy", {"mute_quiet_shots": True})
     out2 = merge_project(db, tmp_path / "data", pid)
     assert mean_volume(out2) < -60  # 开关开：无台词镜全静音
+
+
+def test_merge_skips_tts_for_native_voice(tmp_path, monkeypatch):
+    """Phase 2 音色：渲染时注入过音色样本（ledger.h3_native_voice）→ 合成不再
+    TTS 替换（保 H3 原声口型）。"""
+    import json as _json
+    calls = []
+    monkeypatch.setattr("comic_studio.engine.merge._replace_audio",
+                        lambda v, a, o: (calls.append(1), o)[1])
+    db, pid = _proj_with_shots(tmp_path, "原声剧")
+    for i in (1, 2):
+        (tmp_path / "data" / "projects" / "原声剧" / "shots" / str(i)
+         / "dialogue.mp3").write_bytes(b"mp3")
+    from comic_studio.engine.shots import list_shots
+    conn = db.connect()
+    for s in list_shots(db, pid):
+        ledger = _json.loads(s["ledger_json"] or "{}")
+        ledger["h3_native_voice"] = True
+        conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
+                     (_json.dumps(ledger, ensure_ascii=False), s["id"]))
+    conn.commit()
+    out = merge_project(db, tmp_path / "data", pid)
+    assert out.exists() and calls == []   # 未触发 TTS 替换

@@ -36,6 +36,13 @@ inject:
   - node: '97'
     field: image
     slot: ref1
+  # Phase 2 音色（2026-08-30）：说话人样本 LoadAudio 上传位（后缀分流 → /upload/audio）
+  - node: '95'
+    field: audio
+    slot: audio0
+  - node: '98'
+    field: audio
+    slot: audio1
 outputs:
 - node: '114'
   filename_prefix: cs/{project}/{asset}

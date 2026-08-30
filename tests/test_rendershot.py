@@ -472,3 +472,54 @@ def test_fl2v_render_prepends_align_header(tmp_path, monkeypatch):
         sent = m.prompts[0]["prompt"]["64"]["inputs"]["prompt"]
         assert sent.startswith("<Picture 1> is the EXACT starting key frame at 0.00 seconds")
         assert "<Picture 2> is the EXACT ending key frame at 5.00 seconds" in sent
+
+
+def test_ref2va_injects_voice_samples(tmp_path, monkeypatch):
+    """Phase 2 音色（2026-08-30）：角色绑定音色 + 台词说话人 → ref_audios 槽注入、
+    <Audio N> 声明入提示词、ledger 标 h3_native_voice（合成跳过 TTS 依据）。"""
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    db, pid, assets = _setup(tmp_path)
+    conn = db.connect()
+    conn.execute("UPDATE assets SET voice='高冷御姐' WHERE name='林晨'")
+    conn.commit()
+    # 预设样本就位
+    preset = tmp_path / "data" / "voices" / "presets" / "高冷御姐.flac"
+    preset.parent.mkdir(parents=True)
+    preset.write_bytes(b"fLaCxx")
+    sid = persist_shots(db, pid, [_shot_draft(
+        character_ids=[assets["林晨"]["id"]],
+        ledger={"dialogue": [{"speaker": "林晨", "line": "我回来了"}]})])[0]
+    update_shot(db, sid, {"prompt": "林晨推门说话。"})
+
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok", video=True) as m:
+        out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        assert out.exists()
+        wf = m.prompts[0]["prompt"]
+        assert wf["110"]["inputs"]["ref_audios.ref_audio_0"] == ["95", 0]
+        assert wf["95"]["inputs"]["audio"].endswith("audio0.flac")
+        sent = wf["110"]["inputs"]["prompt"]
+        assert "<Audio 1> is a reference audio for 林晨" in sent
+        assert any(u.endswith("audio0.flac") for u in m.audio_uploads)
+        shot = get_shot(db, sid)
+        assert json.loads(shot["ledger_json"])["h3_native_voice"] is True
+
+
+def test_no_voice_binding_no_audio_slots(tmp_path, monkeypatch):
+    """未绑音色（或样本缺失）→ 不注音频槽、不标 ledger。"""
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    db, pid, assets = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(
+        character_ids=[assets["林晨"]["id"]],
+        ledger={"dialogue": [{"speaker": "林晨", "line": "你好"}]})])[0]
+    update_shot(db, sid, {"prompt": "说话。"})
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok", video=True) as m:
+        out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        assert out.exists()
+        wf = m.prompts[0]["prompt"]
+        assert wf["95"]["inputs"]["audio"] == "cs_voice_0.mp3"  # 模板默认未动
+        assert "<Audio 1>" not in wf["110"]["inputs"]["prompt"]
+        assert m.audio_uploads == []
