@@ -38,3 +38,31 @@ def test_mix_director_audio_replaces_tts_spans(tmp_path):
     # 全无台词 → 原样返回（不折腾）
     none_out = mix_director_audio(video, [(1, 0.0, 4.0, None)], tmp_path / "keep.mp4")
     assert none_out == video
+
+
+def test_mix_director_audio_mutes_quiet_spans(tmp_path):
+    """无台词镜静音（2026-08-30 杂音封堵）：mute_quiet=True 时无台词镜输出静音、
+    有台词镜配音不受影响；全无台词也不再原样返回（出全静音片）。"""
+    import re as _re
+    from comic_studio.engine.director_mix import mix_director_audio
+
+    def mean_volume(path, dur=None):
+        cmd = [ffmpeg_bin(), "-i", str(path)]
+        if dur: cmd += ["-t", str(dur)]
+        cmd += ["-af", "volumedetect", "-f", "null", "-"]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        m = [l for l in (r.stderr or "").splitlines() if "mean_volume" in l]
+        assert m, (r.stderr or r.stdout)[-400:]
+        return float(_re.search(r"mean_volume:\s*(-?[\d.]+)", m[0]).group(1))
+
+    video = _make_video(tmp_path / "in_m.mp4", 4)  # 全程 440Hz 正弦（响）
+    tts2 = _make_speech(tmp_path / "tts_m.mp3", 1)
+    spans = [(1, 0.0, 2.0, None), (2, 2.0, 2.0, tts2)]
+    out = mix_director_audio(video, spans, tmp_path / "muted.mp4", mute_quiet=True)
+    assert out.exists()
+    assert mean_volume(out, dur=1.8) < -60   # 镜1（无台词）→ 静音
+    assert mean_volume(out) > -45            # 镜2 有配音（全静音约 -91，均值被半片静音拉低）
+    # 全无台词 + mute_quiet → 不原样返回，静音成片
+    allq = mix_director_audio(video, [(1, 0.0, 4.0, None)], tmp_path / "allq.mp4",
+                              mute_quiet=True)
+    assert allq != video and allq.exists() and mean_volume(allq) < -60

@@ -43,7 +43,9 @@ DEFAULT_SETTINGS = {
               # 介于批内 latent 连贯与硬切之间；失败自动退化为硬切
               "director_batch_relay": True,
               # P7-J 整片混音：TTS 配音（有台词镜）+ SRT 烧录；失败退化纯画面
-              "director_mix": True},
+              "director_mix": True,
+              # 无台词镜静音（2026-08-30 杂音封堵）：H3 原声不进成片，代价是丢自然环境声
+              "mute_quiet_shots": False},
     # 工作流模型槽位覆盖（计划5B 任务6）：{模板 id: {label: 文件名}}
     "model_overrides": {},
 }

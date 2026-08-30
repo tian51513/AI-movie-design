@@ -14,16 +14,18 @@ from .merge import ffmpeg_bin
 _UNIFY = "aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo"
 
 
-def mix_director_audio(video: Path, spans: list, output: Path) -> Path:
-    """spans 覆盖整片时间轴且按时间顺序；tts 为 None 的镜保留原声切片。
-    全部无台词 → 原样返回 video（不折腾）。"""
+def mix_director_audio(video: Path, spans: list, output: Path,
+                       mute_quiet: bool = False) -> Path:
+    """spans 覆盖整片时间轴且按时间顺序；tts 为 None 的镜默认保留原声切片，
+    mute_quiet=True 时改为静音（2026-08-30：封死 H3 残留杂音进成片，代价是丢
+    自然环境声）。全部无台词且不静音 → 原样返回 video（不折腾）。"""
     tts_input_idx = {}  # span 下标 → ffmpeg 输入序号（0=原视频，1..=TTS 文件）
     inputs = ["-i", str(video)]
     for s in spans:
         if s[3] is not None:
             tts_input_idx[id(s)] = len(tts_input_idx) + 1
             inputs += ["-i", str(s[3])]
-    if not tts_input_idx:
+    if not tts_input_idx and not mute_quiet:
         return video
 
     parts = []
@@ -32,6 +34,9 @@ def mix_director_audio(video: Path, spans: list, output: Path) -> Path:
             ai = tts_input_idx[id(spans[idx])]
             parts.append(f"[{ai}:a]{_UNIFY},apad=whole_dur={dur:.3f},"
                          f"atrim=0:{dur:.3f},asetpts=PTS-STARTPTS[a{idx}]")
+        elif mute_quiet:
+            parts.append(f"anullsrc=r=48000:cl=stereo,atrim=0:{dur:.3f},"
+                         f"asetpts=PTS-STARTPTS[a{idx}]")
         else:
             parts.append(f"[0:a]{_UNIFY},atrim=start={start:.3f}:end={start + dur:.3f},"
                          f"asetpts=PTS-STARTPTS[a{idx}]")

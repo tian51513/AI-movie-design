@@ -92,6 +92,15 @@ def _replace_audio(video: Path, audio: Path, output: Path) -> Path:
     return output
 
 
+def _mute_audio(video: Path, output: Path) -> Path:
+    """无台词镜静音（2026-08-30 杂音封堵）：画面保留，音轨置零——
+    H3 原生残留杂音不进成片，代价是丢自然环境声（comfy.mute_quiet_shots）。"""
+    subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-af", "volume=0",
+                    "-c:v", "copy", "-c:a", "aac", str(output)],
+                   check=True, capture_output=True, timeout=300)
+    return output
+
+
 def _burn_subtitles(video: Path, srt: Path) -> None:
     """P6：SRT 字幕烧入成片（原地覆盖）。"""
     tmp = video.with_suffix(".sub_tmp.mp4")
@@ -125,6 +134,8 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
     n = len(list(out_dir.glob("ep*.mp4"))) + 1
     out = out_dir / f"ep{n:03d}.mp4"
     import tempfile
+    from .settings import get_setting
+    mute_quiet = bool((get_setting(db, "comfy") or {}).get("mute_quiet_shots", False))
     with tempfile.TemporaryDirectory() as td:
         td = Path(td)
         parts = []
@@ -139,6 +150,10 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
                 tts_part = td / f"{s['seq']:04d}_tts.mp4"
                 _replace_audio(part, tts_audio, tts_part)
                 part = tts_part
+            elif mute_quiet:  # 无台词镜静音开关（2026-08-30）：杂音不进成片
+                mute_part = td / f"{s['seq']:04d}_mute.mp4"
+                _mute_audio(part, mute_part)
+                part = mute_part
             parts.append(part)
         concat(parts, out)
 

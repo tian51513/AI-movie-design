@@ -382,7 +382,10 @@
               type="checkbox" v-model="settingsForm.comfy.director_batch_relay"> 批间首帧接力</label>
        <label class="muted" style="font-size:12px" margin-left="4px"
               title="成片混 TTS 配音（有台词镜）+ 烧录 SRT 字幕；失败自动退化为纯画面"><input
-              type="checkbox" v-model="settingsForm.comfy.director_mix"> 整片混音</label></p>
+              type="checkbox" v-model="settingsForm.comfy.director_mix"> 整片混音</label>
+          <label><input type="checkbox" v-model="settingsForm.comfy.mute_quiet_shots"
+                title="无台词镜的 H3 原声不进成片（封死残留杂音；代价是丢水声脚步等自然声）。有台词镜不受影响——配音本来就整轨替换">
+            无台词镜静音</label></p>
        <label class="muted" style="margin-left:8px">文生视频模板：</label>
        <select v-model="settingsForm.t2vTm" style="width:280px">
          <option v-for="t in templatesOfType('t2v')" :key="t.id" :value="t.id">{{ t.name }}</option>

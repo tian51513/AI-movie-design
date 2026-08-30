@@ -59,4 +59,5 @@ def test_comfy_setting_default(tmp_path):
                                         "director_clear_vram": False,
                                         "director_export_source": False,
                                         "director_batch_relay": True,
-                                        "director_mix": True}
+                                        "director_mix": True,
+                                        "mute_quiet_shots": False}
