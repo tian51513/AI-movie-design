@@ -12,7 +12,7 @@ from comic_studio.engine.shots import persist_shots
 
 
 def test_four_modes_exist_and_pin_lessons():
-    assert set(PROMPT_MODES) == {"A", "B", "C", "D"}
+    assert set(PROMPT_MODES) == {"A", "B", "C", "D", "E"}
     d = PROMPT_MODES["D"]["spec"]
     assert "[Shot" in d and "<Subject" in d and "<d>Chinese</d>" in d
     b = PROMPT_MODES["B"]["spec"]
@@ -22,7 +22,7 @@ def test_four_modes_exist_and_pin_lessons():
     for spec in PROMPT_MODES.values():
         assert "服装" in spec["spec"]
     with pytest.raises(ValueError):
-        mode_spec("E")
+        mode_spec("F")
 
 
 def test_generate_uses_project_mode(tmp_path):
@@ -75,6 +75,8 @@ def test_audio_protocol_in_all_modes():
     non_diegetic_music 默认 N/A（按分镜可写配乐）、同步声音标注、台词口型。"""
     from comic_studio.engine.prompts.modes import PROMPT_MODES
     for key, m in PROMPT_MODES.items():
+        if key == "E":
+            continue  # E 英文控制式走 Preserve/Add 句式，见独立断言
         spec = m["spec"]
         assert "overall_soundscape" in spec, key
         assert "non_diegetic_music" in spec and "N/A" in spec, key
@@ -82,3 +84,24 @@ def test_audio_protocol_in_all_modes():
         assert "同步声音" in spec, key           # 人物非语言声标注
         assert "口型" in spec, key               # 台词口型同步
         assert "无对白" in spec, key             # 无台词镜明示
+
+
+def test_mode_e_english_control_spec():
+    """模式 E（2026-08-30 用户实测英文控制式，杂音主因修复）：固定句式齐全。"""
+    from comic_studio.engine.prompts.modes import PROMPT_MODES, mode_spec
+    assert "E" in PROMPT_MODES
+    spec = mode_spec("E")
+    for phrase in ("EXACT starting key frame", "global character design reference",
+                   "says in natural Mandarin", "<d>[Mandarin Chinese]",
+                   "No subtitles, logos, watermarks", "Preserve"):
+        assert phrase in spec, phrase
+    # E 不用分节标题/音频字段（区别于 B/C/D 骨架）
+    assert "subject_definitions:" not in spec
+
+
+def test_new_project_defaults_to_mode_e(tmp_path):
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    db = Database(tmp_path / "s.db"); db.migrate()
+    row = create_project(db, tmp_path / "d", "E默认剧", "9:16", "t")
+    assert row["prompt_mode"] == "E"

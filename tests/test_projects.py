@@ -113,7 +113,7 @@ def test_prompt_mode_and_lora_columns(tmp_path):
                          prompt_mode="C", lora_realism=0.6)
     assert row["prompt_mode"] == "C" and row["lora_realism"] == 0.6
     with pytest.raises(ValueError):
-        update_video_params(db, row["id"], prompt_mode="E")
+        update_video_params(db, row["id"], prompt_mode="F")
     with pytest.raises(ValueError):
         update_video_params(db, row["id"], lora_realism=1.5)
     upd = update_video_params(db, row["id"], prompt_mode="A", lora_realism=0)

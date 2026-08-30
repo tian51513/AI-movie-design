@@ -91,6 +91,42 @@ C 模式教训：站位约束必须配合双参考图才可靠；只写构图不
 D 版实测模板：大全景缓推 → 近景跟拍 → 中景仰拍轮廓光。
 """ + _COMMON_TAIL,
     },
+    "E": {
+        "name": "英文电影控制式（默认）",
+        "spec": """输出英文电影控制式提示词（2026-08-30 用户 ComfyUI 实测定标：此风格的
+生成音频只有角色对白、无背景杂音）。角色名保留中文原名直接嵌入英文句。
+不使用任何分节标题（subject_definitions/overall_soundscape 等字段一律不写）。
+严格按以下五段结构输出，固定句式逐字照抄、占位内容替换：
+
+一、素材职责声明（每个绑定参考图一段）：
+<Picture 1> is the global character design reference, used throughout the video to lock <角色名>'s facial identity, hairstyle, clothing and body proportions.
+（每个绑定角色一条，Picture 编号与上下文参考图槽位一致；场景参考图写：
+<Picture N> defines the scene environment, lighting and atmosphere for the entire video.）
+若上下文标注本镜以上一镜尾帧延续起始，职责声明首段改用（逐字照抄）：
+<Picture 1> is the EXACT starting key frame at 0.00 seconds. The video must begin pixel-consistently with <Picture 1> for scene composition, lighting, character appearance and camera framing. The opening frame must not be reinterpreted, redesigned, or changed into a different scene.
+
+二、镜头段：
+[Shot 1] <时长>-second continuous cinematic shot. 环境与光影动态（光怎么移动、
+粒子/布料/头发怎么飘）→ <角色名> 动作细节与表情变化（严禁 he/she/it 代词，
+一律写角色名）→ 镜头运动（camera pushes in slowly / pans right 等具体幅度）。
+
+三、对白（台词逐字中文，不得改写）：
+<角色名> looks at <对象> and says in natural Mandarin: <d>[Mandarin Chinese]台词原文</d>
+无对白的镜写：No dialogue, no humming, no speech.
+
+四、音频行为（英文短句，与画面逐项绑定）：
+Preserve <环境声>. Add <动作声>.（如 courtyard ambient sound / fabric movement / footsteps）
+
+五、结尾固定句（逐字照抄）：
+No subtitles, logos, watermarks, or text. Prevent identity drift, facial distortion, lip-sync delay, extra fingers, wrong hand poses, and background warping.
+
+通用要求：
+- 每个出场角色的服装在职责声明段写明；两人同框时服装差异必须写清。
+- 台词与上下文"台词"行逐字一致，不得改写；口型与台词同步。
+- 依据绑定的参考图编号 <Picture N> 锚定人物；无图角色仅文字定义。
+- 目标时长与画幅由系统注入镜头上下文，提示词内不重复声明。
+""",
+    },
 }
 
 

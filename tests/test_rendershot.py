@@ -330,7 +330,7 @@ def test_fl2v_render_appends_no_cut_constraint(tmp_path, monkeypatch):
         out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
         assert out.exists()
         sent = m.prompts[0]["prompt"]["64"]["inputs"]["prompt"]
-        assert "插值" in sent and ("禁止镜内切换" in sent or "机位" in sent)
+        assert "single continuous" in sent and "no cuts" in sent
 
 
 def test_ref2va_prev_tail_frame_takes_ref0(tmp_path, monkeypatch):
@@ -470,6 +470,5 @@ def test_fl2v_render_prepends_align_header(tmp_path, monkeypatch):
         out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
         assert out.exists()
         sent = m.prompts[0]["prompt"]["64"]["inputs"]["prompt"]
-        assert sent.startswith("参考图片与目标视频的对齐关系")
-        assert "<Picture 1>" in sent and "对齐目标视频 0.00 秒" in sent
-        assert "<Picture 2>" in sent and "对齐目标视频 5.00 秒" in sent
+        assert sent.startswith("<Picture 1> is the EXACT starting key frame at 0.00 seconds")
+        assert "<Picture 2> is the EXACT ending key frame at 5.00 seconds" in sent

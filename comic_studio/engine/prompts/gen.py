@@ -166,9 +166,9 @@ def _check_picture_refs(text: str, max_pics: int = 2) -> tuple[bool, str]:
 
 
 def structure_check(text: str, mode: str | None) -> tuple[bool, str]:
-    """结构化模式（B/C/D）必需分段头校验；A/None 放行（散文模式）。
-    2026-08-25：规范早有骨架要求但无校验，模型实际产出散文被放行。"""
-    if mode is None or mode == "A":
+    """结构化模式（B/C/D）必需分段头校验；A/E/None 放行
+    （A 散文、E 英文控制式均无分节标题）。"""
+    if mode is None or mode in ("A", "E"):
         return True, ""
     low = (text or "").lower()
     missing = [s for s in _REQUIRED_SECTIONS if s not in low]
@@ -196,7 +196,7 @@ def _dedup_sentences(line: str) -> tuple[str, bool]:
 _META_WORDS_RE = _re.compile(r"电影级|9[:：]16\s*画幅|生成模型|短片节奏")
 
 
-def heal_h3_prompt(text: str, shot_row, max_pics: int = 2):
+def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = None):
     """P7-C 提示词 token 自愈（借鉴 Director reinforce 思想）：机械可修的问题
     直接修，不消耗 LLM 重试——①占位语删除 ②超界 <Picture N> 引用删除
     ③行内重复句子去重 ④有对白缺 <d>Chinese</d> 补标记
@@ -236,17 +236,19 @@ def heal_h3_prompt(text: str, shot_row, max_pics: int = 2):
         t = t.rstrip() + "\n<d>Chinese</d>"
         fixes.append("补 <d>Chinese</d>")
     # ⑦音频协议兜底（2026-08-30）：缺节机械补；已写的配乐内容不覆盖
-    #（用户决策：non_diegetic_music 按分镜具体情况，多数 N/A）
-    if "overall_soundscape:" not in t:
-        sc = ("人物对白声（按台词逐字，口型同步），辅以与画面一致的自然环境声，音量轻微"
-              if ledger.get("dialogue") else
-              "无对白、无哼唱，仅保留与画面一致的自然环境声，音量轻微")
-        t = t.rstrip() + f"\noverall_soundscape: {sc}"
-        fixes.append("补 overall_soundscape")
-    if "non_diegetic_music:" not in t:
-        t = t.rstrip() + "\nnon_diegetic_music: N/A"
-        fixes.append("补 non_diegetic_music: N/A")
-    if "无字幕" not in t:
+    #（用户决策：non_diegetic_music 按分镜具体情况，多数 N/A）。
+    # E 模式（英文控制式）不用字段——音频走 Preserve/Add 句式，跳过
+    if mode != "E":
+        if "overall_soundscape:" not in t:
+            sc = ("人物对白声（按台词逐字，口型同步），辅以与画面一致的自然环境声，音量轻微"
+                  if ledger.get("dialogue") else
+                  "无对白、无哼唱，仅保留与画面一致的自然环境声，音量轻微")
+            t = t.rstrip() + f"\noverall_soundscape: {sc}"
+            fixes.append("补 overall_soundscape")
+        if "non_diegetic_music:" not in t:
+            t = t.rstrip() + "\nnon_diegetic_music: N/A"
+            fixes.append("补 non_diegetic_music: N/A")
+    if "无字幕" not in t and "No subtitles" not in t:
         t = t.rstrip() + "\n无字幕，无背景音乐"
         fixes.append("补结尾后缀")
     return t, fixes
@@ -260,7 +262,7 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
     proj = get_project(db, shot["project_id"])
     if mode is None:
         mode = (proj["prompt_mode"]
-                if proj is not None and proj["prompt_mode"] in PROMPT_MODES else "D")
+                if proj is not None and proj["prompt_mode"] in PROMPT_MODES else "E")
     assets_by_id = {a["id"]: a for a in list_project_assets(db, shot["project_id"])}
     # 模板实际图槽数（动态——导入多槽模板不再被 2 封顶）
     from ..workflows import registry as _reg
@@ -298,7 +300,7 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
         if backend == "h3":
             # P7-C 自愈：机械可修的问题直接修，不消耗重试（占位语/超界引用/
             # 重复句/缺对白标记——2026-08-27 前这些全靠 LLM 重生成，两次排障浪费）
-            text, _fixes = heal_h3_prompt(text, shot, max_pics=max_ref_images)
+            text, _fixes = heal_h3_prompt(text, shot, max_pics=max_ref_images, mode=mode)
         if backend != "h3":
             return text
         bound = len(ledger_assets(shot))  # 台账绑定资产数（ref 图数量）

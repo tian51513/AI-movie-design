@@ -111,7 +111,7 @@ def test_generate_retries_on_missing_structure(tmp_path):
         def raw_chat(self, messages, temperature=0.3, max_tokens=None):
             return next(replies), Usage(1, 1)
 
-    out = generate_video_prompt(db, sid, FakeLLM(), backend="h3")  # 默认 D
+    out = generate_video_prompt(db, sid, FakeLLM(), backend="h3", mode="D")  # 默认已切 E
     assert "subject_definitions" in out  # 散文被拦后重试，结构版通过
 
 
@@ -188,7 +188,7 @@ def test_context_uses_slot_map_not_asset_ids(tmp_path):
     assert "<Picture 1> = 林医生（角色三视图" in ctx         # 显式槽位表
     assert "严禁" in ctx and "资产 id" in ctx             # 禁用规则
     assert f"id={aid} " not in ctx                        # 不再出现裸 id 绑定行
-    assert "<d>Chinese" in captured["system"]           # 对白标记指引在系统词/骨架
+    assert "<d>" in captured["system"]                   # 对白标记指引在系统词/骨架
 
 
 def test_skeleton_has_dialogue_tag_example():
@@ -344,3 +344,30 @@ def test_heal_backfills_audio_protocol():
     with_na = base + "\noverall_soundscape: 溪水声。\nnon_diegetic_music: N/A"
     h4, _ = heal_h3_prompt(with_na, {"ledger_json": "{}"}, max_pics=2)
     assert h4.count("non_diegetic_music:") == 1 and h4.count("N/A") >= 1
+
+
+def test_mode_e_output_skips_field_heal(tmp_path):
+    """E 模式（2026-08-30 英文控制式）：输出无音频字段属正常——heal 不追加
+    overall_soundscape/non_diegetic_music，英文结尾句满足无字幕检查。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "E剧", "9:16", "t")["id"]
+    sid = persist_shots(db, pid, [NS(text_span="", description="庭院对话",
+        shot_type="", camera={}, duration=5.0, workflow_type="ref2va",
+        ledger={"dialogue": [{"speaker": "林晨", "line": "你好"}]},
+        character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
+
+    class FakeE:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return ("<Picture 1> is the global character design reference, used throughout "
+                    "the video to lock 林晨's facial identity, hairstyle and clothing.\n\n"
+                    "[Shot 1] 5-second continuous cinematic shot. 林晨 walks into the courtyard, "
+                    "camera pushes in slowly. 林晨 says in natural Mandarin: "
+                    "<d>[Mandarin Chinese]你好</d>\n"
+                    "Preserve courtyard ambient sound.\n"
+                    "No subtitles, logos, watermarks, or text. Prevent identity drift.", Usage(1, 1))
+
+    out = generate_video_prompt(db, sid, FakeE(), backend="h3", mode="E")
+    assert "[Shot 1]" in out and "<d>[Mandarin Chinese]你好</d>" in out
+    assert "overall_soundscape:" not in out and "non_diegetic_music" not in out
+    assert "无字幕，无背景音乐" not in out          # 英文结尾句已满足
