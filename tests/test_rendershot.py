@@ -454,3 +454,22 @@ def test_aspect_enum_five_ratios():
     assert ASPECT_ENUM["1:1"] == "1:1 (Square)"
     assert ASPECT_ENUM["9:16"] == "9:16 (Portrait Widescreen)"
     assert ASPECT_ENUM["16:9"] == "16:9 (Widescreen)"
+
+
+def test_fl2v_render_prepends_align_header(tmp_path, monkeypatch):
+    """fl2v 对齐关系头（2026-08-30 用户实测格式）：<Picture 1> 对齐 0.00 秒、
+    <Picture 2> 对齐镜时长秒；置于提示词最前。"""
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    db, pid, sid = _mk_kf_shot(tmp_path)
+    update_shot(db, sid, {"duration": 5.0})
+    kd = tmp_path / "data" / "projects" / "渲染剧" / "shots" / "1"
+    kd.mkdir(parents=True)
+    (kd / "kf_start.png").write_bytes(b"x"); (kd / "kf_end.png").write_bytes(b"x")
+    with comfy_server("ok", video=True) as m:
+        out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        assert out.exists()
+        sent = m.prompts[0]["prompt"]["64"]["inputs"]["prompt"]
+        assert sent.startswith("参考图片与目标视频的对齐关系")
+        assert "<Picture 1>" in sent and "对齐目标视频 0.00 秒" in sent
+        assert "<Picture 2>" in sent and "对齐目标视频 5.00 秒" in sent

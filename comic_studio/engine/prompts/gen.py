@@ -201,7 +201,9 @@ def heal_h3_prompt(text: str, shot_row, max_pics: int = 2):
     直接修，不消耗 LLM 重试——①占位语删除 ②超界 <Picture N> 引用删除
     ③行内重复句子去重 ④有对白缺 <d>Chinese</d> 补标记
     ⑤Meta 词剥离（借鉴 XiaoLuo：电影级/9:16画幅/生成模型/短片节奏）
-    ⑥结尾后缀协议（「无字幕，无背景音乐」固定收尾，抑制自动配乐字幕）。
+    ⑥结尾后缀协议（「无字幕，无背景音乐」固定收尾，抑制自动配乐字幕）
+    ⑦音频协议兜底（2026-08-30）：缺 overall_soundscape / non_diegetic_music 机械补
+    （H3 不约束则自由发挥配乐与杂音；music 缺省补 N/A，已有配乐不覆盖）。
     返回 (healed, fixes)。"""
     fixes = []
     t = text or ""
@@ -233,6 +235,17 @@ def heal_h3_prompt(text: str, shot_row, max_pics: int = 2):
     if ledger.get("dialogue") and "<d>" not in t:
         t = t.rstrip() + "\n<d>Chinese</d>"
         fixes.append("补 <d>Chinese</d>")
+    # ⑦音频协议兜底（2026-08-30）：缺节机械补；已写的配乐内容不覆盖
+    #（用户决策：non_diegetic_music 按分镜具体情况，多数 N/A）
+    if "overall_soundscape:" not in t:
+        sc = ("人物对白声（按台词逐字，口型同步），辅以与画面一致的自然环境声，音量轻微"
+              if ledger.get("dialogue") else
+              "无对白、无哼唱，仅保留与画面一致的自然环境声，音量轻微")
+        t = t.rstrip() + f"\noverall_soundscape: {sc}"
+        fixes.append("补 overall_soundscape")
+    if "non_diegetic_music:" not in t:
+        t = t.rstrip() + "\nnon_diegetic_music: N/A"
+        fixes.append("补 non_diegetic_music: N/A")
     if "无字幕" not in t:
         t = t.rstrip() + "\n无字幕，无背景音乐"
         fixes.append("补结尾后缀")

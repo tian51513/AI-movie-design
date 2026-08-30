@@ -246,10 +246,15 @@ def test_heal_h3_prompt_common_fixes():
     assert healed.count("禁止出现：多余手指。") == 1
     assert "可自行补充" not in healed
     assert len(fixes) >= 4
-    # 无对白不补 <d>；干净文本只补结尾后缀协议（2026-08-28 起 By 设计）
+    # 无对白不补 <d>；干净文本机械补音频协议 + 结尾后缀（2026-08-30 起含音频兜底）
     ok_text = "summary: 空镜。subject_definitions: 无。"
     h2, f2 = heal_h3_prompt(ok_text, {"ledger_json": "{}"}, max_pics=2)
-    assert h2 == ok_text + "\n无字幕，无背景音乐" and f2 == ["补结尾后缀"]
+    expected = (ok_text
+                + "\noverall_soundscape: 无对白、无哼唱，仅保留与画面一致的自然环境声，音量轻微"
+                + "\nnon_diegetic_music: N/A"
+                + "\n无字幕，无背景音乐")
+    assert h2 == expected
+    assert f2 == ["补 overall_soundscape", "补 non_diegetic_music: N/A", "补结尾后缀"]
 
 
 def test_generate_prompt_uses_healed_version(tmp_path):
@@ -314,3 +319,28 @@ def test_heal_strips_meta_and_appends_suffix():
     # 已带后缀不重复追加
     h2, f2 = heal_h3_prompt("summary: x。\n无字幕，无背景音乐", {"ledger_json": "{}"})
     assert h2.count("无字幕，无背景音乐") == 1
+
+
+def test_heal_backfills_audio_protocol():
+    """音频协议兜底（2026-08-30）：缺节机械补；模型已写的配乐内容不覆盖（用户决策）。"""
+    from comic_studio.engine.prompts.gen import heal_h3_prompt
+    base = "subject_definitions: 甲\nsummary: 空镜。\ndetailed_description: 溪边泼水。"
+    # 无台词镜：补白名单环境声 + 无对白声明 + N/A
+    h, fixes = heal_h3_prompt(base, {"ledger_json": "{}"}, max_pics=2)
+    assert "overall_soundscape:" in h and "non_diegetic_music: N/A" in h
+    sc = h.split("overall_soundscape:", 1)[1].split("\n", 1)[0]
+    assert "环境声" in sc and "无对白" in sc
+    assert any("音频" in f or "soundscape" in f for f in fixes)
+    # 有台词镜：兜底文案提及台词与口型
+    shot = {"ledger_json": '{"dialogue":[{"speaker":"林晨","line":"你好"}]}'}
+    h2, _ = heal_h3_prompt(base, shot, max_pics=2)
+    sc2 = h2.split("overall_soundscape:", 1)[1].split("\n", 1)[0]
+    assert "台词" in sc2 and "口型" in sc2
+    # 模型写了配乐 → 保留不覆盖
+    with_music = base + "\noverall_soundscape: 溪水声。\nnon_diegetic_music: 轻柔的钢琴旋律。"
+    h3, _ = heal_h3_prompt(with_music, {"ledger_json": "{}"}, max_pics=2)
+    assert "轻柔的钢琴旋律。" in h3 and h3.count("non_diegetic_music:") == 1
+    # 已有 N/A → 不重复追加
+    with_na = base + "\noverall_soundscape: 溪水声。\nnon_diegetic_music: N/A"
+    h4, _ = heal_h3_prompt(with_na, {"ledger_json": "{}"}, max_pics=2)
+    assert h4.count("non_diegetic_music:") == 1 and h4.count("N/A") >= 1

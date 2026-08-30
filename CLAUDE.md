@@ -108,6 +108,7 @@
 - `engine/director_mix.py` — P7-J 整片混音：帧数轴 spans TTS 音轨替换（有台词镜换配音/无台词镜留原声切片）+ SRT 烧录；`subtitles.generate_srt(spans=)`；comfy.director_mix 开关
 - 前端分镜框选（2026-08-30，导航为主选区）— `app.js marquee*`：**#shotNav 数字条上按住左键扫框 = 扫过数字即选中该镜**（按钮可作起拖点、选中按钮亮橙色、nav 模式不做边缘滚动）；胶片条卡片区为辅选区（交叠即选中、4px 阈值、Shift 追加、边缘 rAF 自动横滚、`.no-snap` 关吸附）；真实拖拽吞 click（按起拖容器挂捕获）防误跳转/误开灯箱；无效镜也参与框选
 - 画幅五档 + 媒体查看器（2026-08-30）— `projects.ASPECT_RATIOS`（9:16/16:9/3:4/4:3/1:1）统一五处校验；迁移 28 重建 projects 表放宽 CHECK（SQLite 不能改 CHECK，id 保序 FK 安全）；director/merge 画布通用 a:b 解析、ASPECT_ENUM 五档映射（ResolutionSelector 枚举实测），**工作流不支持的画幅回落默认 16:9**；前端 `arCSS/vpStyle` 卡内 kf 图（高 200）/视频预览（长边 400）按画幅等比、`viewer` 弹窗全尺寸浏览（首尾帧拉平序列/视频序列，‹ › + ← → 循环翻页，Esc 关）；资产参考图仍走旧 lightbox
+- 提示词音频协议（2026-08-30 用户 ComfyUI 实测格式）— 四模式统一「声音协议」：overall_soundscape 白名单（仅画面一致环境声/动作音/人物非语言声，禁广播嘈杂等无关声源）、non_diegetic_music 默认 N/A（按分镜可写配乐，用户决策）、人物非语言声标「同步声音：…」、无台词镜明示无对白、台词口型同步；`heal_h3_prompt ⑦` 缺节机械补（music 缺省补 N/A、已有配乐不覆盖）；fl2v 渲染前置「参考图片与目标视频的对齐关系」头（Picture1→0.00s / Picture2→镜时长）
 - `engine/director.py` 扩展 — P7-H 批间首帧接力（上批末帧→genImage 起始画面槽，开关 director_batch_relay）；画布按项目兆像素档（×32 ceil 对齐）
 - `routes_projects.GEN_STORY_SYSTEM` — P7-I 短剧结构规范（钩子/情绪流变/断章/语速公式/微表情/禁反向灌输）
 - jobs.cancel_project_jobs + POST stop-jobs — ⏹ 项目级停止；genref 道具/场景双重禁人物（道具产品静物框架）

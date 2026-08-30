@@ -68,3 +68,17 @@ def test_t2v_context_adds_rich_template():
     ctx = build_shot_context(shot, {}, proj)
     assert "文生视频" in ctx or "纯文" in ctx
     assert "无图片参考" in ctx  # 槽位表应显示无参考
+
+
+def test_audio_protocol_in_all_modes():
+    """音频协议（2026-08-30 用户实测格式）：四模式统一带 soundscape 白名单、
+    non_diegetic_music 默认 N/A（按分镜可写配乐）、同步声音标注、台词口型。"""
+    from comic_studio.engine.prompts.modes import PROMPT_MODES
+    for key, m in PROMPT_MODES.items():
+        spec = m["spec"]
+        assert "overall_soundscape" in spec, key
+        assert "non_diegetic_music" in spec and "N/A" in spec, key
+        assert "无关声源" in spec, key          # 广播/嘈杂人群等禁令
+        assert "同步声音" in spec, key           # 人物非语言声标注
+        assert "口型" in spec, key               # 台词口型同步
+        assert "无对白" in spec, key             # 无台词镜明示

@@ -307,7 +307,11 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     if not prompt:
         raise ValueError("shot prompt 为空")
     if tmpl_id == "h3_fl2v":
-        prompt += "\n" + KF_NO_CUT  # 插值约束：和解 D 模式提示词的镜内切换
+        # 对齐关系头（2026-08-30 用户实测格式）+ 镜内禁切约束（和解 D 模式提示词的镜内切换）
+        dur = max(4, int(shot["duration"]))
+        prompt = (f"参考图片与目标视频的对齐关系：<Picture 1>（来自 [Shot 1]）对齐目标视频 0.00 秒；"
+                  f"<Picture 2>（来自 [Shot 1]）对齐目标视频 {dur:.2f} 秒。\n\n"
+                  + prompt + "\n" + KF_NO_CUT)
 
     params = {
         "seed": random.randint(0, 2**31 - 1),
