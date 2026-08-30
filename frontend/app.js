@@ -185,19 +185,23 @@ const methods = {
       this.activeShotSeq = this.shots[idx].seq;
     }
   },
-  // ===== 分镜框选（marquee）：胶片条空白处拖拽批量勾选，复用 shotSel =====
+  // ===== 分镜框选（marquee）：导航数字条为主选区（扫过数字=选中该镜），
+  // 胶片条卡片区为辅选区；均复用 shotSel =====
   marqueeDown(e) {
     if (e.button !== 0) return;  // 只认左键
-    // 按在交互元素上不启动（图片允许：真实拖拽会吞掉 click，不会误开灯箱）
-    if (e.target.closest('button,input,select,textarea,label,a,video')) return;
-    e.preventDefault();  // 阻止文本选择与原生图片拖拽
-    e.currentTarget.classList.add('no-snap');  // 拖拽期间关掉 scroll-snap（否则边缘自动滚动被吸附拉回）
+    const navMode = e.currentTarget.id === 'shotNav';
+    if (!navMode && e.target.closest('button,input,select,textarea,label,a,video')) return;
+    // 导航模式下数字按钮本身就是选择对象——允许在按钮上起拖；卡片模式按在交互元素上不启动
+    // （图片允许：真实拖拽会吞掉 click，不会误开灯箱）
+    e.preventDefault();  // 阻止文本选择/按钮聚焦/原生图片拖拽
+    if (!navMode) e.currentTarget.classList.add('no-snap');  // 拖拽期间关掉 scroll-snap（否则边缘自动滚动被吸附拉回）
     this.marquee = { x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY,
-                     add: e.shiftKey, base: e.shiftKey ? [...this.shotSel] : [], moved: false };
+                     add: e.shiftKey, base: e.shiftKey ? [...this.shotSel] : [],
+                     moved: false, nav: navMode };
     window.addEventListener('mousemove', this.marqueeMove);
     window.addEventListener('mouseup', this.marqueeUp);
     window.addEventListener('blur', this.marqueeUp);
-    this._marqueeRaf = requestAnimationFrame(this.marqueeAutoScroll);
+    if (!navMode) this._marqueeRaf = requestAnimationFrame(this.marqueeAutoScroll);
   },
   marqueeMove(e) {
     const m = this.marquee;
@@ -207,15 +211,21 @@ const methods = {
     m.moved = true;
     this.marqueeApply();
   },
-  marqueeApply() {  // 选框与卡片 viewport 矩形相交（交叠即选中）→ 写回 shotSel
+  marqueeApply() {  // 选框与目标矩形相交（交叠即选中）→ 写回 shotSel；nav 模式命中数字按钮
     const m = this.marquee;
     if (!m || !m.moved) return;
-    const strip = document.getElementById('shotStrip');
-    if (!strip) return;
+    let targets = null;
+    if (m.nav) {
+      targets = document.querySelectorAll('#shotNav button');
+    } else {
+      const strip = document.getElementById('shotStrip');
+      targets = strip ? strip.children : null;
+    }
+    if (!targets || !targets.length) return;
     const L = Math.min(m.x0, m.x1), R = Math.max(m.x0, m.x1);
     const T = Math.min(m.y0, m.y1), B = Math.max(m.y0, m.y1);
     const hits = [];
-    Array.from(strip.children).forEach((c, i) => {  // 卡片顺序 = shots 顺序（同 scrollToShot 假设）
+    Array.from(targets).forEach((c, i) => {  // 按钮顺序 = shots 顺序（v-for 同源，同 scrollToShot 假设）
       const s = this.shots[i];
       if (!s) return;
       const r = c.getBoundingClientRect();
@@ -223,10 +233,10 @@ const methods = {
     });
     this.shotSel = m.add ? [...new Set([...m.base, ...hits])] : hits;
   },
-  marqueeAutoScroll() {  // 拖拽中鼠标靠近左右边缘自动横滚（分镜多时跨视野连选）
+  marqueeAutoScroll() {  // 卡片模式：拖拽中鼠标靠近左右边缘自动横滚（分镜多时跨视野连选）；导航条自动换行无需滚动
     const m = this.marquee;
     if (!m) return;
-    if (m.moved) {
+    if (m.moved && !m.nav) {
       const strip = document.getElementById('shotStrip');
       if (strip) {
         const r = strip.getBoundingClientRect(), EDGE = 40, STEP = 16;
@@ -247,10 +257,12 @@ const methods = {
     window.removeEventListener('mouseup', this.marqueeUp);
     window.removeEventListener('blur', this.marqueeUp);
     if (this._marqueeRaf) { cancelAnimationFrame(this._marqueeRaf); this._marqueeRaf = null; }
-    if (m && m.moved && strip) {  // 真实拖拽后吞掉紧随的一次 click（防误开图片灯箱等）
+    // 真实拖拽后吞掉紧随的一次 click（防误开灯箱/误跳转；挂在起拖容器上）
+    const zone = m && m.nav ? document.getElementById('shotNav') : strip;
+    if (m && m.moved && zone) {
       const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
-      strip.addEventListener('click', swallow, { capture: true, once: true });
-      setTimeout(() => strip.removeEventListener('click', swallow, { capture: true }), 0);
+      zone.addEventListener('click', swallow, { capture: true, once: true });
+      setTimeout(() => zone.removeEventListener('click', swallow, { capture: true }), 0);
     }
   },
   kfUrl(s, phase) {
