@@ -87,12 +87,6 @@ const computed = {
     return mo[this.moTemplate];
   },
   projTotalPages() { return Math.max(1, Math.ceil(this.projects.length / this.projPageSize)); },
-  marqueeStyle() {  // 选框覆盖层几何（fixed 定位，随鼠标更新）
-    const m = this.marquee;
-    if (!m) return {};
-    return { left: Math.min(m.x0, m.x1) + 'px', top: Math.min(m.y0, m.y1) + 'px',
-             width: Math.abs(m.x1 - m.x0) + 'px', height: Math.abs(m.y1 - m.y0) + 'px' };
-  },
   arCSS() {  // 项目画幅 → CSS aspect-ratio（卡内缩略图统一尺寸盒，2026-08-30 需求）
     const ar = (this.project && this.project.aspect_ratio) || '9:16';
     const [w, h] = ar.split(':').map(Number);
@@ -209,6 +203,15 @@ const methods = {
     m.x1 = e.clientX; m.y1 = e.clientY;
     if (!m.moved && Math.hypot(m.x1 - m.x0, m.y1 - m.y0) < 4) return;  // 4px 阈值防误触
     m.moved = true;
+    // 选框几何直写 DOM（不走 Vue 响应式——整页组件重渲染是扫框卡顿的根源）
+    const box = document.getElementById('marqueeBox');
+    if (box) {
+      box.hidden = false;
+      box.style.left = Math.min(m.x0, m.x1) + 'px';
+      box.style.top = Math.min(m.y0, m.y1) + 'px';
+      box.style.width = Math.abs(m.x1 - m.x0) + 'px';
+      box.style.height = Math.abs(m.y1 - m.y0) + 'px';
+    }
     this.marqueeApply();
   },
   marqueeApply() {  // 选框与目标矩形相交（交叠即选中）→ 写回 shotSel；nav 模式命中数字按钮
@@ -231,7 +234,11 @@ const methods = {
       const r = c.getBoundingClientRect();
       if (r.left < R && r.right > L && r.top < B && r.bottom > T) hits.push(s.id);
     });
-    this.shotSel = m.add ? [...new Set([...m.base, ...hits])] : hits;
+    const final = m.add ? [...new Set([...m.base, ...hits])] : hits;
+    const key = final.join(',');  // 命中集合没变就不写入——避免整页无谓重渲染
+    if (m.key === key) return;
+    m.key = key;
+    this.shotSel = final;
   },
   marqueeAutoScroll() {  // 卡片模式：拖拽中鼠标靠近左右边缘自动横滚（分镜多时跨视野连选）；导航条自动换行无需滚动
     const m = this.marquee;
@@ -251,6 +258,8 @@ const methods = {
   marqueeUp() {
     const m = this.marquee;
     this.marquee = null;
+    const box = document.getElementById('marqueeBox');
+    if (box) box.hidden = true;
     const strip = document.getElementById('shotStrip');
     if (strip) strip.classList.remove('no-snap');
     window.removeEventListener('mousemove', this.marqueeMove);

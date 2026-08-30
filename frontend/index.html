@@ -6,6 +6,8 @@
 <script src="/vendor/vue.global.prod.js"></script>
 <style>
   body { font-family: system-ui, sans-serif; margin: 0; background: #111; color: #eee; }
+  .home-link { cursor: pointer; transition: color .12s; }
+  .home-link:hover { color: #60a5fa; }
   header { padding: 12px 20px; background: #1d2530; border-bottom: 1px solid #333; }
   main { padding: 20px; max-width: 1100px; margin: 0 auto; }
   .row { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -51,7 +53,7 @@
 </head>
 <body>
 <div id="app">
-  <header><b>漫剧工坊</b> <span class="muted">comic_studio</span>
+  <header><b class="home-link" @click="back" title="返回项目列表首页">漫剧工坊</b> <span class="muted">comic_studio</span>
     <span style="float:right;display:inline-flex;gap:6px">
       <button @click="openCreate">➕ 创建小说</button>
       <button @click="view='guide'">📖 导引</button>
@@ -720,8 +722,8 @@
               style="background:#7c3aed">🎬 合成成片</button>
     </p>
     </div><!-- /film-strip -->
-    <!-- 框选选框覆盖层（拖拽分镜批量选择；fixed 定位跟随鼠标，不拦截事件） -->
-    <div v-if="marquee && marquee.moved" :style="marqueeStyle"
+    <!-- 框选选框覆盖层（原生 DOM 直写坐标不走 Vue 响应式，拖拽零重渲染；不拦截事件） -->
+    <div id="marqueeBox" hidden
          style="position:fixed;z-index:90;border:1px dashed #f59e0b;background:rgba(245,158,11,.12);pointer-events:none;border-radius:2px"></div>
     <div v-if="shots.length === 0 && !splitRunning" class="muted" style="padding:20px 0">暂无分镜——点击上方「拆分分镜」开始</div>
     <!-- 分镜导览条（快速跳转；数字按钮上/空白处按住左键扫框 = 按镜批量勾选，主选区） -->
@@ -732,7 +734,7 @@
                       s.disabled ? 'opacity:.35;text-decoration:line-through' : '',
                       shotSel.includes(s.id) ? 'background:#f59e0b;color:#1a1f27;font-weight:bold' : '',
                       activeShotSeq===s.seq ? 'box-shadow:0 0 0 2px #f59e0b,0 0 8px rgba(245,158,11,.6);transform:scale(1.2);z-index:1' : '']"
-              style="min-width:36px;font-size:11px;padding:3px 6px;border-radius:4px;flex-shrink:0;transition:all .15s"
+              style="min-width:36px;font-size:11px;padding:3px 6px;border-radius:4px;flex-shrink:0;transition:box-shadow .15s,transform .15s"
               :title="`镜${s.seq} ${s.status}${s.disabled ? '（无效）' : ''}（可拖框选）`">{{ s.seq }}</button>
     </div>
     <!-- 横向胶片式分镜卡 -->
