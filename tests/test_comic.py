@@ -179,3 +179,60 @@ def test_from_comic_api(tmp_path):
         pid = r.json()["id"]
         r2 = c.get(f"/api/projects/{pid}/shots")
         assert len(r2.json()) == 2
+
+
+def test_describe_shots_motion_uses_integrated_format_and_heals(tmp_path):
+    """动态漫读图提示词升级（2026-08-30 用户实测 H3 格式）：system 要求
+    integrated_multimodal_description + 音频协议；落库前过 heal（缺音频节机械补）。"""
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "格式剧", "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG)])["id"]
+    seen = []
+
+    class FakeVision(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            seen.append(messages)
+            return ("integrated_multimodal_description: [Shot 1] 少年推开门走进房间，"
+                    "镜头缓推，他说：「我回来了。」"), Usage(10, 20)
+
+    describe_shots(db, tmp_path / "data", pid, FakeVision())
+    system = seen[0][0]["content"]
+    assert "integrated_multimodal_description" in system
+    assert "overall_soundscape" in system and "non_diegetic_music" in system and "N/A" in system
+    from comic_studio.engine.shots import list_shots
+    for s in list_shots(db, pid):
+        assert s["prompt"].startswith("integrated_multimodal_description:")
+        assert "overall_soundscape:" in s["prompt"]          # heal 兜底
+        assert "non_diegetic_music: N/A" in s["prompt"]
+        assert "无字幕" in s["prompt"]                        # 结尾后缀协议
+
+
+def test_describe_shots_film_uses_skeleton_and_heals(tmp_path):
+    """漫改读图提示词升级：subject_definitions 骨架（用户实测全能参考格式）+ heal。"""
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "漫改格式剧", "9:16",
+                       [("p1.png", PNG)], comic_mode="film_adaptation")["id"]
+    seen = []
+
+    class FakeVision(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            seen.append(messages)
+            return ("subject_definitions: 雪是来自 <Picture 1> 的少女。\n"
+                    "summary: 雪在庭院挥剑。\n"
+                    "detailed_description: 庭院雪景，雪挥剑转身。"), Usage(10, 20)
+
+    describe_shots(db, tmp_path / "data", pid, FakeVision())
+    system = seen[0][0]["content"]
+    assert "subject_definitions" in system and "detailed_description" in system
+    assert "overall_soundscape" in system and "N/A" in system
+    from comic_studio.engine.shots import list_shots
+    for s in list_shots(db, pid):
+        assert "non_diegetic_music: N/A" in s["prompt"] and "无字幕" in s["prompt"]

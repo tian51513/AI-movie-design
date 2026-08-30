@@ -110,18 +110,21 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
             "4. 对白：如有对白气泡，按阅读顺序整理\n"
             "5. 画风：检查漫画原画风格与目标画风是否一致，不一致则加入转换指令"
             + style_hint +
-            "\n\n输出（直接输出，不解释）：\n"
-            "一段中文提示词，150 字以内，必须包含：\n"
-            "- 每个主要角色的具体动作（用角色名，不用代词）\n"
-            "- 镜头运动（如「镜头缓缓推近」「横移跟拍」）\n"
-            "- 背景/环境动态\n"
-            "- 表情变化过程\n"
-            "- 对白（如有）：「角色名：「台词」」\n"
-            "- 画风描述词\n"
-            "关键：\n"
-            "- 描述「正在发生的动画」，不是静态画面\n"
-            "- 多角色时用名字区分（「新郎上前」而非「他上前」）\n"
-            "- 背景角色简略但不遗漏（保持场景真实感）")
+            "\n\n输出（直接输出，不解释）——严格按以下骨架，节标题逐字使用、独占一行：\n"
+            "subject_definitions:\n"
+            "<角色名> 是来自 <Picture 1> 的人物，其外观由该图提供（每个主要角色一条）\n"
+            "summary:\n一句话：本镜核心内容与运镜\n"
+            "retention_analysis:\n"
+            "<角色名>：fully_preserved - 保持<发型/服装/身份特征>（每个角色一条）\n"
+            "detailed_description:\n"
+            "[环境与光线一段]\n"
+            "主要角色具体动作（用角色名不用代词）+ 表情变化 + 镜头运动（如「镜头缓缓推近」）；"
+            "对白写「角色名：「台词」」；背景角色简略但不遗漏\n"
+            "overall_soundscape:\n"
+            "只写与画面一致的对白声/环境声/动作音，音量轻微；禁止广播嘈杂等无关声源；"
+            "无对白时写明无对白无哼唱\n"
+            "non_diegetic_music: N/A\n"
+            "关键：描述「正在发生的动画」，不是静态画面；画风转换要求（若有）写进 detailed_description。")
     else:
         # 动态漫模式：翻页过渡（现有行为）
         system = (
@@ -134,9 +137,12 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
             "标注说话人；多段对白按先后顺序排列\n"
             "4. 推导：从第一格到第二格，人物做了什么动作？说了什么话？镜头怎么动？\n\n"
             "输出格式（直接输出，不解释）：\n"
-            "一段中文提示词，120 字以内，包含：\n"
-            "- 人物名字+动作+表情变化+镜头运动+环境变化\n"
-            "- 对白：如果有对白气泡，按顺序写出「角色名：「台词」」\n"
+            "integrated_multimodal_description: [Shot 1] <一段描述：从第一格到第二格的具体"
+            "过渡——人物名字+动作+表情变化+镜头运动+环境变化，120~200 字；"
+            "对白按漫画实际顺序写「角色名：「台词」」>\n"
+            "overall_soundscape: <只写与画面一致的对白声/环境声/动作音，音量轻微；"
+            "禁止广播嘈杂等无关声源；无对白时写明无对白无哼唱>\n"
+            "non_diegetic_music: N/A\n"
             "必须描述「从第一格到第二格的具体过渡过程」，不能只描述单帧静态画面。\n"
             "对白必须按漫画中的实际顺序排列，不能乱序。")
     n = 0
@@ -184,6 +190,10 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                 temperature=0.4)
         text = (text or "").strip()
         if text:
+            # 结构化+音频协议落库前统一自愈（2026-08-30）：缺音频节机械补、
+            # 超界 Picture 引用清理、无字幕后缀——与小说链路同等待遇
+            from .prompts.gen import heal_h3_prompt
+            text, _heal_fixes = heal_h3_prompt(text, s, max_pics=2)
             # 从提示词中提取对白（「角色名：「台词」」格式）→ ledger.dialogue
             # 联动 TTS 配音 + 字幕烧录链路（2026-08-29 漫画对白需求）
             dialogue = _extract_dialogue(text)

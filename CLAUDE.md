@@ -110,6 +110,7 @@
 - 画幅五档 + 媒体查看器（2026-08-30）— `projects.ASPECT_RATIOS`（9:16/16:9/3:4/4:3/1:1）统一五处校验；迁移 28 重建 projects 表放宽 CHECK（SQLite 不能改 CHECK，id 保序 FK 安全）；director/merge 画布通用 a:b 解析、ASPECT_ENUM 五档映射（ResolutionSelector 枚举实测），**工作流不支持的画幅回落默认 16:9**；前端 `arCSS/vpStyle` 卡内 kf 图（高 200）/视频预览（长边 400）按画幅等比、`viewer` 弹窗全尺寸浏览（首尾帧拉平序列/视频序列，‹ › + ← → 循环翻页，Esc 关）；资产参考图仍走旧 lightbox
 - 提示词音频协议（2026-08-30 用户 ComfyUI 实测格式）— 四模式统一「声音协议」：overall_soundscape 白名单（仅画面一致环境声/动作音/人物非语言声，禁广播嘈杂等无关声源）、non_diegetic_music 默认 N/A（按分镜可写配乐，用户决策）、人物非语言声标「同步声音：…」、无台词镜明示无对白、台词口型同步；`heal_h3_prompt ⑦` 缺节机械补（music 缺省补 N/A、已有配乐不覆盖）；fl2v 渲染前置「参考图片与目标视频的对齐关系」头（Picture1→0.00s / Picture2→镜时长）
 - 无台词镜静音（2026-08-30 杂音终局）— H3 音频遵循是概率性的（提示词协议只提命中率），残留杂音在合成侧确定性封死：`comfy.mute_quiet_shots` 开关（默认关）→ 逐镜 merge `_mute_audio`（volume=0）/ 快车道 `mix_director_audio(mute_quiet=)` anullsrc；代价=丢自然环境声；有台词镜不受影响（配音本就整轨替换）
+- 漫画读图提示词结构化（2026-08-30）— `comic.describe_shots` 两模式 VLM 输出升级为用户实测 H3 格式：动态漫=**integrated_multimodal_description**（fl2v 首尾帧格式）、漫改=**subject_definitions 骨架**（全能参考格式）；均带音频协议（soundscape 白名单 + music N/A）；落库前统一过 `heal_h3_prompt`（与小说链路同等待遇）；对白提取 `_extract_dialogue` 不变
 - `engine/director.py` 扩展 — P7-H 批间首帧接力（上批末帧→genImage 起始画面槽，开关 director_batch_relay）；画布按项目兆像素档（×32 ceil 对齐）
 - `routes_projects.GEN_STORY_SYSTEM` — P7-I 短剧结构规范（钩子/情绪流变/断章/语速公式/微表情/禁反向灌输）
 - jobs.cancel_project_jobs + POST stop-jobs — ⏹ 项目级停止；genref 道具/场景双重禁人物（道具产品静物框架）
