@@ -20,9 +20,9 @@ def test_fifteen_presets_with_gender_and_timbre():
 
 def test_voice_instruct_full_sentence_with_suffix():
     s = voice_instruct("高冷御姐")
-    assert s.startswith("Voice: cold mature elegant woman voice")
-    assert s.endswith("moderate speaking speed, clear pronunciation, "
-                      "high fidelity audio, no background noise")
+    assert s.startswith("Voice: sultry seductive mature woman voice")  # D2 欲感版定稿
+    assert "slow sensual speaking pace" in s  # 御姐专属慢速
+    assert s.endswith("clear pronunciation, high fidelity audio, no background noise")
     assert voice_timbre("大叔") == "deep middle-aged man voice, rich gruff mature male voice"
     with pytest.raises(ValueError, match="未知音色"):
         voice_instruct("赛博朋克音")
