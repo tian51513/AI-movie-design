@@ -79,3 +79,43 @@ def assert_no_banned_words(text: str) -> None:
     for w in _BANNED:
         if w in low:
             raise ValueError(f"音色描述含禁词 {w!r}（ACG 梗词模型识别不稳，请用写实描述）")
+
+
+# ---------- 音色自动匹配（2026-08-30 用户需求）----------
+# 两级：LLM 按 15 预设挑（年龄/性别/气质/着装）→ 挑不到按 性别×年龄 落 8 档基线。
+# 8 档 → 预设映射（基线档均落在 15 预设内，产物一致走 VoiceDesign）
+import re as _re
+
+_AGE_BANDS = [  # (上限含, 女预设, 男预设)
+    (12, "萝莉", "正太"),
+    (39, "温柔少女", "深沉男声"),
+    (59, "温柔淑女", "大叔"),
+    (200, "老年女声", "老年男声"),
+]
+
+
+def default_voice_for(gender: str, age) -> str:
+    """性别×年龄 → 8 档基线预设音色（女童/男童/青年女/男/中年女/男/老年女/男）。
+    性别无法判定返回空（不绑，走 Edge-TTS）。"""
+    g = (gender or "").strip()
+    if not any(k in g for k in ("女", "female", "F")) and not any(k in g for k in ("男", "male", "M")):
+        return ""
+    is_female = any(k in g for k in ("女", "female")) or (not any(k in g for k in ("男", "male")) and "f" in g.lower())
+    try:
+        age_int = int(_re.findall(r"\d+", str(age))[0]) if age else 30
+    except (ValueError, IndexError):
+        age_int = 30
+    for cap, f_voice, m_voice in _AGE_BANDS:
+        if age_int <= cap:
+            return f_voice if is_female else m_voice
+    return ""
+
+
+def match_voice(appearance: str, suggested: str = "") -> str:
+    """角色 → 音色：LLM 建议（限 15 预设，非法忽略）→ 性别×年龄基线兜底。"""
+    valid = {p["name"] for p in VOICE_PRESETS}
+    if (suggested or "").strip() in valid:
+        return suggested.strip()
+    m = _re.search(r"性别[:：]\s*([^\s]+)", appearance or "")
+    a = _re.search(r"年龄[:：]\s*(\d+)", appearance or "")
+    return default_voice_for(m.group(1) if m else "", a.group(1) if a else None)

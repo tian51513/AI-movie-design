@@ -147,3 +147,49 @@ def test_merge_tree_progress_callback():
                                max_payload_chars=200,
                                on_progress=lambda msg: rounds.append(msg))
     assert len(rounds) >= 1 and any("合并" in m for m in rounds)
+
+
+def test_analyze_suggests_voices(tmp_path, monkeypatch):
+    """音色自动匹配（2026-08-30 用户需求）：LLM 分析角色时按年龄/性别/气质
+    推荐 15 预设之一 → 落 assets.voice；非法值忽略；人工仍可改。"""
+    import io
+    from types import SimpleNamespace as NS
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.llm.provider import Usage
+
+    GOOD = ('{"characters":['
+            '{"name":"小雪","role":"主角","appearance":"性别：女 年龄：8岁 服装：红裙",'
+            '"tags":[],"suggested_voice":"萝莉"},'
+            '{"name":"老爷","role":"配角","appearance":"性别：男 年龄：60岁",'
+            '"tags":[],"suggested_voice":"老年男声"},'
+            '{"name":"路人","role":"路人","appearance":"性别：男 年龄：30岁",'
+            '"tags":[],"suggested_voice":"不存在音色"}],'
+            '"scenes":[],"props":[]}')
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return GOOD, Usage(1, 1)
+        def ask_validated(self, system, user, schema, **kw):
+            from comic_studio.engine.llm.schemas import AssetsAnalysis
+            import json as _json
+            return schema.model_validate(_json.loads(GOOD)), Usage(1, 1)
+
+    monkeypatch.setattr("comic_studio.engine.llm.analyze.client_for_task",
+                        lambda db, task: FakeLLM())
+    with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "d",
+                               start_workers=False)) as c:
+        pid = c.post("/api/projects", data={"name": "匹配剧", "aspect_ratio": "9:16"},
+                     files={"novel": ("n.txt", io.BytesIO("正文".encode()),
+                                      "text/plain")}).json()["id"]
+        c.post(f"/api/projects/{pid}/analyze")
+        import time
+        for _ in range(60):
+            if c.get(f"/api/projects/{pid}/analyze/status").json()["status"] != "running":
+                break
+            time.sleep(0.05)
+        assets = {a["name"]: a for a in c.get(f"/api/projects/{pid}/assets").json()}
+        assert assets["小雪"]["voice"] == "萝莉"
+        assert assets["老爷"]["voice"] == "老年男声"
+        assert assets["路人"]["voice"] == "深沉男声"  # 非法建议忽略→性别×年龄兜底（青年男）

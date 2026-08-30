@@ -7,6 +7,8 @@ class CharacterAsset(BaseModel):
     role: str = ""
     appearance: str = Field(min_length=1)  # 外貌固化描述：可视化为后续参考图生成服务
     tags: list[str] = []
+    # 15 预设之一（音色自动匹配；非法值忽略，走性别×年龄基线兜底）
+    suggested_voice: str = ""
 
 
 class SceneAsset(BaseModel):

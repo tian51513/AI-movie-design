@@ -33,3 +33,18 @@ def test_banned_acg_words_rejected():
         with pytest.raises(ValueError, match="禁词"):
             assert_no_banned_words(bad)
     assert_no_banned_words(voice_instruct("元气少女"))  # 预设本身无禁词
+
+
+def test_match_voice_two_level():
+    """两级匹配：合法建议优先；非法/缺失按性别×年龄落 8 档基线；无性别为空。"""
+    from comic_studio.engine.voices import default_voice_for, match_voice
+    assert match_voice("性别：女 年龄：8岁", "高冷御姐") == "高冷御姐"      # 建议优先
+    assert match_voice("性别：女 年龄：8岁", "乱写的") == "萝莉"           # 兜底女童
+    assert match_voice("性别：男 年龄：60岁", "") == "老年男声"
+    assert match_voice("性别：女 年龄：35岁", "") == "温柔少女"            # 青年女
+    assert match_voice("性别：女 年龄：45岁", "") == "温柔淑女"            # 中年女
+    assert match_voice("性别：男 年龄：14岁", "") == "深沉男声"            # 青年男
+    assert match_voice("性别：男 年龄：45岁", "") == "大叔"
+    assert match_voice("无结构化外貌", "") == ""                            # 无性别不绑
+    assert default_voice_for("女", 70) == "老年女声"
+    assert default_voice_for("male", 10) == "正太"
