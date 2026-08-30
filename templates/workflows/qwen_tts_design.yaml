@@ -1,0 +1,21 @@
+id: qwen_tts_design
+type: tts_design
+name: Qwen3-TTS 音色设计（预设生成）
+file: qwen_tts_design.api.json
+prompt_format: null
+inject:
+  params:
+    text:
+      node: '1'
+      field: text
+    voice_instruction:
+      node: '1'
+      field: voice_instruction
+    seed:
+      node: '1'
+      field: seed
+outputs:
+- node: '3'
+  filename_prefix: cs/voices/{asset}
+requires:
+- qwen3-tts-comfyui

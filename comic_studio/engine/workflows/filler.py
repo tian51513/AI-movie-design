@@ -32,7 +32,10 @@ def fill_workflow(template, *, prompt: str | None, params: dict,
         matched = next((im for im in (images or []) if im["slot"] == spec["slot"]), None)
         if matched is None:
             continue
-        name = f"cs__{output_ctx['project']}__{output_ctx['asset']}__{spec['slot']}.png"
+        # 2026-08-30 音色：上传名保留源文件后缀（音频走 /upload/audio 按后缀分流）
+        from pathlib import Path as _P
+        suffix = _P(matched["path"]).suffix.lower() or ".png"
+        name = f"cs__{output_ctx['project']}__{output_ctx['asset']}__{spec['slot']}{suffix}"
         set_input(spec["node"], spec["field"], name)
         uploads.append({"path": matched["path"], "name": name})
 

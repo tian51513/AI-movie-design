@@ -1,0 +1,22 @@
+id: qwen_tts_clone
+type: tts_clone
+name: Qwen3-TTS 音色克隆（上传处理）
+file: qwen_tts_clone.api.json
+prompt_format: null
+inject:
+  params:
+    start_index:
+      node: '79'
+      field: start_index
+    duration:
+      node: '79'
+      field: duration
+  images:
+  - node: '74'
+    field: audio
+    slot: audio
+outputs:
+- node: '76'
+  filename_prefix: cs/voices/{asset}
+requires:
+- qwen3-tts-comfyui

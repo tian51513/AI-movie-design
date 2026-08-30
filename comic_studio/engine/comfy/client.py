@@ -52,6 +52,24 @@ class ComfyClient:
                               files={"image": (name, f, "image/png")})
                 resp.raise_for_status()
 
+    # Phase 2 音色（2026-08-30）：音频后缀 → /upload/audio；mime 表兜底 octet-stream
+    _AUDIO_MIMES = {".mp3": "audio/mpeg", ".wav": "audio/wav", ".flac": "audio/flac",
+                    ".ogg": "audio/ogg", ".m4a": "audio/mp4", ".aac": "audio/aac"}
+
+    def upload_media(self, path: Path, name: str) -> None:
+        """按后缀分流上传：图片 → /upload/image，音频 → /upload/audio（音色样本）。"""
+        suffix = Path(name).suffix.lower()
+        if suffix in self._AUDIO_MIMES:
+            with self._client() as c:
+                with open(path, "rb") as f:
+                    resp = c.post(f"{self.base_url}/upload/audio",
+                                  params={"overwrite": "true"},
+                                  data={"overwrite": "true"},
+                                  files={"file": (name, f, self._AUDIO_MIMES[suffix])})
+                    resp.raise_for_status()
+            return
+        self.upload_image(path, name)
+
     def submit(self, workflow: dict, client_id: str) -> str:
         with self._client() as c:
             resp = c.post(f"{self.base_url}/prompt",
@@ -94,6 +112,9 @@ class ComfyClient:
                 outputs.append({**img, "_kind": "video" if is_video else "image"})
             for vid in node_out.get("gifs", []):
                 outputs.append({**vid, "_kind": "video"})
+            # Phase 2 音色（2026-08-30）：SaveAudio 产物在节点 outputs 的 audio 键
+            for aud in node_out.get("audio", []):
+                outputs.append({**aud, "_kind": "audio"})
         return outputs
 
     def wait_and_collect(self, prompt_id: str, stall_seconds: float = 300,

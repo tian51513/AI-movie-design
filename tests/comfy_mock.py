@@ -32,13 +32,17 @@ class MockComfy:
     def upload_overwrites(self):
         return self._server.RequestHandlerClass.upload_overwrites
 
+    @property
+    def audio_uploads(self):
+        return self._server.RequestHandlerClass.audio_uploads
+
 
 def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
-                  queue_running=()):
+                  audio: bool = False, queue_running=()):
     _q_running = tuple(queue_running)
 
     class H(BaseHTTPRequestHandler):
-        uploads, prompts, frees, interrupts, upload_overwrites = [], [], 0, 0, []
+        uploads, audio_uploads, prompts, frees, interrupts, upload_overwrites = [], [], [], 0, 0, []
         n = 0
         queue_running = _q_running
 
@@ -89,6 +93,10 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
                         {"filename": "shot-1_00003_.mp4", "subfolder": "cs/demo", "type": "output"}],
                         "animated": [True]}},
                         "status": {"status_str": "success"}}})
+                elif audio:
+                    self._json({pid: {"outputs": {"3": {"audio": [
+                        {"filename": "cs_x.flac", "subfolder": "cs/voices", "type": "output"}]}},
+                        "status": {"status_str": "success"}}})
                 else:
                     self._json({pid: {"outputs": {"9": {"images": [
                         {"filename": "cs_x.png", "subfolder": "", "type": "output"}]}},
@@ -105,7 +113,12 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
         def do_POST(self):
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length)
-            if self.path.startswith("/upload/image"):
+            if self.path.startswith("/upload/audio"):
+                m = re.search(rb'filename="([^"]+)"', body)
+                if m:
+                    H.audio_uploads.append(m.group(1).decode())
+                self._json({"name": m.group(1).decode() if m else "unnamed"})
+            elif self.path.startswith("/upload/image"):
                 m = re.search(rb'filename="([^"]+)"', body)
                 if m:
                     H.uploads.append(m.group(1).decode())
@@ -131,9 +144,9 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
 
 
 @contextmanager
-def comfy_server(mode="ok", video=False, animated_images=False, queue_running=()):
+def comfy_server(mode="ok", video=False, animated_images=False, audio=False, queue_running=()):
     server = ThreadingHTTPServer(("127.0.0.1", 0),
-                                 _make_handler(mode, video, animated_images,
+                                 _make_handler(mode, video, animated_images, audio=audio,
                                                queue_running=tuple(queue_running)))
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()

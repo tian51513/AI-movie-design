@@ -1,0 +1,53 @@
+{
+  "1": {
+    "inputs": {
+      "text": "哥哥，你回来啦。[pause:0.5] 人家等了你好久好久了！，要抱抱！\nIt's in the top drawer... wait, it's empty?",
+      "voice_instruction": "体现撒娇稚嫩的萝莉女声，音调偏高且起伏明显，营造出黏人、做作又刻意卖萌的听觉效果。\nSpeak in an incredulous tone, but with a hint of panic.",
+      "language": "Chinese",
+      "output_mode": "Concatenate (Merge)",
+      "seed": 27706172735216,
+      "max_new_tokens": 2048,
+      "temperature": 0.9,
+      "top_p": 1,
+      "top_k": 50,
+      "repetition_penalty": 1.05,
+      "subtalker_temperature": 0.9,
+      "subtalker_top_p": 1,
+      "subtalker_top_k": 50,
+      "model_obj": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "Qwen3TTSVoiceDesign",
+    "_meta": {
+      "title": "Qwen3-TTS Voice Design 🎨"
+    }
+  },
+  "2": {
+    "inputs": {
+      "model_repo": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+      "download_source": "ModelScope",
+      "precision": "bf16",
+      "attn_mode": "sdpa",
+      "auto_download": false
+    },
+    "class_type": "Qwen3TTSLoader",
+    "_meta": {
+      "title": "Qwen3-TTS Loader 🚀"
+    }
+  },
+  "3": {
+    "inputs": {
+      "filename_prefix": "audio/ComfyUI",
+      "audio": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "SaveAudio",
+    "_meta": {
+      "title": "保存音频"
+    }
+  }
+}
