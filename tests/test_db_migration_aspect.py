@@ -1,17 +1,18 @@
 # tests/test_db_migration_aspect.py
-"""迁移 27：projects 画幅 CHECK 放宽五档——SQLite 不能改 CHECK，需重建表（2026-08-30 需求）。"""
+"""迁移 28（列表末位）：projects 画幅 CHECK 放宽五档——SQLite 不能改 CHECK，需重建表。"""
 import sqlite3
 
 from comic_studio.engine.db import Database, MIGRATIONS
 
 
-def test_migration_27_widens_aspect_check(tmp_path):
-    # 手工搭一个停在 v26 的旧库（两档 CHECK），再跑迁移
+def test_migration_28_widens_aspect_check(tmp_path):
+    # 手工搭一个停在倒数第二位的旧库（两档 CHECK），再跑迁移
     path = tmp_path / "legacy.db"
     conn = sqlite3.connect(path)
     conn.executescript("CREATE TABLE schema_version (version INTEGER NOT NULL)")
-    for sql in MIGRATIONS[:26]:
+    for sql in MIGRATIONS[:-1]:
         conn.executescript(sql)
+    conn.execute("INSERT INTO schema_version (version) VALUES (?)", (len(MIGRATIONS) - 1,))
     conn.execute("INSERT INTO schema_version (version) VALUES (26)")
     conn.execute(
         "INSERT INTO projects (slug, name, aspect_ratio, novel_path) "

@@ -51,6 +51,7 @@ function data() {
     moTemplate: '', modelChoices: [], moError: '',
     ollamaModels: [], showThink: false, loadingModels: false,
     activeKind: '全部', perRow: 2, lightbox: null,
+    viewer: null,  // 分镜媒体查看器 {kind:'image'|'video', list:[{url,label}], idx}
     comfyStatus: null, llmTesting: '', llmTestResult: {local: null, online: null},
     localProviderType: '',  // ollama / lmstudio / custom（从 base_url 反推）
     freeingComfy: false,
@@ -91,6 +92,19 @@ const computed = {
     if (!m) return {};
     return { left: Math.min(m.x0, m.x1) + 'px', top: Math.min(m.y0, m.y1) + 'px',
              width: Math.abs(m.x1 - m.x0) + 'px', height: Math.abs(m.y1 - m.y0) + 'px' };
+  },
+  arCSS() {  // 项目画幅 → CSS aspect-ratio（卡内缩略图统一尺寸盒，2026-08-30 需求）
+    const ar = (this.project && this.project.aspect_ratio) || '9:16';
+    const [w, h] = ar.split(':').map(Number);
+    return (w > 0 && h > 0) ? `aspect-ratio:${w}/${h}` : 'aspect-ratio:9/16';
+  },
+  vpStyle() {  // 视频预览盒：长边 400px 按画幅取比（竖屏画幅下固定高度会太窄）
+    const ar = (this.project && this.project.aspect_ratio) || '9:16';
+    let [w, h] = ar.split(':').map(Number);
+    if (!(w > 0 && h > 0)) [w, h] = [9, 16];
+    const L = 400;
+    return w >= h ? { width: L + 'px', height: Math.round(L * h / w) + 'px' }
+                  : { height: L + 'px', width: Math.round(L * w / h) + 'px' };
   },
   directorBusy() {  // 快车道状态由队列轮询驱动（刷新页面可恢复）
     return ((this.queue && this.queue.jobs) || []).some(
@@ -242,6 +256,39 @@ const methods = {
   kfUrl(s, phase) {
     // 从 shots API 返回的 kf_start_url / kf_end_url 取（routes_shots 需附上）
     return s[`kf_${phase}_url`];
+  },
+  // ===== 分镜媒体查看器（2026-08-30）：全尺寸弹窗 + ← → 连续翻页 =====
+  openViewer(kind, shot, phase) {
+    const items = [];
+    if (kind === 'image') {  // 首尾帧拉平成序列：镜1首、镜1尾、镜2首…
+      for (const s of this.shots) {
+        if (this.kfUrl(s, 'start')) items.push({ url: this.kfUrl(s, 'start'), label: `镜${s.seq} · 首帧` });
+        if (this.kfUrl(s, 'end')) items.push({ url: this.kfUrl(s, 'end'), label: `镜${s.seq} · 尾帧` });
+      }
+    } else {  // 视频：当前选中版本
+      for (const s of this.shots) {
+        if (s.video_url) items.push({ url: s.video_url, label: `镜${s.seq} · 视频` });
+      }
+    }
+    const url = kind === 'image' ? this.kfUrl(shot, phase) : shot.video_url;
+    const idx = Math.max(0, items.findIndex(it => it.url === url));
+    this.viewer = { kind, list: items, idx };
+    window.addEventListener('keydown', this.viewerKeys);
+  },
+  navViewer(d) {
+    const v = this.viewer;
+    if (!v || v.list.length < 2) return;
+    v.idx = (v.idx + d + v.list.length) % v.list.length;  // 循环回绕
+  },
+  closeViewer() {
+    this.viewer = null;
+    window.removeEventListener('keydown', this.viewerKeys);
+  },
+  viewerKeys(e) {
+    if (!this.viewer) return;
+    if (e.key === 'ArrowLeft') this.navViewer(-1);
+    else if (e.key === 'ArrowRight') this.navViewer(1);
+    else if (e.key === 'Escape') this.closeViewer();
   },
   async uploadKf(s, phase, file) {
     if (!file) return;

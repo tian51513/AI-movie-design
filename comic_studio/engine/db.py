@@ -141,7 +141,7 @@ MIGRATIONS: list[str] = [
     """ALTER TABLE projects ADD COLUMN chapters_json TEXT NOT NULL DEFAULT '';""",
     # 26 P8-B 漫画双模式：motion_comic（动态漫/fl2v）| film_adaptation（漫改/ref2va）
     """ALTER TABLE projects ADD COLUMN comic_mode TEXT NOT NULL DEFAULT 'motion_comic';""",
-    # 27 projects 画幅放宽五档（2026-08-30 需求）——SQLite 不能改 CHECK，重建表；
+    # 28 projects 画幅放宽五档（2026-08-30 需求）——SQLite 不能改 CHECK，重建表；
     # id 显式拷贝保外键引用，PRAGMA foreign_keys=OFF 让 DROP/RENAME 安全通过
     """PRAGMA foreign_keys=OFF;
     CREATE TABLE projects_new (
