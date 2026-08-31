@@ -25,16 +25,27 @@ SPLIT_SYSTEM = """你是小说改编漫剧的分镜师。把给定的小说文�
    ① 严禁「他/她/它」等代词——一律写角色名（多角色绑定的关键）；
    ② 只写镜头拍得到的内容：生理可观测动作与微表情（咬紧牙关/指节泛白/瞳孔骤缩），
    禁止「他很愤怒」等抽象心理词（借鉴 XiaoLuo/短剧厂规范 2026-08-28）
-8. duration 一律填项目统一段时长（上下文给出），不得自行增减
+8. duration：有对白的镜按「对白句数 × 2.5 秒」上下浮动估时长（镜内多句台词要说完）；
+   无对白镜填项目统一段时长（上下文给出）；一律在 4~15 秒区间内
 9. dialogue：从 text_span 照录本镜人物对白，格式 [{"speaker":"说话人","line":"原话"}]；
    逐字保留原文（含语气词），不改写不概括；无对白则省略或空数组
+10. 台词组打包（2026-09-01，反「一句台词一镜」）：连续同场景、同批人物的对白
+    （3~8 句）合并为**一个**分镜——镜内 dialogue 依次照录多句，画面仅微动作/视线/
+    说话人焦点变化，不切镜；只有 场景更换 / 时间跳转 / 剧情重大转折 才切新镜
+11. 结构化情绪字段（驱动视频动态，杜绝人物僵硬）：
+    - emotion：本镜主导情绪，仅从枚举选：平静/温柔/开心/轻笑/严肃/愤怒/激动/委屈/悲伤/冷漠/惊讶/紧张/低语/嘶吼/淡然
+    - gesture：主导微动作，**英文短句**（如 "slightly raising one hand"，供英文提示词直用），轻微不夸张
+    - gaze：主要视线方向，**英文短句**（如 "looking at the speaker"）
+    - continuity：与上一镜的延续关系，仅从枚举选：全程继承/微变延续/焦点跟随/缓慢推镜/缓慢拉镜/场景断点
 
 只输出一个 JSON 对象：
 {"shots":[{"text_span":"对应原文摘录","description":"...","shot_type":"对话/动作/场景/情绪",
  "camera":{"景别":"中景","机位":"平视","运镜":"固定","转场":"切"},
  "duration":5,"workflow_type":"ref2va",
  "must_appear":["萧炎"],"must_keep":["萧炎的黑发"],"may_change":["镜头角度"],"must_avoid":["服装变化"],
- "character_ids":[1],"scene_ids":[2],"prop_ids":[],"continue_prev":false}]}"""
+ "character_ids":[1],"scene_ids":[2],"prop_ids":[],"continue_prev":false,
+ "emotion":"平静","gesture":"slightly raising one hand","gaze":"looking at the speaker",
+ "continuity":"微变延续"}]}"""
 
 
 class ShotDraft(BaseModel):
@@ -42,7 +53,8 @@ class ShotDraft(BaseModel):
     description: str = Field(min_length=1)
     shot_type: str = ""
     camera: dict = Field(default_factory=dict)
-    duration: float = Field(ge=4, le=15, default=5)
+    # 宽进严出（2026-09-01 台词组拆镜）：LLM 估时长允许越界，staging 机械钳 [4,15]
+    duration: float = Field(ge=1, le=30, default=5)
     workflow_type: str = "ref2va"
     must_appear: list[str] = []
     must_keep: list[str] = []
@@ -54,6 +66,17 @@ class ShotDraft(BaseModel):
     continue_prev: bool = False
     # 台词链路（2026-08-26）：原文照录，供视频语音/TTS 逐字使用
     dialogue: list[dict[str, str]] = []
+    # 台词组拆镜 A2（2026-09-01）：结构化情绪/微动作/视线/延续——枚举外值 staging 清空
+    emotion: str = ""
+    gesture: str = ""
+    gaze: str = ""
+    continuity: str = ""
+
+
+# 枚举契约（SPLIT_SYSTEM 规则 11 同源；LLM 输出外值 → 机械清空不重试）
+EMOTIONS = ("平静", "温柔", "开心", "轻笑", "严肃", "愤怒", "激动", "委屈",
+            "悲伤", "冷漠", "惊讶", "紧张", "低语", "嘶吼", "淡然")
+CONTINUITY_MODES = ("全程继承", "微变延续", "焦点跟随", "缓慢推镜", "缓慢拉镜", "场景断点")
 
 
 class ChunkStoryboard(BaseModel):
@@ -244,7 +267,16 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2
         _dur = float(_proj["default_shot_duration"]) if _proj else 5.0
         staged.extend(SimpleNamespace(
             text_span=d.text_span, description=d.description, shot_type=d.shot_type,
-            camera=d.camera, duration=_dur, workflow_type=d.workflow_type,
+            camera=d.camera,
+            # 台词组拆镜 A1（2026-09-01）：有对白的镜用 LLM 估时长（机械钳 4~15，
+            # 多句台词要说完）；无对白镜维持项目统一段时长
+            duration=(min(15.0, max(4.0, float(d.duration)))
+                      if (d.dialogue or []) else _dur),
+            workflow_type=d.workflow_type,
+            emotion=d.emotion if d.emotion in EMOTIONS else "",
+            gesture=d.gesture.strip(),
+            gaze=d.gaze.strip(),
+            continuity=d.continuity if d.continuity in CONTINUITY_MODES else "",
             ledger={"must_appear": d.must_appear, "must_keep": d.must_keep,
                     "may_change": d.may_change, "must_avoid": d.must_avoid,
                     "dialogue": d.dialogue},

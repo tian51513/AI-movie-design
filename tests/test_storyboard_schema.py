@@ -24,10 +24,13 @@ def test_schema_parses_and_rejects():
         ChunkStoryboard.model_validate({"shots": [{**GOOD_SHOT, "duration": "五秒"}]})
 
 
-def test_duration_minimum_4_rejects_3():
-    """I2: duration 下限 4，3 应被拒绝。"""
+def test_duration_wide_schema_4_15_enforced_downstream():
+    """2026-09-01 台词组拆镜改契约：schema 宽进（1~30，LLM 估时长允许越界，
+    不烧重试），4~15 由 staging/persist 机械钳制（见 test_storyboard_emotion）。"""
+    sb = ChunkStoryboard.model_validate({"shots": [{**GOOD_SHOT, "duration": 3}]})
+    assert sb.shots[0].duration == 3  # 解析层放行
     with pytest.raises(ValidationError):
-        ChunkStoryboard.model_validate({"shots": [{**GOOD_SHOT, "duration": 3}]})
+        ChunkStoryboard.model_validate({"shots": [{**GOOD_SHOT, "duration": 0}]})
 
 
 def test_duration_4_accepts():

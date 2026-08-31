@@ -89,6 +89,25 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
         (f"时代风格：{era}，人物服饰、发型、器物、建筑均须符合该时代形制，禁止现代元素"
          if era else "时代风格：未明确（按描述自行合理推断）"),
     ]
+    # A 级织入（2026-09-01 台词组拆镜）：拆解产出的结构化情绪/微动作/视线/延续
+    # 进上下文——由 LLM 按当前模式的格式自然织入内容段（机械拼接会破 structure_check）
+    _emo = (shot_row["emotion"] if "emotion" in shot_row.keys() else "") or ""
+    _ges = (shot_row["gesture"] if "gesture" in shot_row.keys() else "") or ""
+    _gaz = (shot_row["gaze"] if "gaze" in shot_row.keys() else "") or ""
+    _con = (shot_row["continuity"] if "continuity" in shot_row.keys() else "") or ""
+    if _emo or _ges or _gaz:
+        parts = []
+        if _emo:
+            parts.append(f"主导情绪：{_emo}")
+        if _ges:
+            parts.append(f"微动作（英文短句，织入提示词）：{_ges}")
+        if _gaz:
+            parts.append(f"视线（英文短句，织入提示词）：{_gaz}")
+        if _con:
+            parts.append(f"与上镜延续：{_con}")
+        lines.append(
+            "情绪与动态（台词驱动，杜绝人物僵硬——织入内容段，不单列字段标签）：" +
+            "；".join(parts))
     if is_t2v:
         lines.append(
             "【文生视频模式】无图片参考——提示词是唯一画面约束，必须极度详尽：\n"

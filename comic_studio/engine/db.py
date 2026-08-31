@@ -186,6 +186,12 @@ MIGRATIONS: list[str] = [
     CREATE INDEX IF NOT EXISTS idx_jobs_asset ON jobs(asset_id, type, id);
     CREATE INDEX IF NOT EXISTS idx_jobs_proj ON jobs(project_id, type, id);
     CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status, type);""",
+    # 31 台词组拆镜（2026-09-01 A 级，借鉴「台词驱动无缝分镜」工程文档）：
+    # 情绪/微动作/视线/延续标签——驱动 H3 提示词动态与工作流分发
+    """ALTER TABLE shots ADD COLUMN emotion TEXT NOT NULL DEFAULT '';
+    ALTER TABLE shots ADD COLUMN gesture TEXT NOT NULL DEFAULT '';
+    ALTER TABLE shots ADD COLUMN gaze TEXT NOT NULL DEFAULT '';
+    ALTER TABLE shots ADD COLUMN continuity TEXT NOT NULL DEFAULT '';""",
 ]
 
 

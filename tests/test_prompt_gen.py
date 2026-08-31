@@ -33,6 +33,30 @@ def test_shot_context_binds_assets_and_style():
         assert token in ctx, token
 
 
+def test_shot_context_carries_emotion_fields():
+    """A 级织入（2026-09-01）：拆解新增的情绪/微动作/视线/延续进提示词上下文，
+    由模式指令要求织入内容段（不机械拼接——不破坏 structure_check）。"""
+    shot = {"seq": 1, "description": "庭院对话", "duration": 12.0,
+            "ledger_json": json.dumps({"must_appear": [], "must_keep": [],
+                                       "may_change": [], "must_avoid": [],
+                                       "assets": {"characters": [], "scenes": [], "props": []}}),
+            "shot_type": "", "camera_json": "{}", "workflow_type": "fl2v",
+            "emotion": "平静", "gesture": "slightly raising one hand",
+            "gaze": "looking at the girl", "continuity": "微变延续"}
+    ctx = build_shot_context(shot, {}, {"aspect_ratio": "9:16", "style": ""})
+    for token in ("平静", "slightly raising one hand", "looking at the girl",
+                  "微变延续"):
+        assert token in ctx, token
+
+
+def test_shot_context_without_emotion_fields_omits_block():
+    shot = {"seq": 2, "description": "空镜", "duration": 5.0,
+            "ledger_json": json.dumps({"assets": {"characters": [], "scenes": [], "props": []}}),
+            "shot_type": "", "camera_json": "{}", "workflow_type": "t2v"}
+    ctx = build_shot_context(shot, {}, {"aspect_ratio": "9:16", "style": ""})
+    assert "情绪与动态" not in ctx  # 老项目无字段——零影响（基线上下文他处本就有「情绪」字样）
+
+
 def test_validate_h3_accepts_reasonable_prompt():
     ok, msg = validate_h3("林晨在庭院中推开木门，晨光洒入，镜头缓慢推进，写实画面。", 5, "9:16", 0, 0)
     assert ok is True, msg
