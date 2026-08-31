@@ -139,3 +139,22 @@ def confirm_staged(data_dir, staged_rel: str, name: str,
 def discard_staged(data_dir, staged_rel: str) -> None:
     """放弃：删暂存样本。"""
     _staging_abs(data_dir, staged_rel).unlink()
+
+
+def voice_library_prompt(data_dir, project: str | None = None) -> str:
+    """音色库 → LLM 注入文本（2026-08-31 用户需求：把系统音色库发给 LLM，
+    让它按角色挑真实可用的音色——含自定义，不再只看写死的 15 预设）。"""
+    lines = []
+    for r in list_voices(data_dir, project):
+        if r["origin"] == "preset":
+            g = "女声" if r.get("gender") == "female" else "男声"
+            lines.append(f"- {r['name']}（{g}，预设）：{r['timbre']}")
+        else:
+            tag = "项目级自定义音色" if r["origin"] == "project" else "全局自定义音色"
+            lines.append(f"- {r['name']}（{tag}）")
+    return "\n".join(lines)
+
+
+def voice_library_names(data_dir, project: str | None = None) -> list[str]:
+    """音色库全部名字（match_voice 校验 suggested 用）。"""
+    return [r["name"] for r in list_voices(data_dir, project)]

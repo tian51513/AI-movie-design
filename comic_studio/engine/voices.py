@@ -111,9 +111,10 @@ def default_voice_for(gender: str, age) -> str:
     return ""
 
 
-def match_voice(appearance: str, suggested: str = "") -> str:
-    """角色 → 音色：LLM 建议（限 15 预设，非法忽略）→ 性别×年龄基线兜底。"""
-    valid = {p["name"] for p in VOICE_PRESETS}
+def match_voice(appearance: str, suggested: str = "", library=None) -> str:
+    """角色 → 音色：LLM 建议优先（library 给定时校验库内名——含自定义音色，
+    2026-08-31 用户需求；否则限 15 预设）→ 性别×年龄基线兜底。"""
+    valid = set(library or []) | {p["name"] for p in VOICE_PRESETS}
     if (suggested or "").strip() in valid:
         return suggested.strip()
     m = _re.search(r"性别[:：]\s*([^\s]+)", appearance or "")

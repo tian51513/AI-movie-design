@@ -236,3 +236,71 @@ def test_describe_shots_film_uses_skeleton_and_heals(tmp_path):
     from comic_studio.engine.shots import list_shots
     for s in list_shots(db, pid):
         assert "non_diegetic_music: N/A" in s["prompt"] and "无字幕" in s["prompt"]
+
+
+def test_describe_motion_builds_speaker_assets_with_voices(tmp_path):
+    """动态漫角色音色（2026-08-31）：VOICES 尾行标注 → 对白聚合建角色（旁白过滤）→ 绑音色。"""
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "动态漫音色剧", "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG)])["id"]
+    seen = []
+
+    class FakeVision(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            seen.append(messages)
+            reply = ("integrated_multimodal_description: [Shot 1] 小雪说话。"
+                     "小雪：「哥哥你回来啦。」旁白：「夜色渐深。」\n"
+                     "overall_soundscape: 无对白。\nnon_diegetic_music: N/A\n"
+                     'VOICES:{"voices":[{"name":"小雪","gender":"女","age":8,"voice":"萝莉"}]}')
+            return reply, Usage(10, 20)
+
+    n = describe_shots(db, tmp_path / "data", pid, FakeVision())
+    assert n == 2
+    from comic_studio.engine.assets import list_project_assets
+    from comic_studio.engine.shots import list_shots
+    chars = [a for a in list_project_assets(db, pid) if a["kind"] == "character"]
+    assert [c["name"] for c in chars] == ["小雪"]      # 旁白被过滤
+    assert chars[0]["voice"] == "萝莉"
+    for s in list_shots(db, pid):                       # VOICES 行不进提示词
+        assert "VOICES:" not in (s["prompt"] or "")
+    assert "可用音色库" in seen[0][0]["content"]
+    describe_shots(db, tmp_path / "data", pid, FakeVision(),
+                   shot_id=list_shots(db, pid)[0]["id"])
+    assert len([a for a in list_project_assets(db, pid)
+                if a["kind"] == "character"]) == 1       # 幂等不重复建
+
+
+def test_extract_comic_matches_voices(tmp_path):
+    """漫改资产音色（2026-08-31）：VLM 提取含 suggested_voice + 音色库注入系统词；
+    建资产后自动绑定（非法建议走性别×年龄基线）。"""
+    from comic_studio.engine.comic import import_comic, extract_comic_characters
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "漫改音色剧", "9:16",
+                       [("p1.png", PNG)], comic_mode="film_adaptation")["id"]
+    seen = []
+
+    class FakeVLM(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            seen.append(messages)
+            return ('{"characters":['
+                    '{"name":"小雪","appearance":"性别：女\\n年龄：8岁\\n服装：红裙",'
+                    '"suggested_voice":"萝莉"},'
+                    '{"name":"老仆","appearance":"性别：男\\n年龄：62岁\\n服装：灰袍",'
+                    '"suggested_voice":"乱写的"}],'
+                    '"scenes":[],"props":[]}'), Usage(1, 1)
+
+    n = extract_comic_characters(db, tmp_path / "data", pid, FakeVLM())
+    assert n == 2
+    assert "可用音色库" in seen[0][0]["content"]      # 音色库已注入
+    from comic_studio.engine.assets import list_project_assets
+    by = {a["name"]: a["voice"] for a in list_project_assets(db, pid)
+          if a["kind"] == "character"}
+    assert by["小雪"] == "萝莉"                        # 建议命中
+    assert by["老仆"] == "老年男声"                    # 非法建议→基线兜底

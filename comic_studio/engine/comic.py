@@ -144,8 +144,14 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
             "禁止广播嘈杂等无关声源；无对白时写明无对白无哼唱>\n"
             "non_diegetic_music: N/A\n"
             "必须描述「从第一格到第二格的具体过渡过程」，不能只描述单帧静态画面。\n"
-            "对白必须按漫画中的实际顺序排列，不能乱序。")
+            "对白必须按漫画中的实际顺序排列，不能乱序。\n\n"
+            "对白说话人音色标注（角色音色系统）：输出最后一行严格按此格式（不要代码块）：\n"
+            'VOICES:{"voices":[{"name":"说话人","gender":"女","age":8,"voice":"库内音色名"}]}\n'
+            "只列真实人物（旁白/画外音/内心独白不要）；gender 男/女，age 数字；\n"
+            "voice 从下方可用音色库中按角色年龄/性别/气质选最贴切的。\n\n"
+            "可用音色库（voice 只能从中选）：\n" + _voice_lib(db, data_dir, project_id))
     n = 0
+    voices_meta: dict = {}   # 说话人 → {gender, age, voice}（VOICES 尾行聚合）
     for s in list_shots(db, project_id):
         if shot_id is not None and s["id"] != shot_id:
             continue  # 逐镜模式：只跑指定镜
@@ -189,6 +195,8 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                   f"从当前画面到下一页的自然过渡，写一段视频提示词。"}],
                 temperature=0.4)
         text = (text or "").strip()
+        voices_meta.update(_parse_voices_line(text))
+        text = _strip_voices_line(text)
         if text:
             # 结构化+音频协议落库前统一自愈（2026-08-30）：缺音频节机械补、
             # 超界 Picture 引用清理、无字幕后缀——与小说链路同等待遇
@@ -215,6 +223,14 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                      project_id=project_id)
     if n:
         emit_log(db, "llm", "info", f"VLM 读图生成提示词 {n} 镜", project_id=project_id)
+        # 动态漫角色音色（2026-08-31 用户需求）：对白聚合建角色（旁白过滤，
+        # 不生参考图——fl2v 用原页）+ 音色绑定；幂等（同名不重建）
+        if comic_mode != "film_adaptation":
+            built = _build_speaker_assets(db, data_dir, project_id, voices_meta)
+            if built:
+                emit_log(db, "llm", "info",
+                         f"对白角色 {built} 个入库（不生参考图，已自动匹配音色）",
+                         project_id=project_id)
         # 读图顺手提取角色——仅漫改（2026-08-29 真机教训：动态漫 fl2v 用漫画原页
         # 渲染，角色资产毫无用处，还提取出 83 个旁白/叙述垃圾资产 + 1195 处绑定）
         if comic_mode == "film_adaptation":
@@ -226,6 +242,104 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                 emit_log(db, "llm", "info", f"角色自动绑定：{bound} 处",
                          project_id=project_id)
     return n
+
+
+_NON_SPEAKER_RE = None
+
+
+def _voice_lib(db, data_dir, project_id) -> str:
+    """音色库清单（注入 VLM 系统词；项目视角含项目级自定义）。"""
+    from .voicelib import voice_library_prompt
+    from .projects import get_project
+    proj = get_project(db, project_id)
+    return voice_library_prompt(data_dir, proj["slug"] if proj else None) or "（空）"
+
+
+def _parse_voices_line(text: str) -> dict:
+    """解析输出尾行 VOICES:{"voices":[...]} → {name: {gender, age, voice}}。"""
+    import re as _re
+    global _NON_SPEAKER_RE
+    if _NON_SPEAKER_RE is None:
+        _NON_SPEAKER_RE = _re.compile(r"旁白|画外音|独白|叙述|字幕|旁白声")
+    m = _re.search(r"^VOICES:\s*(\{.*\})\s*$", text or "", _re.M)
+    if not m:
+        return {}
+    try:
+        items = json.loads(m.group(1)).get("voices") or []
+    except (json.JSONDecodeError, AttributeError):
+        return {}
+    out = {}
+    for v in items:
+        name = str(v.get("name") or "").strip()
+        if name and not _NON_SPEAKER_RE.search(name):
+            out[name] = {"gender": v.get("gender") or "", "age": v.get("age"),
+                         "voice": v.get("voice") or ""}
+    return out
+
+
+def _strip_voices_line(text: str) -> str:
+    import re as _re
+    return _re.sub(r"^VOICES:\s*\{.*\}\s*$\n?", "", text or "", flags=_re.M).rstrip()
+
+
+def _bind_asset_voice(db, project_id, name: str, voice: str) -> bool:
+    conn = db.connect()
+    cur = conn.execute(
+        "UPDATE assets SET voice=? WHERE id=("
+        " SELECT a.id FROM assets a JOIN project_assets pa ON pa.asset_id=a.id"
+        " WHERE pa.project_id=? AND a.name=? AND a.kind='character')",
+        (voice, project_id, name))
+    conn.commit()
+    return bool(cur.rowcount)
+
+
+def _build_speaker_assets(db, data_dir, project_id, voices_meta: dict) -> int:
+    """动态漫：ledger.dialogue 说话人聚合 → 建 character 资产（无参考图）+ 音色。"""
+    from types import SimpleNamespace as NS
+    from .assets import list_project_assets, persist_assets
+    from .shots import list_shots
+    from .voices import match_voice
+    from .voicelib import voice_library_names
+    from .projects import get_project
+    speakers: list = []
+    for s in list_shots(db, project_id):
+        for d in json.loads(s["ledger_json"] or "{}").get("dialogue") or []:
+            sp = str(d.get("speaker") or "").strip()
+            if sp and sp not in speakers and not _NON_SPEAKER_RE.search(sp):
+                speakers.append(sp)
+    if not speakers:
+        return 0
+    existing = {a["name"] for a in list_project_assets(db, project_id)
+                if a["kind"] == "character"}
+    drafts, metas = [], {}
+    for sp in speakers:
+        if sp in existing:
+            continue
+        v = voices_meta.get(sp) or {}
+        app = (f"性别：{v.get('gender') or '未知'}\n年龄：{v.get('age') or '未知'}岁"
+               if (v.get("gender") or v.get("age")) else f"（{sp}：动态漫对白角色）")
+        drafts.append(NS(name=sp, appearance=app, tags=[]))
+        metas[sp] = v
+    if drafts:
+        persist_assets(db, data_dir, project_id,
+                       NS(characters=drafts, scenes=[], props=[]))
+    slug = get_project(db, project_id)["slug"]
+    lib = voice_library_names(data_dir, slug)
+    bound = 0
+    for sp in speakers:   # 已存在的同名角色也补绑（仅当 voice 为空）
+        v = voices_meta.get(sp) or {}
+        app = f"性别：{v.get('gender') or ''}\n年龄：{v.get('age') or ''}岁"
+        voice = match_voice(app, v.get("voice", ""), library=lib)
+        if voice:
+            conn = db.connect()
+            cur = conn.execute(
+                "UPDATE assets SET voice=? WHERE id=("
+                " SELECT a.id FROM assets a JOIN project_assets pa ON pa.asset_id=a.id"
+                " WHERE pa.project_id=? AND a.name=? AND a.kind='character'"
+                " AND a.voice='')", (voice, project_id, sp))
+            conn.commit()
+            bound += cur.rowcount
+    return len(drafts) or bound
 
 
 def _extract_characters_from_prompts(db, data_dir, project_id) -> int:
@@ -381,13 +495,16 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> i
     system = (
         "你是漫改电影的美术指导。给定漫画页面，提取角色、场景和重要道具。\n"
         "输出 JSON：\n"
-        '{"characters":[{"name":"角色名","appearance":"外貌行模板"}],\n'
+        '{"characters":[{"name":"角色名","appearance":"外貌行模板","suggested_voice":"库内音色名"}],\n'
         ' "scenes":[{"name":"场景名","appearance":"场景描述"}],\n'
         ' "props":[{"name":"道具名","appearance":"道具描述"}]}\n'
         "外貌行模板格式（每行一项）：性别：\\n年龄：\\n发色发型：\\n服装：\\n…\n"
         "场景描述：空间结构、光线氛围、色调、时代风格。\n"
         "道具描述：外观形状、材质质感、颜色纹样。\n"
-        "只输出 JSON，不解释。")
+        "只输出 JSON，不解释。\n\n"
+        "角色音色（角色音色系统）：suggested_voice 从下方可用音色库中"
+        "按角色年龄/性别/气质选最贴切的；拿不准按 性别×年龄 基线选。\n\n"
+        "可用音色库（suggested_voice 只能从中选）：\n" + _voice_lib(db, data_dir, project_id))
     content = [{"type": "text", "text": "提取这些漫画页面中的所有角色、场景和重要道具："}]
     for s in shots:
         png = data_to_abs(data_dir, f"projects/{slug}/shots/{s['seq']}/kf_start.png")
@@ -447,6 +564,24 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> i
         return 0
     persist_assets(db, data_dir, project_id,
                    NS(characters=char_ns, scenes=scene_ns, props=prop_ns))
+    # 角色音色绑定（2026-08-31）：建议优先（库内名），非法走性别×年龄基线
+    from .voices import match_voice
+    from .voicelib import voice_library_names
+    lib = voice_library_names(data_dir, proj["slug"])
+    conn = db.connect()
+    for c in (data.get("characters") or []):
+        name = str(c.get("name") or "").strip()
+        if not name:
+            continue
+        app = _to_str(c.get("appearance"))
+        voice = match_voice(app, str(c.get("suggested_voice") or ""), library=lib)
+        if voice:
+            conn.execute(
+                "UPDATE assets SET voice=? WHERE id=("
+                " SELECT a.id FROM assets a JOIN project_assets pa ON pa.asset_id=a.id"
+                " WHERE pa.project_id=? AND a.name=? AND a.kind='character')",
+                (voice, project_id, name))
+    conn.commit()
     parts = []
     if char_ns:
         parts.append(f"角色 {len(char_ns)}：{', '.join(c.name for c in char_ns)}")

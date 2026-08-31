@@ -112,3 +112,22 @@ def test_list_voices_origins(tmp_path):
     assert by["项目同名"] == "project"   # 同名覆盖
     from comic_studio.engine.voices import VOICE_PRESETS
     assert any(r["name"] == "高冷御姐" and r.get("missing") for r in rows)  # 未生成的预设也列出
+
+
+def test_voice_library_prompt_and_match_with_custom(tmp_path):
+    """音色库 → LLM 注入清单（2026-08-31 用户需求）：预设带性别+描述、自定义带来源；
+    match_voice 认自定义名（同名直连优先于基线兜底）。"""
+    from comic_studio.engine import voicelib
+    from comic_studio.engine.voices import match_voice
+    (tmp_path / "voices" / "custom").mkdir(parents=True)
+    (tmp_path / "voices" / "custom" / "御姐专属.flac").write_bytes(b"x")
+    (tmp_path / "projects" / "p1" / "voices").mkdir(parents=True)
+    (tmp_path / "projects" / "p1" / "voices" / "小雪专属.flac").write_bytes(b"x")
+    lib = voicelib.voice_library_prompt(tmp_path, project="p1")
+    assert "高冷御姐（女声，预设）" in lib and "sultry" in lib
+    assert "御姐专属（全局自定义音色）" in lib
+    assert "小雪专属（项目级自定义音色）" in lib
+    # match_voice：库内自定义名命中；库外建议回落基线
+    names = voicelib.voice_library_names(tmp_path, project="p1")
+    assert match_voice("性别：女 年龄：30岁", "御姐专属", library=names) == "御姐专属"
+    assert match_voice("性别：女 年龄：30岁", "库里没有的", library=names) == "温柔少女"

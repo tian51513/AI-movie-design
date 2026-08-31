@@ -42,11 +42,10 @@ EXTRACT_SYSTEM = """你是小说改编漫剧的资产分析师。从给定的小
 3. 关键道具（props）：name、description（外观、材质、尺寸、时代与文化风格——
    如肚兜/罗裳等须写明"中式古风"及形制细节，避免生成模型误读为现代物品）
 只提取对画面呈现有意义的条目；路人一般不建角色。
-每个角色另给 suggested_voice：从以下 15 个预设音色中按年龄/性别/气质/着装
-选最贴切的一个（枚举外值会被忽略）：萝莉/高冷御姐/正太/大叔/软萌甜妹/深沉男声/
-浪漫女声/文艺女生/温柔少女/播音男声/播音女声/温柔淑女/元气少女/老年男声/老年女声；
-拿不准时按 性别×年龄 选基线档（女童→萝莉 男童→正太 青年女→温柔少女 青年男→深沉男声
-中年女→温柔淑女 中年男→大叔 老年女→老年女声 老年男→老年男声）。
+每个角色另给 suggested_voice：按年龄/性别/气质/着装从随提示附上的「可用音色库」
+清单中选最贴切的一个（含用户自定义音色；清单外值会被忽略，走性别×年龄基线：
+女童→萝莉 男童→正太 青年女→温柔少女 青年男→深沉男声 中年女→温柔淑女
+中年男→大叔 老年女→老年女声 老年男→老年男声）。
 
 只输出一个 JSON 对象：{"characters":[{"name","role","appearance","tags","suggested_voice"}],
 "scenes":[{"name","description","tags"}],"props":[{"name","description","tags"}]}"""
@@ -116,6 +115,17 @@ def merge_analyses(client: LLMClient, results: list[AssetsAnalysis],
     return level[0], Usage(total_prompt, total_completion)
 
 
+
+
+def _system_with_voices(db, data_dir, project_id) -> str:
+    """系统词 + 当前音色库清单（2026-08-31 用户需求：LLM 对着真实可用库挑，
+    自定义音色也能被分配）。"""
+    from ..projects import get_project
+    from ..voicelib import voice_library_prompt
+    proj = get_project(db, project_id)
+    lib = voice_library_prompt(data_dir, proj["slug"] if proj else None)
+    return EXTRACT_SYSTEM + "\n\n可用音色库（suggested_voice 只能从中选）：\n" + lib
+
 def analyze_project(db: Database, data_dir: Path, project_id: int,
                     client_factory: ClientFactory | None = None,
                     max_chars: int = 8000) -> list[int]:
@@ -145,7 +155,8 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
                  project_id=project_id)
         t0 = time.monotonic()
         result, usage = ask_validated(
-            extract_client, EXTRACT_SYSTEM, chunk, AssetsAnalysis,
+            extract_client, _system_with_voices(db, data_dir, project_id),
+            chunk, AssetsAnalysis,
             on_retry=lambda reason: emit_log(db, "llm", "warn", f"校验重试：{reason}",
                                              project_id=project_id))
         emit_log(db, "llm", "info",
@@ -172,10 +183,13 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
     # 音色自动匹配（2026-08-30 用户需求）：LLM 建议优先，性别×年龄基线兜底；
     # 只写默认匹配，人工绑定（assets.voice 已有值）不覆盖
     from ..voices import match_voice
+    from ..voicelib import voice_library_names
+    _lib = voice_library_names(data_dir, proj["slug"])
     conn = db.connect()
     n_voice = 0
     for ch in final.characters:
-        voice = match_voice(ch.appearance, getattr(ch, "suggested_voice", ""))
+        voice = match_voice(ch.appearance, getattr(ch, "suggested_voice", ""),
+                            library=_lib)
         if not voice:
             continue
         cur = conn.execute(
