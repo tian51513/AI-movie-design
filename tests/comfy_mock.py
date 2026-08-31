@@ -119,11 +119,15 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
                     H.audio_uploads.append(m.group(1).decode())
                 self._json({"name": m.group(1).decode() if m else "unnamed"})
             elif self.path.startswith("/upload/image"):
+                # 2026-08-31：真机音频也走 /upload/image——按扩展名归类记录
                 m = re.search(rb'filename="([^"]+)"', body)
-                if m:
-                    H.uploads.append(m.group(1).decode())
+                fname = m.group(1).decode() if m else "unnamed"
+                if fname.lower().endswith((".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac")):
+                    H.audio_uploads.append(fname)
+                else:
+                    H.uploads.append(fname)
                 H.upload_overwrites.append(b"name=\"overwrite\"" in body)
-                self._json({"name": m.group(1).decode() if m else "unnamed"})
+                self._json({"name": fname, "subfolder": "", "type": "input"})
             elif self.path == "/prompt":
                 H.n += 1
                 try:

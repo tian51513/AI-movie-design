@@ -52,23 +52,21 @@ class ComfyClient:
                               files={"image": (name, f, "image/png")})
                 resp.raise_for_status()
 
-    # Phase 2 音色（2026-08-30）：音频后缀 → /upload/audio；mime 表兜底 octet-stream
+    # Phase 2 音色（2026-08-31 真机教训）：真 ComfyUI 无 /upload/audio 端点（405），
+    # 音频同样走 /upload/image 存入 input（LoadAudio 从 input 读）；仅 mime 按后缀给
     _AUDIO_MIMES = {".mp3": "audio/mpeg", ".wav": "audio/wav", ".flac": "audio/flac",
                     ".ogg": "audio/ogg", ".m4a": "audio/mp4", ".aac": "audio/aac"}
 
     def upload_media(self, path: Path, name: str) -> None:
-        """按后缀分流上传：图片 → /upload/image，音频 → /upload/audio（音色样本）。"""
-        suffix = Path(name).suffix.lower()
-        if suffix in self._AUDIO_MIMES:
-            with self._client() as c:
-                with open(path, "rb") as f:
-                    resp = c.post(f"{self.base_url}/upload/audio",
-                                  params={"overwrite": "true"},
-                                  data={"overwrite": "true"},
-                                  files={"file": (name, f, self._AUDIO_MIMES[suffix])})
-                    resp.raise_for_status()
-            return
-        self.upload_image(path, name)
+        """上传媒体：图片/音频统一走 /upload/image（真机实测音频同端点）。"""
+        mime = self._AUDIO_MIMES.get(Path(name).suffix.lower(), "image/png")
+        with self._client() as c:
+            with open(path, "rb") as f:
+                resp = c.post(f"{self.base_url}/upload/image",
+                              params={"overwrite": "true"},
+                              data={"overwrite": "true"},
+                              files={"image": (name, f, mime)})
+                resp.raise_for_status()
 
     def submit(self, workflow: dict, client_id: str) -> str:
         with self._client() as c:

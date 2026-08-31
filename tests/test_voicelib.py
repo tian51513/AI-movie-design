@@ -54,7 +54,7 @@ def test_voicelib_generate_preset(tmp_path, monkeypatch):
 
 
 def test_voicelib_process_upload(tmp_path, monkeypatch):
-    """上传处理：clone 模板注入裁剪起止 + 音频文件名（后缀保留）。"""
+    """上传处理：clone 模板注入裁剪起止 + 音频文件名（后缀保留）→ staging。"""
     from comic_studio.engine.comfy.client import ComfyClient
     from comic_studio.engine import voicelib
     from comfy_mock import comfy_server
@@ -63,9 +63,13 @@ def test_voicelib_process_upload(tmp_path, monkeypatch):
     with comfy_server("ok", audio=True) as m:
         c = ComfyClient(m.base_url)
         out = voicelib.process_upload(c, tmp_path, src, name="试音",
-                                      start=45, dur=60, scope="global")
+                                      start=45, dur=60)
         assert out.exists() and "试音" in out.name
-        assert out.parent == tmp_path / "voices" / "custom"
+        assert out.parent == tmp_path / "voices" / "_staging"   # 先试听再确认入库
+        final = voicelib.confirm_staged(tmp_path, f"voices/_staging/试音{out.suffix}",
+                                        "试音", scope="global")
+        assert final.parent == tmp_path / "voices" / "custom" and final.exists()
+        assert not out.exists()
         wf = m.prompts[0]["prompt"]
         assert wf["79"]["inputs"]["start_index"] == 45
         assert wf["79"]["inputs"]["duration"] == 60
@@ -73,8 +77,8 @@ def test_voicelib_process_upload(tmp_path, monkeypatch):
         assert m.audio_uploads and m.audio_uploads[0].endswith(".mp3")
 
 
-def test_voicelib_process_upload_project_scope(tmp_path, monkeypatch):
-    """项目级作用域：样本落项目 voices 目录。"""
+def test_voicelib_confirm_project_scope(tmp_path, monkeypatch):
+    """项目级作用域：staging 确认后样本落项目 voices 目录；非法路径被拦。"""
     from comic_studio.engine.comfy.client import ComfyClient
     from comic_studio.engine import voicelib
     from comfy_mock import comfy_server
@@ -82,9 +86,14 @@ def test_voicelib_process_upload_project_scope(tmp_path, monkeypatch):
     src = tmp_path / "raw2.wav"; src.write_bytes(b"RIFF")
     with comfy_server("ok", audio=True) as m:
         c = ComfyClient(m.base_url)
-        out = voicelib.process_upload(c, tmp_path, src, name="专属", start=0, dur=10,
-                                      scope="project", project="myproj")
-        assert out.parent == tmp_path / "projects" / "myproj" / "voices"
+        out = voicelib.process_upload(c, tmp_path, src, name="专属", start=0, dur=10)
+        final = voicelib.confirm_staged(tmp_path, f"voices/_staging/专属{out.suffix}",
+                                        "专属", scope="project", project="myproj")
+        assert final.parent == tmp_path / "projects" / "myproj" / "voices"
+        # 防穿越：staging 外的路径拒绝
+        import pytest as _pytest
+        with _pytest.raises(ValueError):
+            voicelib.confirm_staged(tmp_path, "projects/myproj/novel.txt", "x")
 
 
 def test_list_voices_origins(tmp_path):

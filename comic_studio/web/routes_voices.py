@@ -46,7 +46,8 @@ def list_voices(request: Request, project_id: int | None = None):
 def upload_voice(request: Request, file: UploadFile, name: str = Form(...),
                  scope: str = Form("global"), project_id: int | None = Form(None),
                  start: float = Form(0), dur: float = Form(60)):
-    """上传音色处理：走 qwen_tts_clone 模板（裁剪起止 + 默认句克隆）。"""
+    """上传音色处理：走 qwen_tts_clone 模板（裁剪起止 + 默认句克隆）→
+    **staging 暂存**，前端试听后 confirm 入库 / discard 放弃（2026-08-31）。"""
     if scope not in ("global", "project"):
         raise HTTPException(422, "scope 只能是 global 或 project")
     if scope == "project" and not project_id:
@@ -54,20 +55,58 @@ def upload_voice(request: Request, file: UploadFile, name: str = Form(...),
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in (".mp3", ".wav", ".flac", ".ogg", ".m4a"):
         raise HTTPException(422, f"不支持的音频格式: {suffix or '(无后缀)'}")
-    slug = _slug(request, project_id)
+    _slug(request, project_id)  # 校验项目存在（staging 阶段不需要 slug）
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(file.file.read())
         tmp_path = Path(tmp.name)
     try:
         out = voicelib.process_upload(_comfy(request), request.app.state.data_dir,
-                                      tmp_path, name=name, start=start, dur=dur,
-                                      scope=scope, project=slug)
+                                      tmp_path, name=name, start=start, dur=dur)
     except Exception as e:
         raise HTTPException(502, f"音色处理失败（ComfyUI TTS）: {e}")
     finally:
         tmp_path.unlink(missing_ok=True)
     rel = out.relative_to(request.app.state.data_dir).as_posix()
-    return {"name": name, "scope": scope, "path": rel}
+    return {"name": name, "scope": scope, "staged": rel, "url": f"/media/{rel}"}
+
+
+@router.post("/api/voices/confirm")
+def confirm_voice(request: Request, body: dict = Body(...)):
+    """试听满意 → 确认入库（staging → 全局/项目级正式目录）。"""
+    staged = str(body.get("staged") or "")
+    name = str(body.get("name") or "").strip()
+    scope = body.get("scope") or "global"
+    if not staged or not name:
+        raise HTTPException(422, "staged 与 name 必填")
+    if scope not in ("global", "project"):
+        raise HTTPException(422, "scope 只能是 global 或 project")
+    slug = _slug(request, body.get("project_id"))
+    if scope == "project" and not slug:
+        raise HTTPException(422, "项目级音色必须带 project_id")
+    try:
+        out = voicelib.confirm_staged(request.app.state.data_dir, staged, name,
+                                      scope=scope, project=slug)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    return {"name": name, "scope": scope,
+            "path": out.relative_to(request.app.state.data_dir).as_posix()}
+
+
+@router.post("/api/voices/discard")
+def discard_voice(request: Request, body: dict = Body(...)):
+    """放弃暂存样本。"""
+    staged = str(body.get("staged") or "")
+    if not staged:
+        raise HTTPException(422, "staged 必填")
+    try:
+        voicelib.discard_staged(request.app.state.data_dir, staged)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    return {"discarded": staged}
 
 
 @router.post("/api/voices/presets/generate")

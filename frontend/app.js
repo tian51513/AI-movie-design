@@ -51,7 +51,7 @@ function data() {
     moTemplate: '', modelChoices: [], moError: '',
     ollamaModels: [], showThink: false, loadingModels: false,
     activeKind: '全部', perRow: 2, lightbox: null,
-    voices: [], voicesBusy: '', vUpBusy: false, vUpErr: '',
+    voices: [], voicesBusy: '', vUpBusy: false, vUpErr: '', vStaged: null,
     vUp: { file: null, name: '', start: 45, dur: 60 },
     pUp: { file: null, name: '', start: 45, dur: 60 }, projVoiceOpen: false,
     editAssetVoice: '',
@@ -1090,21 +1090,25 @@ const methods = {
   },
   async genMissingPresets() {
     const missing = this.voices.filter(v => v.origin === 'preset' && v.missing);
-    for (const v of missing) {
-      this.voicesBusy = `生成 ${v.name}（${missing.indexOf(v) + 1}/${missing.length}）…`;
-      try {
-        const r = await fetch('/api/voices/presets/generate', {
-          method: 'POST', headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ name: v.name }) });
-        if (!r.ok) { alert(`${v.name} 生成失败：${(await r.json()).detail || r.status}`); break; }
-      } catch (e) { alert(`${v.name} 生成异常: ${e}`); break; }
+    try {
+      for (const v of missing) {
+        this.voicesBusy = `生成 ${v.name}（${missing.indexOf(v) + 1}/${missing.length}）…`;
+        try {
+          const r = await fetch('/api/voices/presets/generate', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name: v.name }) });
+          if (!r.ok) { alert(`${v.name} 生成失败：${(await r.json()).detail || r.status}`); break; }
+          await this.loadVoices(this.project && this.project.id);  // 逐个刷新（用户可见进度）
+        } catch (e) { alert(`${v.name} 生成异常: ${e}`); break; }
+      }
+    } finally {
+      this.voicesBusy = '';
+      await this.loadVoices(this.project && this.project.id);
     }
-    this.voicesBusy = '';
-    await this.loadVoices(this.project && this.project.id);
   },
   async submitVoiceUpload(scope) {
     const f = scope === 'project' ? this.pUp : this.vUp;
-    this.vUpBusy = true; this.vUpErr = '';
+    this.vUpBusy = true; this.vUpErr = ''; this.vStaged = null;
     try {
       const fd = new FormData();
       fd.append('file', f.file); fd.append('name', f.name);
@@ -1112,10 +1116,32 @@ const methods = {
       if (scope === 'project') fd.append('project_id', this.project.id);
       const r = await fetch('/api/voices/upload', { method: 'POST', body: fd });
       if (!r.ok) { this.vUpErr = `失败：${(await r.json()).detail || r.status}`; return; }
-      f.file = null; f.name = '';
-      this.projVoiceOpen = false;
-      await this.loadVoices(this.project && this.project.id);
+      const body = await r.json();
+      this.vStaged = { staged: body.staged, url: body.url, name: f.name, scope };
+      f.file = null;   // 保留 name 供确认入库展示
+      this.projVoiceOpen = true;   // 项目入口保持展开显示试听条
     } finally { this.vUpBusy = false; }
+  },
+  async confirmVoice(scope) {
+    if (!this.vStaged) return;
+    const r = await fetch('/api/voices/confirm', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ staged: this.vStaged.staged, name: this.vStaged.name,
+                             scope,
+                             ...(scope === 'project' ? { project_id: this.project.id } : {}) }) });
+    if (!r.ok) { this.vUpErr = `入库失败：${(await r.json()).detail || r.status}`; return; }
+    this.vStaged = null;
+    (scope === 'project' ? this.pUp : this.vUp).name = '';
+    this.projVoiceOpen = false;
+    await this.loadVoices(this.project && this.project.id);
+  },
+  async discardVoice() {
+    if (!this.vStaged) return;
+    await fetch('/api/voices/discard', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ staged: this.vStaged.staged }) });
+    this.vStaged = null;
+    this.vUp.name = ''; this.pUp.name = '';
   },
   async delVoice(v, scope) {
     if (!confirm(`删除音色「${v.name}」？`)) return;

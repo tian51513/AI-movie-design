@@ -279,7 +279,7 @@
     <h2>音色库</h2>
     <div class="row">
       <div class="card" style="flex:1.4;min-width:340px">
-        <h3>预设音色（15）<button @click="genMissingPresets" :disabled="voicesBusy"
+        <h3>预设音色（15）<button @click="genMissingPresets" :disabled="!!voicesBusy || vUpBusy"
                 style="font-size:12px;padding:3px 10px;margin-left:10px">{{ voicesBusy || '生成缺失' }}</button></h3>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
           <div v-for="v in voices.filter(x=>x.origin==='preset')" :key="v.name"
@@ -310,7 +310,15 @@
             <input type="number" v-model.number="vUp.dur" min="5" style="width:80px"></label>
           <button @click="submitVoiceUpload('global')" :disabled="vUpBusy || !vUp.file || !vUp.name">
             {{ vUpBusy ? '⏳ 克隆处理中…' : '⬆ 上传并生成样本' }}</button>
-          <span v-if="vUpErr" style="color:#f87171;font-size:12px">{{ vUpErr }}</span></p>
+          <span v-if="vUpErr" style="color:#f87171;font-size:12px">{{ vUpErr }}</span>
+          <span v-if="vStaged" style="border:1px solid #f59e0b;border-radius:6px;padding:6px;display:flex;flex-direction:column;gap:6px">
+            <b style="font-size:12px;color:#f59e0b">试听「{{ vStaged.name }}」——满意再入库</b>
+            <audio :src="vStaged.url" controls style="height:28px"></audio>
+            <span style="display:flex;gap:8px">
+              <button style="background:#16a34a;font-size:12px;padding:3px 10px" @click="confirmVoice('global')">✓ 确认入库</button>
+              <button style="background:#dc2626;font-size:12px;padding:3px 10px" @click="discardVoice">✕ 放弃</button>
+            </span>
+          </span></p>
         <div v-for="v in voices.filter(x=>x.origin==='global')" :key="v.name"
              style="display:flex;align-items:center;gap:8px;margin-top:6px">
           <b style="font-size:13px">{{ v.name }}</b>
@@ -663,6 +671,11 @@
         长度<input type="number" v-model.number="pUp.dur" min="5" style="width:60px">
         <button @click="submitVoiceUpload('project')" :disabled="vUpBusy || !pUp.file || !pUp.name"
                 style="font-size:11px;padding:2px 8px">{{ vUpBusy ? '⏳' : '上传' }}</button>
+      </span>
+      <span v-if="vStaged && projVoiceOpen" style="display:inline-flex;gap:6px;align-items:center;border:1px solid #f59e0b;border-radius:6px;padding:4px 8px;font-size:12px">
+        🎧 <audio :src="vStaged.url" controls style="height:24px"></audio>
+        <button style="background:#16a34a;font-size:11px;padding:2px 8px" @click="confirmVoice('project')">✓ 入库</button>
+        <button style="background:#dc2626;font-size:11px;padding:2px 8px" @click="discardVoice">✕ 放弃</button>
       </span>
     </p>
     <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">

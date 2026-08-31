@@ -42,31 +42,53 @@ def test_upload_and_delete_scopes(tmp_path, monkeypatch):
                      files={"novel": ("n.txt", io.BytesIO("正文".encode()),
                                       "text/plain")}).json()["id"]
 
-        def fake_upload(comfy, data_dir, audio_path, *, name, start, dur,
-                        scope, project):
-            sub = (Path(data_dir) / "projects" / project / "voices"
-                   if scope == "project" else Path(data_dir) / "voices" / "custom")
-            out = sub / f"{name}.flac"
+        def fake_upload(comfy, data_dir, audio_path, *, name, start, dur):
+            out = Path(data_dir) / "voices" / "_staging" / f"{name}.flac"
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_bytes(b"fLaC")
             return out
         monkeypatch.setattr("comic_studio.web.routes_voices.voicelib.process_upload",
                             fake_upload)
+        # ① 上传 → staging（未入正式库，列表不可见）
         r = c.post("/api/voices/upload",
                    data={"name": "试音", "scope": "global", "start": 45, "dur": 60},
                    files={"file": ("a.mp3", io.BytesIO(b"ID3"), "audio/mpeg")})
         assert r.status_code == 200, r.text
-        assert r.json()["path"] == "voices/custom/试音.flac"
-        r2 = c.post("/api/voices/upload",
+        staged = r.json()["staged"]
+        assert staged == "voices/_staging/试音.flac" and r.json()["url"].startswith("/media/")
+        assert not any(x["name"] == "试音" for x in c.get("/api/voices").json())
+        # ② 试听满意 → 确认入库
+        r2 = c.post("/api/voices/confirm",
+                    json={"staged": staged, "name": "试音", "scope": "global"})
+        assert r2.status_code == 200 and r2.json()["path"] == "voices/custom/试音.flac"
+        assert any(x["name"] == "试音" for x in c.get("/api/voices").json())
+        # ③ 项目级：上传→staging→confirm 带 project_id
+        r3 = c.post("/api/voices/upload",
                     data={"name": "专属", "scope": "project", "project_id": pid,
                           "start": 0, "dur": 10},
                     files={"file": ("b.wav", io.BytesIO(b"RIFF"), "audio/wav")})
-        assert r2.status_code == 200 and "projects/音色剧/voices" in r2.json()["path"]
-        # 项目视角列表带 origin
+        staged3 = r3.json()["staged"]
+        r4 = c.post("/api/voices/confirm",
+                    json={"staged": staged3, "name": "专属", "scope": "project",
+                          "project_id": pid})
+        assert r4.status_code == 200 and "projects/音色剧/voices" in r4.json()["path"]
         row = next(x for x in c.get(f"/api/voices?project_id={pid}").json()
                    if x["name"] == "专属")
         assert row["origin"] == "project"
-        # 删除
+        # ④ 放弃：staging 删除
+        r5 = c.post("/api/voices/upload",
+                    data={"name": "丢弃", "scope": "global", "start": 0, "dur": 5},
+                    files={"file": ("c.mp3", io.BytesIO(b"ID3"), "audio/mpeg")})
+        r6 = c.post("/api/voices/discard", json={"staged": r5.json()["staged"]})
+        assert r6.status_code == 200
+        assert c.post("/api/voices/confirm",
+                      json={"staged": r5.json()["staged"], "name": "丢弃",
+                            "scope": "global"}).status_code == 404
+        # ⑤ 防目录穿越
+        assert c.post("/api/voices/confirm",
+                      json={"staged": "../projects/音色剧/novel.txt", "name": "x",
+                            "scope": "global"}).status_code in (404, 422)
+        # ⑥ 删除正式音色
         assert c.delete("/api/voices/试音?scope=global").status_code == 200
         assert c.delete(f"/api/voices/专属?scope=project&project_id={pid}").status_code == 200
         assert c.delete("/api/voices/试音?scope=global").status_code == 404

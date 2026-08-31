@@ -32,21 +32,28 @@ def _scan(dir_: Path) -> dict[str, Path]:
 
 def list_voices(data_dir, project: str | None = None) -> list[dict]:
     """音色库列表：15 预设（未生成也列出，标 missing）+ 全局自定义 + 项目自定义。
-    同名时项目级优先（origin=project）。"""
+    同名时项目级优先（origin=project）。
+    path 统一存 data 相对 POSIX 路径（前端拼 /media 直链——Windows 服务的
+    反斜杠绝对路径曾是试听 404 根因，2026-08-31 真机教训）。"""
     data_dir = Path(data_dir)
+
+    def rel(p: Path | None) -> dict:
+        if p is None:
+            return {"missing": True}
+        return {"path": p.resolve().relative_to(data_dir.resolve()).as_posix()}
+
     presets = _scan(data_dir / "voices" / "presets")
     glob = _scan(data_dir / "voices" / "custom")
     proj = _scan(data_dir / "projects" / project / "voices") if project else {}
     rows: dict[str, dict] = {}
     for p in VOICE_PRESETS:  # 预设打底
-        path = presets.get(p["name"])
         rows[p["name"]] = {"name": p["name"], "origin": "preset", "gender": p["gender"],
                            "timbre": p["timbre"], "instruct": voice_instruct(p["name"]),
-                           **({"path": str(path)} if path else {"missing": True})}
+                           **rel(presets.get(p["name"]))}
     for name, path in glob.items():
-        rows[name] = {"name": name, "origin": "global", "path": str(path)}
+        rows[name] = {"name": name, "origin": "global", **rel(path)}
     for name, path in proj.items():  # 项目级最后写入 = 同名优先
-        rows[name] = {"name": name, "origin": "project", "path": str(path)}
+        rows[name] = {"name": name, "origin": "project", **rel(path)}
     return sorted(rows.values(), key=lambda r: (r["origin"] != "preset", r["name"]))
 
 
@@ -94,14 +101,41 @@ def generate_preset(comfy, data_dir, name: str) -> Path:
 
 
 def process_upload(comfy, data_dir, audio_path: Path, *, name: str,
-                   start: float, dur: float, scope: str = "global",
-                   project: str | None = None) -> Path:
-    """上传音色处理（VoiceClone 模板）：裁剪起止 + 默认句克隆 → 样本落库。"""
-    if scope == "project":
-        assert project, "项目级音色必须给 project slug"
-    dest_dir = (Path(data_dir) / "projects" / project / "voices" if scope == "project"
-                else Path(data_dir) / "voices" / "custom")
+                   start: float, dur: float) -> Path:
+    """上传音色处理（VoiceClone 模板）：裁剪起止 + 默认句克隆 → **staging 暂存**
+    （2026-08-31 用户需求：先试听，确认后才入正式库）。返回暂存样本路径。"""
     return _run_template(comfy, "qwen_tts_clone",
                          params={"start_index": start, "duration": dur},
                          images=[{"slot": "audio", "path": str(audio_path)}],
-                         dest_dir=dest_dir, name=name)
+                         dest_dir=Path(data_dir) / "voices" / "_staging", name=name)
+
+
+def _staging_abs(data_dir, staged_rel: str) -> Path:
+    """暂存相对路径 → 绝对路径（防目录穿越：必须在 voices/_staging 之下）。"""
+    root = (Path(data_dir) / "voices" / "_staging").resolve()
+    p = (Path(data_dir) / staged_rel).resolve()
+    if p != root and root not in p.parents:
+        raise ValueError(f"非法暂存路径: {staged_rel}")
+    if not p.exists():
+        raise FileNotFoundError(f"暂存样本不存在: {staged_rel}")
+    return p
+
+
+def confirm_staged(data_dir, staged_rel: str, name: str,
+                   scope: str = "global", project: str | None = None) -> Path:
+    """试听满意 → 确认入库：staging 样本移入正式目录（全局/项目级）。"""
+    import shutil
+    if scope == "project":
+        assert project, "项目级音色必须给 project slug"
+    src = _staging_abs(data_dir, staged_rel)
+    dest_dir = (Path(data_dir) / "projects" / project / "voices" if scope == "project"
+                else Path(data_dir) / "voices" / "custom")
+    dest = dest_dir / f"{name}{src.suffix}"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(src), str(dest))
+    return dest
+
+
+def discard_staged(data_dir, staged_rel: str) -> None:
+    """放弃：删暂存样本。"""
+    _staging_abs(data_dir, staged_rel).unlink()
