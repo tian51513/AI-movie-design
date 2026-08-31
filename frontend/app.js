@@ -193,8 +193,26 @@ const methods = {
     // （图片允许：真实拖拽会吞掉 click，不会误开灯箱）
     e.preventDefault();  // 阻止文本选择/按钮聚焦/原生图片拖拽
     if (!navMode) e.currentTarget.classList.add('no-snap');  // 拖拽期间关掉 scroll-snap（否则边缘自动滚动被吸附拉回）
-    this.marquee = { x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY,
-                     add: e.shiftKey, base: e.shiftKey ? [...this.shotSel] : [],
+    this._marqueeStart(e.currentTarget, e.clientX, e.clientY, e.shiftKey);
+  },
+  // 触控框选（2026-09-01 手机局域网）：仅导航数字条绑定（touch-action:none）；
+  // 无 Shift 等价——扫框=全新选择，追加用各镜 checkbox
+  marqueeTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    this._marqueeStart(e.currentTarget, t.clientX, t.clientY, false);
+    window.addEventListener('touchmove', this.marqueeTouchMove);
+    window.addEventListener('touchend', this.marqueeTouchEnd);
+  },
+  marqueeTouchMove(e) {
+    const t = e.touches[0];
+    if (t) this.marqueeMove({ clientX: t.clientX, clientY: t.clientY });
+  },
+  marqueeTouchEnd() { this.marqueeUp(); },
+  _marqueeStart(zone, x, y, add) {
+    const navMode = zone.id === 'shotNav';
+    this.marquee = { x0: x, y0: y, x1: x, y1: y,
+                     add: add, base: add ? [...this.shotSel] : [],
                      moved: false, nav: navMode };
     window.addEventListener('mousemove', this.marqueeMove);
     window.addEventListener('mouseup', this.marqueeUp);
@@ -269,6 +287,8 @@ const methods = {
     window.removeEventListener('mousemove', this.marqueeMove);
     window.removeEventListener('mouseup', this.marqueeUp);
     window.removeEventListener('blur', this.marqueeUp);
+    window.removeEventListener('touchmove', this.marqueeTouchMove);
+    window.removeEventListener('touchend', this.marqueeTouchEnd);
     if (this._marqueeRaf) { cancelAnimationFrame(this._marqueeRaf); this._marqueeRaf = null; }
     // 真实拖拽后吞掉紧随的一次 click（防误开灯箱/误跳转；挂在起拖容器上）
     const zone = m && m.nav ? document.getElementById('shotNav') : strip;
@@ -304,6 +324,14 @@ const methods = {
     const v = this.viewer;
     if (!v || v.list.length < 2) return;
     v.idx = (v.idx + d + v.list.length) % v.list.length;  // 循环回绕
+  },
+  // 触控滑动翻页（2026-09-01）：水平位移 >40px 判定翻页；点按/竖滑不误触
+  viewerTouchStart(e) { this._vswipe = e.touches.length === 1 ? e.touches[0].clientX : null; },
+  viewerTouchEnd(e) {
+    const x0 = this._vswipe; this._vswipe = null;
+    if (x0 === null || !this.viewer || !e.changedTouches.length) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 40) this.navViewer(dx < 0 ? 1 : -1);
   },
   closeViewer() {
     this.viewer = null;
