@@ -26,12 +26,18 @@ class ProviderConfig(BaseModel):
 
 
 class ComfyConfig(BaseModel):
+    # extra=allow（2026-08-31 教训）：白名单漏键会让前端发来的新开关在
+    # model_dump() 时被静默丢弃——保存"成功"但永远存不上（无台词静音失忆根因）
+    model_config = {"extra": "allow"}
     base_url: str = ""
     # 导演台性能开关（引擎注入覆盖模板值；OOM 时开清显存）
     director_clear_vram: bool = False
     director_export_source: bool = False
     director_batch_relay: bool = True  # P7-H 批间首帧接力
     director_mix: bool = True  # P7-J 整片混音（TTS+字幕）
+    mute_quiet_shots: bool = False  # 无台词镜静音（2026-08-30）
+    min_free_vram_gb: float = 8  # gpu_comfy 前置显存门槛（2026-08-28）
+    director_batch_frames: int = 512  # 快车道分批帧数（2026-08-28）
 
 
 TEMPLATE_MAP_KEYS = {"character_views", "t2i", "ref2va", "fl2v", "t2v", "i2v",
