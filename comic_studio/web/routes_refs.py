@@ -97,6 +97,14 @@ def gen_batch(request: Request, project_id: int):
     return {"enqueued": n}
 
 
+@router.post("/api/jobs/purge")
+def purge_jobs(request: Request, days: int = Query(default=7, ge=1, le=90)):
+    """jobs 历史清理（2026-09-01）：done/failed/cancelled 超 N 天删除。"""
+    from ..engine.jobs import purge_finished_jobs
+    n = purge_finished_jobs(request.app.state.db, days)
+    return {"purged": n, "days": days}
+
+
 @router.delete("/api/projects/{project_id}/queue")
 def clear_queue(request: Request, project_id: int):
     """一键清空队列/取消任务：pending/running → cancelled；

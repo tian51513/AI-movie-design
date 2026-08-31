@@ -767,6 +767,13 @@ const methods = {
     if (resp.ok) { alert('已保存'); } else { alert('保存失败：' + (await resp.text())); }
   },
 
+  async purgeJobs() {
+    if (!confirm('删除 7 天前已完成/失败/取消的任务记录（含快照）？\n进行中与近 7 天记录保留。')) return;
+    const r = await fetch('/api/jobs/purge?days=7', { method: 'POST' });
+    if (r.ok) { const b = await r.json(); alert(`已清理 ${b.purged} 条历史任务记录`); }
+    else alert('清理失败：' + await r.text());
+  },
+
   // ===== 日志 =====
   startLogsPolling() {
     this.stopLogsPolling();

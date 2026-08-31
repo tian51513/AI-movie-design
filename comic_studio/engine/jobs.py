@@ -159,3 +159,17 @@ def collect_reattach_candidates(db, jtype="gen_shot") -> list:
     return db.connect().execute(
         "SELECT * FROM jobs WHERE status='running' AND type=? AND comfy_prompt_id IS NOT NULL",
         (jtype,)).fetchall()
+
+
+def purge_finished_jobs(db, days: int = 7) -> int:
+    """历史清理（2026-09-01 用户决策）：done/failed/cancelled 超 N 天删除。
+
+    3.6 万失败行（含肥大 snapshot_json）撑爆失败计数且拖慢全表扫描；
+    pending/running 与窗口内记录保留（审计/对账用）。"""
+    conn = db.connect()
+    cur = conn.execute(
+        "DELETE FROM jobs WHERE status IN ('done','failed','cancelled') "
+        "AND finished_at IS NOT NULL AND finished_at < datetime('now', ?)",
+        (f"-{int(days)} days",))
+    conn.commit()
+    return cur.rowcount

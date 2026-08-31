@@ -550,6 +550,10 @@
         {{ saving ? '保存中…' : '💾 保存全部设置' }}</button>
       <span class="muted" style="margin-left:8px">改模型/路由/映射立即生效</span>
     </p>
+    <p class="muted" style="margin-top:8px;font-size:13px">🧹 任务历史
+      <button @click="purgeJobs" style="font-size:12px;padding:3px 10px;margin-left:6px"
+              title="删除 7 天前已完成/失败/取消的任务记录（含工作流快照）——数据库瘦身、失败计数归零；进行中与近 7 天记录保留">清理 7 天前记录</button>
+    </p>
   </main>
   <main v-else-if="view==='projects'">
     <h2>项目 <span style="float:right;font-size:13px">
