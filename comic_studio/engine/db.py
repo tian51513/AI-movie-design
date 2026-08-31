@@ -192,6 +192,8 @@ MIGRATIONS: list[str] = [
     ALTER TABLE shots ADD COLUMN gesture TEXT NOT NULL DEFAULT '';
     ALTER TABLE shots ADD COLUMN gaze TEXT NOT NULL DEFAULT '';
     ALTER TABLE shots ADD COLUMN continuity TEXT NOT NULL DEFAULT '';""",
+    # 32 B 级组 seed（2026-09-01）：延续组内视频 seed 继承 +3/镜防画风漂移
+    """ALTER TABLE shots ADD COLUMN seed INTEGER;""",
 ]
 
 

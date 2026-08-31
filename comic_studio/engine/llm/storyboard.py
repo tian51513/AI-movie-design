@@ -79,6 +79,11 @@ EMOTIONS = ("平静", "温柔", "开心", "轻笑", "严肃", "愤怒", "激动"
 CONTINUITY_MODES = ("全程继承", "微变延续", "焦点跟随", "缓慢推镜", "缓慢拉镜", "场景断点")
 
 
+def _random_seed() -> int:
+    import random
+    return random.randint(0, 2 ** 31 - 1)
+
+
 class ChunkStoryboard(BaseModel):
     shots: list[ShotDraft] = Field(min_length=1)
 
@@ -265,23 +270,42 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2
         from ..projects import get_project as _gp
         _proj = _gp(db, project_id)
         _dur = float(_proj["default_shot_duration"]) if _proj else 5.0
-        staged.extend(SimpleNamespace(
-            text_span=d.text_span, description=d.description, shot_type=d.shot_type,
-            camera=d.camera,
-            # 台词组拆镜 A1（2026-09-01）：有对白的镜用 LLM 估时长（机械钳 4~15，
-            # 多句台词要说完）；无对白镜维持项目统一段时长
-            duration=(min(15.0, max(4.0, float(d.duration)))
-                      if (d.dialogue or []) else _dur),
-            workflow_type=d.workflow_type,
-            emotion=d.emotion if d.emotion in EMOTIONS else "",
-            gesture=d.gesture.strip(),
-            gaze=d.gaze.strip(),
-            continuity=d.continuity if d.continuity in CONTINUITY_MODES else "",
-            ledger={"must_appear": d.must_appear, "must_keep": d.must_keep,
-                    "may_change": d.may_change, "must_avoid": d.must_avoid,
-                    "dialogue": d.dialogue},
-            character_ids=d.character_ids, scene_ids=d.scene_ids, prop_ids=d.prop_ids,
-            depends_on=None) for d in result.shots)
+        # B 级（2026-09-01）：延续状态在 staging 逐镜累积——组 seed 继承与
+        # workflow 机械校准都要看「上一镜的 continuity」
+        _prev_con = ""
+        _prev_seed = None
+        for d in result.shots:
+            con = d.continuity if d.continuity in CONTINUITY_MODES else ""
+            wf = d.workflow_type
+            # B4：本镜延续上一镜（继承/微变）而 LLM 给了 ref2va → 机械校准 fl2v
+            # （首尾帧接力链连贯性最好）；t2v 是 LLM 的「全新画面」判断，永不覆盖
+            if con in ("全程继承", "微变延续") and wf == "ref2va":
+                wf = "fl2v"
+            # B5：延续组内 seed 继承 +3/镜（同场景画风漂移防治）；断点/空→组首随机
+            if con and con != "场景断点" and _prev_seed is not None:
+                seed = _prev_seed + 3
+            else:
+                seed = _random_seed()
+            _prev_con, _prev_seed = con, seed
+            staged.append(SimpleNamespace(
+                text_span=d.text_span, description=d.description, shot_type=d.shot_type,
+                camera=d.camera,
+                # 台词组拆镜 A1（2026-09-01）：有对白的镜用 LLM 估时长（机械钳 4~15，
+                # 多句台词要说完）；无对白镜维持项目统一段时长
+                duration=(min(15.0, max(4.0, float(d.duration)))
+                          if (d.dialogue or []) else _dur),
+                workflow_type=wf,
+                emotion=d.emotion if d.emotion in EMOTIONS else "",
+                gesture=d.gesture.strip(),
+                gaze=d.gaze.strip(),
+                continuity=con,
+                seed=seed,
+                ledger={"must_appear": d.must_appear, "must_keep": d.must_keep,
+                        "may_change": d.may_change, "must_avoid": d.must_avoid,
+                        "dialogue": d.dialogue},
+                character_ids=d.character_ids, scene_ids=d.scene_ids,
+                prop_ids=d.prop_ids,
+                depends_on=None))
     # 对白机械兜底（2026-08-27 真机：nsfwvision-v3 等 RP 模型把对白写进描述正文、
     # 不填 schema 的 dialogue 字段 → TTS/字幕链路全空）：从 text_span 引号原文提取，
     # 说话人取引号前后最近角色名；LLM 已填的镜不动

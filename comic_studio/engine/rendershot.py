@@ -326,6 +326,16 @@ def ensure_keyframes(db, data_dir, shot_id, comfy, job_id=None):
     return kf_start, kf_end
 
 
+def _video_seed(shot) -> int:
+    """B5 组 seed（2026-09-01）：延续组内继承 +3/镜防画风漂移——拆解时算好
+    存 shots.seed；无值（老项目/未重拆）随机兜底。"""
+    try:
+        s = shot["seed"] if shot is not None and "seed" in shot.keys() else None
+    except TypeError:
+        s = getattr(shot, "seed", None) if shot is not None else None
+    return int(s) if s else random.randint(0, 2 ** 31 - 1)
+
+
 def render_shot(db, data_dir, shot_id, comfy, job_id=None,
                 first_frame_png: Path | None = None) -> Path:
     shot = get_shot(db, shot_id)
@@ -361,7 +371,7 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
                   + prompt + "\n" + KF_NO_CUT)
 
     params = {
-        "seed": random.randint(0, 2**31 - 1),
+        "seed": _video_seed(shot),
         "megapixels": proj["video_megapixels"],
         "multiple": proj["video_multiple"],
         "duration": max(4, int(shot["duration"])),
