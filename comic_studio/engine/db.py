@@ -179,6 +179,13 @@ MIGRATIONS: list[str] = [
     PRAGMA foreign_keys=ON;""",
     # 29 角色绑定音色（2026-08-30 Phase 2）：音色名（预设/全局/项目级）或样本相对路径
     """ALTER TABLE assets ADD COLUMN voice TEXT NOT NULL DEFAULT '';""",
+    # 30 jobs 索引（2026-09-01 事故复盘）：零索引 + 3.6 万行（含肥大 snapshot_json）
+    # → GET /shots 每镜 2 次 _last_job 全表扫描，564 镜项目 95s——慢响应乱序
+    # 覆盖造成「分镜内容错乱」；claim_next_job 的 pending 扫描同受益
+    """CREATE INDEX IF NOT EXISTS idx_jobs_shot ON jobs(shot_id, type, id);
+    CREATE INDEX IF NOT EXISTS idx_jobs_asset ON jobs(asset_id, type, id);
+    CREATE INDEX IF NOT EXISTS idx_jobs_proj ON jobs(project_id, type, id);
+    CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status, type);""",
 ]
 
 

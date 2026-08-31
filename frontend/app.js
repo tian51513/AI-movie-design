@@ -474,7 +474,10 @@ const methods = {
     // 项目参数输入中跳过 project 整体替换——否则轮询把正在键入的值顶回旧值，
     // 手动输入"存不上"（点加减按钮立即触发 change 所以没事；2026-08-27 真机）
     if (!this.editingProject) {
-      this.project = await (await fetch(`/api/projects/${this.project.id}`)).json();
+      const pid = this.project?.id;
+      const p = await (await fetch(`/api/projects/${pid}`)).json();
+      if (this.project?.id !== pid) return;  // 慢响应乱序：项目已切走，丢弃（2026-09-01 分镜错乱配套）
+      this.project = p;
     }
     // P7-E 章节结构（有章节才显示章节选择；默认全选范围）
     try {
@@ -856,7 +859,13 @@ const methods = {
     if (mode === 'shots' && this.project) await this.loadShots();
   },
   async loadShots() {
-    this.shots = await (await fetch(`/api/projects/${this.project.id}/shots`)).json();
+    const pid = this.project?.id;
+    if (!pid) return;
+    const data = await (await fetch(`/api/projects/${pid}/shots`)).json();
+    // 慢响应乱序防串台（2026-09-01 分镜错乱根因配套）：等响应回来时若已切到
+    // 别的项目，丢弃——否则 A 项目的分镜会盖进 B 项目的页面
+    if (this.project?.id !== pid) return;
+    this.shots = data;
   },
   async startSplit() {
     if (this.shots.length && !confirm('已存在分镜，重新拆解将覆盖（提示词会丢失）。继续？')) return;
