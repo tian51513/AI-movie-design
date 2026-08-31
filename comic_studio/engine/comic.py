@@ -110,28 +110,21 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
             "4. 对白：如有对白气泡，按阅读顺序整理\n"
             "5. 画风：检查漫画原画风格与目标画风是否一致，不一致则加入转换指令"
             + style_hint +
-            "\n\n输出（直接输出，不解释）——严格按以下骨架，节标题逐字使用、独占一行；"
-            "内容用英文（2026-08-31 统一语言），角色名保留中文原名，对白只写中文：\n"
+            "\n\n输出（直接输出，不解释）——严格按以下骨架，节标题逐字使用、独占一行"
+            "（2026-08-31 实测回调：中文输出）：\n"
             "subject_definitions:\n"
-            "<角色名> is a character from <Picture 1>; the appearance is provided by that "
-            "image (one line per main character)\n"
-            "summary:\nOne sentence: core content and camera move of this shot\n"
+            "<角色名> 是来自 <Picture 1> 的人物，其外观由该图提供（每个主要角色一条）\n"
+            "summary:\n一句话：本镜核心内容与运镜\n"
             "retention_analysis:\n"
-            "<角色名>: fully_preserved - keep <hairstyle/costume/identity features> "
-            "(one line per character)\n"
+            "<角色名>：fully_preserved - 保持<发型/服装/身份特征>（每个角色一条）\n"
             "detailed_description:\n"
-            "[One passage of environment and lighting]\n"
-            "Main characters' concrete actions (use character names, never pronouns) + "
-            "expression changes + camera movement (e.g. camera pushes in slowly); dialogue "
-            "as: <角色名> says in natural Mandarin: <d>[Mandarin Chinese]台词</d>; "
-            "background characters brief but not omitted\n"
+            "[环境与光线一段]\n"
+            "主要角色具体动作（用角色名不用代词）+ 表情变化 + 镜头运动（如「镜头缓缓推近」），"
+            "80~120 字；对白写「角色名：「台词」」；背景角色简略但不遗漏\n"
             "overall_soundscape:\n"
-            "English only: dialogue voices and scene-consistent ambient/action sounds at "
-            "subtle volume; if no dialogue write 'No dialogue, no humming.'\n"
+            "只写与画面一致的对白声/环境声/动作音，音量轻微；无对白时写明无对白无哼唱\n"
             "non_diegetic_music: N/A\n"
-            "Last line (copy verbatim): No subtitles, logos, watermarks, or text.\n"
-            "Key: describe the animation in progress, not a static panel; style-transfer "
-            "requirements (if any) go into detailed_description.")
+            "关键：描述「正在发生的动画」，不是静态画面；画风转换要求（若有）写进 detailed_description。")
     else:
         # 动态漫模式：翻页过渡（现有行为）
         system = (
@@ -143,21 +136,24 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
             "3. 对白排序：按漫画阅读顺序（从上到下、从右到左）整理两格中出现的所有对白，"
             "标注说话人；多段对白按先后顺序排列\n"
             "4. 推导：从第一格到第二格，人物做了什么动作？说了什么话？镜头怎么动？\n\n"
-            "输出格式（直接输出，不解释）——内容用英文（2026-08-31 统一语言），"
-            "角色名保留中文原名，对白只写中文：\n"
-            "integrated_multimodal_description: [Shot 1] <English: the specific transition "
-            "from the first panel to the second — character names + actions + expression "
-            "changes + camera movement + environment changes, 80~150 words; dialogue in "
-            "reading order as: <角色名> says in natural Mandarin: "
-            "<d>[Mandarin Chinese]台词</d>>\n"
-            "overall_soundscape: <English: only dialogue voices and scene-consistent "
-            "ambient/action sounds at subtle volume; if no dialogue write "
-            "'No dialogue, no humming.'>\n"
+            "输出格式（直接输出，不解释；2026-08-31 实测回调中文 + 六模块骨架）——"
+            "严格按以下骨架，节标题逐字使用、独占一行：\n"
+            "subject_definitions:\n"
+            "<角色名> 是本镜画面中的人物，其外观由画面提供（每个主要角色一条）\n"
+            "summary:\n一句话：本镜核心内容与运镜\n"
+            "retention_analysis:\n"
+            "<角色名>：fully_preserved - 保持<发型/服装/身份特征>（每个角色一条）\n"
+            "detailed_description:\n"
+            "[环境与光线一段]\n"
+            "[Shot 1] 从第一格到第二格的具体过渡——人物名字+动作+表情变化+镜头运动+"
+            "环境变化，80~120 字；对白按漫画实际顺序写「角色名：「台词」」\n"
+            "overall_soundscape:\n"
+            "只写与画面一致的对白声/环境声/动作音，音量轻微；无对白时写明无对白无哼唱\n"
             "non_diegetic_music: N/A\n"
-            "Last line (copy verbatim): No subtitles, logos, watermarks, or text.\n"
             "必须描述「从第一格到第二格的具体过渡过程」，不能只描述单帧静态画面。\n"
             "对白必须按漫画中的实际顺序排列，不能乱序。\n\n"
-            "对白说话人音色标注（角色音色系统）：输出最后一行严格按此格式（不要代码块）：\n"
+            "对白说话人音色标注（角色音色系统）：本镜有对白时，最后一行严格按此格式输出"
+            "（不要代码块；无对白的镜不要输出此行）：\n"
             'VOICES:{"voices":[{"name":"说话人","gender":"女","age":8,"voice":"库内音色名"}]}\n'
             "只列真实人物（旁白/画外音/内心独白不要）；gender 男/女，age 数字；\n"
             "voice 从下方可用音色库中按角色年龄/性别/气质选最贴切的。\n\n"
@@ -213,7 +209,7 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
             # 结构化+音频协议落库前统一自愈（2026-08-30）：缺音频节机械补、
             # 超界 Picture 引用清理、无字幕后缀——与小说链路同等待遇
             from .prompts.gen import heal_h3_prompt
-            text, _heal_fixes = heal_h3_prompt(text, s, max_pics=2, mode='E')
+            text, _heal_fixes = heal_h3_prompt(text, s, max_pics=2)
             # 从提示词中提取对白（「角色名：「台词」」格式）→ ledger.dialogue
             # 联动 TTS 配音 + 字幕烧录链路（2026-08-29 漫画对白需求）
             dialogue = _extract_dialogue(text)

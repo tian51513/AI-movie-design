@@ -182,8 +182,8 @@ def test_from_comic_api(tmp_path):
 
 
 def test_describe_shots_motion_uses_integrated_format_and_heals(tmp_path):
-    """动态漫读图提示词升级（2026-08-30 用户实测 H3 格式）：system 要求
-    integrated_multimodal_description + 音频协议；落库前过 heal（缺音频节机械补）。"""
+    """动态漫读图提示词（2026-08-31 定稿：H3 六模块骨架中文输出）：
+    system 要求六模块 + VOICES；落库前过 heal（缺音频节机械补）。"""
     from comic_studio.engine.comic import import_comic, describe_shots
     from comic_studio.engine.llm.provider import LLMClient, Usage
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -196,17 +196,20 @@ def test_describe_shots_motion_uses_integrated_format_and_heals(tmp_path):
             super().__init__("http://x", "k", "v")
         def raw_chat(self, messages, temperature=0.3, max_tokens=None):
             seen.append(messages)
-            return ("integrated_multimodal_description: [Shot 1] 少年推开门走进房间，"
-                    "镜头缓推，他说：「我回来了。」"), Usage(10, 20)
+            return ("subject_definitions:\n少年 是本镜画面中的人物\nsummary:\n少年推门。\n"
+                    "retention_analysis:\n少年：fully_preserved - 保持黑发\n"
+                    "detailed_description:\n[Shot 1] 少年推开门走进房间，镜头缓推，"
+                    "他说：「我回来了。」"), Usage(10, 20)
 
     describe_shots(db, tmp_path / "data", pid, FakeVision())
     system = seen[0][0]["content"]
-    assert "integrated_multimodal_description" in system
+    for sec in ("subject_definitions:", "summary:", "retention_analysis:",
+                "detailed_description:", "overall_soundscape:", "non_diegetic_music"):
+        assert sec in system, sec
     assert "overall_soundscape" in system and "non_diegetic_music" in system and "N/A" in system
     from comic_studio.engine.shots import list_shots
     for s in list_shots(db, pid):
-        assert s["prompt"].startswith("integrated_multimodal_description:")
-        # 2026-08-31 统一语言：E 式 heal（不补中文音频字段），中文尾缀兜底保留
+        assert "detailed_description:" in s["prompt"]
         assert "无字幕" in s["prompt"]
 
 

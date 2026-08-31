@@ -99,9 +99,10 @@ def test_mode_e_english_control_spec():
     assert "subject_definitions:" not in spec
 
 
-def test_new_project_defaults_to_mode_e(tmp_path):
+def test_new_project_defaults_to_mode_d(tmp_path):
+    """2026-08-31 实测回调：语言与杂音无关（有对白即抑制），默认回 D 中文。"""
     from comic_studio.engine.db import Database
     from comic_studio.engine.projects import create_project
     db = Database(tmp_path / "s.db"); db.migrate()
-    row = create_project(db, tmp_path / "d", "E默认剧", "9:16", "t")
-    assert row["prompt_mode"] == "E"
+    row = create_project(db, tmp_path / "d", "D默认剧", "9:16", "t")
+    assert row["prompt_mode"] == "D"

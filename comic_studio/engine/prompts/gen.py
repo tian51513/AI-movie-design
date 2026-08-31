@@ -262,7 +262,7 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
     proj = get_project(db, shot["project_id"])
     if mode is None:
         mode = (proj["prompt_mode"]
-                if proj is not None and proj["prompt_mode"] in PROMPT_MODES else "E")
+                if proj is not None and proj["prompt_mode"] in PROMPT_MODES else "D")
     assets_by_id = {a["id"]: a for a in list_project_assets(db, shot["project_id"])}
     # 模板实际图槽数（动态——导入多槽模板不再被 2 封顶）
     from ..workflows import registry as _reg

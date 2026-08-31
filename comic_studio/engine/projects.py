@@ -25,7 +25,7 @@ def create_project(db: Database, data_dir: Path, name: str,
                    style_vis: str = "", comic_mode: str = "",
                    video_megapixels: float = 0.4, video_multiple: int = 32,
                    video_speed: str = "标准", default_shot_duration: float = 5.0,
-                   prompt_mode: str = "E", lora_realism: float = 0.75,
+                   prompt_mode: str = "D", lora_realism: float = 0.75,
                    target_duration: float = 0.0) -> sqlite3.Row:
     assert aspect_ratio in ASPECT_RATIOS, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}"
     conn = db.connect()
@@ -95,7 +95,7 @@ def update_video_params(db: Database, project_id: int, *, video_megapixels: floa
         updates["default_shot_duration"] = default_shot_duration
     if prompt_mode is not None:
         if prompt_mode not in ("A", "B", "C", "D", "E"):
-            raise ValueError("prompt_mode 必须为 'A'~'E'（E=英文控制式默认）")
+            raise ValueError("prompt_mode 必须为 'A'~'E'（D=默认中文）")
         updates["prompt_mode"] = prompt_mode
     if lora_realism is not None:
         if not (0 <= lora_realism <= 1.0):
