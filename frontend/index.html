@@ -25,7 +25,8 @@
   .film-strip::-webkit-scrollbar { height: 8px; }
   .film-strip::-webkit-scrollbar-thumb { background: #2c3540; border-radius: 4px; }
   .film-card { flex: 0 0 min(66vw, 900px); scroll-snap-align: start; max-height: 78vh;
-               overflow-y: auto; }
+               overflow-y: auto;
+               content-visibility: auto; contain-intrinsic-size: auto 500px; }  /* 屏外卡跳过布局/绘制——564 镜横滑不卡（2026-09-01 移动端实测） */
   .film-card.sel { border-color: #f59e0b; box-shadow: 0 0 0 1px #f59e0b; }
   .media-box { display: block; height: 200px; max-width: 100%; margin: 0 auto;
                object-fit: contain; border-radius: 4px; cursor: zoom-in; background: #0d1117; }
