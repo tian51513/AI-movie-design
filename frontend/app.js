@@ -717,11 +717,9 @@ const methods = {
                   extra_body: ebOnline },
       },
       llm_routing: { ...this.settingsForm.routing },
-      comfy: { base_url: this.settingsForm.comfy.base_url || '',
-               director_clear_vram: !!this.settingsForm.comfy.director_clear_vram,
-               director_export_source: !!this.settingsForm.comfy.director_export_source,
-               director_batch_relay: this.settingsForm.comfy.director_batch_relay !== false,
-               director_mix: this.settingsForm.comfy.director_mix !== false },
+      // comfy 全量透传（2026-08-31 教训：手工罗列键漏了 mute_quiet_shots/
+      // min_free_vram_gb/director_batch_frames——保存后被默认值覆盖，开关"失忆"）
+      comfy: { ...this.settingsForm.comfy, base_url: this.settingsForm.comfy.base_url || '' },
       template_map: { t2i: this.settingsForm.t2i_tm || null,
                       character_views: this.settingsForm.cvTm || null,
                       keyframe: this.settingsForm.kfTm || null,
