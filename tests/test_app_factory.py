@@ -13,6 +13,17 @@ def test_health(tmp_path):
         assert resp.status_code == 200 and resp.json() == {"status": "ok"}
 
 
+def test_frontend_assets_no_cache_header(tmp_path):
+    """前端资源必须 no-cache（2026-09-01 事故：无 Cache-Control → 浏览器启发式
+    缓存旧 app.js，新 HTML+旧 JS 混跑出现怪相；no-cache 带 ETag 重验证零成本）。"""
+    app = create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data", start_workers=False)
+    with TestClient(app) as client:
+        for path in ("/", "/static/app.js"):
+            resp = client.get(path)
+            assert resp.status_code == 200, path
+            assert resp.headers.get("cache-control") == "no-cache", path
+
+
 def test_migrations_applied_on_startup(tmp_path):
     db_path = tmp_path / "t.db"
     app = create_app(db_path=db_path, data_dir=tmp_path / "data", start_workers=False)

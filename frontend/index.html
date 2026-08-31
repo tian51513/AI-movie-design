@@ -62,15 +62,24 @@
     input, select, textarea { font-size: 16px; }
     button { min-height: 32px; }
   }
+  .m-bottombar { display: none; }  /* 桌面不渲染视觉层（必须在媒体查询前——同优先级后者胜） */
   @media (max-width: 768px) {
     header { padding: 10px 12px; }
-    main { padding: 12px; }
+    main { padding: 12px 12px 128px; }  /* 底部留操作栏空间 */
     .hdr-actions { float: none; display: flex; width: 100%; justify-content: flex-end; }
     .film-card { flex: 0 0 min(92vw, 900px); }
     .grid-2 { grid-template-columns: 1fr; }
     .proj-row { flex-wrap: wrap; }
     .proj-name { min-width: 0; }
     .proj-excerpt { flex: 1; min-width: 120px; max-width: 100%; }
+    main > h2 { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
+                overflow-x: auto; white-space: nowrap; scrollbar-width: none; }  /* 标题 pill 行横滑 */
+    /* 移动端底部操作栏（2026-09-01 专用版）：关键决策 + 监控状态 */
+    .m-bottombar { display: block; position: fixed; left: 0; right: 0; bottom: 0;
+                   z-index: 60; background: #1d2530f2; border-top: 1px solid #2c3540;
+                   padding: 8px 12px calc(10px + env(safe-area-inset-bottom)); }
+    .m-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .m-actions button { flex: 1 1 auto; min-width: 104px; min-height: 44px; font-size: 14px; }
   }
 </style>
 </head>
@@ -968,14 +977,38 @@
         <video controls :src="m.url" style="max-width:100%;border-radius:6px;margin-top:6px;border:1px solid #2c3540"></video>
       </div>
     </div>
-    <h3>执行日志（{{ logs.length }}）</h3>
-    <div id="logbox" style="background:#0d1117;border:1px solid #2c3540;border-radius:8px;padding:10px;max-height:320px;overflow-y:auto;font-family:ui-monospace,monospace;font-size:13px;line-height:1.7">
+    <h3>执行日志（{{ logs.length }}）
+      <button @click="logsOpen=!logsOpen" style="font-size:12px;padding:3px 10px;margin-left:8px"
+              :title="logsOpen ? '折叠日志区' : '展开日志区'">{{ logsOpen ? '收起' : '展开' }}</button></h3>
+    <div v-show="logsOpen" id="logbox" style="background:#0d1117;border:1px solid #2c3540;border-radius:8px;padding:10px;max-height:320px;overflow-y:auto;font-family:ui-monospace,monospace;font-size:13px;line-height:1.7">
       <div v-for="l in logs" :key="l.id">
         <span class="muted">{{ l.time.slice(5, 19) }}</span>
         <span class="pill">{{ l.source }}</span>
         <span :style="{color: logColor(l.level)}">{{ l.message }}</span>
       </div>
       <div v-if="!logs.length" class="muted">暂无日志——分析等活动产生后此处实时滚动显示</div>
+    </div>
+    <!-- 移动端底部操作栏（≤768px 专用，桌面 display:none）：关键决策大按钮 + 监控状态行。
+         按钮全部复用既有 methods，与页面内按钮同源零新逻辑 -->
+    <div class="m-bottombar">
+      <div class="muted" style="font-size:12px;margin-bottom:6px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span v-if="project.autopilot" :title="'autopilot 当前动作：' + (project.autopilot_action?.detail || '')">⚡ {{ autopilotActionLabel() }}</span>
+        <span>运行 {{ queue.running }} · 排队 {{ queue.pending }} · 失败 {{ queue.failed }}</span>
+        <span>ComfyUI <span :style="{color: queue.comfy_ok?'#4ade80':'#f87171'}">●</span></span>
+      </div>
+      <div class="m-actions">
+        <button v-if="project.autopilot && project.stage!=='merged'" @click="setAutopilot(project, false)"
+                style="background:#dc2626">⏹ 停止自动</button>
+        <button v-else-if="project.stage!=='merged'" @click="setAutopilot(project, true)"
+                style="background:#16a34a"
+                title="全自动：分析→参考图→门1→拆分镜→提示词→门2→渲染→门3→合成成片">🚀 一键出片</button>
+        <button v-if="hasActiveJobs" @click="stopJobs" style="background:#7f1d1d"
+                title="取消本项目全部待跑任务 + ComfyUI 清队中断在跑的">⏹ 停止任务</button>
+        <button v-if="project.stage==='analyzed' && allHaveViews" @click="passGate1" style="background:#16a34a">✓ 过门1</button>
+        <button v-if="allShotsReady && project.stage==='assets_ready'" @click="passGate2" style="background:#16a34a">✓ 过门2</button>
+        <button v-if="allShotsRendered && project.stage==='storyboard_ready'" @click="passGate3" style="background:#16a34a">✓ 过门3</button>
+        <button v-if="project.stage==='rendered'" @click="startMerge" style="background:#7c3aed">🎬 合成成片</button>
+      </div>
     </div>
   </main>
 

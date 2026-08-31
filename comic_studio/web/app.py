@@ -191,7 +191,16 @@ def create_app(db_path: str | Path = "./data/studio.db",
 
     @app.get("/")
     def index():
-        return FileResponse(_FRONTEND)
+        return FileResponse(_FRONTEND, headers={"Cache-Control": "no-cache"})
+
+    @app.middleware("http")
+    async def _frontend_no_cache(request, call_next):
+        """前端资源禁启发式缓存（2026-09-01 事故：浏览器缓存旧 app.js 与新
+        HTML 混跑）；no-cache 仍带 ETag 重验证，未变时 304 零成本。"""
+        resp = await call_next(request)
+        if request.url.path.startswith(("/static/", "/vendor/")):
+            resp.headers["Cache-Control"] = "no-cache"
+        return resp
 
     from fastapi.staticfiles import StaticFiles
     vendor_dir = _FRONTEND.parent / "vendor"

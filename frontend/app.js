@@ -66,6 +66,9 @@ function data() {
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
       optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文' },
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
+    // 日志折叠（2026-09-01 移动版）：桌面默认展开、窄屏默认折叠（详情页缩短，成片/视频优先露出）
+    logsOpen: (typeof window !== 'undefined' && window.matchMedia)
+      ? window.matchMedia('(min-width: 769px)').matches : true,
     splitTargetCount: null, shotSel: [], editingProject: false,
     marquee: null,  // 分镜框选拖拽状态 {x0,y0,x1,y1, add, base[], moved}，null=未拖拽
     chapters: [], splitChFrom: null, splitChTo: null, splitAllChapters: true,
