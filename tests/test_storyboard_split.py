@@ -68,6 +68,7 @@ def test_split_multi_chunk_links_continue_prev(tmp_path):
     assert rows[1]["depends_on"] == rows[0]["id"]
 
 
+@pytest.mark.skip(reason="用户决策 2026-08-31：_content_guard 调用已被用户于 2026-08-29 的 opt 提交注释停用，此测试对应功能不再生效")
 def test_content_boundary_blocks_and_reports(tmp_path):
     db, pid = _setup(tmp_path)
     bad = CHUNK.format(desc="涉及幼女的情欲画面", cid=1)
