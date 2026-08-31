@@ -206,9 +206,8 @@ def test_describe_shots_motion_uses_integrated_format_and_heals(tmp_path):
     from comic_studio.engine.shots import list_shots
     for s in list_shots(db, pid):
         assert s["prompt"].startswith("integrated_multimodal_description:")
-        assert "overall_soundscape:" in s["prompt"]          # heal 兜底
-        assert "non_diegetic_music: N/A" in s["prompt"]
-        assert "无字幕" in s["prompt"]                        # 结尾后缀协议
+        # 2026-08-31 统一语言：E 式 heal（不补中文音频字段），中文尾缀兜底保留
+        assert "无字幕" in s["prompt"]
 
 
 def test_describe_shots_film_uses_skeleton_and_heals(tmp_path):
@@ -235,7 +234,7 @@ def test_describe_shots_film_uses_skeleton_and_heals(tmp_path):
     assert "overall_soundscape" in system and "N/A" in system
     from comic_studio.engine.shots import list_shots
     for s in list_shots(db, pid):
-        assert "non_diegetic_music: N/A" in s["prompt"] and "无字幕" in s["prompt"]
+        assert "无字幕" in s["prompt"]   # 2026-08-31 统一语言：E 式 heal
 
 
 def test_describe_motion_builds_speaker_assets_with_voices(tmp_path):
