@@ -55,7 +55,7 @@ WSL 用 `.venv`，Windows 原生用 `.venv-win`（均已 git-ignore）。
 ./start.sh        # 自动建 venv/装依赖（首次），带热重载
 ```
 
-或手动：`python3 -m venv .venv` → `source .venv/bin/activate`（必须 source）→ `pip install -e ".[dev]"` → `uvicorn comic_studio.web.app:app --port 8190 --reload`
+或手动：`python3 -m venv .venv` → `source .venv/bin/activate`（必须 source）→ `pip install -e ".[dev]"` → `uvicorn comic_studio.web.app:app --host 0.0.0.0 --port 8190 --reload`
 
 不想激活可全程前缀：`.venv/bin/pip ...` / `.venv/bin/uvicorn ...` / `.venv/bin/pytest -q`
 
@@ -65,7 +65,7 @@ WSL 用 `.venv`，Windows 原生用 `.venv-win`（均已 git-ignore）。
 start.bat
 ```
 
-或手动：`python -m venv .venv-win` → `.venv-win\Scripts\activate` → `pip install -e ".[dev]"` → `uvicorn comic_studio.web.app:app --port 8190 --reload`
+或手动：`python -m venv .venv-win` → `.venv-win\Scripts\activate` → `pip install -e ".[dev]"` → `uvicorn comic_studio.web.app:app --host 0.0.0.0 --port 8190 --reload`
 
 ### 网络说明（WSL ↔ Windows 侧服务）
 

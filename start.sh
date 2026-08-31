@@ -4,5 +4,5 @@ set -e
 cd "$(dirname "$0")"
 [ -d .venv ] || python3 -m venv .venv
 [ -x .venv/bin/uvicorn ] || .venv/bin/pip install -e ".[dev]"
-echo "→ http://localhost:8190"
-exec .venv/bin/uvicorn comic_studio.web.app:app --port 8190 --reload
+echo "→ http://localhost:8190 （局域网：http://$(hostname -I | awk '{print $1}'):8190）"
+exec .venv/bin/uvicorn comic_studio.web.app:app --host 0.0.0.0 --port 8190 --reload
