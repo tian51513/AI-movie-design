@@ -73,6 +73,25 @@ def test_put_comfy_base_url(tmp_path):
         assert c.get("/api/settings").json()["comfy"]["base_url"] == "http://192.168.3.1:8188"
 
 
+def test_put_comfy_partial_update_keeps_base_url(tmp_path):
+    """事故复盘（2026-09-01）：comfy 局部更新不得把未提供的键冲成默认——
+    全量 model_dump 曾让 base_url 被覆盖成空串，36k 渲染任务以 AttributeError 批量失败。"""
+    with _client(tmp_path) as c:
+        assert c.put("/api/settings", json={"comfy": {"base_url": "http://127.0.0.1:8188"}}).status_code == 200
+        resp = c.put("/api/settings", json={"comfy": {"mute_quiet_shots": True}})
+        assert resp.status_code == 200
+        assert c.get("/api/settings").json()["comfy"]["base_url"] == "http://127.0.0.1:8188"
+
+
+def test_put_comfy_empty_base_url_rejected(tmp_path):
+    """base_url 显式传空 → 422（渲染/参考图/快车道全依赖它，误清空必须在门口拦下）。"""
+    with _client(tmp_path) as c:
+        assert c.put("/api/settings", json={"comfy": {"base_url": "http://127.0.0.1:8188"}}).status_code == 200
+        resp = c.put("/api/settings", json={"comfy": {"base_url": ""}})
+        assert resp.status_code == 422
+        assert c.get("/api/settings").json()["comfy"]["base_url"] == "http://127.0.0.1:8188"
+
+
 def test_put_template_map_roundtrip(tmp_path):
     """PUT template_map {t2i: x} 能 roundtrip 读回。"""
     with _client(tmp_path) as c:

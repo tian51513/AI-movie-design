@@ -88,3 +88,11 @@ def set_setting(db: Database, key: str, value) -> None:
         conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
     except Exception:
         pass
+
+
+def ensure_comfy_configured(db: Database) -> None:
+    """ComfyUI 依赖型任务入队前门禁（2026-09-01 事故复盘：base_url 被存成
+    空串 → worker 拿 None client → 36k 任务 AttributeError 批量失败）。"""
+    base = str((get_setting(db, "comfy") or {}).get("base_url") or "").strip()
+    if not base:
+        raise ValueError("ComfyUI 未配置地址（设置页 → 工作流 → ComfyUI base_url 为空）")

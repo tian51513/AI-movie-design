@@ -96,7 +96,13 @@ def update(request: Request, body: SettingsUpdate):
         set_setting(db, "llm_routing", merged)
     if body.comfy is not None:
         merged = get_setting(db, "comfy")
-        merged.update(body.comfy.model_dump())
+        # exclude_unset（2026-09-01 事故复盘）：未提供的键不覆盖——全量
+        # model_dump 会把 base_url 冲成默认空串，36k 渲染任务 AttributeError 批量失败
+        provided = body.comfy.model_dump(exclude_unset=True)
+        if "base_url" in provided and not str(provided["base_url"]).strip():
+            raise HTTPException(422, "ComfyUI 地址不能为空——渲染/参考图/快车道全依赖它；"
+                                    "换地址请直接改写新地址")
+        merged.update(provided)
         set_setting(db, "comfy", merged)
     if body.template_map is not None:
         bad = set(body.template_map) - TEMPLATE_MAP_KEYS

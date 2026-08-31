@@ -72,6 +72,11 @@ class Worker(threading.Thread):
             comfy = None
             try:
                 comfy = self._comfy()
+                # 配置缺失快失败（2026-09-01 事故）：不给 handler 递 None client
+                # 让它在某个 comfy.xxx 上裸崩 AttributeError
+                if comfy is None and job["resource"] == "gpu_comfy":
+                    raise ValueError(
+                        "ComfyUI 未配置地址（设置页 → 工作流 → base_url 为空），任务未执行")
                 if comfy is not None and self.last_template and template_id != self.last_template:
                     comfy.free()  # 模型切换释放（spec §8.3）
                 if comfy is not None and job["resource"] == "gpu_comfy":

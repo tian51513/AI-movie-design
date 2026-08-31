@@ -101,3 +101,21 @@ def test_versions_listing_and_select(tmp_path):
         assert r.status_code == 200 and r.json()["selected"] == "video_v1.mp4"
         assert c.get(f"/api/projects/{pid}/shots").json()[0]["video_url"].endswith("video_v1.mp4")
         assert c.post(f"/api/shots/{ids[0]}/version", json={"file": "video_v9.mp4"}).status_code == 422
+
+
+def test_render_rejected_when_comfy_not_configured(tmp_path):
+    """事故复盘（2026-09-01）：comfy.base_url 为空时入队直接 409——
+    不让任务进队列后以 AttributeError 批量失败（PUT 侧已拦空值，这里直写模拟历史脏数据）。"""
+    with _client(tmp_path) as c:
+        pid = c.post("/api/projects", data={"name": "无地址剧", "aspect_ratio": "16:9"},
+                     files={"novel": ("n.txt", io.BytesIO("文".encode()), "text/plain")}).json()["id"]
+        from comic_studio.engine.projects import set_stage
+        set_stage(c.app.state.db, pid, "storyboard_ready")
+        ids = persist_shots(c.app.state.db, pid, [_shot()])
+        from comic_studio.engine.settings import set_setting
+        comfy = c.get("/api/settings").json()["comfy"]
+        set_setting(c.app.state.db, "comfy", {**comfy, "base_url": ""})
+        r1 = c.post(f"/api/shots/{ids[0]}/render")
+        assert r1.status_code == 409 and "未配置" in r1.text
+        r2 = c.post(f"/api/projects/{pid}/render")
+        assert r2.status_code == 409 and "未配置" in r2.text

@@ -14,6 +14,6 @@ taskkill /f /im python.exe >nul 2>nul
 timeout /t 2 /nobreak >nul
 echo comic_studio - http://localhost:8190
 rem echo LAN URL (open on your phone, same Wi-Fi)
-for /f "delims=" %%i in ('powershell -NoProfile -Command "Get-NetIPAddress -AddressFamily IPv4 ^| Where-Object {$_.IPAddress -like '192.168.*'} ^| Select-Object -First 1 -ExpandProperty IPAddress"') do echo LAN: http://%%i:8190
+for /f "delims=" %%i in ('powershell -NoProfile -Command "Get-NetIPAddress -AddressFamily IPv4 | Where-Object {$_.IPAddress -like '192.168.*'} | Select-Object -First 1 -ExpandProperty IPAddress"') do echo LAN: http://%%i:8190
 .venv-win\Scripts\uvicorn comic_studio.web.app:app --host 0.0.0.0 --port 8190 --reload --log-level warning
 pause

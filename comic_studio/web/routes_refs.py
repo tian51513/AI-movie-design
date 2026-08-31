@@ -9,7 +9,7 @@ from ..engine.jobs import enqueue_job
 from ..engine.paths import data_to_abs
 from ..engine.pipeline_gates import GateStageError, gate_pass
 from ..engine.projects import get_project
-from ..engine.settings import get_setting
+from ..engine.settings import ensure_comfy_configured, get_setting
 
 router = APIRouter(tags=["refs"])
 
@@ -64,6 +64,10 @@ def gen_asset(request: Request, asset_id: int, body: dict | None = Body(default=
         (asset_id,)).fetchone()
     if dup:
         raise HTTPException(409, "该资产的参考图生成已在队列中")
+    try:
+        ensure_comfy_configured(db)  # 配置门禁（2026-09-01 事故）：空地址不入队
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
     jid = enqueue_job(db, "gen_ref", project_id=asset["source_project"],
                       asset_id=asset_id, resource="gpu_comfy",
                       payload={"asset_id": asset_id, "stage": stage})
@@ -78,6 +82,10 @@ def gen_batch(request: Request, project_id: int):
     queued = {r["asset_id"] for r in db.connect().execute(
         "SELECT DISTINCT asset_id FROM jobs WHERE type='gen_ref' "
         "AND asset_id IS NOT NULL AND status IN ('pending','running')")}
+    try:
+        ensure_comfy_configured(db)  # 配置门禁（2026-09-01 事故）：空地址不入队
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
     n = 0
     for a in list_project_assets(db, project_id):
         views = data_to_abs(request.app.state.data_dir, a["library_dir"]) / "views"

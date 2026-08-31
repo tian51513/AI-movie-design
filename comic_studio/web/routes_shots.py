@@ -6,6 +6,7 @@ from fastapi import APIRouter, Body, HTTPException, Request
 
 from ..engine import jobs
 from ..engine.jobs import enqueue_job
+from ..engine.settings import ensure_comfy_configured
 from ..engine.pipeline_gates import GATE_STAGES, GateStageError, gate_pass
 from ..engine.pipeline_jobs import enqueue_llm_job
 from ..engine.projects import get_project, set_stage
@@ -265,6 +266,10 @@ def render_shot(request: Request, shot_id: int, body: dict | None = Body(default
         "AND status IN ('pending','running')", (shot_id,)).fetchone()
     if dup and not force:
         raise HTTPException(409, "该镜头渲染已在队列")
+    try:
+        ensure_comfy_configured(db)  # 配置门禁（2026-09-01 事故）：空地址不入队
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
     jid = enqueue_job(db, "gen_shot", project_id=shot["project_id"],
                       shot_id=shot_id, resource="gpu_comfy",
                       payload={"shot_id": shot_id,
@@ -280,6 +285,10 @@ def render_batch(request: Request, project_id: int):
         raise HTTPException(404, "项目不存在")
     if proj["stage"] != "storyboard_ready":
         raise HTTPException(409, f"阶段 {proj['stage']} 不能渲染（需 storyboard_ready）")
+    try:
+        ensure_comfy_configured(db)  # 配置门禁（2026-09-01 事故）：空地址不入队
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
     queued = {r["shot_id"] for r in db.connect().execute(
         "SELECT DISTINCT shot_id FROM jobs WHERE type='gen_shot' "
         "AND shot_id IS NOT NULL AND status IN ('pending','running')")}
@@ -352,6 +361,10 @@ def render_director(request: Request, project_id: int):
         "AND status IN ('pending','running')", (project_id,)).fetchone()
     if dup:
         raise HTTPException(409, "整段渲染已在队列")
+    try:
+        ensure_comfy_configured(db)  # 配置门禁（2026-09-01 事故）：空地址不入队
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
     jid = enqueue_job(db, "gen_director", project_id=project_id,
                       resource="gpu_comfy", payload={"project_id": project_id})
     return {"job_id": jid}

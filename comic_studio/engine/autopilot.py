@@ -201,6 +201,13 @@ def tick(db, data_dir, project_id) -> dict:
         enqueue_llm_job(db, "analyze", project_id=project_id, payload={"project_id": project_id})
     elif action == "gen_refs":
         from .jobs import enqueue_job
+        try:
+            from .settings import ensure_comfy_configured
+            ensure_comfy_configured(db)  # 配置门禁（2026-09-01 事故）：空地址不入队
+        except ValueError as exc:
+            emit_log(db, "autopilot", "error", f"autopilot 跳过参考图入队：{exc}",
+                     project_id=project_id)
+            return act
         n = 0
         from .pipeline_gates import has_views
         for a in list_project_assets(db, project_id):
@@ -245,6 +252,13 @@ def tick(db, data_dir, project_id) -> dict:
     elif action == "render":
         from .jobs import enqueue_job
         from .rendershot import pick_template_id
+        try:
+            from .settings import ensure_comfy_configured
+            ensure_comfy_configured(db)  # 配置门禁（2026-09-01 事故）：空地址不入队
+        except ValueError as exc:
+            emit_log(db, "autopilot", "error", f"autopilot 跳过渲染入队：{exc}",
+                     project_id=project_id)
+            return act
         conn = db.connect()
         queued = {r["shot_id"] for r in conn.execute(
             "SELECT DISTINCT shot_id FROM jobs WHERE type='gen_shot' AND shot_id IS NOT NULL AND status IN ('pending','running')")}

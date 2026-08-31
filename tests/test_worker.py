@@ -108,3 +108,30 @@ def test_comfy_unreachable_waits_without_consuming(tmp_path):
     assert job["attempts"] <= 1           # claim +1 被回退，尝试预算未消耗（0 或 1 取决于停止时机）
     assert len(calls) > 3                  # 反复重试
     assert "ComfyUnreachable" in job["error"]
+
+
+def test_worker_comfy_job_without_config_fails_clearly(tmp_path):
+    """事故复盘（2026-09-01）：base_url 为空 → worker 拿 None client，
+    曾以 AttributeError 裸崩且 handler 已执行一半——必须进 handler 前给可读报错。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "p", "9:16", "t")["id"]
+    called = []
+
+    @register("cfg_job")
+    def handle(db, data_dir, job, comfy):
+        called.append(1)
+
+    stop = threading.Event()
+    w = Worker(db.path, tmp_path / "data", None, stop, poll_interval=0.05,
+               handler_types=("cfg_job",), comfy_factory=lambda: None)
+    w.start()
+    jid = enqueue_job(db, "cfg_job", project_id=pid, resource="gpu_comfy")
+    for _ in range(300):
+        if get_job(db, jid)["status"] == "failed":
+            break
+        time.sleep(0.05)
+    stop.set(); w.join(timeout=2)
+    job = get_job(db, jid)
+    assert job["status"] == "failed"
+    assert "ComfyUI 未配置" in job["error"]
+    assert called == []                    # 没带 None client 进 handler
