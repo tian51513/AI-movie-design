@@ -69,6 +69,28 @@ def generate_dialogue_audio(db, data_dir, project_id) -> list:
         shot_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}")
         shot_dir.mkdir(parents=True, exist_ok=True)
 
+        # ref2va 已注入音色样本（H3 原生配音）→ 不生成 TTS，保原声；
+        # 顺带清掉历史残留的 dialogue.mp3（否则快车道 spans 会误用，2026-08-31）
+        if ledger.get("h3_native_voice"):
+            stale = shot_dir / "dialogue.mp3"
+            if stale.exists():
+                stale.unlink()
+            continue
+
+        # 角色音色配音（2026-08-31 用户决策）：单一说话人 + 绑定音色有样本 →
+        # VoiceClone 一次生成整镜台词（fl2v/i2v/t2v 无音频槽，配音期用角色音色）；
+        # 多说话人 / 未绑 / Comfy 不可用 → 逐句 Edge-TTS 按性别（原路径）
+        if _try_voiced_tts(db, data_dir, proj, shot, dialogue, shot_dir):
+            results.append({"shot_id": shot["id"], "seq": shot["seq"],
+                            "lines": [{"speaker": d.get("speaker", "?"),
+                                       "line": d.get("line", ""),
+                                       "voice": "角色音色"} for d in dialogue
+                                      if d.get("line", "").strip()]})
+            emit_log(db, "tts", "info",
+                     f"分镜 {shot['seq']} 配音按角色音色克隆生成",
+                     project_id=project_id)
+            continue
+
         lines_info = []
         # 逐句生成（多句合并为一个文件——ffmpeg 对齐阶段处理）
         audio_parts = []
@@ -110,6 +132,62 @@ def generate_dialogue_audio(db, data_dir, project_id) -> list:
                  project_id=project_id)
 
     return results
+
+
+def _try_voiced_tts(db, data_dir, proj, shot, dialogue, shot_dir) -> bool:
+    """单说话人 + 绑定音色有样本 → qwen_tts_clone 生成 dialogue.mp3。
+    任何不满足/失败都返回 False（走 Edge-TTS 兜底），失败只告警不阻塞。"""
+    speakers = {str(d.get("speaker") or "").strip() for d in dialogue
+                if d.get("line", "").strip()}
+    if len(speakers) != 1:
+        return False
+    speaker = speakers.pop()
+    from .assets import list_project_assets
+    from .voicelib import resolve_sample, clone_speech
+    asset = next((a for a in list_project_assets(db, proj["id"])
+                  if a["kind"] == "character" and a["name"] == speaker), None)
+    voice = ((asset["voice"] if asset is not None and "voice" in asset.keys() else "")
+             or "").strip()
+    if not voice:
+        return False
+    from pathlib import PurePosixPath
+    sample = None
+    if PurePosixPath(voice).suffix:
+        cand = data_to_abs(data_dir, voice)
+        sample = cand if cand.exists() else None
+    if sample is None:
+        sample = resolve_sample(data_dir, voice, proj["slug"])
+    if sample is None:
+        return False
+    text = " [pause:0.4] ".join(d.get("line", "").strip()
+                                for d in dialogue if d.get("line", "").strip())
+    try:
+        comfy = _comfy_client(db)
+        out = clone_speech(comfy, sample, text, shot_dir, f"dialogue_{shot['seq']}",
+                             db=db)
+        _to_mp3(out, shot_dir / "dialogue.mp3")
+        out.unlink(missing_ok=True)
+        return True
+    except Exception as exc:
+        emit_log(db, "tts", "warn",
+                 f"分镜 {shot['seq']} 角色音色克隆失败，回退 Edge-TTS：{exc}",
+                 project_id=proj["id"])
+        return False
+
+
+def _comfy_client(db):
+    from .comfy.client import ComfyClient
+    from .settings import get_setting
+    url = (get_setting(db, "comfy") or {}).get("base_url", "http://127.0.0.1:8188")
+    return ComfyClient(url)
+
+
+def _to_mp3(src: Path, dest: Path) -> None:
+    """克隆产物（flac 等）转 mp3（下游 merge/director_mix 只认 dialogue.mp3）。"""
+    from .merge import ffmpeg_bin
+    import subprocess
+    subprocess.run([ffmpeg_bin(), "-y", "-i", str(src), "-codec:a", "libmp3lame",
+                    "-q:a", "4", str(dest)], check=True, capture_output=True, timeout=120)
 
 
 def _tts_sync(text: str, voice: str, output: Path):

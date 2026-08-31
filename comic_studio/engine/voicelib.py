@@ -69,8 +69,18 @@ def resolve_sample(data_dir, name: str, project: str | None = None) -> Path | No
 
 
 def _run_template(comfy, template_id: str, params: dict, images: list | None,
-                  dest_dir: Path, name: str) -> Path:
-    """提交 TTS 模板 → 轮询 → 下载首个 audio 产物到 dest_dir/<name><原后缀>。"""
+                  dest_dir: Path, name: str, db=None) -> Path:
+    """提交 TTS 模板 → 轮询 → 下载首个 audio 产物到 dest_dir/<name><原后缀>。
+    db 给定时先走 ensure_vram_for_comfy（LLM 让位+显存门槛——TTS 1.7B 与
+    本地 LLM 同卡会挤爆，2026-08-31 用户要求 LLM/Comfy 串行）。"""
+    if db is not None:
+        try:
+            has_gpu_info = bool((comfy.health().get("devices") or [{}])[0])
+        except Exception:
+            has_gpu_info = False   # 健康信息不可得 → 无法测量，交给 ComfyUI 队列兜底
+        if has_gpu_info:
+            from .llm.local import ensure_vram_for_comfy
+            ensure_vram_for_comfy(db, comfy)
     from .workflows import registry
     from .workflows.filler import fill_workflow
     tmpl = registry.scan_templates(registry.TEMPLATE_ROOT)[template_id]
@@ -90,23 +100,23 @@ def _run_template(comfy, template_id: str, params: dict, images: list | None,
     return dest
 
 
-def generate_preset(comfy, data_dir, name: str) -> Path:
+def generate_preset(comfy, data_dir, name: str, db=None) -> Path:
     """生成预设音色样本（VoiceDesign 模板）→ data/voices/presets/<名>.flac。"""
     return _run_template(comfy, "qwen_tts_design",
                          params={"voice_instruction": voice_instruct(name),
                                  "text": PRESET_TEXT,
                                  "seed": random.randint(0, 2**31 - 1)},
-                         images=None,
+                         images=None, db=db,
                          dest_dir=Path(data_dir) / "voices" / "presets", name=name)
 
 
 def process_upload(comfy, data_dir, audio_path: Path, *, name: str,
-                   start: float, dur: float) -> Path:
+                   start: float, dur: float, db=None) -> Path:
     """上传音色处理（VoiceClone 模板）：裁剪起止 + 默认句克隆 → **staging 暂存**
     （2026-08-31 用户需求：先试听，确认后才入正式库）。返回暂存样本路径。"""
     return _run_template(comfy, "qwen_tts_clone",
                          params={"start_index": start, "duration": dur},
-                         images=[{"slot": "audio", "path": str(audio_path)}],
+                         images=[{"slot": "audio", "path": str(audio_path)}], db=db,
                          dest_dir=Path(data_dir) / "voices" / "_staging", name=name)
 
 
@@ -158,3 +168,14 @@ def voice_library_prompt(data_dir, project: str | None = None) -> str:
 def voice_library_names(data_dir, project: str | None = None) -> list[str]:
     """音色库全部名字（match_voice 校验 suggested 用）。"""
     return [r["name"] for r in list_voices(data_dir, project)]
+
+
+def clone_speech(comfy, sample_path, text: str, dest_dir: Path, name: str,
+                 db=None) -> Path:
+    """音色样本 + 台词 → 克隆语音（配音期角色音色，2026-08-31 用户决策：
+    fl2v/i2v/t2v 无音频槽，配音阶段用角色音色替代 Edge-TTS）。
+    样本本身已是干净短句，裁剪参数取整段。"""
+    return _run_template(comfy, "qwen_tts_clone",
+                         params={"text": text, "start_index": 0, "duration": 9999},
+                         images=[{"slot": "audio", "path": str(sample_path)}], db=db,
+                         dest_dir=Path(dest_dir), name=name)

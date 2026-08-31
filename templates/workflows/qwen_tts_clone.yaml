@@ -5,6 +5,9 @@ file: qwen_tts_clone.api.json
 prompt_format: null
 inject:
   params:
+    text:
+      node: '77'
+      field: target_text
     start_index:
       node: '79'
       field: start_index

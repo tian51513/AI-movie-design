@@ -61,7 +61,8 @@ def upload_voice(request: Request, file: UploadFile, name: str = Form(...),
         tmp_path = Path(tmp.name)
     try:
         out = voicelib.process_upload(_comfy(request), request.app.state.data_dir,
-                                      tmp_path, name=name, start=start, dur=dur)
+                                      tmp_path, name=name, start=start, dur=dur,
+                                      db=request.app.state.db)
     except Exception as e:
         raise HTTPException(502, f"音色处理失败（ComfyUI TTS）: {e}")
     finally:
@@ -116,7 +117,8 @@ def generate_preset(request: Request, body: dict = Body(...)):
     if name not in {p["name"] for p in VOICE_PRESETS}:
         raise HTTPException(422, f"未知预设: {name}")
     try:
-        out = voicelib.generate_preset(_comfy(request), request.app.state.data_dir, name)
+        out = voicelib.generate_preset(_comfy(request), request.app.state.data_dir,
+                                       name, db=request.app.state.db)
     except Exception as e:
         raise HTTPException(502, f"预设生成失败（ComfyUI TTS）: {e}")
     return {"name": name,

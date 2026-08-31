@@ -20,7 +20,7 @@ def test_list_and_generate_preset(tmp_path, monkeypatch):
         assert "高冷御姐" in names and "萝莉" in names
         assert all(r.get("missing") for r in rows if r["origin"] == "preset")
 
-        def fake_gen(comfy, data_dir, name):
+        def fake_gen(comfy, data_dir, name, db=None):
             out = Path(data_dir) / "voices" / "presets" / f"{name}.flac"
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_bytes(b"fLaC")
@@ -42,7 +42,7 @@ def test_upload_and_delete_scopes(tmp_path, monkeypatch):
                      files={"novel": ("n.txt", io.BytesIO("正文".encode()),
                                       "text/plain")}).json()["id"]
 
-        def fake_upload(comfy, data_dir, audio_path, *, name, start, dur):
+        def fake_upload(comfy, data_dir, audio_path, *, name, start, dur, db=None):
             out = Path(data_dir) / "voices" / "_staging" / f"{name}.flac"
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_bytes(b"fLaC")
