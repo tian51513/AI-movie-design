@@ -44,12 +44,16 @@ def generate_srt(db, data_dir, project_id, spans=None) -> Path:
             start_base, duration = timeline, float(shot["duration"] or 5.0)
 
         if dialogue:
-            # 镜内多句均分时长
-            n = len(dialogue)
-            per = duration / n
-            for i, d in enumerate(dialogue):
-                start = start_base + i * per
-                end = start_base + (i + 1) * per
+            # C7 按字数比例分时长（2026-09-01 台词组拆镜配套）：一镜 3~8 句后
+            # 均分会让短句占长、长句赶读——字数即朗读时长的先验
+            weights = [max(1, len((d.get("line") or "").strip())) for d in dialogue]
+            total_w = sum(weights)
+            cursor = 0.0
+            for d, w in zip(dialogue, weights):
+                seg = duration * w / total_w
+                start = start_base + cursor
+                end = start_base + cursor + seg
+                cursor += seg
                 line = d.get("line", "").strip()
                 speaker = d.get("speaker", "")
                 if line:

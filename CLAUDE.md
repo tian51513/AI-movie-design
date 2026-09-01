@@ -135,6 +135,14 @@
 - `engine/jobs.purge_finished_jobs` + `POST /api/jobs/purge?days=1-90` — done/failed/cancelled 超 N 天删除（设置页「🧹 清理 7 天前记录」）；pending/running 与窗口内保留
 - jobs 表四索引（迁移 30）：shot/asset/proj/status——修「分镜内容错乱」（564 镜 /shots 95s→0.2s，慢响应乱序串台）；前端 loadShots/loadDetail pid 乱序守卫
 
+## 模块地图（台词驱动连贯渲染 A/B/C 2026-09-01）
+
+- 借鉴「AI漫剧工坊·台词驱动无缝分镜」工程文档三级落地（两份文档在 E:/AI/AI_Shared_Models/skills/）
+- **A 级**：拆解规则 10/11——连续同场景对白 3~8 句打包一镜（反「一句台词一镜」）；duration=句数×2.5s 估（schema 宽进 1~30，staging 钳 4~15，无对白镜用项目统一段时长）；shots 新列 emotion（15 枚举）/gesture/gaze（英文短句）/continuity（6 枚举，外值 staging 清空，迁移 31）；`build_shot_context` 织「情绪与动态」块（LLM 按模式织入，不机械拼接）
+- **B 级**：staging 机械校准 workflow——continuity∈{全程继承,微变延续} 且 LLM 给 ref2va → fl2v（t2v 永不覆盖）；迁移 32 shots.seed——延续组内 +3/镜（断点/空重开随机），`rendershot._video_seed` 优先库值
+- **C 级**：`merge.concat_xfade`（开关 comfy.merge_xfade，默认关）段间 0.3s xfade+acrossfade 交叉淡化、可选 comfy.merge_grade 统一调色；段>120 回退硬拼（全链重编码代价）；无音轨段 `_ensure_audio` 补静音；`subtitles` 镜内多句按字数比例分时长（替均分）
+- 注意：xfade 链整片重编码，合成耗时显著上升——追求速度保持默认关；文档的中文提示词模板未采纳（项目 E 模式为真机实测协议）
+
 ## 模块地图（comfy.base_url 清空事故 2026-09-01）
 
 - 事故：设置页保存曾把 comfy.base_url 冲成空串（全量 model_dump 默认值覆盖未提供键）→ worker `_comfy()` 返 None → 36k gen_shot 以 `AttributeError: NoneType.upload_media` 批量失败（暴露于 09-01 03:00 autopilot 夜间大批渲染）

@@ -66,3 +66,28 @@ def test_generate_srt_accepts_frame_spans(tmp_path):
     srt = generate_srt(db, tmp_path / "data", pid, spans=spans)
     text = srt.read_text(encoding="utf-8")
     assert "00:00:00,000 --> 00:00:05,166" in text  # 镜1 帧数时长（124/24）
+
+
+def test_generate_srt_proportional_by_length(tmp_path):
+    """C7（2026-09-01 台词组拆镜配套）：镜内多句按字数比例分时长——
+    台词组打包后一镜 3~8 句，均分会让短句占长、长句赶读。"""
+    import json as _json
+    db, pid = _proj(tmp_path)
+    conn = db.connect()
+    conn.execute(
+        "UPDATE shots SET duration=8, ledger_json=? WHERE seq=1",
+        (_json.dumps({"dialogue": [
+            {"speaker": "A", "line": "好"},                     # 1 字
+            {"speaker": "B", "line": "这一段台词明显要长得多"}]}),))  # 10 字
+    conn.commit()
+    from comic_studio.engine.subtitles import generate_srt
+    srt = generate_srt(db, tmp_path / "data", pid).read_text(encoding="utf-8")
+    stamps = [l for l in srt.splitlines() if "-->" in l]
+    assert len(stamps) >= 2
+    def _sec(ts):
+        h, m, rest = ts.split(":")
+        return int(h) * 3600 + int(m) * 60 + float(rest.replace(",", "."))
+    d1 = _sec(stamps[0].split("-->")[1]) - _sec(stamps[0].split("-->")[0])
+    d2 = _sec(stamps[1].split("-->")[1]) - _sec(stamps[1].split("-->")[0])
+    assert abs((d1 + d2) - 8.0) < 0.01          # 总时长守恒
+    assert d2 / d1 > 8                          # 10:1 字数比 → 时长比接近 10

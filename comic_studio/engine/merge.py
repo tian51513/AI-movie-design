@@ -70,6 +70,70 @@ def concat(parts: list, out: Path) -> Path:
     return out
 
 
+# ── C6 交叉淡化 + 统一调色（2026-09-01 台词驱动文档 C 级）──
+XFADE_SEC = 0.3
+XFADE_MAX_PARTS = 120  # 段数上限：xfade 链须全量重编码，段过多命令/耗时爆炸→回退硬拼
+
+
+def build_xfade_filter(durations: list, fade: float = XFADE_SEC,
+                       grade: bool = False) -> str:
+    """xfade 链 filter 字符串（视频交叉淡化 + 音频 acrossfade）。
+    offset_i = sum(dur[:i]) - i*fade（前一链输出已含交叠扣减）。"""
+    n = len(durations)
+    segs = []
+    prev_v, prev_a = "[0:v]", "[0:a]"
+    for i in range(1, n):
+        offset = sum(durations[:i]) - i * fade
+        last = i == n - 1
+        lv = "[vout]" if last else f"[xv{i}]"
+        la = "[aout]" if last else f"[xa{i}]"
+        segs.append(f"{prev_v}[{i}:v]xfade=transition=fade:duration={fade}"
+                    f":offset={offset:.3f}{lv}")
+        segs.append(f"{prev_a}[{i}:a]acrossfade=d={fade}{la}")
+        prev_v, prev_a = lv, la
+    if grade:
+        segs.append("[vout]eq=gamma=1.05:contrast=1.02[vout2]")
+    return ";".join(segs)
+
+
+def concat_xfade(parts: list, out: Path, fade: float = XFADE_SEC,
+                 grade: bool = False) -> Path:
+    """交叉淡化拼接（整链重编码——观感顺滑的代价）。段 ==1 直接复制。
+    无音轨段先补静音（acrossfade 要求两路音频流齐全）。"""
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if len(parts) == 1:
+        import shutil
+        shutil.copyfile(parts[0], out)
+        return out
+    parts = [_ensure_audio(Path(p), out.parent) for p in parts]
+    durs = [probe(p)["duration"] for p in parts]
+    fc = build_xfade_filter(durs, fade, grade)
+    args = [ffmpeg_bin(), "-y"]
+    for p in parts:
+        args += ["-i", str(p)]
+    args += ["-filter_complex", fc,
+             "-map", "[vout2]" if grade else "[vout]", "-map", "[aout]",
+             "-c:v", "libx264", "-crf", "20", "-preset", "fast",
+             "-pix_fmt", "yuv420p", "-c:a", "aac", str(out)]
+    subprocess.run(args, check=True, capture_output=True, timeout=3600)
+    return out
+
+
+def _ensure_audio(src: Path, workdir: Path) -> Path:
+    """无音轨 → 复制视频流并垫静音轨（视频直拷零重编码）。"""
+    r = subprocess.run([ffmpeg_bin(), "-i", str(src)], capture_output=True,
+                       timeout=60, text=True)
+    if " Audio:" in (r.stderr or ""):
+        return src
+    dst = workdir / f"{src.stem}_sil.mp4"
+    subprocess.run(
+        [ffmpeg_bin(), "-y", "-i", str(src),
+         "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+         "-shortest", "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", str(dst)],
+        check=True, capture_output=True, timeout=300)
+    return dst
+
+
 def _canvas(aspect_ratio: str) -> tuple:
     """合成画布：长边 1920 按画幅取比，短边偶数对齐（yuv420p 要求）。
     五档画幅通用解析（2026-08-30）；不支持的画幅回落默认 16:9（用户决策）。"""
@@ -158,7 +222,18 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
                 _mute_audio(part, mute_part)
                 part = mute_part
             parts.append(part)
-        concat(parts, out)
+        # C6 交叉淡化（2026-09-01）：开关 comfy.merge_xfade（默认关）→ 段间 0.3s
+        # 交叉溶解 + 可选统一调色 comfy.merge_grade；段数超上限回退硬拼
+        cfg = get_setting(db, "comfy") or {}
+        if cfg.get("merge_xfade") and len(parts) <= XFADE_MAX_PARTS:
+            concat_xfade(parts, out, fade=XFADE_SEC,
+                         grade=bool(cfg.get("merge_grade")))
+        else:
+            if cfg.get("merge_xfade"):
+                emit_log(db, "merge", "warn",
+                         f"段数 {len(parts)} 超 xfade 上限 {XFADE_MAX_PARTS}，回退硬拼接缝",
+                         project_id=project_id)
+            concat(parts, out)
 
     # P6：字幕烧录（subtitles.srt 存在时烧入成片）
     srt = out_dir / "subtitles.srt"

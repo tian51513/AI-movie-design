@@ -53,8 +53,11 @@ def test_unknown_key_raises(tmp_path):
 def test_comfy_setting_default(tmp_path):
     db = _db(tmp_path)
     # min_free_vram_gb：LLM 让位后的显存门槛（2026-08-28，12GB 共享决策）
+    # merge_xfade/merge_grade：C6 段间交叉淡化/统一调色（2026-09-01，默认关）
     assert get_setting(db, "comfy") == {"base_url": "http://127.0.0.1:8188",
                                         "min_free_vram_gb": 8,
+                                        "merge_xfade": False,
+                                        "merge_grade": False,
                                         "director_batch_frames": 512,
                                         "director_clear_vram": False,
                                         "director_export_source": False,

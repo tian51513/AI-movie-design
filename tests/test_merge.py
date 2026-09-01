@@ -143,3 +143,60 @@ def test_merge_skips_tts_for_native_voice(tmp_path, monkeypatch):
     conn.commit()
     out = merge_project(db, tmp_path / "data", pid)
     assert out.exists() and calls == []   # 未触发 TTS 替换
+
+
+# ── C6 交叉淡化 + 统一调色（2026-09-01 台词驱动文档 C 级）──
+
+def test_build_xfade_filter_offsets():
+    from comic_studio.engine.merge import build_xfade_filter
+    fc = build_xfade_filter([5.0, 4.0, 3.0], 0.3, grade=False)
+    # offset_i = sum(dur[:i]) - i*fade → 4.7 / 8.4
+    assert "xfade=transition=fade:duration=0.3:offset=4.700" in fc
+    assert "xfade=transition=fade:duration=0.3:offset=8.400" in fc
+    assert "eq=" not in fc
+
+
+def test_build_xfade_filter_grade():
+    from comic_studio.engine.merge import build_xfade_filter
+    fc = build_xfade_filter([5.0, 4.0], 0.3, grade=True)
+    assert "eq=gamma=1.05:contrast=1.02" in fc
+
+
+def test_concat_xfade_shortens_by_fade(tmp_path):
+    """真机 ffmpeg：两段各 2s，xfade 0.3 → 成片 ≈ 3.7s。"""
+    from comic_studio.engine.merge import concat_xfade
+    a = normalize(_make(tmp_path / "a.mp4", 2), tmp_path / "a_n.mp4", 640, 360, 10)
+    b = normalize(_make(tmp_path / "b.mp4", 2), tmp_path / "b_n.mp4", 640, 360, 10)
+    out = concat_xfade([a, b], tmp_path / "xf.mp4", fade=0.3)
+    dur = probe(out)["duration"]
+    assert abs(dur - 3.7) < 0.2, dur
+
+
+def test_merge_project_respects_xfade_setting(tmp_path, monkeypatch):
+    """开关开→走 xfade 链；段数超上限→回退硬拼。"""
+    calls = {"xfade": 0, "concat": 0}
+    monkeypatch.setattr("comic_studio.engine.merge.concat_xfade",
+                        lambda parts, out, fade=0.3, grade=False: calls.__setitem__("xfade", calls["xfade"] + 1) or out)
+    monkeypatch.setattr("comic_studio.engine.merge.concat",
+                        lambda parts, out: calls.__setitem__("concat", calls["concat"] + 1) or out)
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "淡化剧", "16:9", "正文")["id"]
+    set_stage(db, pid, "rendered")
+    from comic_studio.engine.settings import set_setting
+    vids = []
+    for i in range(2):
+        v = _make(tmp_path / f"v{i}.mp4", 1)
+        vids.append(v)
+    ids = persist_shots(db, pid, [
+        NS(text_span="", description=f"镜{i}", shot_type="", camera={},
+           duration=5.0, workflow_type="t2v", ledger={},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)
+        for i in range(2)])
+    for sid, v in zip(ids, vids):
+        update_shot(db, sid, {"video_path": str(v), "status": "rendered"})
+    set_setting(db, "comfy", {"base_url": "", "merge_xfade": True})
+    merge_project(db, tmp_path / "data", pid)
+    assert calls["xfade"] == 1 and calls["concat"] == 0
+    set_setting(db, "comfy", {"base_url": "", "merge_xfade": False})
+    merge_project(db, tmp_path / "data", pid)
+    assert calls["concat"] == 1
