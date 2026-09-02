@@ -126,6 +126,17 @@ def _system_with_voices(db, data_dir, project_id) -> str:
     lib = voice_library_prompt(data_dir, proj["slug"] if proj else None)
     return EXTRACT_SYSTEM + "\n\n可用音色库（suggested_voice 只能从中选）：\n" + lib
 
+# 音色绑定 UPDATE。LIMIT 1 必须在子查询括号**内**——括号外即 UPDATE...LIMIT：
+# Windows 版 sqlite3 未编译 SQLITE_ENABLE_UPDATE_DELETE_LIMIT，直接
+# OperationalError: near "LIMIT"（WSL Debian 版却接受——同 SQL 跨环境两种命运，
+# 2026-09-02 线上事故）。提出常量供 tests/test_analyze.py 结构护栏断言。
+_VOICE_BIND_SQL = (
+    "UPDATE assets SET voice=? WHERE id=("
+    "  SELECT a.id FROM assets a JOIN project_assets pa ON pa.asset_id=a.id"
+    "  WHERE pa.project_id=? AND a.name=? AND a.kind='character'"
+    "  AND a.voice='' LIMIT 1)")
+
+
 def analyze_project(db: Database, data_dir: Path, project_id: int,
                     client_factory: ClientFactory | None = None,
                     max_chars: int = 8000) -> list[int]:
@@ -192,12 +203,7 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
                             library=_lib)
         if not voice:
             continue
-        cur = conn.execute(
-            "UPDATE assets SET voice=? WHERE id=("
-            "  SELECT a.id FROM assets a JOIN project_assets pa ON pa.asset_id=a.id"
-            "  WHERE pa.project_id=? AND a.name=? AND a.kind='character'"
-            "  AND a.voice='') LIMIT 1",
-            (voice, project_id, ch.name))
+        cur = conn.execute(_VOICE_BIND_SQL, (voice, project_id, ch.name))
         n_voice += cur.rowcount
     conn.commit()
     if n_voice:

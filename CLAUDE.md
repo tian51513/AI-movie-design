@@ -3,7 +3,7 @@
 - 架构边界：`comic_studio/engine/` 禁止 import fastapi/starlette/uvicorn（未来抽取为 ComfyUI 节点）
 - 测试：pytest，TDD（先失败测试后实现）；运行 `pytest -q`
 - 安装：WSL 用 `.venv`、Windows 原生用 `.venv-win`（二进制不可混装）；激活后 `pip install -e ".[dev]"`
-- 跨环境：DB 存相对 data 根的 POSIX 路径（engine/paths.py），WSL 与 Windows 可共享同一 data/
+- 跨环境：DB 存相对 data 根的 POSIX 路径（engine/paths.py），WSL 与 Windows 可共享同一 data/；**两环境 sqlite3 编译差异**：WSL Debian 版接受 `UPDATE...LIMIT`，Windows python.org 版拒绝（未编译 UPDATE_DELETE_LIMIT）——UPDATE/DELETE 的 LIMIT 只能放子查询括号内（2026-09-02 analyze 音色绑定事故，`_VOICE_BIND_SQL` 常量 + tests/test_analyze.py 结构护栏）
 - 启动：`uvicorn comic_studio.web.app:app --host 0.0.0.0 --port 8190`（app 提供 `create_app(db_path)` 工厂；0.0.0.0=手机局域网可访问）
 - 数据：默认 `./data`（SQLite + library + projects），不入 git
 - 文档：每个里程碑同步更新 README.md / CLAUDE.md / docs/superpowers/specs/ 状态

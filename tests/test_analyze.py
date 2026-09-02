@@ -193,3 +193,28 @@ def test_analyze_suggests_voices(tmp_path, monkeypatch):
         assert assets["小雪"]["voice"] == "萝莉"
         assert assets["老爷"]["voice"] == "老年男声"
         assert assets["路人"]["voice"] == "深沉男声"  # 非法建议忽略→性别×年龄兜底（青年男）
+
+
+def test_voice_match_update_sql_valid(tmp_path):
+    """2026-09-02 线上事故：音色自动匹配的 UPDATE 把 LIMIT 1 写在子查询括号外，
+    成了 UPDATE...LIMIT——Python sqlite3 未编译 SQLITE_ENABLE_UPDATE_DELETE_LIMIT，
+    直接 OperationalError: near "LIMIT"。appearance 带性别/年龄即踩中音色分支
+    （老 fixture「黑发少年」匹配不到音色，SQL 从未真正执行过）。"""
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "一段短文本")
+    chunk = ('{"characters":[{"name":"林战","appearance":"性别：男；年龄：30；铁甲将军"}],'
+             '"scenes":[],"props":[]}')
+    analyze_project(db, tmp_path / "data", proj["id"],
+                    client_factory=lambda t: FakeClient([chunk]))
+    assets = list_project_assets(db, proj["id"])
+    assert assets and assets[0]["voice"], "音色应写入资产"
+
+
+def test_voice_bind_sql_no_update_level_limit():
+    """结构护栏（引擎无关）：UPDATE 语句禁止括号外 LIMIT——WSL Debian 版
+    sqlite 接受 UPDATE...LIMIT 而 Windows 版拒绝，行为测试在 WSL 上永远绿，
+    只有静态断言能跨环境守住（2026-09-02 Windows 线上事故）。"""
+    import re
+    from comic_studio.engine.llm.analyze import _VOICE_BIND_SQL
+    assert not re.search(r"\)\s*LIMIT", _VOICE_BIND_SQL), "LIMIT 落在子查询括号外=UPDATE级LIMIT"
+    assert "'' LIMIT 1)" in _VOICE_BIND_SQL  # 在子查询内
