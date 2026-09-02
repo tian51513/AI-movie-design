@@ -41,6 +41,22 @@ def test_purge_removes_old_finished_keeps_rest(tmp_path):
         assert remain == {new_fail, pending}
 
 
+def test_purge_clears_logs_job_refs(tmp_path):
+    """2026-09-02 线上报错：logs.job_id 外键引用待删 job 时 DELETE 被
+    FOREIGN KEY constraint failed 拦下（db.py PRAGMA foreign_keys=ON）。
+    修复后日志行保留、job_id 置空——同 shots.py 删镜清引用模式，审计文本不丢。"""
+    from comic_studio.engine.logbus import emit
+    db, pid, c = _client(tmp_path)
+    old_done = _job(db, pid, "done", "2026-08-01 00:00:00")
+    emit(db, "test", "info", f"job {old_done} 完成", project_id=pid, job_id=old_done)
+    with c:
+        r = c.post("/api/jobs/purge?days=7")
+        assert r.status_code == 200, r.text
+        assert r.json()["purged"] == 1
+        rows = db.connect().execute("SELECT job_id, message FROM logs").fetchall()
+        assert len(rows) == 1 and rows[0]["job_id"] is None
+
+
 def test_purge_days_clamped(tmp_path):
     db, pid, c = _client(tmp_path)
     with c:

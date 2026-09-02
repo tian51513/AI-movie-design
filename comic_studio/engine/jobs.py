@@ -165,11 +165,16 @@ def purge_finished_jobs(db, days: int = 7) -> int:
     """历史清理（2026-09-01 用户决策）：done/failed/cancelled 超 N 天删除。
 
     3.6 万失败行（含肥大 snapshot_json）撑爆失败计数且拖慢全表扫描；
-    pending/running 与窗口内记录保留（审计/对账用）。"""
+    pending/running 与窗口内记录保留（审计/对账用）。
+    2026-09-02：先清 logs.job_id 外键引用再删（FK=ON 下 DELETE 被引用行拦下，
+    同 shots.py 删镜清引用模式）；日志行保留、job_id 置空，审计文本不丢。"""
     conn = db.connect()
-    cur = conn.execute(
-        "DELETE FROM jobs WHERE status IN ('done','failed','cancelled') "
-        "AND finished_at IS NOT NULL AND finished_at < datetime('now', ?)",
-        (f"-{int(days)} days",))
+    cond = ("status IN ('done','failed','cancelled') "
+            "AND finished_at IS NOT NULL AND finished_at < datetime('now', ?)")
+    window = (f"-{int(days)} days",)
+    conn.execute(
+        "UPDATE logs SET job_id=NULL WHERE job_id IN "
+        f"(SELECT id FROM jobs WHERE {cond})", window)
+    cur = conn.execute(f"DELETE FROM jobs WHERE {cond}", window)
     conn.commit()
     return cur.rowcount

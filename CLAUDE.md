@@ -132,7 +132,7 @@
 - `frontend/index.html` `.m-bottombar` — 项目详情 ≤768px 底部固定操作栏：按阶段出关键决策大按钮（🚀 一键出片/⏹ 停止自动/✓ 过门1-3/🎬 合成成片/⏹ 停止任务，全部复用页面内 methods 零新逻辑）+ 监控状态行（⚡动作 · 运行/排队/失败 · ComfyUI 灯）；44px 触控目标、`env(safe-area-inset-bottom)` iPhone 安全区；**注意 `.m-bottombar{display:none}` 必须写在 @media 之前**（同优先级后者胜，曾把移动端一起盖掉）
 - 标题 pill 行窄屏单行横滑（`main>h2` nowrap+overflow-x）；执行日志 `logsOpen`（app.js 按宽度初始化：桌面展开/窄屏折叠，h3 收起/展开按钮）
 - `web/app.py` — `/`、`/static/*`、`/vendor/*` 一律 `Cache-Control: no-cache`（当天两次浏览器启发式缓存旧 app.js 与新 HTML 混跑出怪相；ETag 重验证未变 304 零成本）
-- `engine/jobs.purge_finished_jobs` + `POST /api/jobs/purge?days=1-90` — done/failed/cancelled 超 N 天删除（设置页「🧹 清理 7 天前记录」）；pending/running 与窗口内保留
+- `engine/jobs.purge_finished_jobs` + `POST /api/jobs/purge?days=1-90` — done/failed/cancelled 超 N 天删除（设置页「🧹 清理 7 天前记录」）；pending/running 与窗口内保留；**删前先清 logs.job_id 外键引用**（FK=ON 下删被引用 job 必炸 IntegrityError，2026-09-02 线上事故，同 shots.py 删镜清引用模式；删项目路径 routes_projects 本就 logs 先删无恙）
 - jobs 表四索引（迁移 30）：shot/asset/proj/status——修「分镜内容错乱」（564 镜 /shots 95s→0.2s，慢响应乱序串台）；前端 loadShots/loadDetail pid 乱序守卫
 
 ## 模块地图（台词驱动连贯渲染 A/B/C 2026-09-01）
