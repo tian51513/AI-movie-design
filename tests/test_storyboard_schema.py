@@ -52,3 +52,20 @@ def test_user_prompt_roster():
             NS(kind="scene", id=2, name="庭院", appearance_json='{"detail": "古宅"}')]
     u = build_split_user_prompt("正文文本", rows)
     assert "id=1 林晨（黑发少年）" in u and "id=2 庭院（古宅）" in u and "正文文本" in u
+
+
+def test_shot_staging_requires_text_span():
+    """R（2026-09-02 连夜两模型实证）：ornith_1.5 与 nsfwvision-v3 都不可靠地
+    填 text_span → backfill_dialogue 无米下锅 → 零对白 → 时长全落默认 5s。
+    schema 强制非空：缺失由 ask_validated 反馈重试兜住，不再赌模型自觉。"""
+    import pytest as _pytest
+    from comic_studio.engine.llm.storyboard import ShotDraft
+    with _pytest.raises(Exception):
+        ShotDraft.model_validate({
+            "description": "庭院对话", "shot_type": "对话",
+            "duration": 5, "workflow_type": "ref2va", "ledger": {}})
+    ok = ShotDraft.model_validate({
+        "text_span": "林晨说：“你好。”", "description": "庭院对话",
+        "shot_type": "对话", "duration": 5, "workflow_type": "ref2va",
+        "ledger": {}})
+    assert ok.text_span

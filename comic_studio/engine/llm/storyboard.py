@@ -49,7 +49,10 @@ SPLIT_SYSTEM = """你是小说改编漫剧的分镜师。把给定的小说文�
 
 
 class ShotDraft(BaseModel):
-    text_span: str = ""
+    # text_span 必填非空（2026-09-02 连夜两模型实证：ornith/nsfwvision 都不可靠
+    # 填写 → backfill_dialogue 无米下锅 → 零对白 → 时长全落默认 5s；缺失交给
+    # ask_validated 校验反馈重试兜住，不赌模型自觉）
+    text_span: str = Field(min_length=1)
     description: str = Field(min_length=1)
     shot_type: str = ""
     camera: dict = Field(default_factory=dict)
