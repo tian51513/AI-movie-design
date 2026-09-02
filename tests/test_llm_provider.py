@@ -68,7 +68,9 @@ def test_raw_chat_raises_on_truncated_output():
 
     c = LLMClient("http://x", "k", "m")
     c._client = FakeClient()
-    with pytest.raises(LLMError, match="截断"):
+    # 2026-09-02 复盘：ornith_1.5 思考模型 3764 输入 + 12620 思考输出填满 16k 窗口——
+    # 报错必须提示「屏蔽思考」这条路，别只让用户缩分块/加窗口白折腾
+    with pytest.raises(LLMError, match=r"截断.*思考"):
         c.raw_chat([{"role": "user", "content": "hi"}])
 
 

@@ -76,8 +76,11 @@ class LLMClient:
         finish = getattr(choices[0], "finish_reason", None)
         if finish == "length":
             raise LLMError(
-                f"输出被长度上限截断（finish_reason=length）：请减小单次输入（如缩小分块）"
-                f"或提高模型上下文窗口")
+                "输出被长度上限截断（finish_reason=length）：请减小单次输入（如缩小分块）"
+                "或提高模型上下文窗口；若为思考型模型，思考会先烧满窗口——"
+                "Ollama 可在设置里为该 provider 配 extra_body "
+                '{"reasoning_effort":"none"} 屏蔽（2026-09-02 实测，'
+                "think:false 不彻底、chat_template_kwargs 无效）")
         message = choices[0].message
         text = _THINK_RE.sub("", message.content or "").strip()
         if not text:

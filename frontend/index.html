@@ -411,7 +411,7 @@
         <p v-else><input v-model="settingsForm.local.model"
                   placeholder="模型名（点上方获取模型后变下拉）" style="width:90%"></p>
         <p><input v-model="settingsForm.local.extra_body_json"
-                  placeholder="附加参数 JSON（可选，如 {&quot;chat_template_kwargs&quot;:{&quot;enable_thinking&quot;:false}} 屏蔽思考）" style="width:90%"></p>
+                  placeholder="附加参数 JSON（可选，如 {&quot;reasoning_effort&quot;:&quot;none&quot;} 屏蔽思考型模型的推理输出）" style="width:90%"></p>
         <p><label class="muted"><input type="checkbox" v-model="showThink"> 显示推理模型（含 think）</label></p>
       </div>
       <div class="card" style="flex:1;min-width:320px">

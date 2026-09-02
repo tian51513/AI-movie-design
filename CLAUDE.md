@@ -73,7 +73,7 @@
 - `comic_studio/engine/tts.py` — Edge-TTS 配音（按性别分配声音，ledger.dialogue 逐句 → dialogue.mp3）
 - `comic_studio/engine/subtitles.py` — SRT 字幕（镜内均分 + 时间轴累计 → subtitles.srt）
 - `engine/merge.py` 扩展 — TTS 音轨替换 + SRT 字幕烧录（autopilot merge 前自动生成）
-- `web/routes_merge.py` 扩展 — POST /tts；`engine/llm/provider.py` — normalize_base_url（Ollama/LM Studio 误填自动归一 /v1）+ 思考模型响应处理（剥 <think>、reasoning-only 报错、extra_body 透传；本机 LM Studio 实测无法请求侧屏蔽思考）
+- `web/routes_merge.py` 扩展 — POST /tts；`engine/llm/provider.py` — normalize_base_url（Ollama/LM Studio 误填自动归一 /v1）+ 思考模型响应处理（剥 <think>、reasoning-only 报错、extra_body 透传；本机 LM Studio 实测无法请求侧屏蔽思考；**Ollama /v1 可以**——extra_body `{"reasoning_effort":"none"}` 实测彻底关思考，2026-09-02 ornith_1.5 思考烧满 16k 窗口事故：3764 输入+12620 思考输出=16384；think:false 不彻底、chat_template_kwargs 无效）
 - 分镜控制：shots.disabled（迁移 22）——无效镜不进门禁计数/渲染/合成；`routes_shots.py` POST shots/batch（disable/enable/delete）；拆分镜 target_count 按块字数占比分配配额
 - 注意：llm-test 不限 max_tokens（思考模型预算）；空正文/无 choices 均显式报错，不再静默空串
 
