@@ -138,7 +138,8 @@
 ## 模块地图（台词驱动连贯渲染 A/B/C 2026-09-01）
 
 - 借鉴「AI漫剧工坊·台词驱动无缝分镜」工程文档三级落地（两份文档在 E:/AI/AI_Shared_Models/skills/）
-- **A 级**：拆解规则 10/11——连续同场景对白 3~8 句打包一镜（反「一句台词一镜」）；duration=句数×2.5s 估（schema 宽进 1~30，staging 钳 4~15，无对白镜用项目统一段时长）；shots 新列 emotion（15 枚举）/gesture/gaze（英文短句）/continuity（6 枚举，外值 staging 清空，迁移 31）；`build_shot_context` 织「情绪与动态」块（LLM 按模式织入，不机械拼接）
+- **A 级**：拆解规则 10/11——连续同场景对白 3~8 句打包一镜（反「一句台词一镜」）；duration=句数×2.5s 估（schema 宽进 1~30，staging 钳 4~15，无对白镜用项目统一段时长；**backfill 补录镜由 `reestimate_durations` 机械重算**——LLM 没见过对白就写死 5，2026-09-03 真机 42 镜全 5s 教训；LLM 自填对白的镜保留估时不覆盖）；shots 新列 emotion（15 枚举）/gesture/gaze（英文短句）/continuity（6 枚举，外值 staging 清空，迁移 31）；`build_shot_context` 织「情绪与动态」块（LLM 按模式织入，不机械拼接）
+- **backfill_dialogue 说话人三则**（2026-09-03 真机「女主回怼全派男主」）：引号紧前有说话动词（说道：）→ 前名优先（后方窗口不争抢）；双向就近兜底；相邻引号间无名字/说话提示 → 中文对白交替惯例换人
 - **B 级**：staging 机械校准 workflow——continuity∈{全程继承,微变延续} 且 LLM 给 ref2va → fl2v（t2v 永不覆盖）；迁移 32 shots.seed——延续组内 +3/镜（断点/空重开随机），`rendershot._video_seed` 优先库值
 - **C 级**：`merge.concat_xfade`（开关 comfy.merge_xfade，默认关）段间 0.3s xfade+acrossfade 交叉淡化、可选 comfy.merge_grade 统一调色；段>120 回退硬拼（全链重编码代价）；无音轨段 `_ensure_audio` 补静音；`subtitles` 镜内多句按字数比例分时长（替均分）
 - 注意：xfade 链整片重编码，合成耗时显著上升——追求速度保持默认关；文档的中文提示词模板未采纳（项目 E 模式为真机实测协议）
