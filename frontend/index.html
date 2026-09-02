@@ -400,7 +400,7 @@
     <h2>LLM 设置</h2>
     <div class="row">
       <div class="card" style="flex:1;min-width:320px">
-        <h3>本地 LLM（轻活）
+        <h3>本地 LLM
           <span :style="{color: llmLamp('local').color}">●</span>
           <span class="muted">{{ llmLamp('local').text }}</span></h3>
         <p>服务商
@@ -419,6 +419,7 @@
            <span v-if="llmTestManual.local && llmTestResult.local !== null"
                  :style="{color: llmTestResult.local?.ok ? '#4ade80' : '#f87171'}">
              {{ llmTestResult.local?.ok ? '✓ ' + (llmTestResult.local?.detail || 'OK') : '✗ ' + llmTestResult.local?.detail }}</span></p>
+        <p style="margin-bottom:2px"><span class="muted" style="font-size:12px">轻度模型（分析/读图等常规任务）</span></p>
         <p v-if="ollamaModels.length">
            <select v-model="settingsForm.local.model" style="width:90%">
              <option v-if="settingsForm.local.model && !displayOllamaModels.includes(settingsForm.local.model)"
@@ -427,23 +428,19 @@
            </select></p>
         <p v-else><input v-model="settingsForm.local.model"
                   placeholder="模型名（点上方获取模型后变下拉）" style="width:90%"></p>
+        <p style="margin-bottom:2px"><span class="muted" style="font-size:12px">重度模型（拆分镜/提示词等结构重活；留空=不启用）</span></p>
+        <p v-if="ollamaModels.length">
+           <select v-model="settingsForm.local2.model" style="width:90%">
+             <option value="">（不启用）</option>
+             <option v-if="settingsForm.local2.model && !displayOllamaModels.includes(settingsForm.local2.model)"
+                     :value="settingsForm.local2.model">{{ settingsForm.local2.model }}（清单外，保留）</option>
+             <option v-for="m in displayOllamaModels" :key="'h'+m" :value="m">{{ m }}</option>
+           </select></p>
+        <p v-else><input v-model="settingsForm.local2.model"
+                  placeholder="重度模型名（结构与轻度物理隔离，不吃下方附加参数）" style="width:90%"></p>
         <p><input v-model="settingsForm.local.extra_body_json"
-                  placeholder="附加参数 JSON（可选，如 {&quot;reasoning_effort&quot;:&quot;none&quot;} 屏蔽思考型模型的推理输出）" style="width:90%"></p>
+                  placeholder="附加参数 JSON（可选，仅作用于轻度模型，如 {&quot;reasoning_effort&quot;:&quot;none&quot;}）" style="width:90%"></p>
         <p><label class="muted"><input type="checkbox" v-model="showThink"> 显示推理模型（含 think）</label></p>
-      </div>
-      <!-- 本地2（2026-09-02 音色夜定型）：重活槽——结构与 local 物理隔离（extra_body 分治：
-           IQ2_M 这类模型被 reasoning_effort:none 打哑，27B 拆分镜/提示词走这里） -->
-      <div class="card" style="flex:1;min-width:320px">
-        <h3>本地2 LLM（重活）
-          <span :style="{color: llmLamp('local2').color}">●</span>
-          <span class="muted">{{ llmLamp('local2').text }}</span></h3>
-        <p><input v-model="settingsForm.local2.base_url"
-                  placeholder="base_url（如 http://127.0.0.1:11434/v1，可空=禁用）" style="width:90%"></p>
-        <p><input type="password" v-model="settingsForm.local2.api_key" placeholder="api_key（可空）" style="width:90%"></p>
-        <p><input v-model="settingsForm.local2.model"
-                  placeholder="模型名（如 nsfw-qwen3.8:IQ2_M）" style="width:90%"></p>
-        <p><input v-model="settingsForm.local2.extra_body_json"
-                  placeholder="附加参数 JSON（可选；27B 勿配 reasoning_effort）" style="width:90%"></p>
       </div>
       <div class="card" style="flex:1;min-width:320px">
         <h3>线上 API
@@ -576,12 +573,12 @@
     <p v-for="(label, task) in taskLabels" :key="task">
       {{ label }}：
       <select v-model="settingsForm.routing[task]">
-        <option value="local">本地 · 轻活默认模型</option>
+        <option value="local">本地 · 轻度模型</option>
         <option v-for="m in displayOllamaModels" :key="'l'+task+m" :value="'local:'+m"
                 :title="'local:'+m">{{ m.toLowerCase().includes('think') ? '🧠 ' : '' }}{{ m }}</option>
-        <option v-if="settingsForm.local2 && settingsForm.local2.base_url" value="local2">本地2 · 重活默认模型</option>
-        <option v-for="m in (settingsForm.local2 && settingsForm.local2.base_url ? displayOllamaModels : [])"
-                :key="'l2'+task+m" :value="'local2:'+m" :title="'local2:'+m">{{ m }}（本地2）</option>
+        <option v-if="settingsForm.local2 && settingsForm.local2.model" value="local2">本地 · 重度模型</option>
+        <option v-for="m in (settingsForm.local2 && settingsForm.local2.model ? displayOllamaModels : [])"
+                :key="'l2'+task+m" :value="'local2:'+m" :title="'local2:'+m">{{ m }}（重度）</option>
         <option value="online">线上 · 默认模型</option>
         <option v-if="settingsForm.online.model" :value="'online:'+settingsForm.online.model"
                 :title="'online:'+settingsForm.online.model">线上 · {{ settingsForm.online.model }}</option>

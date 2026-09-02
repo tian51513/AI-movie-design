@@ -741,8 +741,7 @@ const methods = {
   async saveSettings() {
     const ebLocal = this._parseExtra(this.settingsForm.local);
     const ebOnline = this._parseExtra(this.settingsForm.online);
-    const ebLocal2 = this._parseExtra(this.settingsForm.local2);
-    if (ebLocal === undefined || ebOnline === undefined || ebLocal2 === undefined) {
+    if (ebLocal === undefined || ebOnline === undefined) {
       alert('extra_body 不是合法 JSON（各 provider 检查）'); return;
     }
     this.saving = true;      const payload = {
@@ -751,10 +750,10 @@ const methods = {
                  api_key: this.settingsForm.local.api_key || 'ollama',
                  model: this.settingsForm.local.model || '',
                  extra_body: ebLocal },
-        local2: { base_url: this.settingsForm.local2.base_url || '',
-                  api_key: this.settingsForm.local2.api_key || 'ollama',
+        local2: { base_url: this.settingsForm.local.base_url || '',   // 与本地同一服务
+                  api_key: this.settingsForm.local.api_key || 'ollama',
                   model: this.settingsForm.local2.model || '',
-                  extra_body: ebLocal2 },
+                  extra_body: null },   // 重度模型不吃轻度的 extra_body（IQ2_M 被关思考打哑）
         online: { base_url: this.settingsForm.online.base_url || '',
                   api_key: this.settingsForm.online.api_key || '',
                   model: this.settingsForm.online.model || '',

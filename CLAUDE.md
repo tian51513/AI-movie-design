@@ -152,6 +152,13 @@
 - 移动端：`.voice-panel`/`.voice-row` 换行自适应；`.assets-grid .card{min-width:0;overflow-wrap:anywhere}`（修 375px 多列资产卡长串顶破轨道 406>360 既有溢出）；Playwright 375×667 面板全开零溢出实测
 - 注意：**项目级音色=按角色各自绑定，无「项目级单一音色」语义**；音色消费两链路（ref2va 原声口型 / qwen_tts_clone 克隆配音，多说话人镜落 Edge-TTS）
 
+## 模块地图（LLM 轻重双模型 2026-09-02 深夜）
+
+- **设置页本地卡两模型字段**：轻度模型（常规任务）+ 重度模型（拆分镜/提示词/优化等结构重活，留空=不启用）——用户需求「本地的模型设置项新增一个作为重度模型」。实现上映射 provider `local2`（保存时自动继承 local 的 base_url/key，**extra_body 恒 null**：IQ2_M 等 27B 被 `reasoning_effort:none` 打哑需与轻度物理隔离）；路由下拉「本地·轻度/重度」+ 逐模型钉选（`local:tag`/`local2:tag`，首个冒号切分）
+- **路由必须可从设置页选到**（本夜事故链：local2 只能 API 配置 → 表单无选项显示空白 → 保存拿旧表单冲掉 API 改的路由，二次事故）；表单快照含 local2，保存为正路
+- 小模型纪律缺口连环修（当晚 ornith/nsfwvision 两模型实证）：`ShotDraft.text_span 必填非空`（缺→ask_validated 反馈重试，不再静默饿死 backfill_dialogue→零对白→时长全 5s）；gen_prompt **紧凑重试**（结构失败换 `_compact_system` 短骨架、上下文重开不背失败输出）；`build_h3_system` 注入前 `_strip_code_blocks`（SKILL.md 校验节 powershell 示例曾让 9B 抄进提示词）+ heal⑧围栏卫生（协议正文拆栏保文/工具代码整删）
+- 注意：26k 上下文的 27B 拆分镜单块 ~90s（93.3s/2014 字块实测）——重活慢是常态，别误判卡死
+
 ## 模块地图（comfy.base_url 清空事故 2026-09-01）
 
 - 事故：设置页保存曾把 comfy.base_url 冲成空串（全量 model_dump 默认值覆盖未提供键）→ worker `_comfy()` 返 None → 36k gen_shot 以 `AttributeError: NoneType.upload_media` 批量失败（暴露于 09-01 03:00 autopilot 夜间大批渲染）
