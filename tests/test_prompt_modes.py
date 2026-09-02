@@ -31,20 +31,22 @@ def test_generate_uses_project_mode(tmp_path):
     sid = persist_shots(db, pid, [NS(text_span="", description="x", shot_type="",
         camera={}, duration=5.0, workflow_type="ref2va", ledger={},
         character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
-    captured = {}
+    captured = []
 
     class FakeLLM:
         model = "fake"
         def raw_chat(self, messages, temperature=0.3, max_tokens=None):
-            captured["system"] = messages[0]["content"]
+            captured.append(messages[0]["content"])
             return "林晨推开木门，晨光，推进镜头，写实。", Usage(1, 1)
 
     generate_video_prompt(db, sid, FakeLLM(), backend="h3")
-    assert PROMPT_MODES["A"]["spec"][:30] in captured["system"]
-    # 显式 mode 覆盖项目设置（D 的结构校验会拒散文回复——system 已捕获即达成测试目的）
+    assert PROMPT_MODES["A"]["spec"][:30] in captured[-1]
+    # 显式 mode 覆盖项目设置：首次 D 调用用 D 规程；结构失败后的重试换
+    # 紧凑骨架系统词（2026-09-02 真机 job 38401：9B × 全量规程三次全缺段）
     with pytest.raises(RuntimeError):
         generate_video_prompt(db, sid, FakeLLM(), backend="h3", mode="D")
-    assert PROMPT_MODES["D"]["spec"][:30] in captured["system"]
+    assert PROMPT_MODES["D"]["spec"][:30] in captured[1]   # D 首调=全量 D 规程
+    assert "subject_definitions:" in captured[-1]          # 重试=紧凑骨架
 
 
 def test_t2v_rich_prompt_spec():
