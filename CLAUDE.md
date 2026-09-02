@@ -122,7 +122,7 @@
 
 ## 模块地图（移动端适配 2026-09-01）
 
-- 服务监听 `--host 0.0.0.0`（start.sh/start.bat/README）——手机局域网访问 `http://<主机IP>:8190`；WSL mirrored 网络模式免端口转发，Windows 防火墙需放行 8190
+- 服务监听 `--host 0.0.0.0`（start.sh/start.bat/README）——手机局域网访问 `http://<主机IP>:8190`；WSL mirrored 网络模式免端口转发，Windows 防火墙需放行 8190；**start.bat 旧服务清理只按端口 8190 精确杀**（曾用 `taskkill /im python.exe` 全域杀——ComfyUI 等独立 python 应用每次重启被连带杀，2026-09-02；护栏 tests/test_start_scripts.py）
 - `frontend/index.html` — viewport meta + 全局 `box-sizing:border-box`（width:100% 卡片窄屏溢出根因）+ input/select `max-width:100%`；≤768px 断点（main 收紧/hdr-actions 换行/guide `.grid-2` 双栏→单栏/`.film-card` 92vw/`.proj-row` 换行）；`pointer:coarse`（输入 16px 防 iOS 聚焦缩放、按钮 min-height:32px）；编辑外貌/主题弹窗补内部滚动
 - `frontend/app.js` — 框选触控化：`_marqueeStart` 重构共用（鼠标/触控同路径），`#shotNav` 绑 `@touchstart.prevent` + CSS `touch-action:none`（触控无 Shift——扫框=全新选择，追加用 checkbox；胶片条保持原生横滚）；查看器 `viewerTouchStart/End` 水平滑 >40px 翻页
 - 已验：Playwright 375×667 各视图零横向溢出；CDP 真实触控框选/鼠标框选回归通过（合成 TouchEvent 不可信，测触控须走 CDP Input.dispatchTouchEvent）
