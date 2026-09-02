@@ -140,8 +140,9 @@ def test_auto_bind_characters_from_description(tmp_path):
 
 def test_split_default_chunk_fits_context(tmp_path):
     """默认分块必须按模型上下文容量取值（真机 2026-08-27 job 582：8127 字块
-    输出撞 16384 num_ctx 硬截断）。实测最密拆解 6.28 completion tok/输入字 +
-    prompt 0.82 tok/字 + ~350 开销 ≤ 16384 → 块 ≤ ~2100 字，默认取 2000。"""
+    输出撞 16384 num_ctx 硬截断；2026-09-03 job 38410：text_span 必填后输出
+    密度上涨，1956 字块 >7.07 completion tok/字仍截断）。span 时代预算：
+    密度上限按 11.5 + prompt 0.82 + ~350 开销 ≤ 16384 → 块 ≤ ~1300 字。"""
     db, pid = _setup(tmp_path)
     import pathlib
     from comic_studio.engine.projects import get_project
@@ -160,7 +161,7 @@ def test_split_default_chunk_fits_context(tmp_path):
     split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
     assert len(fake.users) >= 2  # 3600 字默认必须拆多块（旧默认 8000 只会 1 块）
     chunks = [u.split("小说文本：\n", 1)[1] for u in fake.users]
-    assert all(len(c) <= 2000 for c in chunks), [len(c) for c in chunks]
+    assert all(len(c) <= 1300 for c in chunks), [len(c) for c in chunks]
 
 
 def test_split_target_count_allocates_per_chunk(tmp_path):

@@ -219,11 +219,12 @@ def auto_bind_characters(db, project_id):
     return bound
 
 
-def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=2000,
+def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1300,
                       target_count=None, chapter_range=None):
-    """max_chars=2000：按上下文容量实证取值（2026-08-27 job 582 真机教训：
-    8127 字块输出撞 Ollama 16384 num_ctx 硬截断；最密拆解 6.28 completion tok/输入字
-    + prompt 0.82 tok/字 + ~350 开销 → 块 ≤ ~2100 字才稳妥）。
+    """max_chars=1300：按上下文容量实证取值（2026-08-27 job 582：8127 字块撞
+    16384 num_ctx 硬截断；2026-09-03 job 38410：text_span 必填后输出密度上涨，
+    1956 字块 >7.07 completion tok/字仍截断——span 时代密度上限按 11.5 保守取，
+    + prompt 0.82 tok/字 + ~350 开销 → 块 ≤ ~1300 字）。
     target_count：指定全文分镜数（2026-08-27 需求）——按各块字数占比分配配额注入提示词；
     None=自动拆分（现状）。"""
     if client_factory is None:
