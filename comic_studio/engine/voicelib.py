@@ -110,6 +110,41 @@ def generate_preset(comfy, data_dir, name: str, db=None) -> Path:
                          dest_dir=Path(data_dir) / "voices" / "presets", name=name)
 
 
+def generate_custom(comfy, data_dir, project: str, name: str, instruction: str,
+                    db=None) -> Path:
+    """按声线描述生成**项目级**角色音色（2026-09-02 音色系统：分析期「预设
+    不匹配→LLM 描述生成」与面板「生成并绑定」共用此入口）。
+    同名样本已存在 → 直接返回（幂等，不重烧 ComfyUI；不满意可删了重生成）。"""
+    dest_dir = Path(data_dir) / "projects" / project / "voices"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    if (hit := _scan(dest_dir).get(name)):
+        return hit
+    return _run_template(comfy, "qwen_tts_design",
+                         params={"voice_instruction": instruction,
+                                 "text": PRESET_TEXT,
+                                 "seed": random.randint(0, 2**31 - 1)},
+                         images=None, db=db, dest_dir=dest_dir, name=name)
+
+
+def promote_to_global(data_dir, project: str, name: str, new_name: str | None = None) -> Path:
+    """项目级音色 → 全局自定义库（2026-09-02 用户需求：满意的项目级音色沉淀
+    供后续项目复用）。复制不移动（项目级源保留）；全局已同名 ValueError。"""
+    import shutil
+    src = _scan(Path(data_dir) / "projects" / project / "voices").get(name)
+    if src is None:
+        raise FileNotFoundError(f"项目级音色不存在: {name}")
+    dest_name = (new_name or name).strip()
+    if not dest_name:
+        raise ValueError("新音色名不能为空")
+    dest_dir = Path(data_dir) / "voices" / "custom"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / f"{dest_name}{src.suffix}"
+    if dest.exists():
+        raise ValueError(f"全局自定义库已有同名音色: {dest_name}")
+    shutil.copy(str(src), str(dest))
+    return dest
+
+
 def process_upload(comfy, data_dir, audio_path: Path, *, name: str,
                    start: float, dur: float, db=None) -> Path:
     """上传音色处理（VoiceClone 模板）：裁剪起止 + 默认句克隆 → **staging 暂存**

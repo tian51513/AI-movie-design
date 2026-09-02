@@ -131,3 +131,37 @@ def test_voice_library_prompt_and_match_with_custom(tmp_path):
     names = voicelib.voice_library_names(tmp_path, project="p1")
     assert match_voice("性别：女 年龄：30岁", "御姐专属", library=names) == "御姐专属"
     assert match_voice("性别：女 年龄：30岁", "库里没有的", library=names) == "温柔少女"
+
+
+def test_voicelib_generate_custom(tmp_path, monkeypatch):
+    """按声线描述生成项目级音色（R1/R2 2026-09-02）：instruction 注入 design
+    模板，产物落 projects/<slug>/voices/；同名已存在幂等返回不重烧 ComfyUI。"""
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine import voicelib
+    from comfy_mock import comfy_server
+    _registry(tmp_path, monkeypatch)
+    with comfy_server("ok", audio=True) as m:
+        c = ComfyClient(m.base_url)
+        out = voicelib.generate_custom(c, tmp_path, "myproj", "林战",
+                                       "低沉沙哑的中年男声，语气威严")
+        assert out.exists() and out.parent == tmp_path / "projects" / "myproj" / "voices"
+        wf = m.prompts[0]["prompt"]
+        assert wf["1"]["inputs"]["voice_instruction"] == "低沉沙哑的中年男声，语气威严"
+        # 幂等：同名样本已存在 → 直接返回，不再提交模板
+        again = voicelib.generate_custom(c, tmp_path, "myproj", "林战", "描述变了也不重生成")
+        assert again == out and len(m.prompts) == 1
+
+
+def test_voicelib_promote_to_global(tmp_path):
+    """项目级 → 全局自定义库（R4 2026-09-02）：复制（项目级源保留），重名拒绝。"""
+    from comic_studio.engine import voicelib
+    src = tmp_path / "projects" / "p1" / "voices" / "林战.flac"
+    src.parent.mkdir(parents=True)
+    src.write_bytes(b"fLaC")
+    out = voicelib.promote_to_global(tmp_path, "p1", "林战")
+    assert out == tmp_path / "voices" / "custom" / "林战.flac" and out.exists()
+    assert src.exists() and src.read_bytes() == out.read_bytes()  # 复制非移动
+    with pytest.raises(ValueError):
+        voicelib.promote_to_global(tmp_path, "p1", "林战")  # 全局已同名
+    renamed = voicelib.promote_to_global(tmp_path, "p1", "林战", new_name="林战·全局")
+    assert renamed.name == "林战·全局.flac"

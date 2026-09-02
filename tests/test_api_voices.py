@@ -110,3 +110,61 @@ def test_bind_asset_voice(tmp_path):
         assert r.status_code == 200 and r.json()["voice"] == "高冷御姐"
         r2 = c.patch(f"/api/assets/{aid}/voice", json={"voice": ""})
         assert r2.json()["voice"] == ""
+
+
+def test_design_generates_and_binds(tmp_path, monkeypatch):
+    """/api/voices/design（R2 2026-09-02）：生成项目级音色 → 自动绑角色；
+    资产不存在 404（生成前先校验，不白烧 ComfyUI）；空描述 422。"""
+    with _client(tmp_path) as c:
+        pid = c.post("/api/projects", data={"name": "配音剧", "aspect_ratio": "9:16"},
+                     files={"novel": ("n.txt", io.BytesIO("正文".encode()),
+                                      "text/plain")}).json()["id"]
+        from types import SimpleNamespace as NS
+        from comic_studio.engine.assets import persist_assets
+        ids = persist_assets(c.app.state.db, tmp_path / "data", pid,
+                             NS(characters=[NS(name="林晨", appearance="黑发", tags=[])],
+                                scenes=[], props=[]))
+        aid = ids[0]
+
+        def fake_gen(comfy, data_dir, project, name, instruction, db=None):
+            out = Path(data_dir) / "projects" / project / "voices" / f"{name}.flac"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_bytes(b"fLaC")
+            return out
+        monkeypatch.setattr("comic_studio.web.routes_voices.voicelib.generate_custom",
+                            fake_gen)
+        r = c.post("/api/voices/design", json={
+            "project_id": pid, "name": "林晨", "bind_asset_id": aid,
+            "instruction": "清亮的青年男声"})
+        assert r.status_code == 200, r.text
+        assert r.json()["path"] == "projects/配音剧/voices/林晨.flac"
+        row = c.app.state.db.connect().execute(
+            "SELECT voice FROM assets WHERE id=?", (aid,)).fetchone()
+        assert row["voice"] == "林晨"  # 生成后自动绑定（不能拿 PATCH 验——那是解绑）
+        # 空描述 422；资产不存在 404
+        assert c.post("/api/voices/design", json={
+            "project_id": pid, "name": "x", "instruction": " "}).status_code == 422
+        assert c.post("/api/voices/design", json={
+            "project_id": pid, "name": "x", "instruction": "描述",
+            "bind_asset_id": 9999}).status_code == 404
+
+
+def test_promote_voice_to_custom_library(tmp_path):
+    """/api/voices/promote（R4 2026-09-02）：项目级 → 全局自定义库；
+    重名 409；项目级音色不存在 404。"""
+    with _client(tmp_path) as c:
+        pid = c.post("/api/projects", data={"name": "晋升剧", "aspect_ratio": "9:16"},
+                     files={"novel": ("n.txt", io.BytesIO("正文".encode()),
+                                      "text/plain")}).json()["id"]
+        src = tmp_path / "data" / "projects" / "晋升剧" / "voices" / "林战.flac"
+        src.parent.mkdir(parents=True)
+        src.write_bytes(b"fLaC")
+        r = c.post("/api/voices/promote",
+                   json={"project_id": pid, "name": "林战", "new_name": "林战·全局"})
+        assert r.status_code == 200, r.text
+        assert (tmp_path / "data" / "voices" / "custom" / "林战·全局.flac").exists()
+        assert c.post("/api/voices/promote",
+                      json={"project_id": pid, "name": "林战",
+                            "new_name": "林战·全局"}).status_code == 409
+        assert c.post("/api/voices/promote",
+                      json={"project_id": pid, "name": "不存在"}).status_code == 404

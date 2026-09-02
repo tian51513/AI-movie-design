@@ -125,6 +125,56 @@ def generate_preset(request: Request, body: dict = Body(...)):
             "path": out.relative_to(request.app.state.data_dir).as_posix()}
 
 
+@router.post("/api/voices/design")
+def design_voice(request: Request, body: dict = Body(...)):
+    """按声线描述生成项目级音色并（可选）自动绑角色（2026-09-02 角色配音）。
+    资产先校验再生成——不白烧 ComfyUI。生成失败 502（绑定未发生）。"""
+    instruction = str(body.get("instruction") or "").strip()
+    name = str(body.get("name") or "").strip()
+    if not instruction or not name:
+        raise HTTPException(422, "name 与 instruction 必填")
+    project_id = body.get("project_id")
+    slug = _slug(request, project_id)
+    if not slug:
+        raise HTTPException(422, "必须带 project_id")
+    bind_asset_id = body.get("bind_asset_id")
+    if bind_asset_id is not None and get_asset(request.app.state.db, bind_asset_id) is None:
+        raise HTTPException(404, f"资产不存在: {bind_asset_id}")
+    try:
+        out = voicelib.generate_custom(_comfy(request), request.app.state.data_dir,
+                                       slug, name, instruction,
+                                       db=request.app.state.db)
+    except Exception as e:
+        raise HTTPException(502, f"音色生成失败（ComfyUI TTS）: {e}")
+    rel = out.relative_to(request.app.state.data_dir).as_posix()
+    if bind_asset_id is not None:
+        conn = request.app.state.db.connect()
+        conn.execute("UPDATE assets SET voice=? WHERE id=?", (name, bind_asset_id))
+        conn.commit()
+    return {"name": name, "path": rel, "url": f"/media/{rel}",
+            "bound": bind_asset_id}
+
+
+@router.post("/api/voices/promote")
+def promote_voice(request: Request, body: dict = Body(...)):
+    """项目级音色 → 全局自定义库（2026-09-02：满意的沉淀复用；复制不移动）。"""
+    name = str(body.get("name") or "").strip()
+    if not name:
+        raise HTTPException(422, "name 必填")
+    slug = _slug(request, body.get("project_id"))
+    if not slug:
+        raise HTTPException(422, "必须带 project_id")
+    try:
+        out = voicelib.promote_to_global(request.app.state.data_dir, slug, name,
+                                         new_name=str(body.get("new_name") or "").strip() or None)
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    rel = out.relative_to(request.app.state.data_dir).as_posix()
+    return {"name": out.stem, "path": rel, "url": f"/media/{rel}"}
+
+
 @router.delete("/api/voices/{name}")
 def delete_voice(request: Request, name: str, scope: str = "global",
                  project_id: int | None = None):
