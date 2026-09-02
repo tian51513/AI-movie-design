@@ -192,6 +192,16 @@ def _check_picture_refs(text: str, max_pics: int = 2) -> tuple[bool, str]:
     return True, ""
 
 
+def _compact_system() -> str:
+    """结构校验失败后的重试系统词（2026-09-02 真机 job 38401 教训：9B 本地 ×
+    8.7k 全量规程 → D 骨架三次全缺——小模型短提示服从性显著更好）。
+    分段要求与 structure_check 同源（_REQUIRED_SECTIONS），不另维护一份。"""
+    secs = "\n".join(_REQUIRED_SECTIONS)
+    return ("你是视频提示词生成器。只输出提示词本体，禁止任何解释、禁止代码围栏。\n"
+            f"必须逐字包含以下分段标题行：\n{secs}\n"
+            "各段按镜头上下文填写；结尾固定一行：无字幕，无背景音乐")
+
+
 def structure_check(text: str, mode: str | None) -> tuple[bool, str]:
     """结构化模式（B/C/D）必需分段头校验；A/E/None 放行
     （A 散文、E 英文控制式均无分节标题）。"""
@@ -355,7 +365,15 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
         if sok and pok and ok and "可自行补充" not in text:
             return text
         last_err = (smsg or msg) or "输出含占位语"
-        messages += [{"role": "assistant", "content": text},
-                     {"role": "user", "content":
-                      f"上一版未通过机械校验：{last_err}。请修正后重新输出完整提示词，只输出提示词。"}]
+        if smsg:
+            # 结构骨架缺失 → 全量规程对小模型是负担而非帮助：换紧凑骨架、
+            # 上下文重开（不背失败输出——追加只会让 16k 窗口更挤，2026-09-02）
+            messages = [{"role": "system", "content": _compact_system()},
+                        {"role": "user", "content": ctx},
+                        {"role": "user", "content":
+                         f"上一版缺少必需分段：{smsg}。请按上述骨架输出完整提示词，只输出提示词。"}]
+        else:
+            messages += [{"role": "assistant", "content": text},
+                         {"role": "user", "content":
+                          f"上一版未通过机械校验：{last_err}。请修正后重新输出完整提示词，只输出提示词。"}]
     raise RuntimeError(f"视频提示词 {max_attempts} 次尝试未通过校验：{last_err}")

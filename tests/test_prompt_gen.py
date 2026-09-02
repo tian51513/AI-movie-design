@@ -423,3 +423,34 @@ def test_heal_strips_tool_code_and_unwraps_fenced_prompt():
     h2, f2 = heal_h3_prompt("```markdown\n" + tail + "```\n", shot, max_pics=2)
     assert "subject_definitions:" in h2 and "林晨缓步入屋" in h2
     assert "```" not in h2
+
+
+def test_generate_structure_failure_switches_to_compact_system(tmp_path):
+    """2026-09-02 真机 job 38401：9B 本地 × 8.7k 全量规程，D 骨架三次全缺。
+    结构校验失败后的重试应换「紧凑骨架」系统词（短提示服从性显著更好），
+    而非在越滚越长的全量上下文上继续追加。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "p", "9:16", "t")["id"]
+    sid = persist_shots(db, pid, [NS(text_span="", description="x",
+        shot_type="", camera={}, duration=5.0, workflow_type="ref2va",
+        ledger={}, character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
+    calls = []
+
+    class FlakyThenGood:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            calls.append(messages)
+            if len(calls) == 1:
+                return "一段没有任何骨架的散文输出，缺全部分段。", Usage(10, 20)
+            return ("subject_definitions: 林晨\nsummary: 推门。\n"
+                    "retention_analysis: 保持黑发。\n"
+                    "detailed_description: 林晨推门，晨光洒入，镜头缓慢推进，写实画面。\n"
+                    "无字幕，无背景音乐"), Usage(10, 20)
+
+    out = generate_video_prompt(db, sid, FlakyThenGood(), backend="h3", mode="D")
+    assert "subject_definitions:" in out
+    assert len(calls) == 2
+    # 第二次调用：system 换成紧凑骨架（比分段要求同源的短提示），上下文重开
+    sys2 = calls[1][0]["content"]
+    assert "subject_definitions:" in sys2 and len(sys2) < len(calls[0][0]["content"])
+    assert sum(1 for m in calls[1] if m["role"] == "assistant") == 0  # 不背失败输出
