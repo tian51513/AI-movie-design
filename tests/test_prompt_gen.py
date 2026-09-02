@@ -395,3 +395,31 @@ def test_mode_e_output_skips_field_heal(tmp_path):
     assert "[Shot 1]" in out and "<d>[Mandarin Chinese]你好</d>" in out
     assert "overall_soundscape:" not in out and "non_diegetic_music" not in out
     assert "无字幕，无背景音乐" not in out          # 英文结尾句已满足
+
+
+def test_build_h3_system_strips_tooling_code_blocks():
+    """2026-09-02 事故：SKILL.md「校验」节的 ```powershell validate_h3_prompt 调用
+    示例被整体注入系统词 → 本地 9B 模型把工具片段/围栏抄进分镜提示词。
+    注入前必须剥离代码块（规程里的代码块全是给人看的工具用法，写作提示词用不上）。"""
+    from comic_studio.engine.prompts.gen import build_h3_system
+    sys_text = build_h3_system()
+    assert "validate_h3_prompt" not in sys_text
+    assert "```" not in sys_text
+
+
+def test_heal_strips_tool_code_and_unwraps_fenced_prompt():
+    """⑧ 输出卫生（2026-09-02 事故）：模型输出混入工具代码块/外层围栏——
+    围栏内是协议正文 → 只拆围栏保留内容；围栏内是工具代码 → 整块删除。"""
+    from comic_studio.engine.prompts.gen import heal_h3_prompt
+    shot = {"ledger_json": "{}", "duration": 5}
+    tail = ("subject_definitions: 林晨\nsummary: 林晨推门。\n"
+            "detailed_description: 林晨缓步入屋。\n")
+    # ① 工具片段（校验器调用）前置 + 正文在外
+    tool = "```powershell\npython scripts/validate_h3_prompt.py --input x\n```\n"
+    h1, f1 = heal_h3_prompt(tool + tail, shot, max_pics=2)
+    assert "validate_h3_prompt" not in h1 and "```" not in h1
+    assert "subject_definitions:" in h1 and "剥离代码" in "".join(f1)
+    # ② 整个提示词被 ```markdown 围栏包裹 → 拆围栏保内容（不能把正文删了）
+    h2, f2 = heal_h3_prompt("```markdown\n" + tail + "```\n", shot, max_pics=2)
+    assert "subject_definitions:" in h2 and "林晨缓步入屋" in h2
+    assert "```" not in h2

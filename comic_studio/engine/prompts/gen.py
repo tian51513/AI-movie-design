@@ -18,12 +18,20 @@ _PIPELINE_NOTE = """【流水线适配】你在自动化管线中非交互运行
 不要输出"建议设置/素材编号/分析过程/可自行补充"等任何附加语；本阶段无音频，跳过声音系统模块。"""
 
 
+def _strip_code_blocks(text: str) -> str:
+    """剥离 Markdown 围栏代码块（2026-09-02 事故：SKILL.md 校验节的
+    ```powershell validate 调用示例注入系统词 → 本地 9B 模型把工具片段抄进
+    分镜提示词输出）。规程里的代码块全是给人看的工具用法，写作提示词用不上。"""
+    return "\n".join(l for l in _re.sub(r"```.*?```", "", text, flags=_re.DOTALL)
+                     .splitlines() if l.strip()) if "```" in text else text
+
+
 def build_h3_system() -> str:
     parts = [_PIPELINE_NOTE]
     for rel in ("SKILL.md", "references/official-rules.md", "references/capability-map.md"):
         p = H3_DIR / rel
         if p.exists():
-            parts.append(p.read_text(encoding="utf-8"))
+            parts.append(_strip_code_blocks(p.read_text(encoding="utf-8")))
     # 借鉴 XiaoLuo 规范（2026-08-28 第一批）：反代词具名 + 分级英文运镜标签
     parts.append(
         "【输出卫生规范（必须遵守）】\n"
@@ -213,6 +221,10 @@ def _dedup_sentences(line: str) -> tuple[str, bool]:
 
 
 _META_WORDS_RE = _re.compile(r"电影级|9[:：]16\s*画幅|生成模型|短片节奏")
+# 围栏内是否为协议正文（heal ⑧ 区分「拆栏保文」与「整块删工具代码」）
+_PROTOCOL_ANCHOR_RE = _re.compile(
+    r"subject_definitions|summary:|retention_analysis|detailed_description"
+    r"|overall_soundscape|non_diegetic_music|\[Shot \d+\]|\[镜\d+\]")
 
 
 def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = None):
@@ -226,6 +238,18 @@ def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = No
     返回 (healed, fixes)。"""
     fixes = []
     t = text or ""
+    # ⑧ 输出卫生（2026-09-02 事故）：模型混入代码围栏——内含协议正文
+    #（subject_definitions/summary/[Shot…）→ 只拆围栏保留内容；纯工具代码
+    # → 整块删除。协议提示词里永远不该出现围栏。
+    if "```" in t:
+        def _fence(m):
+            inner = m.group(1).strip()
+            return inner if _PROTOCOL_ANCHOR_RE.search(inner) else ""
+        t2 = _re.sub(r"```[a-zA-Z]*\n?(.*?)```", _fence, t, flags=_re.DOTALL)
+        t2 = _re.sub(r"^```[a-zA-Z]*[ \t]*\n?", "", t2.strip(), flags=_re.M)  # 未闭合残栏
+        if t2 != t:
+            t = t2.strip()
+            fixes.append("剥离代码块（工具片段/围栏）")
     if "可自行补充" in t:
         t = "\n".join(l for l in t.splitlines() if "可自行补充" not in l)
         fixes.append("删除占位语")
