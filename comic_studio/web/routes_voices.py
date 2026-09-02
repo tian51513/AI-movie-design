@@ -133,6 +133,12 @@ def design_voice(request: Request, body: dict = Body(...)):
     name = str(body.get("name") or "").strip()
     if not instruction or not name:
         raise HTTPException(422, "name 与 instruction 必填")
+    # ComfyUI 未配置门禁（2026-09-01 comfy.base_url 清空事故防线②惯例）
+    from ..engine.settings import ensure_comfy_configured
+    try:
+        ensure_comfy_configured(request.app.state.db)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
     project_id = body.get("project_id")
     slug = _slug(request, project_id)
     if not slug:

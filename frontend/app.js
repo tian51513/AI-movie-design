@@ -53,7 +53,8 @@ function data() {
     activeKind: '全部', perRow: 2, lightbox: null,
     voices: [], voicesBusy: '', vUpBusy: false, vUpErr: '', vStaged: null,
     vUp: { file: null, name: '', start: 45, dur: 60 },
-    pUp: { file: null, name: '', start: 45, dur: 60 }, projVoiceOpen: false,
+    pUp: { file: null, name: '', start: 45, dur: 60 },
+    voicePanelOpen: false, rowVoiceSel: {}, rowVoiceDesc: {}, rowBusy: {},
     editAssetVoice: '',
     themeEditOpen: false, themeEdit: {}, themeEditErr: '',
     viewer: null,  // 分镜媒体查看器 {kind:'image'|'video', list:[{url,label}], idx}
@@ -85,6 +86,7 @@ const computed = {
     return this.activeKind === '全部' ? this.assets
                                       : this.assets.filter(a => a.kind === this.activeKind);
   },
+  voiceChars() { return this.assets.filter(a => a.kind === 'character'); },
   displayOllamaModels() {
     return this.showThink ? this.ollamaModels
       : this.ollamaModels.filter(m => !m.toLowerCase().includes("think"));
@@ -1164,7 +1166,7 @@ const methods = {
       const body = await r.json();
       this.vStaged = { staged: body.staged, url: body.url, name: f.name, scope };
       f.file = null;   // 保留 name 供确认入库展示
-      this.projVoiceOpen = true;   // 项目入口保持展开显示试听条
+      this.voicePanelOpen = true;   // 面板保持展开显示试听条
     } finally { this.vUpBusy = false; }
   },
   async confirmVoice(scope) {
@@ -1177,7 +1179,6 @@ const methods = {
     if (!r.ok) { this.vUpErr = `入库失败：${(await r.json()).detail || r.status}`; return; }
     this.vStaged = null;
     (scope === 'project' ? this.pUp : this.vUp).name = '';
-    this.projVoiceOpen = false;
     await this.loadVoices(this.project && this.project.id);
   },
   async discardVoice() {
@@ -1194,6 +1195,78 @@ const methods = {
     await fetch(`/api/voices/${encodeURIComponent(v.name)}${q}`, { method: 'DELETE' });
     await this.loadVoices(this.project && this.project.id);
   },
+  // ===== 🎭 角色配音面板（2026-09-02 音色系统：按角色各自绑定）=====
+  toggleVoicePanel() {
+    this.voicePanelOpen = !this.voicePanelOpen;
+    if (this.voicePanelOpen) {
+      this.loadVoices(this.project && this.project.id);
+      this.syncRowVoices();
+    }
+  },
+  syncRowVoices() {  // 行下拉初值=角色当前绑定（资产刷新后调用）
+    for (const a of this.assets.filter(x => x.kind === 'character'))
+      this.rowVoiceSel[a.id] = a.voice || '';
+  },
+  voiceEntry(name) { return this.voices.find(v => v.name === name) || null; },
+  voicePath(name) { const e = this.voiceEntry(name); return (e && e.path) || ''; },
+  selNeedsSample(a) {
+    const e = this.voiceEntry(this.rowVoiceSel[a.id]);
+    return !!(e && e.missing);
+  },
+  async bindRowVoice(a) {
+    const r = await fetch(`/api/assets/${a.id}/voice`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ voice: this.rowVoiceSel[a.id] || '' }) });
+    if (!r.ok) { alert(`绑定失败：${(await r.json()).detail || r.status}`); return; }
+    await this.open(this.project); this.voicePanelOpen = true; this.syncRowVoices();
+  },
+  async genPresetSample(name, a) {
+    if (!name) return;
+    if (a) this.rowBusy[a.id] = true;
+    try {
+      const r = await fetch('/api/voices/presets/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }) });
+      if (!r.ok) { alert(`生成失败：${(await r.json()).detail || r.status}`); return; }
+      await this.loadVoices(this.project && this.project.id);
+    } finally { if (a) this.rowBusy[a.id] = false; }
+  },
+  async genRowVoice(a) {
+    const desc = (this.rowVoiceDesc[a.id] || '').trim();
+    if (!desc) return;
+    this.rowBusy[a.id] = true;
+    try {
+      const r = await fetch('/api/voices/design', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: this.project.id, name: a.name,
+                               instruction: desc, bind_asset_id: a.id }) });
+      if (!r.ok) { alert(`生成失败：${(await r.json()).detail || r.status}`); return; }
+      await this.open(this.project); this.voicePanelOpen = true; this.syncRowVoices();
+      await this.loadVoices(this.project.id);
+    } finally { this.rowBusy[a.id] = false; }
+  },
+  async promoteRow(a) {
+    const nn = prompt('存入全局自定义音色库的名字：', a.voice);
+    if (!nn || !nn.trim()) return;
+    const r = await fetch('/api/voices/promote', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: this.project.id, name: a.voice,
+                             new_name: nn.trim() }) });
+    if (!r.ok) { alert(`晋升失败：${(await r.json()).detail || r.status}`); return; }
+    await this.loadVoices(this.project && this.project.id);
+  },
+  async delRowVoice(a) {
+    const e = this.voiceEntry(a.voice);
+    if (!e) return;
+    if (!confirm(`删除音色「${a.voice}」的样本？该角色将回落 Edge-TTS。`)) return;
+    const q = e.origin === 'project'
+      ? `?scope=project&project_id=${this.project.id}` : '?scope=global';
+    const r = await fetch(`/api/voices/${encodeURIComponent(a.voice)}${q}`,
+                          { method: 'DELETE' });
+    if (!r.ok) { alert(`删除失败：${(await r.json()).detail || r.status}`); return; }
+    await this.loadVoices(this.project && this.project.id);
+  },
+
   async saveAssetVoice() {
     const r = await fetch(`/api/assets/${this.editAssetId}/voice`, {
       method: 'PATCH', headers: {'Content-Type': 'application/json'},

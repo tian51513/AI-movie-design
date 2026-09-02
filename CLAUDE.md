@@ -143,6 +143,15 @@
 - **C 级**：`merge.concat_xfade`（开关 comfy.merge_xfade，默认关）段间 0.3s xfade+acrossfade 交叉淡化、可选 comfy.merge_grade 统一调色；段>120 回退硬拼（全链重编码代价）；无音轨段 `_ensure_audio` 补静音；`subtitles` 镜内多句按字数比例分时长（替均分）
 - 注意：xfade 链整片重编码，合成耗时显著上升——追求速度保持默认关；文档的中文提示词模板未采纳（项目 E 模式为真机实测协议）
 
+## 模块地图（角色音色系统 2026-09-02）
+
+- **R1 分析期音色决策链** — `schemas.CharacterAsset.voice_description`（仅给有台词角色）；EXTRACT_SYSTEM「库内不合适→suggested_voice 留空+填声线描述」；analyze 尾链：库内 suggested→绑（零成本）→有描述→`voicelib.generate_custom` 生成项目级（角色名命名，幂等不重烧）并自动绑→性别×年龄基线兜底；ComfyUI 不可用/失败只 warn 落基线**不炸分析**；生成后置 LLM 分块全部结束（不与分析抢显存）
+- **R2/R3/R5 项目页「🎭 角色配音」面板**（替换旧「🎵 项目音色」按钮）— 每角色一行：当前音色徽章（项目级/预设/未绑定→Edge-TTS）/`/media` 试听/换绑下拉（未生成预设标灰+行内「⚡生成样本」）/声线描述「生成并绑定」/上传克隆收尾；`POST /api/voices/design`（生成+自动绑，空 base_url 422 门禁）/`POST /api/voices/promote`（项目级→全局自定义库 data/voices/custom，重名 409，复制保留源）——此后所有项目下拉可见且进 `voice_library_prompt` 注入 LLM；自定义音色可删（DELETE scope=project|global，被删绑定自动落 Edge-TTS）
+- **R6 资产提取防污染** — 小说：EXTRACT_SYSTEM 明令不建旁白/画外音/群体称谓/未出场者 + **persist 前机械丢弃名字不在原文的角色**（幻觉名，warn 透明）；漫画：动态漫聚合 `_NON_SPEAKER_RE` 与漫改 `_NARRATION_WORDS` 扩群体称谓（「们」一字覆盖一切 …们；众人/观众/路人即使复现 ≥2 次也不建）——防无关角色绑音色耗 ComfyUI、污染资产表
+- 合并打包两根修（schema 增字段暴露）：`_results_payload` 用 `exclude_defaults`（空音色字段零信息，每角色白胖 44 字）；`merge_analyses` 按精确增量（去 JSON 包装）计费替代整载荷累加（旧法重复计包装、系统性偏高，末轮易触发强制两两合并击穿 max_payload_chars）
+- 移动端：`.voice-panel`/`.voice-row` 换行自适应；`.assets-grid .card{min-width:0;overflow-wrap:anywhere}`（修 375px 多列资产卡长串顶破轨道 406>360 既有溢出）；Playwright 375×667 面板全开零溢出实测
+- 注意：**项目级音色=按角色各自绑定，无「项目级单一音色」语义**；音色消费两链路（ref2va 原声口型 / qwen_tts_clone 克隆配音，多说话人镜落 Edge-TTS）
+
 ## 模块地图（comfy.base_url 清空事故 2026-09-01）
 
 - 事故：设置页保存曾把 comfy.base_url 冲成空串（全量 model_dump 默认值覆盖未提供键）→ worker `_comfy()` 返 None → 36k gen_shot 以 `AttributeError: NoneType.upload_media` 批量失败（暴露于 09-01 03:00 autopilot 夜间大批渲染）

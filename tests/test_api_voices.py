@@ -121,10 +121,17 @@ def test_design_generates_and_binds(tmp_path, monkeypatch):
                                       "text/plain")}).json()["id"]
         from types import SimpleNamespace as NS
         from comic_studio.engine.assets import persist_assets
+        from comic_studio.engine.settings import set_setting
         ids = persist_assets(c.app.state.db, tmp_path / "data", pid,
                              NS(characters=[NS(name="林晨", appearance="黑发", tags=[])],
                                 scenes=[], props=[]))
         aid = ids[0]
+        # ComfyUI 空串门禁（2026-09-01 事故防线②：默认值带 8188，拦的是被存空的形态）
+        set_setting(c.app.state.db, "comfy", {"base_url": ""})
+        assert c.post("/api/voices/design", json={
+            "project_id": pid, "name": "x", "instruction": "描述",
+            "bind_asset_id": aid}).status_code == 422
+        set_setting(c.app.state.db, "comfy", {"base_url": "http://127.0.0.1:8188"})
 
         def fake_gen(comfy, data_dir, project, name, instruction, db=None):
             out = Path(data_dir) / "projects" / project / "voices" / f"{name}.flac"

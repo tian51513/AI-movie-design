@@ -82,6 +82,23 @@
     .m-actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .m-actions button { flex: 1 1 auto; min-width: 104px; min-height: 44px; font-size: 14px; }
   }
+  /* 🎭 角色配音面板（2026-09-02 音色系统）：按角色一行，换行自适应窄屏 */
+  .assets-grid .card { min-width: 0; overflow-wrap: anywhere; }  /* 窄屏多列时卡内长串顶破轨道（2026-09-02 移动端实测 406>360） */
+  .voice-panel { border: 1px solid #334155; border-radius: 8px; padding: 10px;
+                 margin: 8px 0; display: flex; flex-direction: column; gap: 8px; }
+  .voice-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+  .voice-row audio { max-width: 170px; }
+  .vbadge { font-size: 11px; padding: 2px 8px; border-radius: 10px;
+            background: #334155; color: #cbd5e1; max-width: 100%; }
+  .vbadge.project { background: #0e7490; }
+  .vbadge.preset { background: #475569; }
+  .vbadge.none { background: #450a0a; color: #fca5a5; }
+  @media (max-width: 768px) {
+    .voice-row { font-size: 12px; }
+    .voice-row audio { max-width: 128px; height: 24px; }
+    .voice-row input, .voice-row select { max-width: 100%; }
+    .voice-row button { min-height: 32px; }
+  }
 </style>
 </head>
 <body>
@@ -221,7 +238,7 @@
       <div><b style="color:#60a5fa">🔀 任务路由</b>：每个任务可独立选服务商/模型（长文本建议对话模型）</div>
       <div><b style="color:#60a5fa">🎬 工作流</b>：模板映射（主图/三视图/视频/导演台）+ 模型切换 + 性能开关</div>
       <div><b style="color:#60a5fa">📚 预设主题</b>：主题模板管理（导入/编辑/删除）</div>
-      <div><b style="color:#60a5fa">🎵 音色库</b>：15 预设批量生成（⟳ 可重生成+试听）· 全局/项目级自定义上传（裁剪→克隆→试听→确认入库）</div>
+      <div><b style="color:#60a5fa">🎵 音色库</b>：15 预设批量生成（⟳ 可重生成+试听）· 全局/项目级自定义上传（裁剪→克隆→试听→确认入库）· 项目页<b>「🎭 角色配音」</b>逐角色：分析自动绑（预设优先）→试听/换绑→声线描述生成专属→⤴晋升全局复用</div>
     </div>
 
     <!-- 提示 -->
@@ -714,22 +731,58 @@
       <button v-if="project.comic_mode && assets.length" @click="purgeComicAssets"
               style="background:#dc2626;font-size:12px;padding:3px 10px"
               title="删除全部读图提取的资产（含参考图目录与分镜绑定）——动态漫不需要角色资产，误提取的旁白/叙述垃圾用它清理">🗑 清理提取资产</button>
-      <button @click="projVoiceOpen=!projVoiceOpen" style="font-size:12px;padding:3px 10px;background:#0e7490"
-              title="上传仅本项目可用的音色（克隆处理成标准样本）">🎵 项目音色</button>
-      <span v-if="projVoiceOpen" style="display:inline-flex;gap:6px;align-items:center;font-size:12px;flex-wrap:wrap">
+      <button @click="toggleVoicePanel" style="font-size:12px;padding:3px 10px;background:#0e7490"
+              title="逐角色：试听当前音色 / 换绑预设或自定义 / 按声线描述生成专属音色 / 满意晋升全局">🎭 角色配音</button>
+    </p>
+    <!-- 🎭 角色配音面板（2026-09-02 音色系统）：按角色各自绑定，非项目级单一音色 -->
+    <div v-if="voicePanelOpen" class="voice-panel">
+      <div v-for="a in voiceChars" :key="a.id" class="voice-row">
+        <b>{{ a.name }}</b>
+        <span class="vbadge" :class="(voiceEntry(a.voice)||{}).origin || 'none'">
+          {{ a.voice ? (a.voice + ((voiceEntry(a.voice)||{}).missing ? ' ·样本缺失' : '')) : '未绑定→Edge-TTS' }}</span>
+        <audio v-if="voicePath(a.voice)" :src="'/media/'+voicePath(a.voice)" controls
+               style="height:26px;max-width:170px" title="试听当前音色样本"></audio>
+        <select v-model="rowVoiceSel[a.id]" style="max-width:150px"
+                title="系统预设 / 全局自定义 / 项目级音色">
+          <option value="">（不绑定——Edge-TTS 按性别）</option>
+          <option v-for="v in voices" :key="v.name" :value="v.name">
+            {{ v.name }}（{{ {preset:'预设',global:'全局',project:'项目级'}[v.origin] }}{{ v.missing ? '·未生成' : '' }}）</option>
+        </select>
+        <button style="font-size:11px;padding:2px 8px" @click="bindRowVoice(a)">绑定</button>
+        <button v-if="selNeedsSample(a)" style="font-size:11px;padding:2px 8px;background:#b45309"
+                :disabled="rowBusy[a.id]" @click="genPresetSample(rowVoiceSel[a.id], a)"
+                title="该预设还没样本——生成后试听/渲染才生效">⚡生成样本</button>
+        <input v-model="rowVoiceDesc[a.id]" placeholder="声线描述（库中不合适时）"
+               style="flex:1;min-width:130px;max-width:220px">
+        <button style="font-size:11px;padding:2px 8px;background:#7c3aed" @click="genRowVoice(a)"
+                :disabled="rowBusy[a.id] || !(rowVoiceDesc[a.id]||'').trim()"
+                title="VoiceDesign 按描述生成项目级音色并自动绑给该角色">
+          {{ rowBusy[a.id] ? '⏳' : '生成并绑定' }}</button>
+        <button v-if="a.voice && (voiceEntry(a.voice)||{}).origin==='project'"
+                style="font-size:11px;padding:2px 8px;background:#0e7490" @click="promoteRow(a)"
+                title="复制进全局自定义音色库（data/voices/custom），所有项目可复用">⤴ 存为全局</button>
+        <button v-if="a.voice && ['project','global'].includes((voiceEntry(a.voice)||{}).origin)"
+                style="font-size:11px;padding:2px 8px;background:#dc2626" @click="delRowVoice(a)"
+                title="删除该自定义音色样本（角色回落 Edge-TTS）">🗑</button>
+      </div>
+      <div v-if="!voiceChars.length" class="muted" style="font-size:12px">
+        还没有角色资产——先「LLM 分析资产」或导入漫画。</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px">
+        <span class="muted">上传克隆（入库后各角色下拉选绑）：</span>
         <input type="file" accept=".mp3,.wav,.flac,.ogg,.m4a" @change="e => pUp.file = e.target.files[0]" style="max-width:180px">
         <input v-model="pUp.name" placeholder="音色名" style="width:90px">
         起始<input type="number" v-model.number="pUp.start" min="0" style="width:60px">
         长度<input type="number" v-model.number="pUp.dur" min="5" style="width:60px">
         <button @click="submitVoiceUpload('project')" :disabled="vUpBusy || !pUp.file || !pUp.name"
                 style="font-size:11px;padding:2px 8px">{{ vUpBusy ? '⏳' : '上传' }}</button>
-      </span>
-      <span v-if="vStaged && projVoiceOpen" style="display:inline-flex;gap:6px;align-items:center;border:1px solid #f59e0b;border-radius:6px;padding:4px 8px;font-size:12px">
+      </div>
+      <div v-if="vStaged" style="display:flex;gap:6px;align-items:center;border:1px solid #f59e0b;border-radius:6px;padding:4px 8px;font-size:12px;flex-wrap:wrap">
         🎧 <audio :src="vStaged.url" controls style="height:24px"></audio>
         <button style="background:#16a34a;font-size:11px;padding:2px 8px" @click="confirmVoice('project')">✓ 入库</button>
         <button style="background:#dc2626;font-size:11px;padding:2px 8px" @click="discardVoice">✕ 放弃</button>
-      </span>
-    </p>
+      </div>
+      <p v-if="vUpErr" style="color:#f87171;font-size:12px;margin:0">{{ vUpErr }}</p>
+    </div>
     <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button v-for="k in ['全部','character','scene','prop']" :key="k"
               @click="activeKind=k"
@@ -740,7 +793,7 @@
           <option :value="2">2</option><option :value="3">3</option><option :value="4">4</option>
         </select> 个</span>
     </p>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(0,1fr));gap:12px"
+    <div class="assets-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(0,1fr));gap:12px"
          :style="{gridTemplateColumns: 'repeat(' + perRow + ', minmax(0,1fr))'}">
         <div class="card" v-for="a in shownAssets" :key="a.id"
              :title="a.detail">
