@@ -150,6 +150,8 @@ def make_split_factory(db):
 
 
 _QUOTE_RE = re.compile(r'[“「"]([^”」"]{2,})[”」"]')
+# 说话动词/提示：紧邻引号前出现=前方名字是说话人（后方窗口不再争抢）
+_SPEECH_CUE_RE = re.compile(r"说道|笑道|喊道|问道|骂道|冷笑|开口|回道|低语|说：|道：|问：")
 
 
 def backfill_dialogue(staged: list, character_names: list[str]) -> int:
@@ -157,6 +159,9 @@ def backfill_dialogue(staged: list, character_names: list[str]) -> int:
     不填 schema 的 dialogue 字段 → TTS/字幕链路全空）。从 text_span 提取引号句
     （弯引号 “”、直引号 "、方引号 「」；内层单引号 ‘’ 不取），说话人取引号
     前后窗口内最近出现的角色名（前优先），找不到用首个角色或"旁白"。
+    交替惯例（2026-09-03 武侠风云真机：女主无提示回怼被就近规则派给男主）：
+    相邻引号之间的文本若没有任何角色名/说话动词提示，按中文对白惯例轮换到
+    另一位（本 span 出现过的、≠上一句说话人的名字）。
     LLM 已给出 dialogue 的镜不动。返回补录句数。"""
     names = [n for n in character_names if n]
     n_filled = 0
@@ -166,8 +171,10 @@ def backfill_dialogue(staged: list, character_names: list[str]) -> int:
             continue
         span = getattr(s, "text_span", "") or ""
         entries = []
+        prev_speaker, prev_end = None, -1
         for m in _QUOTE_RE.finditer(span):
             before, after = span[:m.start()], span[m.end():m.end() + 30]
+            between = span[prev_end:m.start()] if prev_end >= 0 else ""
             # 双向就近：中文小说对白两种形态都常见——“某人曰：“…”（名在前）与
             # “…”某人动作（名在后），谁离引号近归谁
             speaker, dist = None, None
@@ -177,16 +184,46 @@ def backfill_dialogue(staged: list, character_names: list[str]) -> int:
                     d0 = len(before) - i - len(name)
                     if dist is None or d0 < dist:
                         dist, speaker = d0, name
-            for name in names:
-                j = after.find(name)
-                if j != -1 and (dist is None or j < dist):
-                    dist, speaker = j, name
+            # 引号紧前有说话动词（某某说道：）→ 前方名字即说话人；
+            # 否则双向就近（“…”某人动作 的名在后形态）
+            if not _SPEECH_CUE_RE.search(before[-10:]):
+                for name in names:
+                    j = after.find(name)
+                    if j != -1 and (dist is None or j < dist):
+                        dist, speaker = j, name
+            # 交替惯例：无提示（speaker 空）或最近的候选=上一句说话人且
+            # 两句之间没有任何名字/说话动词 → 轮换另一位（span 内出现过的）
+            span_names = [n for n in names if n in span]
+            if prev_speaker and ((speaker is None) or (speaker == prev_speaker
+                                                       and not _SPEECH_CUE_RE.search(between)
+                                                       and not any(n in between for n in names))):
+                alt = next((n for n in span_names if n != prev_speaker), None)
+                if alt:
+                    speaker = alt
             entries.append({"speaker": speaker or (names[0] if names else "旁白"),
                             "line": m.group(1).strip()})
+            prev_speaker, prev_end = entries[-1]["speaker"], m.end()
         if entries:
             ledger["dialogue"] = entries
+            s.dialogue_backfilled = True  # 重估时长的作用域标记
             n_filled += len(entries)
     return n_filled
+
+
+def reestimate_durations(staged: list) -> int:
+    """对白镜时长机械重估（2026-09-03 武侠风云真机：42 镜对白 24 句仍全 5s——
+    句数×2.5 的估时交给 LLM，而本地模型填不出对白、一律写 5；对白是 backfill
+    机械补的，补完没人回头改时长）。按 A 级文档公式确定性重算：句数×2.5 钳
+    [4,15]；无对白镜不动（维持项目统一段时长）。返回重估镜数。"""
+    n = 0
+    for s in staged:
+        if not getattr(s, "dialogue_backfilled", False):
+            continue  # LLM 自填对白的镜保留其估时（staging 已钳），只重算补录镜
+        dlg = (getattr(s, "ledger", None) or {}).get("dialogue") or []
+        if dlg:
+            s.duration = min(15.0, max(4.0, 2.5 * len(dlg)))
+            n += 1
+    return n
 
 
 def auto_bind_characters(db, project_id):
@@ -318,6 +355,12 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     if n_dlg:
         emit_log(db, "storyboard", "info", f"对白机械补录：{n_dlg} 句（模型未提取，从原文引号恢复）",
                  project_id=project_id)
+    # 时长机械重估（2026-09-03 真机教训：LLM 没见过对白就把时长写死 5，
+    # 补录后必须按文档公式句数×2.5 钳 4~15 回算，对白镜时长不再均分）
+    n_dur = reestimate_durations(staged)
+    if n_dur:
+        emit_log(db, "storyboard", "info",
+                 f"对白镜时长重估：{n_dur} 镜（句数×2.5s，钳 4~15）", project_id=project_id)
     ids = persist_shots(db, project_id, staged)
     conn = db.connect()
     # 尾帧接力链（连贯性① 2026-08-26）：全顺序镜自动链接（含跨块衔接——

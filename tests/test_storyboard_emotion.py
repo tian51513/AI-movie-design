@@ -68,3 +68,32 @@ def test_system_prompt_has_dialogue_grouping_contract():
     for kw in ("平静", "嘶吼", "emotion", "gesture", "gaze", "continuity",
                "微变延续", "场景断点"):
         assert kw in SPLIT_SYSTEM, kw
+
+
+def test_backfill_alternates_speaker_and_reestimates_duration():
+    """2026-09-03 武侠风云真机：①女主无提示回怼被就近规则派给前一句的男主
+    ——中文对白交替惯例：相邻引号间无新说话人提示时轮换；②backfill 补录后
+    时长没人回头重估（LLM 未见过对白，一律写 5）——补录后机械按文档公式
+    句数×2.5 钳 4~15 重算。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.llm.storyboard import backfill_dialogue, reestimate_durations
+    span = ('楚惊云冷笑着说道：“你知道为什么我会将主意打到她身上吗？”'
+            '沈雪柔气得脸色发白。“无耻！你休得血口喷人！”')
+    s = NS(text_span=span, ledger={}, duration=5.0)
+    n = backfill_dialogue([s], ["楚惊云", "沈雪柔"])
+    assert n == 2
+    d = s.ledger["dialogue"]
+    assert d[0]["speaker"] == "楚惊云"
+    assert d[1]["speaker"] == "沈雪柔", "无新提示的相邻回怼应按交替惯例换人"
+    # 时长机械重估（只管补录镜）：2 句 × 2.5 = 5.0；单句钳下限 4.0；8 句钳上限 15
+    reestimate_durations([s]); assert s.duration == 5.0
+    s1 = NS(text_span="", ledger={"dialogue": [{"speaker": "x", "line": "一"}]},
+            duration=5.0, dialogue_backfilled=True)
+    s8 = NS(text_span="", ledger={"dialogue": [{"speaker": "x", "line": str(i)} for i in range(8)]},
+            duration=5.0, dialogue_backfilled=True)
+    llm_filled = NS(text_span="", ledger={"dialogue": [{"speaker": "x", "line": "y"}]},
+                    duration=12.0)  # LLM 自填对白→估时不覆盖
+    s0 = NS(text_span="", ledger={"dialogue": []}, duration=6.0)
+    reestimate_durations([s1, s8, llm_filled, s0])
+    assert s1.duration == 4.0 and s8.duration == 15.0
+    assert llm_filled.duration == 12.0 and s0.duration == 6.0
