@@ -36,7 +36,7 @@ def test_prompts_pin_json_contract():
 
 def test_single_chunk_no_merge(tmp_path):
     db = _db(tmp_path)
-    proj = create_project(db, tmp_path / "data", "p", "9:16", "一段短文本")
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "萧炎的短文本")
     fake = FakeClient([CHUNK1])
     ids = analyze_project(db, tmp_path / "data", proj["id"], client_factory=lambda t: fake)
     assert len(ids) == 1
@@ -46,7 +46,7 @@ def test_single_chunk_no_merge(tmp_path):
 
 def test_multi_chunk_merges(tmp_path):
     db = _db(tmp_path)
-    long_text = "\n\n".join(["甲" * 50, "乙" * 50])  # 触发两块
+    long_text = "\n\n".join(["萧炎甲" * 10, "萧薰儿乙" * 10])  # 触发两块
     proj = create_project(db, tmp_path / "data", "p", "9:16", long_text)
     fake = FakeClient([CHUNK1, CHUNK2, MERGED])
     ids = analyze_project(db, tmp_path / "data", proj["id"],
@@ -58,7 +58,7 @@ def test_multi_chunk_merges(tmp_path):
 
 def test_llm_calls_logged(tmp_path):
     db = _db(tmp_path)
-    proj = create_project(db, tmp_path / "data", "p", "9:16", "短文本")
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "萧炎短文本")
     analyze_project(db, tmp_path / "data", proj["id"],
                     client_factory=lambda t: FakeClient([CHUNK1]))
     n = db.connect().execute("SELECT COUNT(*) c FROM llm_calls").fetchone()["c"]
@@ -68,7 +68,7 @@ def test_llm_calls_logged(tmp_path):
 def test_merge_llm_call_logs_real_usage(tmp_path):
     """合并步骤的 llm_calls 应记录真实 usage 而非 0/0。"""
     db = _db(tmp_path)
-    long_text = "\n\n".join(["甲" * 50, "乙" * 50])
+    long_text = "\n\n".join(["萧炎甲" * 10, "萧薰儿乙" * 10])
     proj = create_project(db, tmp_path / "data", "p", "9:16", long_text)
     fake = FakeClient([CHUNK1, CHUNK2, MERGED])
     analyze_project(db, tmp_path / "data", proj["id"],
@@ -85,7 +85,7 @@ def test_analysis_emits_structured_logs(tmp_path):
     from comic_studio.engine.db import Database
     from comic_studio.engine.logbus import fetch_logs
     db = Database(tmp_path / "s.db"); db.migrate()
-    proj = create_project(db, tmp_path / "data", "日志剧", "9:16", "一段短文本")
+    proj = create_project(db, tmp_path / "data", "日志剧", "9:16", "萧炎的短文本")
     analyze_project(db, tmp_path / "data", proj["id"],
                     client_factory=lambda t: FakeClient([CHUNK1]))
     msgs = [(r["source"], r["level"], r["message"]) for r in fetch_logs(db, proj["id"])]
@@ -181,7 +181,7 @@ def test_analyze_suggests_voices(tmp_path, monkeypatch):
     with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "d",
                                start_workers=False)) as c:
         pid = c.post("/api/projects", data={"name": "匹配剧", "aspect_ratio": "9:16"},
-                     files={"novel": ("n.txt", io.BytesIO("正文".encode()),
+                     files={"novel": ("n.txt", io.BytesIO("小雪搀着老爷，路人让开。".encode()),
                                       "text/plain")}).json()["id"]
         c.post(f"/api/projects/{pid}/analyze")
         import time
@@ -201,7 +201,7 @@ def test_voice_match_update_sql_valid(tmp_path):
     直接 OperationalError: near "LIMIT"。appearance 带性别/年龄即踩中音色分支
     （老 fixture「黑发少年」匹配不到音色，SQL 从未真正执行过）。"""
     db = _db(tmp_path)
-    proj = create_project(db, tmp_path / "data", "p", "9:16", "一段短文本")
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "林战的短文本")
     chunk = ('{"characters":[{"name":"林战","appearance":"性别：男；年龄：30；铁甲将军"}],'
              '"scenes":[],"props":[]}')
     analyze_project(db, tmp_path / "data", proj["id"],
@@ -233,7 +233,7 @@ def test_voice_chain_generates_project_voice_when_no_preset_matches(tmp_path, mo
     音色（以角色名命名）并绑定。"""
     from comic_studio.engine import voicelib
     db = _db(tmp_path)
-    proj = create_project(db, tmp_path / "data", "p", "9:16", "一段短文本")
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "玄鸟的短文本")
     from comic_studio.engine.settings import set_setting
     set_setting(db, "comfy", {"base_url": "http://127.0.0.1:8188"})
     calls = []
@@ -256,7 +256,7 @@ def test_voice_chain_degrades_to_baseline_when_comfy_unavailable(tmp_path, monke
     """R1：ComfyUI 未配置 → 不生成、不炸分析，落性别×年龄基线预设。"""
     from comic_studio.engine import voicelib
     db = _db(tmp_path)
-    proj = create_project(db, tmp_path / "data", "p", "9:16", "一段短文本")
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "玄鸟的短文本")
     monkeypatch.setattr(voicelib, "generate_custom",
                         lambda *a, **k: (_ for _ in ()).throw(AssertionError("不应生成")))
     analyze_project(db, tmp_path / "data", proj["id"],
@@ -264,3 +264,17 @@ def test_voice_chain_degrades_to_baseline_when_comfy_unavailable(tmp_path, monke
     a = list_project_assets(db, proj["id"])[0]
     assert a["voice"]  # 基线兜底（女/28 → 青年女预设）
     assert get_project(db, proj["id"])["stage"] == "analyzed"
+
+
+def test_analyze_drops_ghost_character_names(tmp_path):
+    """R6（2026-09-02 用户需求）：LLM 幻觉名（原文中不存在的角色）落库前
+    机械丢弃——防无关角色绑音色耗资源、污染资产表。"""
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "林战踏马入城。")
+    chunk = ('{"characters":[{"name":"林战","appearance":"性别：男；年龄：30岁"},'
+             '{"name":"幽泉老祖","appearance":"性别：男；年龄：70岁"}],'
+             '"scenes":[],"props":[]}')
+    analyze_project(db, tmp_path / "data", proj["id"],
+                    client_factory=lambda t: FakeClient([chunk]))
+    names = {a["name"] for a in list_project_assets(db, proj["id"])}
+    assert names == {"林战"}  # 幽泉老祖=幻觉名，丢弃

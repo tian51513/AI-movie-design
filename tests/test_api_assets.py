@@ -23,7 +23,7 @@ def test_assets_endpoint(tmp_path, monkeypatch):
                         lambda db, task: FakeLLM())
     with TestClient(app) as c:
         pid = c.post("/api/projects", data={"name": "p", "aspect_ratio": "9:16"},
-                     files={"novel": ("c.txt", io.BytesIO("短".encode()), "text/plain")}).json()["id"]
+                     files={"novel": ("c.txt", io.BytesIO("萧炎的短篇".encode()), "text/plain")}).json()["id"]
         c.post(f"/api/projects/{pid}/analyze")
         import time
         for _ in range(50):

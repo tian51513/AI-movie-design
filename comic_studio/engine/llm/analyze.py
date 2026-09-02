@@ -42,6 +42,10 @@ EXTRACT_SYSTEM = """你是小说改编漫剧的资产分析师。从给定的小
 3. 关键道具（props）：name、description（外观、材质、尺寸、时代与文化风格——
    如肚兜/罗裳等须写明"中式古风"及形制细节，避免生成模型误读为现代物品）
 只提取对画面呈现有意义的条目；路人一般不建角色。
+绝不建为角色（R6 2026-09-02）：旁白/画外音/内心独白等无姓名的叙述声音、
+群体称谓（众人/大家/村民们/士兵们等一切「…们」）、仅被对话提及而从未实际
+出场者、抽象概念或物种统称。角色必须是原文中实际出场、姓名在原文中出现
+过的个体（系统会机械校验：名字不在原文的角色将被丢弃）。
 每个角色另给 suggested_voice：按年龄/性别/气质/着装从随提示附上的「可用音色库」
 清单中选最贴切的一个（含用户自定义音色；清单外值会被忽略，走性别×年龄基线：
 女童→萝莉 男童→正太 青年女→温柔少女 青年男→深沉男声 中年女→温柔淑女
@@ -215,6 +219,16 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
                                              project_id=project_id))
         emit_log(db, "analyze", "info", f"合并 {len(results)} 块分析结果", project_id=project_id)
         log_llm_call(db, "extract_assets", provider_name, extract_client.model, merge_usage)
+    # R6 机械防污染（2026-09-02 用户需求）：幻觉名（原文中不存在的角色名）落库
+    # 前丢弃——真角色的名字（含别名）必然在原文出现过；不存在=模型编造。
+    _ghost = {c.name.strip() for c in final.characters
+              if c.name.strip() and c.name.strip() not in text}
+    if _ghost:
+        final = final.model_copy(update={"characters": [
+            c for c in final.characters if c.name.strip() not in _ghost]})
+        emit_log(db, "analyze", "warn",
+                 f"丢弃 {len(_ghost)} 个原文不存在的角色（幻觉名）："
+                 f"{'、'.join(sorted(_ghost))}", project_id=project_id)
     ids = persist_assets(db, data_dir, project_id, final)
     emit_log(db, "analyze", "info",
              f"入库 {len(final.characters)} 角色 / {len(final.scenes)} 场景 / {len(final.props)} 道具",

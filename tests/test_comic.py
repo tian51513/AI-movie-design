@@ -306,3 +306,46 @@ def test_extract_comic_matches_voices(tmp_path):
           if a["kind"] == "character"}
     assert by["小雪"] == "萝莉"                        # 建议命中
     assert by["老仆"] == "老年男声"                    # 非法建议→基线兜底
+
+
+def test_motion_group_speakers_not_built_as_assets(tmp_path):
+    """R6：动态漫对白聚合——群体称谓（众人/…们/观众）不建角色不绑音色。"""
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "群杂剧", "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG)])["id"]
+
+    class FakeVision(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return "林战：「冲锋」众人：「杀——」士兵们紧随其后。", Usage(10, 20)
+
+    describe_shots(db, tmp_path / "data", pid, FakeVision())
+    from comic_studio.engine.assets import list_project_assets
+    names = {a["name"] for a in list_project_assets(db, pid) if a["kind"] == "character"}
+    assert names == {"林战"}  # 众人/士兵们不建
+
+
+def test_film_group_nouns_not_extracted(tmp_path):
+    """R6：漫改提取——群体称谓即使出现 ≥2 次也不得建角色。"""
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "漫改群杂", "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG), ("p3.png", PNG)],
+                       comic_mode="film_adaptation")["id"]
+    replies = iter(["众人：「哇」继父：「来拍照」", "众人：「好看」继父：「别动」",
+                    "继父微笑，画面渐暗"])
+
+    class FakeVision(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return next(replies), Usage(10, 20)
+
+    describe_shots(db, tmp_path / "data", pid, FakeVision())
+    from comic_studio.engine.assets import list_project_assets
+    names = {a["name"] for a in list_project_assets(db, pid) if a["kind"] == "character"}
+    assert names == {"继父"}  # 众人出现 2 次、2 字——旧规则会放行，R6 拦下
