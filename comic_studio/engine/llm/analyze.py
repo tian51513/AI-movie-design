@@ -46,16 +46,22 @@ EXTRACT_SYSTEM = """你是小说改编漫剧的资产分析师。从给定的小
 清单中选最贴切的一个（含用户自定义音色；清单外值会被忽略，走性别×年龄基线：
 女童→萝莉 男童→正太 青年女→温柔少女 青年男→深沉男声 中年女→温柔淑女
 中年男→大叔 老年女→老年女声 老年男→老年男声）。
+若清单中没有贴合该角色的音色：suggested_voice 留空，改填 voice_description——
+一句可据此合成该声线的描述（如"低沉沙哑的中年男声，语速慢，语气威严"）。
+voice_description 只给**有台词的说话角色**；不出声的角色一律不填。
 
-只输出一个 JSON 对象：{"characters":[{"name","role","appearance","tags","suggested_voice"}],
+只输出一个 JSON 对象：{"characters":[{"name","role","appearance","tags","suggested_voice","voice_description"}],
 "scenes":[{"name","description","tags"}],"props":[{"name","description","tags"}]}"""
 
 MERGE_SYSTEM = """合并多段小说文本的资产分析结果。规则：
 - 同名（或明显同一人的别名，如"萧炎/炎少爷"）合并为一条，appearance 取信息最丰富的描述并可融合细节；
 - 同一场景不同叫法合并；tags 取并集；
 - 保留所有不同条目，不丢项。
+- 角色的 suggested_voice / voice_description 必须保留（取非空者；都空则留空）——
+  这是后续配音绑定的依据，丢了会导致角色无声线。
 输出与输入相同结构的 JSON：{"characters":[...],"scenes":[...],"props":[...]}，
-其中每条角色含 name/role/appearance/tags，场景与道具含 name/description/tags。"""
+其中每条角色含 name/role/appearance/tags/suggested_voice/voice_description，
+场景与道具含 name/description/tags。"""
 
 ClientFactory = Callable[[str], LLMClient]
 
@@ -68,10 +74,16 @@ def make_client_factory(db: Database) -> ClientFactory:
 
 
 def _results_payload(results: list[AssetsAnalysis]) -> str:
+    # exclude_defaults：空音色字段（suggested_voice/voice_description=""）零信息，
+    # 序列化进合并载荷每个角色白胖 ~44 字（2026-09-02 实测把 12 角色的合并树
+    # 挤过 max_payload_chars）；tags:[] 同理剔除，解析侧默认值自动补回。
     return json.dumps(
-        {"characters": [c.model_dump() for r in results for c in r.characters],
-         "scenes": [s.model_dump() for r in results for s in r.scenes],
-         "props": [p.model_dump() for r in results for p in r.props]},
+        {"characters": [c.model_dump(exclude_defaults=True)
+                        for r in results for c in r.characters],
+         "scenes": [s.model_dump(exclude_defaults=True)
+                    for r in results for s in r.scenes],
+         "props": [p.model_dump(exclude_defaults=True)
+                   for r in results for p in r.props]},
         ensure_ascii=False)
 
 
@@ -83,21 +95,25 @@ def merge_analyses(client: LLMClient, results: list[AssetsAnalysis],
     total_prompt = total_completion = 0
     level = list(results)
     rnd = 0
+    # 精确增量打包（2026-09-02 修正）：按「去 JSON 包装的裸 dump 长度」累加，
+    # 实际批发送只带一个包装（{"characters":…,"scenes":…,"props":…}）。旧算法
+    # 按每份结果的完整载荷累加——每份都重复计一次包装，系统性偏高，小预算下
+    # 末轮易剩两份各近预算，触发强制两两合并击穿 max_payload_chars。
+    _WRAP = len('{"characters": [], "scenes": [], "props": []}')
+    budget = max_payload_chars - 40  # 逗号与少量富余（精确计费后无需大余量）
     while len(level) > 1:
         rnd += 1
-        # 预算留 200 字余量给 JSON 包裹结构
-        budget = max(1, max_payload_chars - 200)
-        sizes = [len(_results_payload([r])) for r in level]
+        sizes = [len(_results_payload([r])) - _WRAP for r in level]
         batches, cur, cur_size = [], [], 0
         for r, s in zip(level, sizes):
-            if cur and cur_size + s > budget:
+            if cur and _WRAP + cur_size + s > budget:
                 batches.append(cur)
                 cur, cur_size = [], 0
             cur.append(r)
             cur_size += s
         if cur:
             batches.append(cur)
-        if len(batches) >= len(level):  # 预算过小没并起来——强制两两合并防死循环
+        if len(batches) >= len(level):  # 单份即超预算没并起来——强制两两防死循环
             batches = [level[i:i + 2] for i in range(0, len(level), 2)]
         nxt = []
         for batch in batches:
@@ -135,6 +151,18 @@ _VOICE_BIND_SQL = (
     "  SELECT a.id FROM assets a JOIN project_assets pa ON pa.asset_id=a.id"
     "  WHERE pa.project_id=? AND a.name=? AND a.kind='character'"
     "  AND a.voice='' LIMIT 1)")
+
+
+def _comfy_for_voices(db) -> "object | None":
+    """音色生成用 ComfyClient；未配置返回 None（只探一次，warn 一次）。"""
+    from ..comfy.client import ComfyClient
+    from ..settings import ensure_comfy_configured
+    try:
+        ensure_comfy_configured(db)
+    except ValueError:
+        return None
+    url = (get_setting(db, "comfy") or {}).get("base_url", "http://127.0.0.1:8188")
+    return ComfyClient(url)
 
 
 def analyze_project(db: Database, data_dir: Path, project_id: int,
@@ -191,16 +219,47 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
     emit_log(db, "analyze", "info",
              f"入库 {len(final.characters)} 角色 / {len(final.scenes)} 场景 / {len(final.props)} 道具",
              project_id=project_id)
-    # 音色自动匹配（2026-08-30 用户需求）：LLM 建议优先，性别×年龄基线兜底；
-    # 只写默认匹配，人工绑定（assets.voice 已有值）不覆盖
+    # 音色决策链（2026-09-02 用户需求：预设优先，不匹配才生成）：
+    # ① suggested_voice 库内有效 → 绑（零成本）
+    # ② LLM 给了 voice_description → ComfyUI 可用时生成项目级音色（角色名命名）
+    #    并绑定；不可用/失败 → warn + 落基线，分析照常完成（音色是增强不是门槛）
+    # ③ 都没有 → 性别×年龄基线预设兜底；性别也判不出 → 不绑（渲染走 Edge-TTS）
+    # 生成只发生在 LLM 分块全部结束后（本阶段），不会与分析 LLM 抢显存。
     from ..voices import match_voice
     from ..voicelib import voice_library_names
     _lib = voice_library_names(data_dir, proj["slug"])
+    _lib_set = set(_lib)
     conn = db.connect()
     n_voice = 0
+    comfy = None
+    comfy_tried = False
     for ch in final.characters:
-        voice = match_voice(ch.appearance, getattr(ch, "suggested_voice", ""),
-                            library=_lib)
+        suggested = (getattr(ch, "suggested_voice", "") or "").strip()
+        voice = ""
+        if suggested in _lib_set:
+            voice = suggested
+        else:
+            desc = (getattr(ch, "voice_description", "") or "").strip()
+            if desc:
+                if not comfy_tried:
+                    comfy_tried = True
+                    comfy = _comfy_for_voices(db)
+                    if comfy is None:
+                        emit_log(db, "analyze", "warn",
+                                 "ComfyUI 未配置，跳过角色音色生成（落基线预设）",
+                                 project_id=project_id)
+                if comfy is not None:
+                    try:
+                        from .. import voicelib
+                        voicelib.generate_custom(comfy, data_dir, proj["slug"],
+                                                 ch.name, desc, db=db)
+                        voice = ch.name
+                    except Exception as e:
+                        emit_log(db, "analyze", "warn",
+                                 f"角色 {ch.name} 音色生成失败，落基线预设：{e}",
+                                 project_id=project_id)
+            if not voice:
+                voice = match_voice(ch.appearance, "", library=_lib)
         if not voice:
             continue
         cur = conn.execute(_VOICE_BIND_SQL, (voice, project_id, ch.name))

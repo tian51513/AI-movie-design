@@ -218,3 +218,49 @@ def test_voice_bind_sql_no_update_level_limit():
     from comic_studio.engine.llm.analyze import _VOICE_BIND_SQL
     assert not re.search(r"\)\s*LIMIT", _VOICE_BIND_SQL), "LIMIT 落在子查询括号外=UPDATE级LIMIT"
     assert "'' LIMIT 1)" in _VOICE_BIND_SQL  # 在子查询内
+
+
+def _voice_chunk(name="玄鸟", **extra):
+    import json as _json
+    ch = {"name": name, "appearance": "性别：女；年龄：28岁；银发斗篷",
+          "suggested_voice": "", "voice_description": "空灵慵懒的低语女声"}
+    ch.update(extra)
+    return _json.dumps({"characters": [ch], "scenes": [], "props": []})
+
+
+def test_voice_chain_generates_project_voice_when_no_preset_matches(tmp_path, monkeypatch):
+    """R1（2026-09-02）：库内 suggested 无效 + voice_description → 生成项目级
+    音色（以角色名命名）并绑定。"""
+    from comic_studio.engine import voicelib
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "一段短文本")
+    from comic_studio.engine.settings import set_setting
+    set_setting(db, "comfy", {"base_url": "http://127.0.0.1:8188"})
+    calls = []
+
+    def fake_gen(comfy, data_dir, project, name, instruction, db=None):
+        calls.append((project, name, instruction))
+        out = Path(data_dir) / "projects" / project / "voices" / f"{name}.flac"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(b"fLaC")
+        return out
+    monkeypatch.setattr(voicelib, "generate_custom", fake_gen)
+    analyze_project(db, tmp_path / "data", proj["id"],
+                    client_factory=lambda t: FakeClient([_voice_chunk()]))
+    assert calls == [(proj["slug"], "玄鸟", "空灵慵懒的低语女声")]
+    a = list_project_assets(db, proj["id"])[0]
+    assert a["voice"] == "玄鸟"
+
+
+def test_voice_chain_degrades_to_baseline_when_comfy_unavailable(tmp_path, monkeypatch):
+    """R1：ComfyUI 未配置 → 不生成、不炸分析，落性别×年龄基线预设。"""
+    from comic_studio.engine import voicelib
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "一段短文本")
+    monkeypatch.setattr(voicelib, "generate_custom",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("不应生成")))
+    analyze_project(db, tmp_path / "data", proj["id"],
+                    client_factory=lambda t: FakeClient([_voice_chunk()]))
+    a = list_project_assets(db, proj["id"])[0]
+    assert a["voice"]  # 基线兜底（女/28 → 青年女预设）
+    assert get_project(db, proj["id"])["stage"] == "analyzed"

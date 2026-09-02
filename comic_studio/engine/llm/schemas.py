@@ -9,6 +9,9 @@ class CharacterAsset(BaseModel):
     tags: list[str] = []
     # 15 预设之一（音色自动匹配；非法值忽略，走性别×年龄基线兜底）
     suggested_voice: str = ""
+    # 库内音色均不合适时的声线描述（2026-09-02 音色系统）：据此 VoiceDesign
+    # 生成项目级音色并绑定。仅给有台词的说话角色——没台词不填（防空耗）。
+    voice_description: str = ""
 
 
 class SceneAsset(BaseModel):
