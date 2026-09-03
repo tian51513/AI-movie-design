@@ -23,9 +23,13 @@ def test_bat_kills_by_port_8190_only():
 
 
 def test_prod_bat_no_reload_dev_bat_has_reload():
-    """start-prod 无 --reload（挂机长批次不被文件改动打断）；start.bat 保留（开发）。"""
-    prod = (START_BAT.parent / "start-prod.bat").read_text(encoding="utf-8",
-                                                           errors="replace").lower()
+    """start-prod 无 --reload（挂机长批次不被文件改动打断）；start.bat 保留（开发）。
+    2026-09-03 真机：bat 必须 ASCII+CRLF——UTF-8 中文注释按 GBK 误读+LF 行尾
+    会让注释碎片被当命令执行（「系统找不到文件 .bat锛夈」）。"""
+    raw = (START_BAT.parent / "start-prod.bat").read_bytes()
+    assert raw.decode("ascii")  # 纯 ASCII（cmd 代码页无关）
+    assert b"\r\n" in raw and b"\n" not in raw.replace(b"\r\n", b"")  # CRLF 行尾
+    prod = raw.decode().lower()
     assert "--reload" not in prod
     assert "localport 8190" in prod  # 端口清理与开发版一致
     assert "--reload" in START_BAT.read_text(encoding="utf-8", errors="replace").lower()
