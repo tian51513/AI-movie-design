@@ -119,3 +119,31 @@ def test_render_rejected_when_comfy_not_configured(tmp_path):
         assert r1.status_code == 409 and "未配置" in r1.text
         r2 = c.post(f"/api/projects/{pid}/render")
         assert r2.status_code == 409 and "未配置" in r2.text
+
+
+def test_generate_prompts_batch_regenerates_stale(tmp_path):
+    """批量生成提示词的完整语义（2026-09-03 武侠风云真机：参考图重生把 38/46 镜
+    标 stale，旧逻辑跳过「已有提示词」的镜 → stale 镜无救、过门2 按钮永不亮）：
+    无提示词 → 入队；有提示词且 ready → 跳过；**stale → 重生入队**。"""
+    import io, json
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.shots import persist_shots
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "批量剧", "9:16", "正文")["id"]
+    mk = lambda i: NS(text_span="正文", description=f"镜{i}", shot_type="动作",
+                      camera={}, duration=5.0, workflow_type="ref2va",
+                      ledger={}, character_ids=[], scene_ids=[], prop_ids=[],
+                      depends_on=None)
+    ids = persist_shots(db, pid, [mk(i) for i in range(3)])
+    conn = db.connect()
+    # 镜0：旧提示词+stale（参考图重生后）；镜1：新提示词+ready；镜2：无提示词
+    conn.execute("UPDATE shots SET prompt='旧', status='stale' WHERE id=?", (ids[0],))
+    conn.execute("UPDATE shots SET prompt='新', status='ready' WHERE id=?", (ids[1],))
+    conn.commit()
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post(f"/api/projects/{pid}/generate-prompts")
+        assert r.status_code == 202, r.text
+        assert r.json()["enqueued"] == 2  # stale 镜0 + 无提示词镜2；ready 镜1 跳过

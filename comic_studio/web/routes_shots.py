@@ -219,7 +219,11 @@ def gen_batch(request: Request, project_id: int):
         "AND shot_id IS NOT NULL AND status IN ('pending','running')")}
     n = 0
     for s in list_shots(db, project_id):
-        if (s["prompt"] or "").strip() or s["id"] in queued:
+        # 批量语义 = 补缺 + 重生 stale（2026-09-03 真机：参考图重生把 38/46 镜
+        # 标 stale，旧逻辑跳过已有提示词的镜 → stale 无救、过门2 按钮永不亮）；
+        # ready 的镜不动
+        has_fresh_prompt = bool((s["prompt"] or "").strip()) and s["status"] != "stale"
+        if has_fresh_prompt or s["id"] in queued:
             continue
         enqueue_llm_job(db, "gen_prompt", project_id=project_id,
                         shot_id=s["id"], payload={"shot_id": s["id"]})
