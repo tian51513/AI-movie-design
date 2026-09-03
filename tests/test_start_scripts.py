@@ -20,3 +20,12 @@ def test_bat_kills_by_port_8190_only():
     text = START_BAT.read_text(encoding="utf-8", errors="replace").lower()
     assert "localport 8190" in text
     assert "owningprocess" in text
+
+
+def test_prod_bat_no_reload_dev_bat_has_reload():
+    """start-prod 无 --reload（挂机长批次不被文件改动打断）；start.bat 保留（开发）。"""
+    prod = (START_BAT.parent / "start-prod.bat").read_text(encoding="utf-8",
+                                                           errors="replace").lower()
+    assert "--reload" not in prod
+    assert "localport 8190" in prod  # 端口清理与开发版一致
+    assert "--reload" in START_BAT.read_text(encoding="utf-8", errors="replace").lower()
