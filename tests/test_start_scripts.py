@@ -43,3 +43,22 @@ def test_silent_prod_vbs_no_reload_lan_enabled():
     assert "--reload" not in text.lower()
     assert "--host 0.0.0.0" in text and "--port 8190" in text
     assert b"\r\n" in raw
+
+
+def test_h3_video_manifests_wire_aspect_and_megapixels():
+    """2026-09-03 真机：h3_fl2v 的 ResolutionSelector 硬编码 9:16——manifest
+    未接 aspect 槽位，注入被静默丢弃，项目 16:9 全程无效（视频出 480x864）。
+    护栏：每个 h3_* 视频模板 manifest 必须接线 aspect + megapixels。"""
+    import json, re
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent / "templates" / "workflows"
+    for yml in sorted(root.glob("h3_*.yaml")):
+        text = yml.read_text(encoding="utf-8")
+        wf = json.load(open(yml.with_suffix(".api.json")))
+        has_rs = any(isinstance(n, dict) and n.get("class_type") == "ResolutionSelector"
+                     for n in wf.values())
+        if not has_rs:
+            continue
+        assert re.search(r"aspect:\s*\n\s*node:", text) or "aspect:" in text and "aspect_ratio" in text, \
+            f"{yml.name} 有 ResolutionSelector 但 manifest 未接 aspect"
+        assert "megapixels" in text, f"{yml.name} 未接 megapixels"
