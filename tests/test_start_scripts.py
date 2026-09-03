@@ -33,3 +33,13 @@ def test_prod_bat_no_reload_dev_bat_has_reload():
     assert "--reload" not in prod
     assert "localport 8190" in prod  # 端口清理与开发版一致
     assert "--reload" in START_BAT.read_text(encoding="utf-8", errors="replace").lower()
+
+
+def test_silent_prod_vbs_no_reload_lan_enabled():
+    """start_silent_prod.vbs（2026-09-03）：无热重载 + 0.0.0.0（旧 silent 版
+    只绑 127.0.0.1，手机局域网访问不到）；ASCII+CRLF。"""
+    raw = (START_BAT.parent / "start_silent_prod.vbs").read_bytes()
+    text = raw.decode("ascii")
+    assert "--reload" not in text.lower()
+    assert "--host 0.0.0.0" in text and "--port 8190" in text
+    assert b"\r\n" in raw
