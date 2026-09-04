@@ -91,3 +91,21 @@ def test_generate_srt_proportional_by_length(tmp_path):
     d2 = _sec(stamps[1].split("-->")[1]) - _sec(stamps[1].split("-->")[0])
     assert abs((d1 + d2) - 8.0) < 0.01          # 总时长守恒
     assert d2 / d1 > 8                          # 10:1 字数比 → 时长比接近 10
+
+
+def test_srt_uses_audio_duration_when_longer(tmp_path):
+    """设计B3：镜 1 配音 8s > duration 5s → 字幕轴按 8s（与合成端末帧补长一致，
+    后续镜起点不漂移）。"""
+    import subprocess
+    from comic_studio.engine.merge import ffmpeg_bin
+    db, pid = _proj(tmp_path)
+    shot_dir = tmp_path / "data" / "projects" / "字幕剧" / "shots" / "1"
+    shot_dir.mkdir(parents=True)
+    subprocess.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
+                    "anullsrc=r=24000:cl=mono", "-t", "8", "-q:a", "9",
+                    str(shot_dir / "dialogue.mp3")],
+                   check=True, capture_output=True, timeout=60)
+    from comic_studio.engine.subtitles import generate_srt
+    content = generate_srt(db, tmp_path / "data", pid).read_text(encoding="utf-8")
+    assert "00:00:08" in content          # 镜2 台词起点 8s（旧逻辑漂移到 5s）
+    assert "00:00:05 -->" not in content

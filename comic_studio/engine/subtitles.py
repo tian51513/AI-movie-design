@@ -42,6 +42,18 @@ def generate_srt(db, data_dir, project_id, spans=None) -> Path:
             start_base, duration = span_map[shot["seq"]]
         else:
             start_base, duration = timeline, float(shot["duration"] or 5.0)
+            # B3（2026-09-05）：有配音且长于 duration → 按音频实际时长，与合成端
+            # 末帧补长一致（否则本镜字幕赶读、后续镜起点整体漂移）
+            if dialogue:
+                mp3 = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}") / "dialogue.mp3"
+                if mp3.exists():
+                    try:
+                        from .merge import probe
+                        a_dur = probe(mp3)["duration"]
+                        if a_dur > duration:
+                            duration = a_dur
+                    except Exception:
+                        pass  # 探测失败退回 duration，不阻断字幕
 
         if dialogue:
             # C7 按字数比例分时长（2026-09-01 台词组拆镜配套）：一镜 3~8 句后

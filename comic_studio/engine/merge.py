@@ -146,7 +146,17 @@ def _canvas(aspect_ratio: str) -> tuple:
     return (int(1920 * w / h) // 2 * 2, 1920)
 
 
-def _replace_audio(video: Path, audio: Path, output: Path) -> Path:
+def _replace_audio(video: Path, audio: Path, output: Path, pad: float = 0.0) -> Path:
+    """TTS 音轨替换。pad>0 → 末帧定格补长（2026-09-05 设计B3：音频长于视频时
+    -shortest 会把对白截半——tpad clone 让末帧画面续到音频说完，需重编码）。"""
+    if pad > 0:
+        subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-i", str(audio),
+                        "-vf", f"tpad=stop_mode=clone:stop_duration={pad:.2f}",
+                        "-map", "0:v", "-map", "1:a",
+                        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                        "-c:a", "aac", "-shortest", str(output)],
+                       check=True, capture_output=True, timeout=600)
+        return output
     """P6：TTS 音轨替换——视频画面保留，音频换为 TTS 配音。"""
     subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-i", str(audio),
                     "-map", "0:v", "-map", "1:a",
@@ -218,7 +228,21 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
             native_voice = json.loads(s["ledger_json"] or "{}").get("h3_native_voice")
             if tts_audio.exists() and not native_voice:
                 tts_part = td / f"{s['seq']:04d}_tts.mp4"
-                _replace_audio(part, tts_audio, tts_part)
+                # B3 兜底（2026-09-05）：配音长于视频 → 末帧定格补齐差值再拼，
+                # 对白永远说得完；warn 供下次修时长
+                pad = 0.0
+                try:
+                    a_dur = probe(tts_audio)["duration"]
+                    v_dur = probe(part)["duration"]
+                    if a_dur > v_dur + 0.05:
+                        pad = a_dur - v_dur + 0.1
+                        emit_log(db, "merge", "warn",
+                                 f"镜 {s['seq']} 配音 {a_dur:.1f}s 长于视频 {v_dur:.1f}s，"
+                                 f"末帧定格补长 {pad:.1f}s 保对白完整",
+                                 project_id=project_id)
+                except Exception:
+                    pass  # 探测失败按原样替换，不阻断合成
+                _replace_audio(part, tts_audio, tts_part, pad=pad)
                 part = tts_part
             elif mute_quiet:  # 无台词镜静音开关（2026-08-30）：杂音不进成片
                 mute_part = td / f"{s['seq']:04d}_mute.mp4"

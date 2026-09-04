@@ -85,15 +85,23 @@ def test_backfill_alternates_speaker_and_reestimates_duration():
     d = s.ledger["dialogue"]
     assert d[0]["speaker"] == "楚惊云"
     assert d[1]["speaker"] == "沈雪柔", "无新提示的相邻回怼应按交替惯例换人"
-    # 时长机械重估（只管补录镜）：2 句 × 2.5 = 5.0；单句钳下限 4.0；8 句钳上限 15
-    reestimate_durations([s]); assert s.duration == 5.0
+    # 时长机械重估（只管补录镜）：2 句 29 字 → ⌈29/4⌉+0.6 = 8.6（2026-09-05 B1：
+    # 句数×2.5 无视句长，长句对白被截半——改字数/4+句间停顿 0.6s）
+    reestimate_durations([s]); assert s.duration == 8.6
     s1 = NS(text_span="", ledger={"dialogue": [{"speaker": "x", "line": "一"}]},
             duration=5.0, dialogue_backfilled=True)
-    s8 = NS(text_span="", ledger={"dialogue": [{"speaker": "x", "line": str(i)} for i in range(8)]},
+    s8 = NS(text_span="", ledger={"dialogue": [{"speaker": "x", "line": "字" * 10}
+                                               for _ in range(8)]},
             duration=5.0, dialogue_backfilled=True)
     llm_filled = NS(text_span="", ledger={"dialogue": [{"speaker": "x", "line": "y"}]},
                     duration=12.0)  # LLM 自填对白→估时不覆盖
     s0 = NS(text_span="", ledger={"dialogue": []}, duration=6.0)
     reestimate_durations([s1, s8, llm_filled, s0])
-    assert s1.duration == 4.0 and s8.duration == 15.0
+    assert s1.duration == 4.0 and s8.duration == 15.0  # 1字钳下限；80字钳上限
     assert llm_filled.duration == 12.0 and s0.duration == 6.0
+
+
+def test_system_prompt_duration_rules():
+    """设计 B2（2026-09-05）：估时字数基准 + 无对白镜动作复杂度 + 打包字数预算。"""
+    for kw in ("字数", "48", "打斗", "全景"):
+        assert kw in SPLIT_SYSTEM, kw

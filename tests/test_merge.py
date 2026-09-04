@@ -225,3 +225,53 @@ def test_burn_subtitles_filter_ascii_and_cwd(tmp_path, monkeypatch):
     assert "\\" not in vf and "武侠风云" not in vf
     assert grabbed["kw"].get("cwd") == str(srt.parent)
     assert video.read_bytes() == b"mp4"  # tmp 已原地替换
+
+
+# ── B3 末帧定格补长（2026-09-05 设计B：对白说一半就截的合成端兜底）──
+
+def test_replace_audio_pads_short_video(tmp_path):
+    """2s 视频配 3.5s 音频：pad 后成片 ≈3.5s——末帧定格续到对白说完。"""
+    from comic_studio.engine.merge import _replace_audio, probe
+    v = _make(tmp_path / "v.mp4", 2)
+    subprocess.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
+                    "sine=frequency=440:duration=3.5", str(tmp_path / "a.mp3")],
+                   check=True, capture_output=True, timeout=60)
+    out = _replace_audio(v, tmp_path / "a.mp3", tmp_path / "out.mp4", pad=1.6)
+    d = probe(out)["duration"]
+    assert abs(d - 3.5) < 0.5, d
+
+
+def test_merge_pads_when_tts_longer_than_video(tmp_path, monkeypatch):
+    """merge_project：配音长于视频 → _replace_audio 收到 pad≈差值+0.1 + warn 日志。"""
+    import shutil as _sh
+    from comic_studio.engine import merge as M
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.shots import persist_shots, update_shot
+    grabbed = {}
+
+    def fake_replace(video, audio, output, pad=0.0):
+        grabbed["pad"] = pad
+        _sh.copy(video, output)
+        return output
+
+    def fake_probe(p):
+        return {"duration": 6.0 if str(p).endswith(".mp3") else 4.0,
+                "width": 640, "height": 360, "fps": 25}
+
+    monkeypatch.setattr(M, "_replace_audio", fake_replace)
+    monkeypatch.setattr(M, "probe", fake_probe)
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "补长剧", "16:9", "正文")["id"]
+    v = _make(tmp_path / "v.mp4", 1)
+    (v.parent / "dialogue.mp3").write_bytes(b"fake-mp3")
+    sid = persist_shots(db, pid, [
+        NS(text_span="", description="镜1", shot_type="", camera={},
+           duration=5.0, workflow_type="t2v", ledger={},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
+    update_shot(db, sid, {"video_path": str(v), "status": "rendered"})
+    M.merge_project(db, tmp_path / "data", pid)
+    assert grabbed["pad"] > 2.0 and grabbed["pad"] < 2.2, grabbed
+    n = db.connect().execute(
+        "SELECT COUNT(*) c FROM logs WHERE message LIKE '%补长%'").fetchone()["c"]
+    assert n == 1
