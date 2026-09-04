@@ -330,6 +330,15 @@ def patch_style(request: Request, project_id: int, body: dict):
         conn = db.connect()
         conn.execute("UPDATE projects SET autopilot=? WHERE id=?", (on, project_id))
         conn.commit()
+        if row["autopilot"] == 1 and on == 0:
+            # 2026-09-04 设计A1 暂停联动全停：关开关同时取消 pending/打断 running——
+            # 排队的 gen_prompt 不再跑完覆盖用户正要改的提示词（列表/详情/底栏共用此 PATCH）
+            from ..engine.jobs import cancel_project_jobs
+            from ..engine.logbus import emit as emit_log
+            result = cancel_project_jobs(db, project_id)
+            emit_log(db, "autopilot", "info",
+                     f"停止自动：取消 {result['cancelled']} 个排队任务、"
+                     f"停止 {result['stopping']} 个运行中任务", project_id=project_id)
 
     # Handle render_mode (视频渲染模式项目级切换 → 批量改全部镜 workflow_type；
     # 类型→具体模板由 settings 页 template_map 决定，两层协同 2026-08-26)

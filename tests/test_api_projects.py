@@ -164,3 +164,29 @@ def test_style_vis_roundtrip_and_patch(tmp_path):
         assert r.status_code == 200
         item = next(p for p in c.get("/api/projects").json() if p["id"] == pid)
         assert item["style_vis"] == "胶片颗粒质感"
+
+
+def test_patch_autopilot_off_stops_jobs(tmp_path):
+    """暂停联动全停（2026-09-04 设计A1）：autopilot 1→0 自动取消 pending、
+    打断 running（attempts 打满）；0→1 与不含 autopilot 的 PATCH 不动任务。"""
+    from comic_studio.engine import jobs as jobs_mod
+    from comic_studio.engine.db import Database
+    with _client(tmp_path) as c:
+        pid = _upload(c).json()["id"]
+        db = Database(tmp_path / "t.db"); db.migrate()
+        conn = db.connect()
+        conn.execute("UPDATE projects SET autopilot=1 WHERE id=?", (pid,))
+        conn.commit()
+        j1 = jobs_mod.enqueue_job(db, "gen_prompt", project_id=pid, payload={})
+        j2 = jobs_mod.enqueue_job(db, "gen_prompt", project_id=pid, payload={})
+        conn.execute("UPDATE jobs SET status='running' WHERE id=?", (j2,))
+        conn.commit()
+        assert c.patch(f"/api/projects/{pid}", json={"autopilot": False}).status_code == 200
+        st = {r["id"]: r for r in conn.execute(
+            "SELECT id, status, attempts FROM jobs WHERE project_id=?", (pid,))}
+        assert st[j1]["status"] == "cancelled"
+        assert st[j2]["attempts"] >= 99  # running 由 worker 收尾为 failed
+        # 重新打开只翻开关，不杀任务
+        j3 = jobs_mod.enqueue_job(db, "gen_prompt", project_id=pid, payload={})
+        assert c.patch(f"/api/projects/{pid}", json={"autopilot": True}).status_code == 200
+        assert conn.execute("SELECT status FROM jobs WHERE id=?", (j3,)).fetchone()[0] == "pending"

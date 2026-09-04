@@ -160,3 +160,115 @@ def test_autopilot_turns_off_when_done(tmp_path):
     assert next_action(db, tmp_path / "data", pid)["action"] == "done"
     tick(db, tmp_path / "data", pid)
     assert get_project(db, pid)["autopilot"] == 0
+
+
+# ===== 2026-09-04 设计A：失败守卫 / 跨类型在飞感知 =====
+
+def _shot(**kw):
+    base = dict(text_span="", description="x", shot_type="", camera={},
+                duration=5.0, workflow_type="ref2va", ledger={},
+                character_ids=[], scene_ids=[], prop_ids=[], depends_on=None, prompt="")
+    base.update(kw)
+    return NS(**base)
+
+
+def test_wait_after_failed_split(tmp_path):
+    """split 失败守卫：最新 split_storyboards failed 且无在飞 → wait 不自动重拆
+    （泛化 2026-08-25 analyze 失败不重烧模式——否则每 3s 无限重拆烧 token）。"""
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "assets_ready")
+    jid = jobs.enqueue_job(db, "split_storyboards", project_id=pid,
+                           payload={"project_id": pid})
+    jobs.finish_job(db, jid, "boom")
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "失败" in act["detail"]
+
+
+def test_wait_after_failed_describe_shots(tmp_path):
+    """漫画读图失败守卫：describe_shots failed → wait 不自动重烧 VLM。"""
+    db = Database(tmp_path / "c.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "漫画剧", "16:9", "正文",
+                         comic_mode="motion_comic")["id"]
+    set_stage(db, pid, "storyboard_ready")
+    persist_shots(db, pid, [_shot()])
+    jid = jobs.enqueue_job(db, "describe_shots", project_id=pid,
+                           payload={"project_id": pid})
+    jobs.finish_job(db, jid, "boom")
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "失败" in act["detail"]
+
+
+def test_gen_prompts_skips_failed_shots_then_waits(tmp_path):
+    """逐镜失败守卫：失败镜跳过不重烧、其余继续；全部失败 → wait + 一次性 error 日志。"""
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "storyboard_ready")
+    s1, s2 = persist_shots(db, pid, [_shot(), _shot()])
+    j1 = jobs.enqueue_job(db, "gen_prompt", project_id=pid, shot_id=s1, payload={})
+    jobs.finish_job(db, j1, "boom")
+    assert next_action(db, tmp_path / "data", pid)["action"] == "gen_prompts"
+    tick(db, tmp_path / "data", pid)
+    pend = db.connect().execute(
+        "SELECT id, shot_id FROM jobs WHERE type='gen_prompt' AND status='pending'").fetchall()
+    assert [r["shot_id"] for r in pend] == [s2]  # 失败镜不入队
+    for r in pend:
+        jobs.finish_job(db, r["id"], "boom")  # 剩余也失败 → 全卡死
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "失败" in act["detail"]
+    tick(db, tmp_path / "data", pid)   # 卡死 → error 一次性上报
+    tick(db, tmp_path / "data", pid)   # 重复巡检不刷屏
+    n = db.connect().execute(
+        "SELECT COUNT(*) c FROM logs WHERE source='autopilot' AND level='error'"
+    ).fetchone()["c"]
+    assert n == 1
+
+
+def test_render_skips_failed_shots(tmp_path):
+    """渲染逐镜失败守卫：失败镜不无限重渲染，其余继续入队。"""
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "storyboard_ready")
+    s1, s2 = persist_shots(db, pid, [_shot(prompt="甲"), _shot(prompt="乙")])
+    j1 = jobs.enqueue_job(db, "gen_shot", project_id=pid, shot_id=s1,
+                          resource="gpu_comfy", payload={"shot_id": s1})
+    jobs.finish_job(db, j1, "boom")
+    assert next_action(db, tmp_path / "data", pid)["action"] == "render"
+    tick(db, tmp_path / "data", pid)
+    rows = db.connect().execute(
+        "SELECT DISTINCT shot_id FROM jobs WHERE type='gen_shot' AND status='pending'"
+    ).fetchall()
+    assert [r["shot_id"] for r in rows] == [s2]
+
+
+def test_gate3_waits_for_inflight_renders(tmp_path):
+    """跨类型在飞感知：全部有视频但 gen_shot 仍在飞（重渲染）→ 不门3
+    （2026-09-04 武侠风云真机竞态：门3 过了、镜15 还在重渲染，旧视频差点拼进成片）。"""
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "storyboard_ready")
+    sid = persist_shots(db, pid, [_shot(prompt="甲")])[0]
+    update_shot(db, sid, {"video_path": "projects/自动剧/shots/1/video_v1.mp4"})
+    jobs.enqueue_job(db, "gen_shot", project_id=pid, shot_id=sid, resource="gpu_comfy",
+                     payload={"shot_id": sid})
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "渲染" in act["detail"]
+
+
+def test_merge_waits_for_inflight_renders(tmp_path):
+    """rendered 阶段：gen_shot 仍在飞（重渲染）→ 不合成（防旧视频拼进成片）。"""
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "rendered")
+    sid = persist_shots(db, pid, [_shot(prompt="甲")])[0]
+    update_shot(db, sid, {"video_path": "projects/自动剧/shots/1/video_v1.mp4"})
+    jobs.enqueue_job(db, "gen_shot", project_id=pid, shot_id=sid, resource="gpu_comfy",
+                     payload={"shot_id": sid})
+    assert next_action(db, tmp_path / "data", pid)["action"] == "wait"
+
+
+def test_wait_after_failed_merge(tmp_path):
+    """merge 失败守卫（2026-09-04 真机：字幕滤镜炸后 autopilot 每 3s 重烧合成）。"""
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "rendered")
+    sid = persist_shots(db, pid, [_shot(prompt="甲")])[0]
+    update_shot(db, sid, {"video_path": "projects/自动剧/shots/1/video_v1.mp4"})
+    jid = jobs.enqueue_job(db, "merge", project_id=pid, payload={"project_id": pid})
+    jobs.finish_job(db, jid, "subtitles filter boom")
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "失败" in act["detail"]

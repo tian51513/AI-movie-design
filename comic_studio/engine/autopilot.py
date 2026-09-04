@@ -36,12 +36,87 @@ def _all_assets_have_sheets(db, data_dir, project_id) -> bool:
     return True
 
 
-def _shots_missing_prompt(db, project_id) -> int:
+def _missing_prompt_shot_ids(db, project_id) -> list:
+    """缺提示词的生效镜 id 列表（2026-09-04 设计A2：逐镜失败守卫需要镜级粒度）。"""
     conn = db.connect()
-    return conn.execute(
-        "SELECT COUNT(*) c FROM shots WHERE project_id=? AND disabled=0 "
-        "AND (prompt IS '' OR prompt='' OR TRIM(prompt)='')",
-        (project_id,)).fetchone()["c"]
+    return [r["id"] for r in conn.execute(
+        "SELECT id FROM shots WHERE project_id=? AND disabled=0 "
+        "AND (prompt IS '' OR prompt='' OR TRIM(prompt)='') ORDER BY seq",
+        (project_id,)).fetchall()]
+
+
+def _shots_missing_video_ids(db, project_id) -> set:
+    conn = db.connect()
+    return {r["id"] for r in conn.execute(
+        "SELECT id FROM shots WHERE project_id=? AND disabled=0 "
+        "AND video_path IS NULL", (project_id,)).fetchall()}
+
+
+def _latest_failed(db, project_id, jtype) -> bool:
+    """批次型失败守卫（泛化 2026-08-25 analyze 模式）：最新 job 已 failed
+    且无在飞 → 不自动重烧，等手动重发解除。"""
+    last = jobs_mod.latest_job(db, project_id, jtype)
+    return last is not None and last["status"] == "failed"
+
+
+def _failed_shot_ids(db, project_id, jtype) -> set:
+    """逐镜失败守卫：该镜此类型最新 job 已 failed → 暂不重烧该镜（其余镜照常推进）。
+    最新状态按 job id 序取每镜最后一条；有更新的 pending/running 自然覆盖。"""
+    rows = db.connect().execute(
+        "SELECT shot_id, status FROM jobs WHERE project_id=? AND type=? "
+        "AND shot_id IS NOT NULL ORDER BY id", (project_id, jtype)).fetchall()
+    latest = {r["shot_id"]: r["status"] for r in rows}  # 后写覆盖=每镜最新
+    return {sid for sid, st in latest.items() if st == "failed"}
+
+
+def _prompt_gap(db, project_id) -> dict | None:
+    """缺提示词时的决策（novel 两阶段共用）：在飞→wait；部分失败→跳过失败镜
+    继续入队；全部失败→wait 等手动重发。返回 None=不缺。"""
+    missing = _missing_prompt_shot_ids(db, project_id)
+    if not missing:
+        return None
+    if _has_active_job(db, project_id, "gen_prompt"):
+        return {"action": "wait", "detail": "提示词生成中"}
+    stuck = set(missing) & _failed_shot_ids(db, project_id, "gen_prompt")
+    if stuck and len(stuck) == len(missing):
+        return {"action": "wait",
+                "detail": f"提示词生成失败 {len(stuck)} 条，重试请手动发起"}
+    if stuck:
+        return {"action": "gen_prompts",
+                "detail": f"缺 {len(missing) - len(stuck)} 条提示词（另 {len(stuck)} 条失败待手动）"}
+    return {"action": "gen_prompts", "detail": f"缺 {len(missing)} 条提示词"}
+
+
+def _render_gap(db, project_id) -> dict | None:
+    """渲染决策（两流程共用）：缺视频→render（跳过失败镜）；全有视频但
+    gen_shot 在飞（重渲染）→ wait（2026-09-04 设计A3 竞态：门3 别抢在
+    重渲染前过）。返回 None=可过门3。"""
+    if not _all_shots_have_video(db, project_id):
+        if _has_active_job(db, project_id, "gen_shot"):
+            return {"action": "wait", "detail": "渲染中"}
+        missing = _shots_missing_video_ids(db, project_id)
+        stuck = missing & _failed_shot_ids(db, project_id, "gen_shot")
+        if stuck and len(stuck) == len(missing):
+            return {"action": "wait",
+                    "detail": f"渲染失败 {len(stuck)} 镜，重试请手动发起"}
+        if stuck:
+            return {"action": "render", "detail": f"批量渲染（{len(stuck)} 镜失败待手动）"}
+        return {"action": "render", "detail": "批量渲染"}
+    if _has_active_job(db, project_id, "gen_shot"):
+        return {"action": "wait", "detail": "重渲染在飞，收尾后过门3"}
+    return None
+
+
+def _merge_gap(db, project_id) -> dict | None:
+    """合成前检查：merge 在飞→wait；gen_shot 在飞（重渲染）→ wait 等收尾
+    （防旧视频拼进成片）；上次 merge 失败 → wait 不自动重烧。None=可合成。"""
+    if _has_active_job(db, project_id, "merge"):
+        return {"action": "wait", "detail": "合成中"}
+    if _has_active_job(db, project_id, "gen_shot"):
+        return {"action": "wait", "detail": "重渲染在飞，收尾后再合成"}
+    if _latest_failed(db, project_id, "merge"):
+        return {"action": "wait", "detail": "上次合成失败，重试请手动发起"}
+    return None
 
 
 def _all_shots_have_video(db, project_id) -> bool:
@@ -93,12 +168,12 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
             "SELECT 1 FROM shots WHERE project_id=? LIMIT 1",
             (project_id,)).fetchone() is not None
         if not has_shots:
+            if _latest_failed(db, project_id, "split_storyboards"):
+                return {"action": "wait", "detail": "上次分镜拆解失败，重试请手动发起"}
             return {"action": "split", "detail": "开始分镜拆解"}
-        missing = _shots_missing_prompt(db, project_id)
-        if missing > 0:
-            if _has_active_job(db, project_id, "gen_prompt"):
-                return {"action": "wait", "detail": "提示词生成中"}
-            return {"action": "gen_prompts", "detail": f"缺 {missing} 条提示词"}
+        gap = _prompt_gap(db, project_id)
+        if gap:
+            return gap
         return {"action": "gate2", "detail": "提示词齐全，过门2"}
     if stage == "storyboard_ready":
         total = db.connect().execute("SELECT COUNT(*) c FROM shots WHERE project_id=?",
@@ -106,22 +181,22 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
         if total == 0:
             if _has_active_job(db, project_id, "split_storyboards"):
                 return {"action": "wait", "detail": "分镜拆解中"}
+            if _latest_failed(db, project_id, "split_storyboards"):
+                return {"action": "wait", "detail": "上次分镜拆解失败，重试请手动发起"}
             return {"action": "split", "detail": "无分镜，先拆解"}
-        missing = _shots_missing_prompt(db, project_id)
-        if missing > 0:
-            if _has_active_job(db, project_id, "gen_prompt"):
-                return {"action": "wait", "detail": "提示词生成中"}
-            return {"action": "gen_prompts", "detail": f"缺 {missing} 条提示词"}
+        gap = _prompt_gap(db, project_id)
+        if gap:
+            return gap
         if _has_active_job(db, project_id, "gen_prompt"):
-            return {"action": "wait", "detail": "提示词生成中"}
-        if not _all_shots_have_video(db, project_id):
-            if _has_active_job(db, project_id, "gen_shot"):
-                return {"action": "wait", "detail": "渲染中"}
-            return {"action": "render", "detail": "批量渲染"}
+            return {"action": "wait", "detail": "提示词生成中"}  # 重生成在飞（stale）
+        rgap = _render_gap(db, project_id)
+        if rgap:
+            return rgap
         return {"action": "gate3", "detail": "全部有视频，过门3"}
     if stage == "rendered":
-        if _has_active_job(db, project_id, "merge"):
-            return {"action": "wait", "detail": "合成中"}
+        mgap = _merge_gap(db, project_id)
+        if mgap:
+            return mgap
         return {"action": "merge", "detail": "开始合成成片"}
     return {"action": "wait", "detail": f"未知阶段 {stage}"}
 
@@ -146,11 +221,14 @@ def _comic_flow(db, data_dir, project_id, proj) -> dict:
             return {"action": "wait", "detail": "无分镜（漫画导入异常）"}
 
         # ① VLM 读图（含角色提取——2026-08-29 用户需求重构：一遍完成）
-        missing = _shots_missing_prompt(db, project_id)
-        if missing > 0:
+        missing = _missing_prompt_shot_ids(db, project_id)
+        if missing:
             if _has_active_job(db, project_id, "describe_shots"):
-                return {"action": "wait", "detail": f"VLM 读图+角色提取中（缺 {missing} 镜）"}
-            return {"action": "describe_shots", "detail": f"缺 {missing} 条提示词（VLM 读图+提取角色）"}
+                return {"action": "wait", "detail": f"VLM 读图+角色提取中（缺 {len(missing)} 镜）"}
+            if _latest_failed(db, project_id, "describe_shots"):
+                return {"action": "wait", "detail": "上次 VLM 读图失败，重试请手动发起"}
+            return {"action": "describe_shots",
+                    "detail": f"缺 {len(missing)} 条提示词（VLM 读图+提取角色）"}
         if _has_active_job(db, project_id, "describe_shots"):
             return {"action": "wait", "detail": "VLM 读图收尾中"}
 
@@ -170,17 +248,20 @@ def _comic_flow(db, data_dir, project_id, proj) -> dict:
                     return {"action": "wait", "detail": f"角色参考图生成中（{len(missing_refs)} 个）"}
                 return {"action": "gen_refs", "detail": f"漫改：生成 {len(missing_refs)} 个角色参考图"}
 
-        # ③ 渲染 → 门3 → 合成
-        if not _all_shots_have_video(db, project_id):
-            if _has_active_job(db, project_id, "gen_shot"):
-                return {"action": "wait", "detail": "渲染中"}
-            return {"action": "render", "detail": "批量渲染"}
+        # ③ 渲染 → 门3 → 合成（失败守卫/在飞感知同小说流 _render_gap/_merge_gap）
+        rgap = _render_gap(db, project_id)
+        if rgap:
+            return rgap
         return {"action": "gate3", "detail": "全部有视频，过门3"}
     if stage == "rendered":
-        if _has_active_job(db, project_id, "merge"):
-            return {"action": "wait", "detail": "合成中"}
+        mgap = _merge_gap(db, project_id)
+        if mgap:
+            return mgap
         return {"action": "merge", "detail": "开始合成成片"}
     return {"action": "wait", "detail": f"漫画项目不应处于阶段 {stage}"}
+
+
+_STUCK_REPORTED: dict = {}  # project_id → 已上报的卡死 detail（一次性 error，3s 巡检不刷屏）
 
 
 def tick(db, data_dir, project_id) -> dict:
@@ -189,6 +270,16 @@ def tick(db, data_dir, project_id) -> dict:
     if act is None:
         return {"action": "none"}
     action = act["action"]
+    # 失败守卫卡死（2026-09-04 设计A2）：detail 带「失败」的 wait 首次出现报一条
+    # error 日志；手动重发后决策不再卡死 → 键清除（再卡重新上报）
+    if action == "wait" and "失败" in (act.get("detail") or ""):
+        if _STUCK_REPORTED.get(project_id) != act["detail"]:
+            emit_log(db, "autopilot", "error",
+                     f"autopilot 卡住：{act['detail']}（手动处理后可续跑）",
+                     project_id=project_id)
+            _STUCK_REPORTED[project_id] = act["detail"]
+        return act
+    _STUCK_REPORTED.pop(project_id, None)
     if action == "done":
         # 全流程完成 → 自动关闭开关（真机 2026-08-25：完成后「停止自动」仍挂着）
         conn = db.connect()
@@ -240,10 +331,12 @@ def tick(db, data_dir, project_id) -> dict:
         conn = db.connect()
         queued = {r["shot_id"] for r in conn.execute(
             "SELECT DISTINCT shot_id FROM jobs WHERE type='gen_prompt' AND shot_id IS NOT NULL AND status IN ('pending','running')")}
+        failed = _failed_shot_ids(db, project_id, "gen_prompt")  # 失败镜不重烧
         n = 0
         from .shots import list_shots
         for s in list_shots(db, project_id):
-            if s["disabled"] or (s["prompt"] or "").strip() or s["id"] in queued:
+            if (s["disabled"] or (s["prompt"] or "").strip()
+                    or s["id"] in queued or s["id"] in failed):
                 continue
             enqueue_llm_job(db, "gen_prompt", project_id=project_id, shot_id=s["id"],
                               payload={"shot_id": s["id"]})
@@ -262,10 +355,12 @@ def tick(db, data_dir, project_id) -> dict:
         conn = db.connect()
         queued = {r["shot_id"] for r in conn.execute(
             "SELECT DISTINCT shot_id FROM jobs WHERE type='gen_shot' AND shot_id IS NOT NULL AND status IN ('pending','running')")}
+        failed = _failed_shot_ids(db, project_id, "gen_shot")  # 失败镜不重烧
         n = 0
         from .shots import list_shots
         for s in list_shots(db, project_id):
-            if s["disabled"] or s["video_path"] or s["id"] in queued:
+            if (s["disabled"] or s["video_path"]
+                    or s["id"] in queued or s["id"] in failed):
                 continue
             enqueue_job(db, "gen_shot", project_id=project_id, shot_id=s["id"],
                         resource="gpu_comfy",

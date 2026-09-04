@@ -126,15 +126,16 @@ def test_split_endpoint_accepts_target_count(tmp_path):
 
 
 def test_autopilot_counts_ignore_disabled(tmp_path):
-    from comic_studio.engine.autopilot import _all_shots_have_video, _shots_missing_prompt
+    from comic_studio.engine.autopilot import (
+        _all_shots_have_video, _missing_prompt_shot_ids)
     from comic_studio.engine.shots import update_shot
     db, pid, ids = _db3(tmp_path, prompt="")
     update_shot(db, ids[0], {"prompt": "提示词", "video_path": "x.mp4"})
     set_disabled_batch(db, pid, [ids[1], ids[2]], 1)
-    assert _shots_missing_prompt(db, pid) == 0  # 无效镜不算缺提示词
+    assert _missing_prompt_shot_ids(db, pid) == []  # 无效镜不算缺提示词
     assert _all_shots_have_video(db, pid) is True  # 无效镜不算缺视频
     set_disabled_batch(db, pid, [ids[1]], 0)
-    assert _shots_missing_prompt(db, pid) == 1
+    assert _missing_prompt_shot_ids(db, pid) == [ids[1]]
 
 
 def test_merge_guard_skips_disabled(tmp_path, monkeypatch):
