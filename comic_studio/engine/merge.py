@@ -166,14 +166,17 @@ def _mute_audio(video: Path, output: Path) -> Path:
 
 
 def _burn_subtitles(video: Path, srt: Path) -> None:
-    """P6：SRT 字幕烧入成片（原地覆盖）。"""
+    """P6：SRT 字幕烧入成片（原地覆盖）。
+    2026-09-04 Windows 真机修复（job 38665）：libavfilter 滤镜串里反斜杠是
+    转义符（data\\projects\\... 被吃成 dataprojects...）、非 ASCII 项目名滤镜内
+    打开不可靠 → 滤镜参数只给纯 ASCII 裸文件名，srt 所在目录用 cwd 传达。"""
     tmp = video.with_suffix(".sub_tmp.mp4")
     style = ("FontName=SimSun,FontSize=22,PrimaryColour=&H00FFFFFF&,"
              "OutlineColour=&H00000000&,Outline=2,Bold=1,MarginV=25")
     subprocess.run([ffmpeg_bin(), "-y", "-i", str(video),
-                    "-vf", f"subtitles={srt}:force_style='{style}'",
+                    "-vf", f"subtitles={srt.name}:force_style='{style}'",
                     "-c:a", "copy", str(tmp)],
-                   check=True, capture_output=True, timeout=600)
+                   check=True, capture_output=True, timeout=600, cwd=str(srt.parent))
     tmp.replace(video)
 
 

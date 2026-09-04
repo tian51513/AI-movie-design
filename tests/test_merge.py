@@ -200,3 +200,28 @@ def test_merge_project_respects_xfade_setting(tmp_path, monkeypatch):
     set_setting(db, "comfy", {"base_url": "", "merge_xfade": False})
     merge_project(db, tmp_path / "data", pid)
     assert calls["concat"] == 1
+
+
+def test_burn_subtitles_filter_ascii_and_cwd(tmp_path, monkeypatch):
+    r"""Windows 真机修复（2026-09-04 job 38665）：libavfilter 滤镜串里 `\` 是转义符
+    （data\\projects\\... 被吃成 dataprojects...）、非 ASCII 项目名滤镜内打开不可靠
+    → 滤镜参数只允许纯 ASCII 裸文件名，srt 目录用 cwd 提供。"""
+    from comic_studio.engine import merge as merge_mod
+    grabbed = {}
+
+    def fake_run(cmd, **kw):
+        grabbed["cmd"], grabbed["kw"] = cmd, kw
+        Path(cmd[-1]).write_bytes(b"mp4")  # 产出 tmp 供 replace
+
+    monkeypatch.setattr(merge_mod.subprocess, "run", fake_run)
+    out = tmp_path / "武侠风云" / "output"
+    out.mkdir(parents=True)
+    video = out / "ep001.mp4"; video.write_bytes(b"v")
+    srt = out / "subtitles.srt"; srt.write_text("1\n00:00:00,000 --> 00:00:01,000\n台词\n")
+    merge_mod._burn_subtitles(video, srt)
+    cmd = grabbed["cmd"]
+    vf = cmd[cmd.index("-vf") + 1]
+    assert vf.startswith("subtitles=subtitles.srt:")  # 裸 ASCII 文件名
+    assert "\\" not in vf and "武侠风云" not in vf
+    assert grabbed["kw"].get("cwd") == str(srt.parent)
+    assert video.read_bytes() == b"mp4"  # tmp 已原地替换
