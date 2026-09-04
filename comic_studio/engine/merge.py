@@ -179,14 +179,18 @@ def _burn_subtitles(video: Path, srt: Path) -> None:
     """P6：SRT 字幕烧入成片（原地覆盖）。
     2026-09-04 Windows 真机修复（job 38665）：libavfilter 滤镜串里反斜杠是
     转义符（data\\projects\\... 被吃成 dataprojects...）、非 ASCII 项目名滤镜内
-    打开不可靠 → 滤镜参数只给纯 ASCII 裸文件名，srt 所在目录用 cwd 传达。"""
+    打开不可靠 → 滤镜参数只给纯 ASCII 裸文件名，srt 所在目录用 cwd 传达。
+    2026-09-05 续修（job 38666）：服务 data_dir 为相对路径，cwd 换目录后
+    相对的 -i/输出跟着新 cwd 解析→凭空消失——进 subprocess 前一律绝对化。"""
+    video = Path(video).resolve()
+    srt = Path(srt).resolve()
     tmp = video.with_suffix(".sub_tmp.mp4")
     style = ("FontName=SimSun,FontSize=22,PrimaryColour=&H00FFFFFF&,"
              "OutlineColour=&H00000000&,Outline=2,Bold=1,MarginV=25")
     subprocess.run([ffmpeg_bin(), "-y", "-i", str(video),
                     "-vf", f"subtitles={srt.name}:force_style='{style}'",
                     "-c:a", "copy", str(tmp)],
-                   check=True, capture_output=True, timeout=600, cwd=str(srt.parent))
+                   check=True, capture_output=True, timeout=600, cwd=str(srt.parent))  # noqa: E501（srt 已绝对化）
     tmp.replace(video)
 
 

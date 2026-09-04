@@ -275,3 +275,29 @@ def test_merge_pads_when_tts_longer_than_video(tmp_path, monkeypatch):
     n = db.connect().execute(
         "SELECT COUNT(*) c FROM logs WHERE message LIKE '%补长%'").fetchone()["c"]
     assert n == 1
+
+
+def test_burn_subtitles_absolutizes_paths(tmp_path, monkeypatch):
+    r"""服务真机续修（2026-09-05 job 38666）：服务 data_dir 为相对路径，烧字幕把
+    cwd 换到 output 目录后，-i/输出若仍相对会跟着新 cwd 解析→文件凭空消失。
+    进 subprocess 前一律绝对化（含 cwd 自身）。"""
+    import os
+    from comic_studio.engine import merge as merge_mod
+    out = tmp_path / "data" / "proj" / "output"
+    out.mkdir(parents=True)
+    (out / "ep001.mp4").write_bytes(b"v")
+    (out / "subtitles.srt").write_text("1\n")
+    grabbed = {}
+
+    def fake_run(cmd, **kw):
+        grabbed["cmd"], grabbed["kw"] = cmd, kw
+        Path(cmd[-1]).write_bytes(b"mp4")
+
+    monkeypatch.setattr(merge_mod.subprocess, "run", fake_run)
+    monkeypatch.chdir(tmp_path)
+    merge_mod._burn_subtitles(Path("data/proj/output/ep001.mp4"),
+                              Path("data/proj/output/subtitles.srt"))
+    cmd = grabbed["cmd"]
+    assert os.path.isabs(cmd[cmd.index("-i") + 1]), cmd   # 输入绝对化
+    assert os.path.isabs(cmd[-1]), cmd                    # 输出绝对化
+    assert os.path.isabs(grabbed["kw"]["cwd"]), grabbed   # cwd 绝对化
