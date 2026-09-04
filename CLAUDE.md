@@ -167,3 +167,13 @@
 - 防线②`settings.ensure_comfy_configured(db)`：ValueError 门禁；routes_shots（单镜/批量/快车道）、routes_refs（单/批量）、autopilot（render/gen_refs 分支记 error 跳过入队）全覆盖
 - 防线③`queue/worker.py`：gpu_comfy 任务 + comfy None → 进 handler 前报「ComfyUI 未配置地址」
 - 注意：设置表无更新时间戳，事故写入时刻无从考证；bat 的 for /f 内 PowerShell 管道**不要**写 `^|`（双引号内原样透传）
+
+## 模块地图（autopilot 收尾 + 时长充足性 2026-09-05）
+
+- **A1 暂停联动全停** — `routes_projects` PATCH：autopilot 1→0 自动 `cancel_project_jobs` + 日志（列表/详情/底栏三入口共用）；0→1 只翻开关不杀任务
+- **A2 失败守卫（泛化 08-25 analyze 模式）** — `engine/autopilot.py`：批次型（split/describe_shots/merge）最新 job failed → wait 等手动重发；逐镜型（gen_prompt/gen_shot）`_failed_shot_ids` 跳过失败镜推进其余、全卡死才 wait；卡死 wait 首现报一条 error（`_STUCK_REPORTED` 去重，3s 巡检不刷屏）；手动重发产生新 job → 守卫自然解除
+- **A3 跨类型在飞感知** — `_render_gap`/`_merge_gap`：门3 与 merge 前查 gen_shot 在飞（2026-09-04 武侠风云竞态：门3 过了镜15 还在重渲染，旧视频差点拼进成片）
+- **B1 时长字数基准** — `llm/storyboard.reestimate_durations`：⌈字数/4⌉+0.6×(句数-1)（中文 TTS 语速约 4 字/s；句数×2.5 无视句长，长句对白被 -shortest 截半）；B2 规则8/10：无对白镜按动作复杂度估（打斗 8~12s/全景 6~8s）、打包字数预算 ≤48 字
+- **B3 合成端兜底** — `merge._replace_audio(pad=)`：配音长于视频 → tpad 末帧定格补齐+warn（tpad 需重编码 libx264）；`subtitles.generate_srt` 有配音镜按 dialogue.mp3 实际时长排轴（与补长一致防漂移）；**快车道 director_mix 未做**（帧数轴重切代价大，当前主链逐镜合成）
+- **字幕烧录 Windows 修复** — `merge._burn_subtitles`：滤镜串里 `\` 是转义符+非 ASCII 项目名滤镜内打开不可靠（job 38665 三连败，WSL POSIX 侧从未触发）→ 滤镜只用裸 `subtitles.srt`、srt 目录走 `cwd=`；**edge-tts 补进 pyproject dependencies**（.venv-win 缺包致 Edge-TTS 回退全灭，WSL interop 可直装 `.venv-win/Scripts/pip.exe`）
+- 注意：估时改字数只影响新拆解项目；存量项目想生效需重拆或手改镜时长
