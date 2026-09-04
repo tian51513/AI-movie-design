@@ -27,7 +27,16 @@ def probe(path: Path) -> dict:
     fm = re.search(r"([\d.]+) fps", info)
     if fm:
         fps = float(fm.group(1))
-    return {"duration": duration, "width": w, "height": h, "fps": fps}
+    # 音频参数（2026-09-05 成片无声事故：concat 段参数一致性体检依据）
+    sample_rate = channels = None
+    rm = re.search(r"(\d+) Hz", info)
+    if rm:
+        sample_rate = int(rm.group(1))
+    cm = re.search(r", (mono|stereo)\b", info)
+    if cm:
+        channels = 1 if cm.group(1) == "mono" else 2
+    return {"duration": duration, "width": w, "height": h, "fps": fps,
+            "sample_rate": sample_rate, "channels": channels}
 
 
 def normalize(src: Path, dst: Path, w: int, h: int, fps: float) -> Path:
@@ -65,7 +74,7 @@ def concat(parts: list, out: Path) -> Path:
         f"concat=n={n}:v=1:a=1[v][a]"
     args += ["-filter_complex", filt, "-map", "[v]", "-map", "[a]",
              "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p",
-             "-c:a", "aac", str(out)]
+             "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2", str(out)]
     subprocess.run(args, check=True, capture_output=True, timeout=600)
     return out
 
@@ -147,20 +156,24 @@ def _canvas(aspect_ratio: str) -> tuple:
 
 
 def _replace_audio(video: Path, audio: Path, output: Path, pad: float = 0.0) -> Path:
-    """TTS 音轨替换。pad>0 → 末帧定格补长（2026-09-05 设计B3：音频长于视频时
-    -shortest 会把对白截半——tpad clone 让末帧画面续到音频说完，需重编码）。"""
+    """P6：TTS 音轨替换——视频画面保留，音频换为 TTS 配音。
+    2026-09-05 真机无声事故：TTS mp3 是 24k 单声道，不带 -ar/-ac 时替换段与
+    normalize 段（44.1k stereo）参数不一致 → concat -c copy 把两种流硬缝一个
+    容器、时间戳全废（ep006 全无声+播放卡死）——两路一律统一 44100 立体声。
+    pad>0 → 末帧定格补长（设计B3：音频长于视频时 -shortest 会把对白截半——
+    tpad clone 让末帧画面续到音频说完，需重编码）。"""
+    audio_args = ["-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2"]
     if pad > 0:
         subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-i", str(audio),
                         "-vf", f"tpad=stop_mode=clone:stop_duration={pad:.2f}",
                         "-map", "0:v", "-map", "1:a",
                         "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
-                        "-c:a", "aac", "-shortest", str(output)],
+                        *audio_args, "-shortest", str(output)],
                        check=True, capture_output=True, timeout=600)
         return output
-    """P6：TTS 音轨替换——视频画面保留，音频换为 TTS 配音。"""
     subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-i", str(audio),
                     "-map", "0:v", "-map", "1:a",
-                    "-c:v", "copy", "-c:a", "aac", "-shortest",
+                    "-c:v", "copy", *audio_args, "-shortest",
                     str(output)],
                    check=True, capture_output=True, timeout=300)
     return output

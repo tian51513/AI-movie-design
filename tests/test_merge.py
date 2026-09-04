@@ -301,3 +301,37 @@ def test_burn_subtitles_absolutizes_paths(tmp_path, monkeypatch):
     assert os.path.isabs(cmd[cmd.index("-i") + 1]), cmd   # 输入绝对化
     assert os.path.isabs(cmd[-1]), cmd                    # 输出绝对化
     assert os.path.isabs(grabbed["kw"]["cwd"]), grabbed   # cwd 绝对化
+
+
+def _make_mp3_24k_mono(dest, seconds):
+    subprocess.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
+                    f"sine=frequency=440:duration={seconds}",
+                    "-ar", "24000", "-ac", "1", str(dest)],
+                   check=True, capture_output=True, timeout=60)
+    return dest
+
+
+def test_replace_audio_unifies_audio_params(tmp_path):
+    """2026-09-05 真机成片无声/卡死根因：TTS mp3 是 24k 单声道，替换段未统一
+    采样率/声道 → concat -c copy 把 24k mono 与 44.1k stereo 硬缝一个容器，
+    时间戳全废（ep005 前段无声后段配音错位、ep006 全无声+拖不动）。
+    替换段必须与 normalize 同参：44100 Hz 立体声（pad 路径同理）。"""
+    from comic_studio.engine.merge import _replace_audio, probe
+    v = _make(tmp_path / "v.mp4", 2)
+    out = _replace_audio(v, _make_mp3_24k_mono(tmp_path / "a.mp3", 1.5),
+                         tmp_path / "o.mp4")
+    p = probe(out)
+    assert p["sample_rate"] == 44100 and p["channels"] == 2, p
+    out2 = _replace_audio(v, _make_mp3_24k_mono(tmp_path / "a2.mp3", 3.5),
+                          tmp_path / "o2.mp4", pad=1.6)
+    p2 = probe(out2)
+    assert p2["sample_rate"] == 44100 and p2["channels"] == 2, p2
+
+
+def test_probe_reports_audio_params_and_absence(tmp_path):
+    """probe 暴露 sample_rate/channels；无音轨文件返回 None（拼接体检依据）。"""
+    from comic_studio.engine.merge import probe
+    p = probe(_make_mp3_24k_mono(tmp_path / "a.mp3", 1))
+    assert p["sample_rate"] == 24000 and p["channels"] == 1
+    v = probe(_make(tmp_path / "v.mp4", 1))  # _make 无音轨
+    assert v["sample_rate"] is None and v["channels"] is None
