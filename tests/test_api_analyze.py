@@ -56,7 +56,7 @@ def test_conflict_while_running_or_done_guard(tmp_path, monkeypatch):
             if c.get(f"/api/projects/{pid}/analyze/status").json()["status"] != "running":
                 break
             time.sleep(0.05)
-        # 已 analyzed 阶段再次触发 → 409（回退重跑属计划 3 的 stale 流程）
+        # 已 analyzed 阶段再次触发 → 202（2026-09-05 语义变更：重析放行补角色）
         assert c.post(f"/api/projects/{pid}/analyze").status_code == 409
         assert c.get("/api/projects/999/analyze/status").status_code == 404
 
@@ -77,6 +77,7 @@ def test_manual_analyze_blocked_when_pending(tmp_path):
 def test_reanalyze_allowed_at_analyzed_stage(tmp_path):
     """2026-09-05 用户需求：规则修正后需重析补角色——analyzed 阶段放行
     重新分析（persist 同名去重，旧资产不重复；其余阶段仍 409）。"""
+    from comic_studio.engine.db import Database
     from comic_studio.engine.projects import set_stage
     with TestClient(create_app(tmp_path / "t.db", tmp_path / "data",
                                start_workers=False)) as c:
