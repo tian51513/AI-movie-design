@@ -72,3 +72,18 @@ def test_manual_analyze_blocked_when_pending(tmp_path):
                                       "text/plain")}).json()["id"]
         jobs_mod.enqueue_job(c.app.state.db, "analyze", project_id=pid, payload={})
         assert c.post(f"/api/projects/{pid}/analyze").status_code == 409
+
+
+def test_reanalyze_allowed_at_analyzed_stage(tmp_path):
+    """2026-09-05 用户需求：规则修正后需重析补角色——analyzed 阶段放行
+    重新分析（persist 同名去重，旧资产不重复；其余阶段仍 409）。"""
+    from comic_studio.engine.projects import set_stage
+    with TestClient(create_app(tmp_path / "t.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        pid = c.post("/api/projects", data={"name": "重析剧", "aspect_ratio": "16:9"},
+                     files={"novel": ("n.txt", io.BytesIO("正文".encode()),
+                                      "text/plain")}).json()["id"]
+        set_stage(Database(tmp_path / "t.db"), pid, "analyzed")
+        assert c.post(f"/api/projects/{pid}/analyze").status_code == 202
+        set_stage(Database(tmp_path / "t.db"), pid, "storyboard_ready")
+        assert c.post(f"/api/projects/{pid}/analyze").status_code == 409

@@ -31,8 +31,11 @@ def start(request: Request, project_id: int, background: BackgroundTasks):
         # L15（2026-09-05 审计低危）：pending 也拦——autopilot 入队的待跑分析
         # 此前拦不住手动双跑（双份 LLM 成本）
         raise HTTPException(409, "分析正在进行中")
-    if proj["stage"] != "created":
-        raise HTTPException(409, f"阶段 {proj['stage']} 不允许重新分析（回退流程见后续计划）")
+    if proj["stage"] not in ("created", "analyzed"):
+        # 2026-09-05 用户需求：analyzed 放行重析（提取规则修正后补角色；
+        # persist_assets 同名去重，旧资产不重复）。再往后阶段仍拒绝。
+        raise HTTPException(409, f"阶段 {proj['stage']} 不允许重新分析"
+                                "（created/analyzed 可，深阶段需删除重建）")
     # P10 守卫（终审 M-1 真机命中 2026-09-05）：源音频在、转写未落盘 →
     # 占位正文会被分析成空资产——409 等转写完成
     from ..engine.asr import load_segments
