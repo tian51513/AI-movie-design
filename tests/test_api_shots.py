@@ -93,3 +93,15 @@ def test_regen_prompt_force_semantics(tmp_path):
         update_shot(c.app.state.db, sid, {"prompt": "已有", "status": "ready"})
         assert c.post(f"/api/shots/{sid}/regen-prompt").status_code == 409
         assert c.post(f"/api/shots/{sid}/regen-prompt", json={"force": True}).status_code == 202
+
+
+def test_split_allowed_at_storyboard_ready(tmp_path):
+    """H3（2026-09-05 审计）：storyboard_ready 显示「拆分分镜/重新拆解」按钮
+    （confirm 承诺覆盖），后端却 409——UI 死路。放行重拆（引擎已做删镜清
+    jobs 外键引用）。"""
+    from comic_studio.engine.projects import set_stage
+    with _client(tmp_path) as c:
+        pid = _mk(c)
+        set_stage(c.app.state.db, pid, "storyboard_ready")
+        r = c.post(f"/api/projects/{pid}/split-storyboards", json={})
+        assert r.status_code == 202, r.text

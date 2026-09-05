@@ -272,3 +272,44 @@ def test_wait_after_failed_merge(tmp_path):
     jobs.finish_job(db, jid, "subtitles filter boom")
     act = next_action(db, tmp_path / "data", pid)
     assert act["action"] == "wait" and "失败" in act["detail"]
+
+
+# ===== 2026-09-05 审计高危修复：H1 漫改参考图 / H2 TTS 时序 =====
+
+def test_film_adaptation_detects_empty_views_dir(tmp_path):
+    """H1：persist_assets 恒建空 views 目录——目录存在≠有图，漫改参考图检查
+    必须按文件判断（has_views），否则空参考图直进渲染永不补图。"""
+    db = Database(tmp_path / "c.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "漫改剧", "16:9", "正文",
+                         comic_mode="film_adaptation")["id"]
+    set_stage(db, pid, "storyboard_ready")
+    persist_shots(db, pid, [_shot(prompt="甲")])
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="沈雪柔", appearance="黑发", tags=[])],
+                      scenes=[], props=[]))  # persist 建出空 views 目录
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "gen_refs", act
+
+
+def test_tick_merge_no_longer_runs_tts_inline(tmp_path, monkeypatch):
+    """H2a：merge 分支不再在巡检线程同步跑 TTS（曾卡停全部 autopilot 项目
+    ~5min；且与手动合成行为不一致）——TTS/SRT 前置挪进 merge 任务本身。"""
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "rendered")
+    sid = persist_shots(db, pid, [_shot(prompt="甲")])[0]
+    update_shot(db, sid, {"video_path": "projects/自动剧/shots/1/video_v1.mp4"})
+
+    def _bomb(*a, **kw):
+        raise AssertionError("巡检线程不得再内联跑 TTS")
+
+    monkeypatch.setattr("comic_studio.engine.tts.generate_dialogue_audio", _bomb)
+    act = tick(db, tmp_path / "data", pid)
+    assert act["action"] == "merge"
+    row = db.connect().execute(
+        "SELECT type FROM jobs WHERE project_id=? ORDER BY id DESC LIMIT 1",
+        (pid,)).fetchone()
+    assert row["type"] == "merge"
+    # 内联跑过必留「TTS/字幕生成失败…继续合成」warn——零痕迹才算真没跑
+    n = db.connect().execute(
+        "SELECT COUNT(*) c FROM logs WHERE message LIKE '%继续合成%'").fetchone()["c"]
+    assert n == 0

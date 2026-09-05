@@ -77,8 +77,10 @@ def start_split(request: Request, project_id: int, body: dict | None = Body(defa
     proj = get_project(db, project_id)
     if proj is None:
         raise HTTPException(404, "项目不存在")
-    if proj["stage"] != "assets_ready":
-        raise HTTPException(409, f"阶段 {proj['stage']} 不能拆分镜（需 assets_ready）")
+    if proj["stage"] not in ("assets_ready", "storyboard_ready"):
+        # H3（2026-09-05 审计）：storyboard_ready 的「重新拆解」按钮此前必 409
+        # ——UI 承诺覆盖重拆，引擎删镜已清 jobs 外键引用，此处放行对齐
+        raise HTTPException(409, f"阶段 {proj['stage']} 不能拆分镜（需 assets_ready/storyboard_ready）")
     running = jobs.latest_job(db, project_id, "split_storyboards")
     if running and running["status"] in ("pending", "running"):
         raise HTTPException(409, "分镜拆解正在进行中")

@@ -305,7 +305,22 @@ def register_merge_handler():
 
     @register("merge")
     def handle_merge(db, data_dir, job, comfy):
+        from .logbus import emit as emit_log
         payload = json.loads(job["payload_json"] or "{}")
-        merge_project(db, data_dir, payload.get("project_id", job["project_id"]),
-                      job_id=job["id"])
+        pid = payload.get("project_id", job["project_id"])
+        # H2b（2026-09-05 审计）：配音/字幕前置进 merge 任务（此前在 autopilot
+        # 巡检线程同步跑，长克隆卡停全部项目巡检；手动合成也只拼旧音轨）；
+        # 失败只 warn 不阻断合成
+        try:
+            from .tts import generate_dialogue_audio
+            from .subtitles import generate_srt
+            audio = generate_dialogue_audio(db, data_dir, pid)
+            generate_srt(db, data_dir, pid)
+            if audio:
+                emit_log(db, "merge", "info",
+                         f"合成前配音+字幕已生成（{len(audio)} 镜）", project_id=pid)
+        except Exception as exc:
+            emit_log(db, "merge", "warn",
+                     f"TTS/字幕生成失败（{exc}），继续合成", project_id=pid)
+        merge_project(db, data_dir, pid, job_id=job["id"])
     return handle_merge

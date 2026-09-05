@@ -178,4 +178,5 @@
 - **字幕烧录 Windows 修复** — `merge._burn_subtitles`：滤镜串里 `\` 是转义符+非 ASCII 项目名滤镜内打开不可靠（job 38665 三连败，WSL POSIX 侧从未触发）→ 滤镜只用裸 `subtitles.srt`、srt 目录走 `cwd=`；**edge-tts 补进 pyproject dependencies**（.venv-win 缺包致 Edge-TTS 回退全灭，WSL interop 可直装 `.venv-win/Scripts/pip.exe`）
 - **音频收口（2026-09-05 下午）** — `_replace_audio(target=)`：对白镜段长恒=配音+0.5s 呼吸（长者 tpad 末帧补齐、短者截尾收口——H3 口型表演撑满整镜的「嘴动无声尾巴」消灭）；字幕轴同规则镜像；`-t` 显式截断（copy+apad+shortest 组合实测熄火 48 字节挂死）；旧 `-shortest` 裸用曾把 17 个短对白镜截掉 ~40s（片长 197 vs 237）；搭配建议：无对白镜开 mute_quiet_shots 封 H3 原生杂音/乱语
 - **段时长 0=LLM 动态估时（2026-09-05 用户需求）** — 校验 0~15、PATCH 0 不动存量镜、拆解时无对白镜也用 LLM 估时钳 4~15；【时长基准】行注入拆解上下文（规则 8 的「上下文给出」此前是空头支票）
+- **审计高危三修（2026-09-05 docs/2026-09-05-feature-audit.md）** — H1 漫改参考图判断改 has_views（目录存在≠有图，persist 恒建空目录）；H2 TTS/SRT 前置挪进 merge handler（巡检线程不再同步跑 5min 卡停全部项目；手动合成同待遇自动重生配音）+ client.wait 排队不计失速 + interrupt 只打 /queue 确认在跑的自己（排队超宽限 DELETE 出队，不误杀他任务）；H3 storyboard_ready 放行重拆（对齐 UI 承诺，引擎删镜已清外键）
 - 注意：估时改字数只影响新拆解项目；存量项目想生效需重拆或手改镜时长；`merged` 阶段开放「重新合成」（POST /merge 放行 rendered/merged）

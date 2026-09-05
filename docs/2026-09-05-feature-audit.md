@@ -90,6 +90,7 @@ created →[analyze]→ analyzed →[gen_refs]→ 门1 → assets_ready
 ## 4. 体检发现（分级）
 
 > 四路只读审查汇总，全部含 file:line 证据；行号以 master@1790e1f 为准。
+> **H1/H2/H3 已于当日修复**（见 §6 时间线尾部）；中低危仍开放。
 
 ### 高（3）
 
@@ -179,4 +180,5 @@ created →[analyze]→ analyzed →[gen_refs]→ 门1 → assets_ready
 | 9809cce | 音频收口：对白镜段长=配音+0.5s（补长/截尾两向） |
 | 9d4dac3 | 段时长 0=LLM 动态估时 + 时长基准进拆解上下文 |
 | 1790e1f | 创建默认 段时长=0/总时长=0 |
+| dc93019+后续 | 审计文档 + 高危三修（H1 has_views/H2 TTS 进 merge 任务+安全 interrupt/H3 重拆放行） |
 | 8240e52 | 文档同步 |

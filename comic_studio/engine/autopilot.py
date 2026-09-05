@@ -236,12 +236,15 @@ def _comic_flow(db, data_dir, project_id, proj) -> dict:
         if is_film:
             from .assets import list_project_assets
             from .paths import data_to_abs
+            from .pipeline_gates import has_views
             missing_refs = []
             for a in list_project_assets(db, project_id):
                 if a["kind"] == "character":
                     views = data_to_abs(data_dir, a["library_dir"]) / "views"
                     main = data_to_abs(data_dir, a["library_dir"]) / "main.png"
-                    if not views.is_dir() and not main.exists():
+                    # H1（2026-09-05 审计）：persist_assets 恒建空 views 目录——
+                    # 目录存在≠有图，必须按文件判断（has_views），否则永不补图
+                    if not has_views(views) and not main.exists():
                         missing_refs.append(a["id"])
             if missing_refs:
                 if _has_active_job(db, project_id, "gen_ref"):
@@ -368,19 +371,9 @@ def tick(db, data_dir, project_id) -> dict:
             n += 1
         emit_log(db, "autopilot", "info", f"autopilot 入队 {n} 镜渲染", project_id=project_id)
     elif action == "merge":
-        # P6：合成前自动生成 TTS 配音 + SRT 字幕
-        try:
-            from .tts import generate_dialogue_audio
-            from .subtitles import generate_srt
-            audio_result = generate_dialogue_audio(db, data_dir, project_id)
-            generate_srt(db, data_dir, project_id)
-            if audio_result:
-                emit_log(db, "autopilot", "info",
-                         f"配音+字幕已生成（{len(audio_result)} 镜）",
-                         project_id=project_id)
-        except Exception as exc:
-            emit_log(db, "autopilot", "warn",
-                     f"TTS/字幕生成失败（{exc}），继续合成", project_id=project_id)
+        # H2a（2026-09-05 审计）：TTS/SRT 前置挪进 merge 任务本身（handle_merge）
+        # ——此前巡检线程同步跑 ~5min TTS 会卡停全部 autopilot 项目的巡检，
+        # 且手动 POST /merge 与自动合成待遇不一致（只拼旧音轨）
         from .jobs import enqueue_job
         enqueue_job(db, "merge", project_id=project_id, payload={"project_id": project_id})
     elif action.startswith("gate"):

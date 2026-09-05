@@ -360,3 +360,47 @@ def test_merge_trims_when_tts_shorter(tmp_path, monkeypatch):
     n = db.connect().execute(
         "SELECT COUNT(*) c FROM logs WHERE message LIKE '%收口%'").fetchone()["c"]
     assert n == 1
+
+
+def test_merge_handler_prepares_tts_and_srt(tmp_path, monkeypatch):
+    """H2b（2026-09-05 审计）：配音/字幕前置挪进 merge 任务——手动合成与自动
+    合成同待遇（此前手动 POST /merge 只拼旧音轨，TTS 仅 autopilot 线程做）；
+    TTS 失败只 warn 不阻断合成。"""
+    import json as _json
+    from comic_studio.engine import merge as M
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.queue.worker import HANDLERS
+    M.register_merge_handler()
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "前置剧", "16:9", "正文")["id"]
+    calls = {"tts": 0, "srt": 0, "merge": 0}
+
+    def fake_tts(db_, dd, pid_):
+        calls["tts"] += 1
+        return []
+
+    def fake_srt(db_, dd, pid_):
+        calls["srt"] += 1
+
+    def fake_merge(db_, dd, pid_, job_id=None):
+        calls["merge"] += 1
+        return tmp_path / "out.mp4"
+
+    monkeypatch.setattr("comic_studio.engine.tts.generate_dialogue_audio", fake_tts)
+    monkeypatch.setattr("comic_studio.engine.subtitles.generate_srt", fake_srt)
+    monkeypatch.setattr(M, "merge_project", fake_merge)
+    job = {"id": 1, "project_id": pid,
+           "payload_json": _json.dumps({"project_id": pid})}
+    HANDLERS["merge"](db, tmp_path / "data", job, None)
+    assert calls == {"tts": 1, "srt": 1, "merge": 1}
+
+    # TTS 炸了 → warn 但合成照跑
+    monkeypatch.setattr("comic_studio.engine.tts.generate_dialogue_audio",
+                        lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("tts down")))
+    calls.update(tts=0, srt=0, merge=0)
+    HANDLERS["merge"](db, tmp_path / "data", job, None)
+    assert calls["merge"] == 1
+    n = db.connect().execute(
+        "SELECT COUNT(*) c FROM logs WHERE message LIKE '%继续合成%'").fetchone()["c"]
+    assert n == 1

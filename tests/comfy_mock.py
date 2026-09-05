@@ -21,6 +21,10 @@ class MockComfy:
         return self._server.RequestHandlerClass.prompts
 
     @property
+    def queue_deletes(self):
+        return self._server.RequestHandlerClass.queue_deletes
+
+    @property
     def frees(self):
         return self._server.RequestHandlerClass.frees
 
@@ -38,13 +42,16 @@ class MockComfy:
 
 
 def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
-                  audio: bool = False, queue_running=()):
+                  audio: bool = False, queue_running=(), queue_pending=()):
     _q_running = tuple(queue_running)
+    _q_pending = tuple(queue_pending)
 
     class H(BaseHTTPRequestHandler):
         uploads, audio_uploads, prompts, frees, interrupts, upload_overwrites = [], [], [], 0, 0, []
+        queue_deletes = []
         n = 0
         queue_running = _q_running
+        queue_pending = _q_pending
 
         def log_message(self, *a):
             pass
@@ -63,7 +70,7 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
             elif self.path == "/queue":
                 # ComfyUI 队列格式：[序号, prompt_id, prompt, extra, outputs]
                 self._json({"queue_running": [[0, pid, {}, {}, []] for pid in H.queue_running],
-                            "queue_pending": []})
+                            "queue_pending": [[0, pid, {}, {}, []] for pid in H.queue_pending]})
             elif self.path.startswith("/object_info/"):
                 # 模型枚举（真实形状：{类名: {"input": {...}}}——2026-08-25 端点曾因
                 # 少套类名一层对真机 KeyError，mock 必须还原真实结构防回归）
@@ -138,6 +145,14 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
             elif self.path == "/free":
                 H.frees += 1
                 self._json({})
+            elif self.path == "/queue":
+                try:
+                    qbody = json.loads(body)
+                except json.JSONDecodeError:
+                    qbody = {}
+                for pid in qbody.get("delete") or []:
+                    H.queue_deletes.append(pid)
+                self._json({})
             elif self.path == "/interrupt":
                 H.interrupts += 1
                 self._json({})
@@ -148,10 +163,12 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
 
 
 @contextmanager
-def comfy_server(mode="ok", video=False, animated_images=False, audio=False, queue_running=()):
+def comfy_server(mode="ok", video=False, animated_images=False, audio=False,
+                 queue_running=(), queue_pending=()):
     server = ThreadingHTTPServer(("127.0.0.1", 0),
                                  _make_handler(mode, video, animated_images, audio=audio,
-                                               queue_running=tuple(queue_running)))
+                                               queue_running=tuple(queue_running),
+                                               queue_pending=tuple(queue_pending)))
     t = threading.Thread(target=server.serve_forever, daemon=True)
     t.start()
     try:

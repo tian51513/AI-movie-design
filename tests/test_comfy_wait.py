@@ -41,13 +41,20 @@ def test_wait_error_mode_raises_with_messages():
 
 
 def test_stall_triggers_interrupt():
-    with comfy_server("hang") as m:
+    """2026-09-05 语义修订（审计 H2c）：interrupt 只打 /queue 确认在跑的自己
+    ——全局 interrupt 会误杀他任务；不在队（已淘汰/丢失）→ 只报失速不动全局。"""
+    with comfy_server("hang", queue_running=["p1"]) as m:
         c = ComfyClient(m.base_url)
         seen = []
         with pytest.raises(ComfyStalled):
             c.wait_and_collect("p1", stall_seconds=0.2, poll_interval=0.05,
                                on_interrupt=lambda: seen.append(1))
         assert m.interrupts == 1 and seen == [1]
+    with comfy_server("hang") as m:
+        c = ComfyClient(m.base_url)
+        with pytest.raises(ComfyStalled):
+            c.wait_and_collect("p1", stall_seconds=0.2, poll_interval=0.05)
+        assert m.interrupts == 0
 
 
 def test_wait_detects_animated_images_key_video():

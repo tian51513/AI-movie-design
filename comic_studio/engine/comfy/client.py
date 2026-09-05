@@ -115,34 +115,64 @@ class ComfyClient:
                 outputs.append({**aud, "_kind": "audio"})
         return outputs
 
+    def _queue_state(self) -> tuple[set, set]:
+        """(running_ids, pending_ids)；/queue 不可达时返回空集（退化为不干预）。"""
+        try:
+            with self._client() as c:
+                resp = c.get(f"{self.base_url}/queue")
+                resp.raise_for_status()
+                q = resp.json()
+        except Exception:
+            return set(), set()
+        running = {e[1] for e in (q.get("queue_running") or []) if len(e) > 1 and e[1]}
+        pending = {e[1] for e in (q.get("queue_pending") or []) if len(e) > 1 and e[1]}
+        return running, pending
+
     def wait_and_collect(self, prompt_id: str, stall_seconds: float = 300,
-                         poll_interval: float = 1.0, on_interrupt=None) -> list[dict]:
+                         poll_interval: float = 1.0, on_interrupt=None,
+                         queue_grace: float = 3600.0) -> list[dict]:
+        """等待并收集产物。H2c（2026-09-05 审计修复）：
+        - 排队等待不计失速——此前 300s 从提交起算，排在前面的长渲染会把自己
+          「等死」；排队超 queue_grace 只把自己 DELETE 出队，不碰全局；
+        - 失速 interrupt 仅当 /queue 确认本任务在执行——/interrupt 无 id 参数、
+          杀的是 ComfyUI 全局当前任务，状态不明时宁可只报错不误杀他任务
+          （真机分镜19 被误打断的事故机制）。"""
         import time
-        deadline = time.monotonic() + stall_seconds
+        started = time.monotonic()
+        stall_start = None
         while True:
             results = self.history_result(prompt_id)
             if results is not None:
                 return results
-            if time.monotonic() > deadline:
-                if on_interrupt:
-                    on_interrupt()
-                with self._client() as c:
-                    c.post(f"{self.base_url}/interrupt")
-                raise ComfyStalled(
-                    f"ComfyUI {prompt_id} 超过 {stall_seconds}s 无进展，已发送 interrupt")
+            running, pending = self._queue_state()
+            now = time.monotonic()
+            if prompt_id in pending:
+                stall_start = None  # 还在排队：不累计失速
+                if now - started > stall_seconds + queue_grace:
+                    with self._client() as c:
+                        c.post(f"{self.base_url}/queue", json={"delete": [prompt_id]})
+                    raise ComfyStalled(
+                        f"ComfyUI {prompt_id} 排队超过 {queue_grace:.0f}s 未执行，已移出队列")
+            else:
+                if stall_start is None:
+                    stall_start = now
+                if now - stall_start > stall_seconds:
+                    if on_interrupt:
+                        on_interrupt()
+                    if prompt_id in running:
+                        with self._client() as c:
+                            c.post(f"{self.base_url}/interrupt")
+                        raise ComfyStalled(
+                            f"ComfyUI {prompt_id} 超过 {stall_seconds}s 无进展，已发送 interrupt")
+                    raise ComfyStalled(
+                        f"ComfyUI {prompt_id} 超过 {stall_seconds}s 无进展"
+                        "（不在执行队列，未 interrupt）")
             time.sleep(poll_interval)
 
     def queued_prompt_ids(self) -> set:
         """当前在 ComfyUI 队列/执行中的 prompt_id 集合（断点对账：在队=可等待接回）。"""
-        with self._client() as c:
-            resp = c.get(f"{self.base_url}/queue")
-            resp.raise_for_status()
-            q = resp.json()
-        ids = set()
-        for entry in (q.get("queue_running") or []) + (q.get("queue_pending") or []):
-            if len(entry) > 1 and entry[1]:
-                ids.add(entry[1])
-        return ids
+        running, pending = self._queue_state()
+        return running | pending
 
     def interrupt(self) -> None:
         """中断 ComfyUI 当前执行（手动取消用）。"""
