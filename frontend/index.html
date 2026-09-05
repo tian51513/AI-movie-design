@@ -763,9 +763,12 @@
     <template v-if="detailMode==='assets'">
     <p>
       <button @click="startAnalyze"
-              :disabled="analyzeState.status==='running' || project.stage!=='created'"
-              :title="project.stage!=='created' ? `阶段 ${stageName(project.stage)} 无需分析` : 'LLM 抽取角色/场景/道具'">
-        {{ analyzeState.status==='running' ? '分析中…' : 'LLM 分析资产' }}</button>
+              :disabled="analyzeState.status==='running' || !['created','analyzed'].includes(project.stage)"
+              :title="!['created','analyzed'].includes(project.stage)
+                ? `阶段 ${stageName(project.stage)} 不能分析（深阶段需删除重建）`
+                : (project.stage==='analyzed' ? '重新分析：按最新正文/规则重跑（同名资产合并，补新角色）' : 'LLM 抽取角色/场景/道具')">
+        {{ analyzeState.status==='running' ? '分析中…'
+          : (project.stage==='analyzed' ? '🔄 重新分析资产' : 'LLM 分析资产') }}</button>
       <span v-if="analyzeState.status==='failed'" style="color:#f87171">
         失败：{{ analyzeState.error }}</span>
       <button v-if="project.comic_mode && assets.length" @click="purgeComicAssets"
