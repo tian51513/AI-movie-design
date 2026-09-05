@@ -376,3 +376,29 @@ def test_stuck_reported_cleared_on_project_delete(tmp_path):
                                start_workers=False)) as c:
         assert c.delete(f"/api/projects/{pid}").status_code == 200
     assert pid not in AP._STUCK_REPORTED
+
+
+def test_audio_project_waits_for_transcription(tmp_path):
+    """终审 M-1 真机命中：源音频在、segments 未落 → 占位正文 20 字被分析成
+    空资产。created 分支 wait 等转写；手动 /analyze 409。"""
+    db, pid = _proj(tmp_path)
+    adir = tmp_path / "data" / "projects" / "自动剧" / "audio"
+    adir.mkdir(parents=True)
+    (adir / "source.mp3").write_bytes(b"f")
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "转写" in act["detail"]
+    import io
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    with TestClient(create_app(db_path=tmp_path / "s.db", data_dir=tmp_path / "data",
+                               start_workers=False)) as c:
+        assert c.post(f"/api/projects/{pid}/analyze").status_code == 409
+
+
+def test_analyzed_with_zero_assets_waits_not_spins(tmp_path):
+    """真机 16:03 空转：0 资产 → _all_assets_have_sheets 恒 False → gen_refs
+    每 3s「入队 0 张」刷屏。空资产明确 wait。"""
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "analyzed")
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "资产" in act["detail"]

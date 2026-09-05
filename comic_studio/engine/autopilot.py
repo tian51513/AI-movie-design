@@ -162,6 +162,19 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
     if stage == "merged":
         return {"action": "done", "detail": "已成片"}
     if stage == "created":
+        # P10 守卫（终审 M-1 真机命中 2026-09-05）：源音频在、转写未落盘 →
+        # 占位正文（~20 字）会被分析成空资产。等转写；失败给手动指引
+        from .asr import load_segments
+        import re as _re
+        _adir = data_to_abs(data_dir, f"projects/{proj['slug']}/audio")
+        _src = next(_adir.glob("source.*"), None) if _adir.is_dir() else None
+        if _src is not None and load_segments(data_dir, proj["slug"]) is None:
+            if _has_active_job(db, project_id, "transcribe"):
+                return {"action": "wait", "detail": "音频转写进行中"}
+            last_t = jobs_mod.latest_job(db, project_id, "transcribe")
+            if last_t is not None and last_t["status"] == "failed":
+                return {"action": "wait", "detail": "上次转写失败，请重新上传音频发起"}
+            return {"action": "wait", "detail": "源音频尚未转写（segments 缺失），请先完成转写"}
         if _has_active_job(db, project_id, "analyze"):
             return {"action": "wait", "detail": "分析进行中"}
         last = jobs_mod.latest_job(db, project_id, "analyze")
@@ -169,6 +182,11 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
             return {"action": "wait", "detail": "上次分析失败，重试请手动发起"}
         return {"action": "analyze", "detail": "开始资产分析"}
     if stage == "analyzed":
+        # 真机 2026-09-05 16:03：0 资产 → gen_refs 每 3s「入队 0 张」空转刷屏
+        if not list_project_assets(db, project_id):
+            return {"action": "wait",
+                    "detail": "分析未产出任何角色资产——正文过短或转写异常，"
+                              "请检查正文后重新分析"}
         if _all_assets_have_sheets(db, data_dir, project_id):
             return {"action": "gate1", "detail": "资产齐全，过门1"}
         if _has_active_job(db, project_id, "gen_ref"):

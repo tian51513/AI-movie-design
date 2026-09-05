@@ -33,6 +33,15 @@ def start(request: Request, project_id: int, background: BackgroundTasks):
         raise HTTPException(409, "分析正在进行中")
     if proj["stage"] != "created":
         raise HTTPException(409, f"阶段 {proj['stage']} 不允许重新分析（回退流程见后续计划）")
+    # P10 守卫（终审 M-1 真机命中 2026-09-05）：源音频在、转写未落盘 →
+    # 占位正文会被分析成空资产——409 等转写完成
+    from ..engine.asr import load_segments
+    from ..engine.paths import data_to_abs
+    _adir = data_to_abs(request.app.state.data_dir, f"projects/{proj['slug']}/audio")
+    _src = next(_adir.glob("source.*"), None) if _adir.is_dir() else None
+    if _src is not None and load_segments(request.app.state.data_dir, proj["slug"]) is None:
+        raise HTTPException(409, "音频转写尚未完成（正文还是占位文本）——等转写 job "
+                                "结束后再分析；若转写失败请重新上传音频")
     job_id = jobs.create_job(db, project_id, "analyze")
     background.add_task(_run_analysis, db, request.app.state.data_dir, project_id, job_id)
     return {"job_id": job_id}
