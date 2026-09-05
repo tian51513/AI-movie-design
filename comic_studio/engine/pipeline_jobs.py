@@ -125,7 +125,22 @@ def handle_transcribe(db, data_dir, job, comfy):
         emit_log(db, "asr", "info", f"转写进行中…已 {n} 段",
                  project_id=pid, job_id=job["id"])
 
-    segs = asr_mod.transcribe(src, progress=_heartbeat)
+    from ..engine.settings import get_setting as _gs
+    _engine = (( _gs(db, "asr") or {}).get("engine")) or "faster_whisper"
+    if _engine == "comfy_qwen3":
+        from ..engine.settings import ensure_comfy_configured
+        ensure_comfy_configured(db)
+        from ..engine.comfy.client import ComfyClient
+        from ..engine.settings import get_setting
+        _base = (get_setting(db, "comfy") or {}).get("base_url")
+        _theme = ""
+        _tf = data_to_abs(data_dir, f"{asr_mod.audio_rel(proj['slug'])}/theme.txt")
+        if _tf.exists():
+            _theme = _tf.read_text(encoding="utf-8").strip()
+        segs = asr_mod.transcribe_comfy(db, src, ComfyClient(_base),
+                                        progress=_heartbeat, theme=_theme)
+    else:
+        segs = asr_mod.transcribe(src, progress=_heartbeat)
     asr_mod.save_segments(data_dir, proj["slug"], segs)
     full = "\n\n".join(x["text"] for x in segs)
     data_to_abs(data_dir, proj["novel_path"]).write_text(full, encoding="utf-8")

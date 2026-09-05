@@ -47,7 +47,8 @@ function data() {
     editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character',
     newStyleKey: '', newStyleText: '',
     analyzeState: { status: '', error: null }, pollTimer: null,
-    settingsForm: { local: {}, online: {}, routing: {}, comfy: {}, t2i_tm: '',
+    settingsForm: { local: {}, online: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
+      comfy: {}, t2i_tm: '',
                     model_overrides: {}, model_templates: [] }, saving: false,
     moTemplate: '', modelChoices: [], moError: '',
     ollamaModels: [], showThink: false, loadingModels: false,
@@ -655,6 +656,8 @@ const methods = {
       online: { ...s.llm_providers.online,
                 extra_body_json: s.llm_providers.online?.extra_body ? JSON.stringify(s.llm_providers.online.extra_body) : '' },
       routing: { ...s.llm_routing },
+      asr: { engine: s.asr?.engine || 'faster_whisper',
+             chunk_seconds: s.asr?.chunk_seconds || 300 },
       comfy: { ...s.comfy },
       t2i_tm: s.template_map?.t2i || '',
       cvTm: s.template_map?.character_views || '',
@@ -785,6 +788,7 @@ const methods = {
                   extra_body: ebOnline },
       },
       llm_routing: { ...this.settingsForm.routing },
+      asr: { ...this.settingsForm.asr },
       // comfy 全量透传（2026-08-31 教训：手工罗列键漏了 mute_quiet_shots/
       // min_free_vram_gb/director_batch_frames——保存后被默认值覆盖，开关"失忆"）
       comfy: { ...this.settingsForm.comfy, base_url: this.settingsForm.comfy.base_url || '' },

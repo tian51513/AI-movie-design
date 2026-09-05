@@ -192,6 +192,16 @@ class ComfyClient:
         with self._client() as c:
             c.post(f"{self.base_url}/queue", json={"clear": True})
 
+    def download_text(self, item: dict) -> str:
+        """取 /view 文本产物（P10-D asr：SaveText 输出 .txt）。"""
+        with self._client() as c:
+            resp = c.get(f"{self.base_url}/view",
+                         params={"filename": item.get("filename"),
+                                 "subfolder": item.get("subfolder", ""),
+                                 "type": item.get("type", "output")})
+            resp.raise_for_status()
+            return resp.text
+
     def download(self, filename: str, subfolder: str, type_: str, dest: Path) -> None:
         with self._client() as c:
             resp = c.get(f"{self.base_url}/view",

@@ -1,0 +1,58 @@
+{
+ "1": {
+  "inputs": {
+   "audio": "晨勃的儿子.mp3"
+  },
+  "class_type": "LoadAudio",
+  "_meta": {
+   "title": "加载音频"
+  }
+ },
+ "3": {
+  "inputs": {
+   "filename_prefix": "ComfyUI",
+   "format": "txt",
+   "text": [
+    "10",
+    0
+   ]
+  },
+  "class_type": "SaveText",
+  "_meta": {
+   "title": "保存文本"
+  }
+ },
+ "9": {
+  "inputs": {
+   "repo_id": "Qwen/Qwen3-ASR-0.6B",
+   "source": "ModelScope",
+   "precision": "bf16",
+   "attention": "sdpa",
+   "forced_aligner": "Qwen/Qwen3-ForcedAligner-0.6B",
+   "local_model_path": ""
+  },
+  "class_type": "Qwen3ASRLoader",
+  "_meta": {
+   "title": "Qwen3-ASR Loader"
+  }
+ },
+ "10": {
+  "inputs": {
+   "language": "Chinese",
+   "context": "",
+   "return_timestamps": false,
+   "model": [
+    "9",
+    0
+   ],
+   "audio": [
+    "1",
+    0
+   ]
+  },
+  "class_type": "Qwen3ASRTranscribe",
+  "_meta": {
+   "title": "Qwen3-ASR Transcribe"
+  }
+ }
+}

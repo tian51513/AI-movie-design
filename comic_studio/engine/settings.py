@@ -16,6 +16,7 @@ DEFAULT_SETTINGS = {
         "fl2v": "h3_fl2v",
         "t2v": "h3_t2v",
         "director": "h3_director",  # P7-D 整段快车道（从视频展示工作流抽离的专属模板）
+        "asr": "asr_qwen3",  # P10-D ComfyUI Qwen3-ASR（audio_to_text）
     },
     "llm_providers": {
         "local": {"base_url": "http://localhost:11434/v1", "api_key": "ollama",
@@ -25,6 +26,7 @@ DEFAULT_SETTINGS = {
         "online": {"base_url": "", "api_key": "", "model": ""},
     },
     # 任务路由（spec §9.1：轻活本地、重活线上）；local2=LM Studio（视觉模型等）
+    "asr": {"engine": "faster_whisper", "chunk_seconds": 300},
     "llm_routing": {
         "extract_assets": "local",
         "fix_appearance": "local",

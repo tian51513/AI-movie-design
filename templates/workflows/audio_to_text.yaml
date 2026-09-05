@@ -1,0 +1,22 @@
+id: asr_qwen3
+type: asr
+name: Qwen3-ASR 音频转文本（ComfyUI）
+file: audio_to_text.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  params:
+    audio:
+      node: '1'
+      field: audio
+    context:
+      node: '10'
+      field: context
+    timestamps:
+      node: '10'
+      field: return_timestamps
+  output_text:
+    node: '3'
+    field: text
+# 2026-09-05 P10-D 用户接入：Qwen3ASRLoader(repo_id/source/precision) 保持
+# 工作流原值（0.6B/ModelScope）——换 1.7B 直接改 _raw 源文件的本节点值。
+# 分块转写在引擎侧（engine/asr.transcribe_comfy），每块独立提交拼接。

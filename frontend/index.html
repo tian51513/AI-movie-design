@@ -255,6 +255,7 @@
       <div><b style="color:#60a5fa">🤖 LLM 设置</b>：本地服务商切换（Ollama/LM Studio/自定义，预设地址一键填）+ 线上 API</div>
       <div><b style="color:#60a5fa">🔀 任务路由</b>：每个任务可独立选服务商/模型（长文本建议对话模型）</div>
       <div><b style="color:#60a5fa">🎬 工作流</b>：模板映射（主图/三视图/视频/导演台）+ 模型切换 + 性能开关</div>
+      <div><b style="color:#34d399">🎧 ASR 引擎</b>：faster-whisper（本地直连，带时间戳）｜ ComfyUI Qwen3-ASR（中文更准，context 热词=内容主题；长音频自动分块防输出不全）</div>
       <div><b style="color:#60a5fa">📚 预设主题</b>：主题模板管理（导入/编辑/删除）</div>
       <div><b style="color:#60a5fa">🎵 音色库</b>：15 预设批量生成（⟳ 可重生成+试听）· 全局/项目级自定义上传（裁剪→克隆→试听→确认入库）· 项目页<b>「🎭 角色配音」</b>逐角色：分析自动绑（预设优先）→试听/换绑→声线描述生成专属→⤴晋升全局复用</div>
     </div>
@@ -487,6 +488,15 @@
        <button @click="freeComfy" :disabled="freeingComfy" style="background:#7c3aed"
                title="卸载模型并清理 ComfyUI 显存/内存（渲完想腾显存时用；平时不清理反而更快）">
          {{ freeingComfy ? '清理中…' : '清理显存' }}</button></p>
+    <p><label class="muted">🎧 ASR 引擎（有声书转写）：</label>
+       <select v-model="settingsForm.asr.engine" style="max-width:100%"
+               title="faster-whisper=本地直连带时间戳（默认）；ComfyUI Qwen3-ASR=中文更准，内容主题作 context 热词，长音频自动分块">
+         <option value="faster_whisper">faster-whisper（本地直连）</option>
+         <option value="comfy_qwen3">ComfyUI Qwen3-ASR</option>
+       </select>
+       <label class="muted" style="margin-left:8px">分块秒数</label>
+       <input v-model.number="settingsForm.asr.chunk_seconds" type="number" min="60" max="1800"
+              style="width:70px" title="长音频按此时长分块独立转写再拼接（防单次输出不全）"></p>
     <h3>工作流模板映射</h3>
     <p><label class="muted">主图/参考图生成模板：</label>
        <select v-model="settingsForm.t2i_tm" style="width:300px">

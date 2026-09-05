@@ -522,3 +522,66 @@ def test_split_audio_project_gets_dialogue_rules(tmp_path):
     db3, pid3 = _proj(tmp_path / "x")
     split_storyboards(db3, tmp_path / "x" / "data", pid3, client_factory=lambda t: CaptureLLM())
     assert "全篇皆对白" not in captured.get("system", "")
+
+
+# ===== P10-D：ComfyUI Qwen3-ASR 后端（2026-09-05 用户接入）=====
+
+def test_parse_qwen_output_formats():
+    """时间戳格式未实测——解析器多格式容忍 + 整块兜底（保时长可用）。"""
+    from comic_studio.engine.asr import parse_qwen_output
+    # 格式A：JSON segments
+    a = parse_qwen_output('{"segments":[{"start":0.5,"end":2.0,"text":"甲"},{"start":2.1,"end":4.0,"text":"乙"}]}', 10.0)
+    assert a == [{"start": 10.5, "end": 12.0, "text": "甲"}, {"start": 12.1, "end": 14.0, "text": "乙"}]
+    # 格式B：行式 [00:00.500 -> 00:02.000] 甲
+    b = parse_qwen_output("[00:00.500 -> 00:02.000] 甲\n[00:02.100 -> 00:04.000] 乙", 0.0)
+    assert b[0]["text"] == "甲" and abs(b[0]["start"] - 0.5) < 0.01 and abs(b[1]["end"] - 4.0) < 0.01
+    # 格式C：SRT 块
+    c = parse_qwen_output("1\n00:00:00,500 --> 00:00:02,000\n甲\n\n2\n00:00:02,100 --> 00:00:04,000\n乙", 0.0)
+    assert len(c) == 2 and c[1]["text"] == "乙"
+    # 兜底：纯文本 → 整块单段
+    d = parse_qwen_output("只是一段纯文本没有时间戳", 5.0, chunk_dur=8.0)
+    assert d == [{"start": 5.0, "end": 13.0, "text": "只是一段纯文本没有时间戳"}]
+
+
+def test_completeness_heuristic():
+    """完整度校验（用户 flagged 输出不全长）：字符密度过低 → warn 提示。"""
+    from comic_studio.engine.asr import text_density_ok
+    assert text_density_ok("字" * 600, 300.0) is True    # 2 字/s 正常
+    assert text_density_ok("字" * 30, 300.0) is False    # 0.1 字/s 异常
+    assert text_density_ok("", 300.0) is False
+    assert text_density_ok("字" * 600, 0.0) is True      # 无时长不判
+
+
+def test_transcribe_engine_setting_branch(tmp_path, monkeypatch):
+    """handler 按设置选引擎：comfy_qwen3 → transcribe_comfy（不碰 faster_whisper）。
+    """
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.queue.worker import HANDLERS
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.settings import set_setting
+    import comic_studio.engine.pipeline_jobs as PJ
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "擎剧", "16:9", "占位")["id"]
+    adir = tmp_path / "d" / "projects" / "擎剧" / "audio"
+    adir.mkdir(parents=True)
+    (adir / "source.mp3").write_bytes(b"f")
+    set_setting(db, "asr", {"engine": "comfy_qwen3"})
+    called = {}
+
+    def fake_comfy(db, audio_path, comfy, progress=None, theme=""):
+        called["engine"] = "comfy"
+        return [{"start": 0.0, "end": 2.0, "text": "甲"}]
+    monkeypatch.setattr("comic_studio.engine.asr.transcribe_comfy", fake_comfy)
+
+    def bomb(path, model_size="large-v3", _backend=None, progress=None):
+        raise AssertionError("comfy 引擎不得走 faster_whisper")
+    monkeypatch.setattr("comic_studio.engine.asr.transcribe", bomb)
+    jid = enqueue_job(db, "transcribe", project_id=pid,
+                      payload={"project_id": pid, "ext": "mp3"})
+    job = dict(db.connect().execute("SELECT * FROM jobs WHERE id=?", (jid,)).fetchone())
+    HANDLERS["transcribe"](db, tmp_path / "d", job, None)
+    assert called["engine"] == "comfy"
+    from comic_studio.engine.asr import load_segments
+    assert load_segments(tmp_path / "d", "擎剧")[0]["text"] == "甲"

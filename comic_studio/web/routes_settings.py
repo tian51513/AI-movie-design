@@ -50,6 +50,7 @@ class SettingsUpdate(BaseModel):
     comfy: ComfyConfig | None = None
     template_map: dict[str, str | None] | None = None
     model_overrides: dict[str, dict[str, str]] | None = None
+    asr: dict | None = None  # P10-D：{engine, chunk_seconds}
 
 
 @router.get("")
@@ -65,6 +66,7 @@ def read(request: Request):
         "llm_providers": get_setting(request.app.state.db, "llm_providers"),
         "llm_routing": get_setting(request.app.state.db, "llm_routing"),
         "comfy": get_setting(request.app.state.db, "comfy"),
+        "asr": get_setting(request.app.state.db, "asr"),
         "template_map": get_setting(request.app.state.db, "template_map"),
         "model_overrides": get_setting(request.app.state.db, "model_overrides") or {},
         "model_templates": templates,
@@ -107,6 +109,13 @@ def update(request: Request, body: SettingsUpdate):
                                     "换地址请直接改写新地址")
         merged.update(provided)
         set_setting(db, "comfy", merged)
+    if body.asr is not None:
+        merged = get_setting(db, "asr") or {}
+        eng = str(body.asr.get("engine") or "")
+        if eng and eng not in ("faster_whisper", "comfy_qwen3"):
+            raise HTTPException(422, f"未知 ASR 引擎: {eng}")
+        merged.update({k: v for k, v in body.asr.items() if v is not None})
+        set_setting(db, "asr", merged)
     if body.template_map is not None:
         bad = set(body.template_map) - TEMPLATE_MAP_KEYS
         if bad:

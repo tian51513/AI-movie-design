@@ -126,3 +126,14 @@ def test_providers_partial_put_preserves_unset(tmp_path):
         prov = c.get("/api/settings").json()["llm_providers"]["online"]
         assert prov["model"] == "m2"
         assert prov["base_url"] == "http://a" and prov["api_key"] == "k"
+
+
+def test_asr_engine_setting_roundtrip(tmp_path):
+    """P10-D：asr 引擎设置往返（默认 faster_whisper → 切 comfy_qwen3），
+    非法值 422。"""
+    with _client(tmp_path) as c:
+        assert c.get("/api/settings").json()["asr"]["engine"] == "faster_whisper"
+        r = c.put("/api/settings", json={"asr": {"engine": "comfy_qwen3"}})
+        assert r.status_code == 200
+        assert c.get("/api/settings").json()["asr"]["engine"] == "comfy_qwen3"
+        assert c.put("/api/settings", json={"asr": {"engine": "xx"}}).status_code == 422
