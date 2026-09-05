@@ -313,3 +313,35 @@ def test_tick_merge_no_longer_runs_tts_inline(tmp_path, monkeypatch):
     n = db.connect().execute(
         "SELECT COUNT(*) c FROM logs WHERE message LIKE '%继续合成%'").fetchone()["c"]
     assert n == 0
+
+
+# ===== 2026-09-05 审计中危批次 A =====
+
+def test_stale_prompts_count_as_missing(tmp_path):
+    """M1：资产重生标 stale 的镜，autopilot 视为缺口重生（手动批量早已重生
+    stale，autopilot 此前只查空提示词→渲染旧提示词）。"""
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "storyboard_ready")
+    sid = persist_shots(db, pid, [_shot(prompt="旧提示词")])[0]
+    update_shot(db, sid, {"status": "stale"})
+    assert next_action(db, tmp_path / "data", pid)["action"] == "gen_prompts"
+    tick(db, tmp_path / "data", pid)
+    row = db.connect().execute(
+        "SELECT shot_id FROM jobs WHERE type='gen_prompt' AND status='pending'"
+    ).fetchone()
+    assert row and row["shot_id"] == sid
+
+
+def test_all_disabled_shots_wait_not_loop(tmp_path):
+    """M3：全部镜无效时明确 wait（此前 storyboard_ready 恒 render 刷日志、
+    assets_ready 反复 gate2 静默吞异常——两个无信号死循环）。"""
+    from comic_studio.engine.shots import set_disabled_batch
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "storyboard_ready")
+    ids = persist_shots(db, pid, [_shot(prompt="甲"), _shot(prompt="乙")])
+    set_disabled_batch(db, pid, ids, 1)
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "无效" in act["detail"]
+    set_stage(db, pid, "assets_ready")
+    act2 = next_action(db, tmp_path / "data", pid)
+    assert act2["action"] == "wait" and "无效" in act2["detail"]

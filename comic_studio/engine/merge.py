@@ -227,6 +227,11 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
     missing = [s["seq"] for s in shots if not s["video_path"]]
     if not shots or missing:
         raise ValueError(f"无法合成：以下镜头无视频: {missing or '（无分镜）'}")
+    # M5（2026-09-05 审计）：导演台产物全镜指同一整片——逐镜合成会拼出
+    # 「整片×N」废片，入口防呆
+    if len(shots) > 1 and len({s["video_path"] for s in shots}) == 1:
+        raise ValueError("全部镜头指向同一整片（导演台产物）——逐镜重合成会拼出"
+                         "整片×N；如需重出片请走快车道或重拆")
     w, h = _canvas(proj["aspect_ratio"])
     out_dir = Path(data_dir) / "projects" / proj["slug"] / "output"
     out_dir.mkdir(parents=True, exist_ok=True)

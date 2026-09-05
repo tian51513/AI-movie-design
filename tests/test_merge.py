@@ -404,3 +404,26 @@ def test_merge_handler_prepares_tts_and_srt(tmp_path, monkeypatch):
     n = db.connect().execute(
         "SELECT COUNT(*) c FROM logs WHERE message LIKE '%继续合成%'").fetchone()["c"]
     assert n == 1
+
+
+def test_merge_rejects_same_video_all_shots(tmp_path):
+    """M5：导演台产物全镜同 video_path——重合成会拼出「整片×N」废片，
+    merge 入口防呆。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "快车道剧", "16:9", "t")["id"]
+    set_stage(db, pid, "rendered")
+    v = _make(tmp_path / "v.mp4", 1)
+    rel = "projects/快车道剧/output/whole.mp4"
+    dest = tmp_path / "data" / rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    import shutil as _sh
+    _sh.copy(v, dest)
+    sids = persist_shots(db, pid, [
+        NS(text_span="", description=f"镜{i}", shot_type="", camera={},
+           duration=5.0, workflow_type="t2v", ledger={},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None,
+           prompt=f"p{i}") for i in (1, 2)])
+    for sid in sids:
+        update_shot(db, sid, {"video_path": rel, "status": "rendered"})
+    with pytest.raises(ValueError, match="整片"):
+        merge_project(db, tmp_path / "data", pid)

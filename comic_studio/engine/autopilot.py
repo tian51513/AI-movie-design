@@ -37,12 +37,21 @@ def _all_assets_have_sheets(db, data_dir, project_id) -> bool:
 
 
 def _missing_prompt_shot_ids(db, project_id) -> list:
-    """缺提示词的生效镜 id 列表（2026-09-04 设计A2：逐镜失败守卫需要镜级粒度）。"""
+    """缺提示词的生效镜 id 列表（2026-09-04 设计A2：逐镜失败守卫需要镜级粒度）。
+    2026-09-05 M1：status='stale'（资产重生联动标记）也算缺口——autopilot 与
+    手动批量同待遇重生，不再渲染旧提示词。"""
     conn = db.connect()
     return [r["id"] for r in conn.execute(
         "SELECT id FROM shots WHERE project_id=? AND disabled=0 "
-        "AND (prompt IS '' OR prompt='' OR TRIM(prompt)='') ORDER BY seq",
-        (project_id,)).fetchall()]
+        "AND (prompt IS '' OR prompt='' OR TRIM(prompt)='' OR status='stale') "
+        "ORDER BY seq", (project_id,)).fetchall()]
+
+
+def _effective_shot_count(db, project_id) -> int:
+    conn = db.connect()
+    return conn.execute(
+        "SELECT COUNT(*) c FROM shots WHERE project_id=? AND disabled=0",
+        (project_id,)).fetchone()["c"]
 
 
 def _shots_missing_video_ids(db, project_id) -> set:
@@ -94,6 +103,10 @@ def _render_gap(db, project_id) -> dict | None:
     if not _all_shots_have_video(db, project_id):
         if _has_active_job(db, project_id, "gen_shot"):
             return {"action": "wait", "detail": "渲染中"}
+        # M3（2026-09-05 审计）：全部镜无效——明确 wait（此前恒 render 刷
+        # 「入队 0 镜」死循环）
+        if _effective_shot_count(db, project_id) == 0:
+            return {"action": "wait", "detail": "无生效分镜（全部无效）"}
         missing = _shots_missing_video_ids(db, project_id)
         stuck = missing & _failed_shot_ids(db, project_id, "gen_shot")
         if stuck and len(stuck) == len(missing):
@@ -174,6 +187,8 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
         gap = _prompt_gap(db, project_id)
         if gap:
             return gap
+        if _effective_shot_count(db, project_id) == 0:
+            return {"action": "wait", "detail": "无生效分镜（全部无效）"}
         return {"action": "gate2", "detail": "提示词齐全，过门2"}
     if stage == "storyboard_ready":
         total = db.connect().execute("SELECT COUNT(*) c FROM shots WHERE project_id=?",
@@ -338,7 +353,9 @@ def tick(db, data_dir, project_id) -> dict:
         n = 0
         from .shots import list_shots
         for s in list_shots(db, project_id):
-            if (s["disabled"] or (s["prompt"] or "").strip()
+            # M1：stale 镜即使有旧提示词也要重生（regen 成功置 ready 复位）
+            if (s["disabled"]
+                    or ((s["prompt"] or "").strip() and s["status"] != "stale")
                     or s["id"] in queued or s["id"] in failed):
                 continue
             enqueue_llm_job(db, "gen_prompt", project_id=project_id, shot_id=s["id"],

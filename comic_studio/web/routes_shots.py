@@ -335,6 +335,14 @@ def stop_jobs(request: Request, project_id: int):
         raise HTTPException(404, "项目不存在")
     from ..engine.jobs import cancel_project_jobs
     result = cancel_project_jobs(db, project_id)
+    # M2（2026-09-05 审计）：autopilot 开着时取消不触发失败守卫、3s 后必重入队
+    # （任务打不死）——停止任务即用户意图全停，自动关一键出片
+    conn = db.connect()
+    if conn.execute("SELECT autopilot FROM projects WHERE id=?",
+                    (project_id,)).fetchone()["autopilot"]:
+        conn.execute("UPDATE projects SET autopilot=0 WHERE id=?", (project_id,))
+        conn.commit()
+        emit_log(db, "system", "info", "停止任务：已自动关闭一键出片", project_id=project_id)
     comfy_err = ""
     try:
         from ..engine.comfy.client import ComfyClient

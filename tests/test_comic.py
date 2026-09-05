@@ -349,3 +349,40 @@ def test_film_group_nouns_not_extracted(tmp_path):
     from comic_studio.engine.assets import list_project_assets
     names = {a["name"] for a in list_project_assets(db, pid) if a["kind"] == "character"}
     assert names == {"继父"}  # 众人出现 2 次、2 字——旧规则会放行，R6 拦下
+
+
+def test_drop_character_bindings_clears_ledger_refs(tmp_path):
+    """M6（2026-09-05 审计）：重提取角色清空重建资产必须同步清分镜 ledger
+    旧 id 绑定（此前悬空 → 渲染参考解析落空）。共用助手单测。"""
+    from types import SimpleNamespace as NS
+    import json as _json
+    from comic_studio.engine.comic import _drop_character_bindings
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.shots import list_shots, persist_shots
+    from comic_studio.engine.assets import persist_assets
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "重建剧", "16:9", "t")["id"]
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="甲", appearance="黑发", tags=[]),
+                                  NS(name="乙", appearance="白发", tags=[])],
+                      scenes=[], props=[]))
+    from comic_studio.engine.assets import list_project_assets
+    aids = [a["id"] for a in list_project_assets(db, pid)]
+    rows = persist_shots(db, pid, [
+        NS(text_span="", description="a", shot_type="", camera={}, duration=5.0,
+           workflow_type="t2v", ledger={},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None),
+        NS(text_span="", description="b", shot_type="", camera={}, duration=5.0,
+           workflow_type="t2v", ledger={},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])
+    conn = db.connect()
+    for sid, chars in zip(rows, [aids, [aids[1]]]):
+        conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
+                     (_json.dumps({"assets": {"characters": chars}},
+                                  ensure_ascii=False), sid))
+    conn.commit()
+    _drop_character_bindings(db, pid, {aids[0]})  # 只删资产1
+    leds = [_json.loads(s["ledger_json"]).get("assets", {}).get("characters")
+            for s in list_shots(db, pid)]
+    assert leds[0] == [aids[1]] and leds[1] == [aids[1]]  # 引用者清、无关者留

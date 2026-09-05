@@ -105,3 +105,19 @@ def test_split_allowed_at_storyboard_ready(tmp_path):
         set_stage(c.app.state.db, pid, "storyboard_ready")
         r = c.post(f"/api/projects/{pid}/split-storyboards", json={})
         assert r.status_code == 202, r.text
+
+
+def test_stop_jobs_disables_autopilot(tmp_path):
+    """M2：autopilot 开着时点「停止任务」自动关一键出片（此前 cancelled 不
+    触发失败守卫，3s 后重入队——任务打不死）。"""
+    from comic_studio.engine import jobs as jobs_mod
+    with _client(tmp_path) as c:
+        pid = _mk(c)
+        conn = c.app.state.db.connect()
+        conn.execute("UPDATE projects SET autopilot=1 WHERE id=?", (pid,))
+        conn.commit()
+        jobs_mod.enqueue_job(c.app.state.db, "gen_prompt", project_id=pid, payload={})
+        r = c.post(f"/api/projects/{pid}/stop-jobs")
+        assert r.status_code == 200
+        assert c.app.state.db.connect().execute(
+            "SELECT autopilot FROM projects WHERE id=?", (pid,)).fetchone()[0] == 0

@@ -422,6 +422,27 @@ def _is_real_character_name(name: str, count: int) -> bool:
     return name not in ("背景", "镜头", "画面", "角色", "模型")
 
 
+def _drop_character_bindings(db, project_id, ids) -> None:
+    """分镜 ledger 的角色绑定同步清理（M6 2026-09-05 审计：重提取重建资产
+    必须清旧 id 引用，否则渲染参考解析落空；purge 与重建共用）。"""
+    import json as _json
+    from .shots import list_shots
+    conn = db.connect()
+    for s in list_shots(db, project_id):
+        try:
+            ledger = _json.loads(s["ledger_json"] or "{}")
+        except ValueError:
+            continue
+        assets = ledger.setdefault("assets", {})
+        chars = assets.get("characters") or []
+        rest = [c for c in chars if c not in ids]
+        if rest != chars:
+            assets["characters"] = rest
+            conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
+                         (_json.dumps(ledger, ensure_ascii=False), s["id"]))
+    conn.commit()
+
+
 def purge_comic_assets(db, data_dir, project_id) -> int:
     """清理读图提取的资产（2026-08-29 动态漫误提取善后）：
     删资产行 + project_assets 引用 + library 目录 + 分镜 ledger 角色绑定。
@@ -451,16 +472,7 @@ def purge_comic_assets(db, data_dir, project_id) -> int:
     conn.execute(f"DELETE FROM project_assets WHERE asset_id IN ({ph})", sorted(ids))
     conn.execute(f"DELETE FROM assets WHERE id IN ({ph})", sorted(ids))
     # 分镜绑定同步清理（对白等其他 ledger 字段不动）
-    for s in list_shots(db, project_id):
-        ledger = json.loads(s["ledger_json"] or "{}")
-        assets = ledger.setdefault("assets", {})
-        chars = assets.get("characters") or []
-        rest = [c for c in chars if c not in ids]
-        if rest != chars:
-            assets["characters"] = rest
-            conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
-                         (json.dumps(ledger, ensure_ascii=False), s["id"]))
-    conn.commit()
+    _drop_character_bindings(db, project_id, ids)
     emit_log(db, "llm", "info",
              f"清理提取资产 {len(rows)} 个（含分镜绑定）", project_id=project_id)
     return len(rows)
@@ -557,8 +569,10 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> i
         conn.execute(f"DELETE FROM project_assets WHERE asset_id IN ({ph})", old_ids)
         conn.execute(f"DELETE FROM assets WHERE id IN ({ph})", old_ids)
         conn.commit()
+        # M6（2026-09-05 审计）：旧 id 绑定同步清（此前悬空 → 渲染参考落空）
+        _drop_character_bindings(db, project_id, set(old_ids))
         emit_log(db, "llm", "info",
-                 f"清理旧资产 {len(old_ids)} 个（重新提取）",
+                 f"清理旧资产 {len(old_ids)} 个（重新提取，含分镜绑定）",
                  project_id=project_id)
 
     def _to_str(v):
