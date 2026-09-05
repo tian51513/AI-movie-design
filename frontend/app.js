@@ -68,7 +68,8 @@ function data() {
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
       optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文',
-      describe_shot: 'VLM 读图' },  // L4：路由标签补全
+      describe_shot: 'VLM 读图',
+      asr_cleanup: '🎧 转写校对' },  // P10-D：路由表可见（本地思考模型截断时可切线上）
     novelOpen: false, novelInfo: {text: '', char_count: 0, from_audio: false}, cleanupBusy: false, cleanupTheme: '', cleanupMode: 'conservative',
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     // 日志折叠（2026-09-01 移动版）：桌面默认展开、窄屏默认折叠（详情页缩短，成片/视频优先露出）
