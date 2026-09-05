@@ -62,7 +62,7 @@ fl2v/i2v/t2v（无音频槽）→ 单说话人+绑音色 → qwen_tts_clone 整�
 
 - LLM provider：路由值支持 `provider:model` 点对点钉选；local2=重度模型（extra_body 恒 null 物理隔离）；思考模型烧窗用 extra_body `{"reasoning_effort":"none"}`（Ollama /v1 实测有效）
 - Ollama num_ctx=16384：拆分块 1300 字上限的推导依据；截断先查 finish_reason
-- 提示词模式 A-E（默认 E 英文控制式）；heal_h3_prompt 机械自愈不耗重试
+- 提示词模式 A-E 契约见 [PROMPTS.md](PROMPTS.md)（默认 E 英文控制式；heal 自愈不耗重试）
 - 画幅五档 ASPECT_RATIOS 统一校验；工作流不支持的画幅回落 16:9
 - 模板：templates/workflows/*.yaml manifest（inject slots: prompt/params/images/audio）+ filler 注入
 

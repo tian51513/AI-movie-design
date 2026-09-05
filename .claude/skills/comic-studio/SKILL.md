@@ -11,7 +11,7 @@ description: comic_studio（漫剧工坊）项目全流程操作手册——开�
 
 - `CLAUDE.md` — 模块地图全集（按日期增量，最新在最下）
 - `docs/2026-09-05-feature-audit.md` — 功能全景 + 体检发现（已知 bug 清单在这）
-- 本 skill 的 [REFERENCE.md](REFERENCE.md)（生产线/开发细则）· [TROUBLESHOOTING.md](TROUBLESHOOTING.md)（真机排障）
+- 本 skill 的 [REFERENCE.md](REFERENCE.md)（生产线/开发细则）· [PROMPTS.md](PROMPTS.md)（提示词模式模板约束 A~E）· [TROUBLESHOOTING.md](TROUBLESHOOTING.md)（真机排障）
 
 ## 开发铁律（违反必炸）
 
