@@ -216,10 +216,17 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "",
                   if theme.strip() else "")
     out, removed = [], 0
     BATCH = 40
-    for i in range(0, len(segs), BATCH):
+    n_batches = (len(segs) + BATCH - 1) // BATCH
+    from .logbus import emit as _el
+    _el(db, "asr", "info",
+        f"转写校对开始：{len(segs)} 段 / {n_batches} 批（模型思考+输出需数分钟，"
+        "本地慢模型更久——耐心等完成日志）", project_id=project_id)
+    for bi, i in enumerate(range(0, len(segs), BATCH), 1):
         chunk = segs[i:i + BATCH]
         lines = "\n".join(f"{j + 1}: {s['text']}" for j, s in enumerate(chunk))
         sys_prompt = (_ENRICH_SYSTEM if mode == "enrich" else _CLEANUP_SYSTEM) + theme_line
+        _el(db, "asr", "info", f"校对批 {bi}/{n_batches} 调用中（{len(chunk)} 段）…",
+            project_id=project_id)
         text, _u = client.raw_chat(
             [{"role": "system", "content": sys_prompt},
              {"role": "user", "content": lines}], temperature=0.2)
