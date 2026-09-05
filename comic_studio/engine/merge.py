@@ -225,6 +225,10 @@ def _burn_subtitles(video: Path, srt: Path) -> None:
     相对的 -i/输出跟着新 cwd 解析→凭空消失——进 subprocess 前一律绝对化。"""
     video = Path(video).resolve()
     srt = Path(srt).resolve()
+    # 空字幕跳过（2026-09-06 真机：全镜无对白→SRT 0 字节→subtitles 滤镜
+    # 打不开崩掉合成）；空文件烧录无意义，成片直接出
+    if not srt.exists() or not srt.read_text(encoding="utf-8").strip():
+        return
     tmp = video.with_suffix(".sub_tmp.mp4")
     style = ("FontName=SimSun,FontSize=22,PrimaryColour=&H00FFFFFF&,"
              "OutlineColour=&H00000000&,Outline=2,Bold=1,MarginV=25")
