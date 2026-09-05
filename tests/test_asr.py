@@ -63,6 +63,40 @@ def test_from_audio_creates_project_and_enqueues(tmp_path, monkeypatch):
         assert row["type"] == "transcribe" and row["status"] == "pending"
 
 
+# ---- P10 Task 3: transcribe 队列任务（转写→回填正文+段落盘+章节重算）----
+
+def test_transcribe_job_fills_novel_and_segments(tmp_path, monkeypatch):
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project, get_project
+    from comic_studio.engine.queue.worker import HANDLERS
+    from comic_studio.engine.jobs import enqueue_job
+    import comic_studio.engine.pipeline_jobs as PJ  # 触发注册
+    from comic_studio.engine import asr as asr_mod
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "转写剧", "16:9",
+                         "（有声书转写中）")["id"]
+    adir = tmp_path / "data" / "projects" / "转写剧" / "audio"
+    adir.mkdir(parents=True)
+    (adir / "source.mp3").write_bytes(b"f")
+    monkeypatch.setattr(asr_mod, "transcribe",
+                        lambda p, model_size="large-v3", _backend=None: [
+                            {"start": 0.0, "end": 2.0, "text": "林凡推门。"},
+                            {"start": 2.2, "end": 5.0, "text": "雨夜。"}])
+    jid = enqueue_job(db, "transcribe", project_id=pid,
+                      payload={"project_id": pid, "ext": "mp3"})
+    job = db.connect().execute("SELECT * FROM jobs WHERE id=?", (jid,)).fetchone()
+    HANDLERS["transcribe"](db, tmp_path / "data", dict(job), None)
+    from comic_studio.engine.paths import data_to_abs
+    novel = data_to_abs(tmp_path / "data", get_project(db, pid)["novel_path"])
+    assert novel.read_text(encoding="utf-8") == "林凡推门。\n\n雨夜。"
+    assert asr_mod.load_segments(tmp_path / "data", "转写剧")[0]["text"] == "林凡推门。"
+    n = db.connect().execute(
+        "SELECT COUNT(*) c FROM logs WHERE message LIKE '%转写完成%'"
+    ).fetchone()["c"]
+    assert n == 1
+
+
 def test_from_audio_rejects_oversize(tmp_path, monkeypatch):
     _stub_faster_whisper(monkeypatch)
     from fastapi.testclient import TestClient

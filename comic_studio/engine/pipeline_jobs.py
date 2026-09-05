@@ -97,3 +97,33 @@ def handle_extract_comic_characters(db, data_dir, job, comfy):
                                  payload.get("project_id", job["project_id"]), client)
     emit_log(db, "llm", "info", f"角色提取任务完成：{n} 个角色",
              project_id=job["project_id"], job_id=job["id"])
+
+
+@register("transcribe")
+def handle_transcribe(db, data_dir, job, comfy):
+    """P10 有声书转写（2026-09-05 计划）：源音频 → 段落盘 + novel.txt 回填
+    + 章节重算。失败由 retry_or_fail 兜底（autopilot/手动重发解除同 analyze）。"""
+    from . import asr as asr_mod
+    from .chapters import parse_chapters
+    from .paths import data_to_abs
+    from .projects import get_project
+    payload = json.loads(job["payload_json"] or "{}")
+    pid = payload.get("project_id", job["project_id"])
+    proj = get_project(db, pid)
+    if proj is None:
+        raise ValueError(f"项目不存在: {pid}")
+    src = data_to_abs(data_dir, f"{asr_mod.audio_rel(proj['slug'])}"
+                                f"/source.{payload.get('ext', 'mp3')}")
+    if not src.exists():
+        raise ValueError(f"源音频缺失: {src}")
+    segs = asr_mod.transcribe(src)
+    asr_mod.save_segments(data_dir, proj["slug"], segs)
+    full = "\n\n".join(x["text"] for x in segs)
+    data_to_abs(data_dir, proj["novel_path"]).write_text(full, encoding="utf-8")
+    conn = db.connect()
+    conn.execute("UPDATE projects SET chapters_json=? WHERE id=?",
+                 (json.dumps(parse_chapters(full), ensure_ascii=False), pid))
+    conn.commit()
+    emit_log(db, "asr", "info",
+             f"转写完成：{len(segs)} 段 / {len(full)} 字（正文已回填，"
+             "可继续 分析→一键出片）", project_id=pid)
