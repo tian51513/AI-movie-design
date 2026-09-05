@@ -1,0 +1,95 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - text: 漫剧工坊 comic_studio
+    - generic [ref=e4]:
+      - button "➕ 创建小说" [ref=e5] [cursor=pointer]
+      - button "📖 导引" [ref=e6] [cursor=pointer]
+      - button "设置" [ref=e7] [cursor=pointer]
+  - main [ref=e8]:
+    - heading [level=2] [ref=e9]:
+      - text: 项目
+      - generic [ref=e10]:
+        - button "⊞ 窗格" [ref=e11] [cursor=pointer]
+        - button "☰ 列表" [ref=e12] [cursor=pointer]
+    - generic [ref=e13]:
+      - generic [ref=e14] [cursor=pointer]:
+        - text: manga1
+        - generic [ref=e15]: 写实电影质感
+        - generic [ref=e16]: 16:9 · 分镜就绪
+        - paragraph [ref=e17]: （漫画导入：565 页，画面见各镜关键帧）…
+        - generic [ref=e18]: 21 字 · 564 镜 创建 08-29 10:33 · 活动 08-29 13:25
+        - generic [ref=e19]:
+          - button "🚀 一键出片" [ref=e20]
+          - button "🗑" [ref=e21]
+      - generic [ref=e22] [cursor=pointer]:
+        - text: 保健室4-1
+        - generic [ref=e23]: 写实风格，电影质感，
+        - generic [ref=e24]: 9:16 · 已合成
+        - paragraph [ref=e25]: 体检室的灯管嗡嗡响，白炽灯把一切照得发白。 林医生四十岁，肚子上的肥肉把白大褂撑得发亮，金丝眼镜滑到鼻尖。他推了推眼镜，…
+        - generic [ref=e26]: 1567 字 · 12 镜 创建 08-28 15:37 · 活动 08-28 16:03
+        - generic [ref=e27]:
+          - button "✓ 已成片" [disabled] [ref=e28]
+          - button "🗑" [ref=e29]
+      - generic [ref=e30] [cursor=pointer]:
+        - text: 武侠
+        - generic [ref=e31]: 古风武侠
+        - generic [ref=e32]: 9:16 · 分镜就绪
+        - paragraph [ref=e33]: 【004】一戏夫人 “无耻！” 沈雪柔狠狠地的瞪着眼前这个少年。在这一刻她才发现，自己已经害怕得颤抖起来了！现在的她真后…
+        - generic [ref=e34]: 4760 字 · 41 镜 创建 08-28 00:46 · 活动 08-28 12:46
+        - generic [ref=e35]:
+          - button "🚀 一键出片" [ref=e36]
+          - button "🗑" [ref=e37]
+      - generic [ref=e38] [cursor=pointer]:
+        - text: 测试
+        - generic [ref=e39]: 真人电影
+        - generic [ref=e40]: 9:16 · 已合成
+        - paragraph [ref=e41]: 阳光斜斜地穿过教学楼的缝隙，洒在屋顶的铁皮边缘，映出斑驳的光点。风卷起几片枯叶，轻轻拂过真嗣的发梢。他正用叉子戳着冷掉的…
+        - generic [ref=e42]: 724 字 · 5 镜 创建 08-27 14:13 · 活动 08-27 15:47
+        - generic [ref=e43]:
+          - button "✓ 已成片" [disabled] [ref=e44]
+          - button "🗑" [ref=e45]
+      - generic [ref=e46] [cursor=pointer]:
+        - text: 合宿1
+        - generic [ref=e47]: 真人AV电影
+        - generic [ref=e48]: 9:16 · 已渲染
+        - paragraph [ref=e49]: 爱丽站在温泉旅馆二楼的露台，赤脚踩在滚烫的石板上，海风裹着咸味和热浪扑面而来。她刚从泳池出来，湿发贴在颈侧，肩上搭着一条…
+        - generic [ref=e50]: 1687 字 · 4 镜 创建 08-27 00:08 · 活动 08-27 13:30
+        - generic [ref=e51]:
+          - button "🚀 一键出片" [ref=e52]
+          - button "🗑" [ref=e53]
+      - generic [ref=e54] [cursor=pointer]:
+        - text: 保健室4
+        - generic [ref=e55]: 成人性爱电影
+        - generic [ref=e56]: 9:16 · 已合成
+        - paragraph [ref=e57]: 体检室的灯管嗡嗡响，白炽灯把一切照得发白。 林医生四十岁，肚子上的肥肉把白大褂撑得发亮，金丝眼镜滑到鼻尖。他推了推眼镜，…
+        - generic [ref=e58]: 1567 字 · 35 镜 创建 08-26 17:09 · 活动 08-26 19:48
+        - generic [ref=e59]:
+          - button "✓ 已成片" [disabled] [ref=e60]
+          - button "🗑" [ref=e61]
+      - generic [ref=e62] [cursor=pointer]:
+        - text: 保健室3
+        - generic [ref=e63]: 成人AV电影
+        - generic [ref=e64]: 9:16 · 分镜就绪
+        - paragraph [ref=e65]: 午后的阳光透过百叶窗的缝隙，斜斜地切进保健室，在磨石子地面上投下斑驳的光影。空气里弥漫着浓烈的来苏水味，混合着旧木质家具…
+        - generic [ref=e66]: 1725 字 · 43 镜 创建 08-25 16:15 · 活动 08-26 15:05
+        - generic [ref=e67]:
+          - button "🚀 一键出片" [ref=e68]
+          - button "🗑" [ref=e69]
+      - generic [ref=e70] [cursor=pointer]:
+        - text: 保健室2
+        - generic [ref=e71]: 成人AV
+        - generic [ref=e72]: 9:16 · 已合成
+        - paragraph [ref=e73]: 午后的阳光透过百叶窗的缝隙，斜斜地切进保健室，在磨石子地面上投下斑驳的光影。空气里弥漫着浓烈的来苏水味，混合着旧木质家具…
+        - generic [ref=e74]: 1725 字 · 52 镜 创建 08-25 15:49 · 活动 08-26 00:39
+        - generic [ref=e75]:
+          - button "✓ 已成片" [disabled] [ref=e76]
+          - button "🗑" [ref=e77]
+      - generic [ref=e78] [cursor=pointer]:
+        - text: 测试2
+        - generic [ref=e79]: 古风成人电影
+        - generic [ref=e80]: 9:16 · 已合成
+        - paragraph [ref=e81]: 【004】一戏夫人 “无耻！” 沈雪柔狠狠地的瞪着眼前这个少年。在这一刻她才发现，自己已经害怕得颤抖起来了！现在的她真后…
+        - generic [ref=e82]: 4760 字 · 20 镜 创建 08-25 00:44 · 活动 08-25 12:24
+        - generic [ref=e83]:
+          - button "✓ 已成片" [disabled] [ref=e84]
+          - button "🗑" [ref=e85]

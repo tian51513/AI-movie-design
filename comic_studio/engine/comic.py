@@ -16,7 +16,9 @@ _VLM_LOCK = threading.Lock()
 
 
 def import_comic(db, data_dir, name: str, aspect: str,
-                 image_blobs: list, comic_mode: str = "motion_comic") -> dict:
+                 image_blobs: list, comic_mode: str = "motion_comic",
+                 default_shot_duration: float = 0.0,
+                 target_duration: float = 0.0) -> dict:
     """image_blobs：[(filename, bytes)]，顺序即页序。comic_mode：
     motion_comic（动态漫/fl2v 翻页）| film_adaptation（漫改/ref2va 动画）。"""
     if not image_blobs:
@@ -32,7 +34,9 @@ def import_comic(db, data_dir, name: str, aspect: str,
     n = len(image_blobs)
     placeholder = f"（漫画导入：{n} 页，画面见各镜关键帧）"
     proj = create_project(db, data_dir, name, aspect, placeholder,
-                          comic_mode=comic_mode)
+                          comic_mode=comic_mode,
+                          default_shot_duration=default_shot_duration,
+                          target_duration=target_duration)
     pid = proj["id"]
     slug = proj["slug"]
 

@@ -525,7 +525,8 @@ const methods = {
     if (a.action === 'wait') return a.detail || '等待任务';  // wait 显示具体原因（渲染中等）
     return { analyze: '分析资产', gen_refs: '生成参考图', gate1: '过门1', split: '拆分分镜',
       gen_prompts: '生成提示词', gate2: '提示词检查', render: '批量渲染', gate3: '过门3',
-      merge: '合成成片', done: '已完成' }[a.action] || a.action;
+      merge: '合成成片', done: '已完成',
+      describe_shots: 'VLM 读图' }[a.action] || a.action;  // M19：漫画项目角标不再显英文原词
   },
   async startMerge() {
     const r = await fetch(`/api/projects/${this.project.id}/merge`, {method: 'POST'});
@@ -953,6 +954,8 @@ const methods = {
       fd.append('name', this.newName || `漫画${this.comicFiles.length}页`);
       fd.append('aspect_ratio', this.newRatio);
       fd.append('comic_mode', this.comicMode);
+      fd.append('default_shot_duration', this.newSegDur ?? 0);   // M16：漫画 tab 时长此前是摆设
+      fd.append('target_duration', this.newTotalDur ?? 0);
       // 自然排序 + 压缩后上传（解决大图超时）
       const sorted = [...this.comicFiles].sort((a, b) =>
         a.name.localeCompare(b.name, undefined, {numeric: true}));

@@ -319,7 +319,7 @@
     <!-- 暂停/续跑说明 -->
     <div style="background:rgba(250,204,21,.04);border:1px solid rgba(250,204,21,.12);border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px;color:#fde047;line-height:1.8">
       ⏸ <b>暂停与续跑</b>：<br>
-      · 点「⏹ 停止自动」暂停 → 可手动编辑任何内容（提示词/分镜/资产）<br>
+      · 点「⏹ 停止自动」= 联动全停（关自动 + 取消排队 + 打断在跑）→ 可安心手动编辑任何内容（提示词/分镜/资产）<br>
       · 点「🚀 一键出片」恢复 → 系统重新评估当前状态，从断点继续<br>
       · 全程无需人工介入（小说和漫画项目均支持）
     </div>
@@ -820,7 +820,7 @@
                    style="max-width:100%;border-radius:6px;border:1px solid #2c3540"></video>
             <audio v-else-if="v.type==='audio'" :src="v.url" controls style="width:100%"></audio>
           </div>
-          <button v-if="project.stage==='analyzed' || project.stage==='assets_ready'"
+          <button v-if="['analyzed','assets_ready','storyboard_ready'].includes(project.stage)"
                   @click="regenAsset(a)" style="margin-top:6px"
                   :disabled="assetBusy(a)"
                   :title="assetBusy(a) ? '该资产正在生成中' : '用新的随机种子重新生成这张参考图（不改动资产文本）'">
@@ -843,7 +843,7 @@
                   style="margin-top:6px;margin-left:4px">编辑外貌</button>
         </div>
     </div>
-    <p v-if="project.stage==='analyzed'">
+    <p v-if="['analyzed','assets_ready','storyboard_ready'].includes(project.stage)">
       <button @click="genAllRefs">批量生成参考图</button>
       <button v-if="allHaveViews" @click="passGate1" style="background:#16a34a">
         ✓ 确认资产（过门1）</button>
@@ -986,9 +986,11 @@
         💬 <span v-for="(d, i) in dialogueOf(s)" :key="i"
                  style="margin-right:8px"><b>{{ d.speaker }}</b>：「{{ d.line }}」</span></p>
       <div v-if="s.ledger" style="font-size:12px;margin:6px 0">
-        <div v-for="(ids, cat) in s.ledger" :key="cat" v-if="cat!=='assets'" class="muted" style="margin:2px 0">
+        <template v-for="(ids, cat) in s.ledger" :key="cat">
+        <div v-if="cat!=='assets' && cat!=='dialogue'" class="muted" style="margin:2px 0">
           <b>{{ ledgerLabel(cat) }}：</b><span class="pill" v-for="aid in ids" :key="aid" style="margin:2px 2px 2px 0">{{ assetName(aid) }}</span>
         </div>
+        </template>
       </div>
       <div v-if="s.prompt" style="margin-top:6px">
         <a href="#" @click.prevent="toggleShotPrompt(s)" style="color:#60a5fa;font-size:13px">{{ expandedShot===s.id ? '收起提示词' : '展开提示词' }}</a>

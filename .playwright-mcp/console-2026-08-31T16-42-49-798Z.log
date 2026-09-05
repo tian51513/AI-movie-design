@@ -1,0 +1,6 @@
+[   42791ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8190/favicon.ico:0
+[   44014ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8190/api/projects/19/analyze/status:0
+[   44358ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8190/api/projects/19/analyze/status:0
+[  357363ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8190/api/projects/19/analyze/status:0
+[  357711ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8190/api/projects/19/analyze/status:0
+[10555827ms] [ERROR] Failed to load resource: net::ERR_NETWORK_CHANGED @ http://localhost:8190/api/projects/19/logs?after=3615:0

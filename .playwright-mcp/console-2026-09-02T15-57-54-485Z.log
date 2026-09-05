@@ -1,0 +1,4 @@
+[     133ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8191/favicon.ico:0
+[   23732ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8191/api/projects/1/analyze/status:0
+[  284213ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8191/api/projects/1/analyze/status:0
+[  325010ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:8191/api/projects/1/analyze/status:0

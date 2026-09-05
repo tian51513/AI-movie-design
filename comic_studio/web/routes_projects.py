@@ -147,6 +147,8 @@ def _generate_story_text(db, theme, body) -> str:
 def create_from_comic(request: Request,
                       name: str = Form(...), aspect_ratio: str = Form("9:16"),
                       comic_mode: str = Form("motion_comic"),
+                      default_shot_duration: float = Form(0.0),
+                      target_duration: float = Form(0.0),
                       images: list[UploadFile] = File(...)):
     """P8 漫画导入：每图一镜，直达分镜就绪。comic_mode：
     motion_comic（动态漫/fl2v）| film_adaptation（漫改/ref2va）。"""
@@ -161,7 +163,9 @@ def create_from_comic(request: Request,
     try:
         from ..engine.comic import import_comic
         proj = import_comic(request.app.state.db, request.app.state.data_dir,
-                            name, aspect_ratio, blobs, comic_mode=comic_mode)
+                            name, aspect_ratio, blobs, comic_mode=comic_mode,
+                            default_shot_duration=default_shot_duration,
+                            target_duration=target_duration)
     except ValueError as exc:
         raise HTTPException(422, str(exc))
     return _public(proj)

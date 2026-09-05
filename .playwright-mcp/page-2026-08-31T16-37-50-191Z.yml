@@ -1,0 +1,75 @@
+- generic [ref=f1e2]:
+  - banner [ref=f1e3]:
+    - text: 漫剧工坊 comic_studio
+    - generic [ref=f1e4]:
+      - button "➕ 创建小说" [ref=f1e5] [cursor=pointer]
+      - button "📖 导引" [ref=f1e6] [cursor=pointer]
+      - button "设置" [ref=f1e7] [cursor=pointer]
+  - main [ref=f1e8]:
+    - heading [level=2] [ref=f1e9]:
+      - text: 项目
+      - generic [ref=f1e10]:
+        - button "⊞ 窗格" [ref=f1e11] [cursor=pointer]
+        - button "☰ 列表" [active] [ref=f1e12] [cursor=pointer]
+    - generic [ref=f1e94]:
+      - generic [ref=f1e95] [cursor=pointer]:
+        - generic [ref=f1e96]: manga3
+        - generic "（漫画导入：569 页，画面见各镜关键帧）" [ref=f1e97]
+        - generic [ref=f1e98]: 9:16 · 分镜就绪 · 21字 · 569镜 · 08-31 16:27
+        - generic "autopilot：VLM 读图+角色提取中（缺 485 镜）" [ref=f1e99]: ⚡ VLM 读图+角色提取中（缺 485 镜）
+        - button "⏹ 停止自动" [ref=f1e100]
+        - button "🗑" [ref=f1e101]
+      - generic [ref=f1e102] [cursor=pointer]:
+        - generic [ref=f1e103]: manga1
+        - generic "（漫画导入：565 页，画面见各镜关键帧）" [ref=f1e104]
+        - generic [ref=f1e105]: 16:9 · 分镜就绪 · 21字 · 564镜 · 08-30 04:04
+        - button "🚀 一键出片" [ref=f1e106]
+        - button "🗑" [ref=f1e107]
+      - generic [ref=f1e108] [cursor=pointer]:
+        - generic [ref=f1e109]: 保健室4-1
+        - generic "体检室的灯管嗡嗡响，白炽灯把一切照得发白。 林医生四十岁，肚子上的肥肉把白大褂撑得发亮，金丝眼镜滑到鼻尖。他推了推眼镜，" [ref=f1e110]
+        - generic [ref=f1e111]: 9:16 · 已合成 · 1567字 · 12镜 · 08-28 16:03
+        - button "✓ 已成片" [disabled] [ref=f1e112]
+        - button "🗑" [ref=f1e113]
+      - generic [ref=f1e114] [cursor=pointer]:
+        - generic [ref=f1e115]: 武侠
+        - generic "【004】一戏夫人 “无耻！” 沈雪柔狠狠地的瞪着眼前这个少年。在这一刻她才发现，自己已经害怕得颤抖起来了！现在的她真后" [ref=f1e116]
+        - generic [ref=f1e117]: 9:16 · 分镜就绪 · 4760字 · 41镜 · 08-28 12:46
+        - button "🚀 一键出片" [ref=f1e118]
+        - button "🗑" [ref=f1e119]
+      - generic [ref=f1e120] [cursor=pointer]:
+        - generic [ref=f1e121]: 测试
+        - generic "阳光斜斜地穿过教学楼的缝隙，洒在屋顶的铁皮边缘，映出斑驳的光点。风卷起几片枯叶，轻轻拂过真嗣的发梢。他正用叉子戳着冷掉的" [ref=f1e122]
+        - generic [ref=f1e123]: 9:16 · 已合成 · 724字 · 5镜 · 08-27 15:47
+        - button "✓ 已成片" [disabled] [ref=f1e124]
+        - button "🗑" [ref=f1e125]
+      - generic [ref=f1e126] [cursor=pointer]:
+        - generic [ref=f1e127]: 合宿1
+        - generic "爱丽站在温泉旅馆二楼的露台，赤脚踩在滚烫的石板上，海风裹着咸味和热浪扑面而来。她刚从泳池出来，湿发贴在颈侧，肩上搭着一条" [ref=f1e128]
+        - generic [ref=f1e129]: 9:16 · 已渲染 · 1687字 · 4镜 · 08-27 13:30
+        - button "🚀 一键出片" [ref=f1e130]
+        - button "🗑" [ref=f1e131]
+      - generic [ref=f1e132] [cursor=pointer]:
+        - generic [ref=f1e133]: 保健室4
+        - generic "体检室的灯管嗡嗡响，白炽灯把一切照得发白。 林医生四十岁，肚子上的肥肉把白大褂撑得发亮，金丝眼镜滑到鼻尖。他推了推眼镜，" [ref=f1e134]
+        - generic [ref=f1e135]: 9:16 · 已合成 · 1567字 · 35镜 · 08-26 19:48
+        - button "✓ 已成片" [disabled] [ref=f1e136]
+        - button "🗑" [ref=f1e137]
+      - generic [ref=f1e138] [cursor=pointer]:
+        - generic [ref=f1e139]: 保健室3
+        - generic "午后的阳光透过百叶窗的缝隙，斜斜地切进保健室，在磨石子地面上投下斑驳的光影。空气里弥漫着浓烈的来苏水味，混合着旧木质家具" [ref=f1e140]
+        - generic [ref=f1e141]: 9:16 · 分镜就绪 · 1725字 · 43镜 · 08-26 15:05
+        - button "🚀 一键出片" [ref=f1e142]
+        - button "🗑" [ref=f1e143]
+      - generic [ref=f1e144] [cursor=pointer]:
+        - generic [ref=f1e145]: 保健室2
+        - generic "午后的阳光透过百叶窗的缝隙，斜斜地切进保健室，在磨石子地面上投下斑驳的光影。空气里弥漫着浓烈的来苏水味，混合着旧木质家具" [ref=f1e146]
+        - generic [ref=f1e147]: 9:16 · 已合成 · 1725字 · 52镜 · 08-26 00:39
+        - button "✓ 已成片" [disabled] [ref=f1e148]
+        - button "🗑" [ref=f1e149]
+      - generic [ref=f1e150] [cursor=pointer]:
+        - generic [ref=f1e151]: 测试2
+        - generic "【004】一戏夫人 “无耻！” 沈雪柔狠狠地的瞪着眼前这个少年。在这一刻她才发现，自己已经害怕得颤抖起来了！现在的她真后" [ref=f1e152]
+        - generic [ref=f1e153]: 9:16 · 已合成 · 4760字 · 20镜 · 08-25 12:24
+        - button "✓ 已成片" [disabled] [ref=f1e154]
+        - button "🗑" [ref=f1e155]

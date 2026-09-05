@@ -186,3 +186,19 @@ def test_create_defaults_to_dynamic_durations(tmp_path):
         assert r2.status_code == 201
         assert r2.json()["default_shot_duration"] == 0
         assert r2.json()["target_duration"] == 0
+
+
+def test_from_comic_accepts_durations(tmp_path):
+    """M16（2026-09-05 审计）：漫画 tab 的段时长/总时长输入此前前端不发、
+    后端不收——纯摆设。两路透传到项目字段。"""
+    import io
+    png = b"\x89PNG\r\n\x1a\n" + b"0" * 64
+    with TestClient(create_app(tmp_path / "t.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        r = c.post("/api/projects/from-comic",
+                   data={"name": "漫画参数剧", "aspect_ratio": "16:9",
+                         "comic_mode": "motion_comic",
+                         "default_shot_duration": 7, "target_duration": 0},
+                   files={"images": ("p1.png", io.BytesIO(png), "image/png")})
+        assert r.status_code == 201, r.text
+        assert r.json()["default_shot_duration"] == 7

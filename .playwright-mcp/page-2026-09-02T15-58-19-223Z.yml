@@ -1,0 +1,54 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - text: 漫剧工坊 comic_studio
+    - generic [ref=e4]:
+      - button "➕ 创建小说" [ref=e5] [cursor=pointer]
+      - button "📖 导引" [ref=e6] [cursor=pointer]
+      - button "设置" [ref=e7] [cursor=pointer]
+  - main [ref=e21]:
+    - paragraph [ref=e22]:
+      - link "← 返回" [ref=e23] [cursor=pointer]:
+        - /url: "#"
+    - heading "配音验证剧 9:16 已创建 + 指定画风 9:16 · 0.4MP · 32倍 · 标准 · 段5s · D模式 · LoRA0.75" [level=2] [ref=e24]:
+      - text: 配音验证剧
+      - generic [ref=e25]: 9:16
+      - generic [ref=e26]: 已创建
+      - generic [ref=e27] [cursor=pointer]: + 指定画风
+      - generic "点击展开/收起视频参数面板" [ref=e28] [cursor=pointer]: 9:16 · 0.4MP · 32倍 · 标准 · 段5s · D模式 · LoRA0.75
+    - paragraph [ref=e29]:
+      - button "资产（2）" [ref=e30] [cursor=pointer]
+      - button "分镜（0）" [ref=e31] [cursor=pointer]
+    - paragraph [ref=e32]:
+      - button "LLM 分析资产" [ref=e33] [cursor=pointer]
+      - button "🎭 角色配音" [ref=e34] [cursor=pointer]
+    - paragraph [ref=e35]:
+      - button "全部（2）" [ref=e36] [cursor=pointer]
+      - button "角色（2）" [ref=e37] [cursor=pointer]
+      - button "场景（0）" [ref=e38] [cursor=pointer]
+      - button "道具（0）" [ref=e39] [cursor=pointer]
+      - generic [ref=e40]:
+        - text: 每行
+        - combobox [ref=e41]:
+          - option "2" [selected]
+          - option "3"
+          - option "4"
+        - text: 个
+    - generic [ref=e42]:
+      - generic "性别：男；年龄：30岁；铁甲" [ref=e43]:
+        - text: 林战
+        - button "主图" [ref=e45] [cursor=pointer]
+        - button "三视图" [ref=e46] [cursor=pointer]
+        - generic "人工上传主图（替换生成版）；上传后点「三视图」从新主图重派生" [ref=e47] [cursor=pointer]: ⬆ 上传主图
+        - button "编辑外貌" [ref=e48] [cursor=pointer]
+      - generic "性别：女；年龄：22岁；白衣" [ref=e49]:
+        - text: 苏瑶
+        - button "主图" [ref=e51] [cursor=pointer]
+        - button "三视图" [ref=e52] [cursor=pointer]
+        - generic "人工上传主图（替换生成版）；上传后点「三视图」从新主图重派生" [ref=e53] [cursor=pointer]: ⬆ 上传主图
+        - button "编辑外貌" [ref=e54] [cursor=pointer]
+    - paragraph [ref=e55]:
+      - generic "无失败任务" [ref=e56]: 运行 0 · 排队 0 · 失败 0 · ComfyUI ●
+    - heading [level=3] [ref=e57]:
+      - text: 执行日志（0）
+      - button "收起" [ref=e58] [cursor=pointer]
+    - generic [ref=e59]: 暂无日志——分析等活动产生后此处实时滚动显示

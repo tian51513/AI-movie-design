@@ -1,0 +1,114 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - text: 漫剧工坊 comic_studio
+    - generic [ref=e4]:
+      - button "➕ 创建小说" [ref=e5] [cursor=pointer]
+      - button "📖 导引" [ref=e6] [cursor=pointer]
+      - button "设置" [ref=e7] [cursor=pointer]
+  - main [ref=e21]:
+    - paragraph [ref=e22]:
+      - link "← 返回" [ref=e23] [cursor=pointer]:
+        - /url: "#"
+    - heading "配音验证剧 9:16 已创建 + 指定画风 9:16 · 0.4MP · 32倍 · 标准 · 段5s · D模式 · LoRA0.75" [level=2] [ref=e24]:
+      - text: 配音验证剧
+      - generic [ref=e25]: 9:16
+      - generic [ref=e26]: 已创建
+      - generic [ref=e27] [cursor=pointer]: + 指定画风
+      - generic "点击展开/收起视频参数面板" [ref=e28] [cursor=pointer]: 9:16 · 0.4MP · 32倍 · 标准 · 段5s · D模式 · LoRA0.75
+    - paragraph [ref=e29]:
+      - button "资产（2）" [ref=e30] [cursor=pointer]
+      - button "分镜（0）" [ref=e31] [cursor=pointer]
+    - paragraph [ref=e32]:
+      - button "LLM 分析资产" [ref=e33] [cursor=pointer]
+      - button "🎭 角色配音" [ref=e34] [cursor=pointer]
+    - generic [ref=e61]:
+      - generic [ref=e62]:
+        - generic [ref=e63]: 林战
+        - generic [ref=e64]: 高冷御姐
+        - generic "试听当前音色样本" [ref=e65]
+        - combobox "系统预设 / 全局自定义 / 项目级音色" [ref=e66]:
+          - option "（不绑定——Edge-TTS 按性别）"
+          - option "元气少女（预设·未生成）"
+          - option "大叔（预设·未生成）"
+          - option "播音女声（预设·未生成）"
+          - option "播音男声（预设·未生成）"
+          - option "文艺女生（预设·未生成）"
+          - option "正太（预设·未生成）"
+          - option "浪漫女声（预设·未生成）"
+          - option "深沉男声（预设·未生成）"
+          - option "温柔少女（预设·未生成）"
+          - option "温柔淑女（预设·未生成）"
+          - option "老年女声（预设·未生成）"
+          - option "老年男声（预设·未生成）"
+          - option "萝莉（预设·未生成）"
+          - option "软萌甜妹（预设·未生成）"
+          - option "高冷御姐（预设）" [selected]
+          - option "林战（项目级）"
+        - button "绑定" [active] [ref=e67] [cursor=pointer]
+        - textbox "声线描述（库中不合适时）" [ref=e68]
+        - button "生成并绑定" [disabled] [ref=e69]
+      - generic [ref=e72]:
+        - generic [ref=e73]: 苏瑶
+        - generic [ref=e74]: 萝莉 ·样本缺失
+        - combobox "系统预设 / 全局自定义 / 项目级音色" [ref=e75]:
+          - option "（不绑定——Edge-TTS 按性别）"
+          - option "元气少女（预设·未生成）"
+          - option "大叔（预设·未生成）"
+          - option "播音女声（预设·未生成）"
+          - option "播音男声（预设·未生成）"
+          - option "文艺女生（预设·未生成）"
+          - option "正太（预设·未生成）"
+          - option "浪漫女声（预设·未生成）"
+          - option "深沉男声（预设·未生成）"
+          - option "温柔少女（预设·未生成）"
+          - option "温柔淑女（预设·未生成）"
+          - option "老年女声（预设·未生成）"
+          - option "老年男声（预设·未生成）"
+          - option "萝莉（预设·未生成）" [selected]
+          - option "软萌甜妹（预设·未生成）"
+          - option "高冷御姐（预设）"
+          - option "林战（项目级）"
+        - button "绑定" [ref=e76] [cursor=pointer]
+        - button "⚡生成样本" [ref=e77] [cursor=pointer]
+        - textbox "声线描述（库中不合适时）" [ref=e78]
+        - button "生成并绑定" [disabled] [ref=e79]
+      - generic [ref=e80]:
+        - generic [ref=e81]: 上传克隆（入库后各角色下拉选绑）：
+        - button "Choose File" [ref=e82]
+        - textbox "音色名" [ref=e83]
+        - text: 起始
+        - spinbutton [ref=e84]: "45"
+        - text: 长度
+        - spinbutton [ref=e85]: "60"
+        - button "上传" [disabled] [ref=e86]
+    - paragraph [ref=e35]:
+      - button "全部（2）" [ref=e36] [cursor=pointer]
+      - button "角色（2）" [ref=e37] [cursor=pointer]
+      - button "场景（0）" [ref=e38] [cursor=pointer]
+      - button "道具（0）" [ref=e39] [cursor=pointer]
+      - generic [ref=e40]:
+        - text: 每行
+        - combobox [ref=e41]:
+          - option "2" [selected]
+          - option "3"
+          - option "4"
+        - text: 个
+    - generic [ref=e42]:
+      - generic "性别：男；年龄：30岁；铁甲" [ref=e43]:
+        - text: 林战
+        - button "主图" [ref=e45] [cursor=pointer]
+        - button "三视图" [ref=e46] [cursor=pointer]
+        - generic "人工上传主图（替换生成版）；上传后点「三视图」从新主图重派生" [ref=e47] [cursor=pointer]: ⬆ 上传主图
+        - button "编辑外貌" [ref=e48] [cursor=pointer]
+      - generic "性别：女；年龄：22岁；白衣" [ref=e49]:
+        - text: 苏瑶
+        - button "主图" [ref=e51] [cursor=pointer]
+        - button "三视图" [ref=e52] [cursor=pointer]
+        - generic "人工上传主图（替换生成版）；上传后点「三视图」从新主图重派生" [ref=e53] [cursor=pointer]: ⬆ 上传主图
+        - button "编辑外貌" [ref=e54] [cursor=pointer]
+    - paragraph [ref=e55]:
+      - generic "无失败任务" [ref=e56]: 运行 0 · 排队 0 · 失败 0 · ComfyUI ●
+    - heading [level=3] [ref=e57]:
+      - text: 执行日志（0）
+      - button "收起" [ref=e58] [cursor=pointer]
+    - generic [ref=e59]: 暂无日志——分析等活动产生后此处实时滚动显示

@@ -1,0 +1,57 @@
+- generic [ref=f1e2]:
+  - banner [ref=f1e3]:
+    - text: 漫剧工坊 comic_studio
+    - generic [ref=f1e4]:
+      - button "➕ 创建小说" [ref=f1e5] [cursor=pointer]
+      - button "📖 导引" [ref=f1e6] [cursor=pointer]
+      - button "设置" [active] [ref=f1e7] [cursor=pointer]
+  - main [ref=f1e287]:
+    - paragraph [ref=f1e288]:
+      - link "← 返回" [ref=f1e289] [cursor=pointer]:
+        - /url: "#"
+    - paragraph [ref=f1e290]:
+      - button "🤖 LLM 设置" [ref=f1e291] [cursor=pointer]
+      - button "🎬 工作流" [ref=f1e292] [cursor=pointer]
+      - button "📚 预设主题" [ref=f1e293] [cursor=pointer]
+      - button "🔀 任务路由" [ref=f1e294] [cursor=pointer]
+      - button "🎵 音色库" [ref=f1e295] [cursor=pointer]
+    - generic [ref=f1e296]:
+      - heading "LLM 设置" [level=2] [ref=f1e297]
+      - generic [ref=f1e298]:
+        - generic [ref=f1e299]:
+          - heading "本地 LLM ●" [level=3] [ref=f1e300]
+          - paragraph [ref=f1e301]:
+            - text: 服务商
+            - combobox [ref=f1e302]:
+              - option "选择…" [disabled]
+              - option "Ollama"
+              - option "LM Studio" [selected]
+              - option "其它（自定义地址）"
+            - text: 切换自动填地址，可手改
+          - paragraph [ref=f1e303]:
+            - textbox "地址（如 http://127.0.0.1:11434，任意写法自动归一 /v1）" [ref=f1e304]: http://127.0.0.1:1234
+            - button "获取模型" [ref=f1e305] [cursor=pointer]
+            - button "测试" [ref=f1e306] [cursor=pointer]
+          - paragraph [ref=f1e307]:
+            - textbox "模型名（点上方获取模型后变下拉）" [ref=f1e308]: "3.6"
+          - paragraph [ref=f1e309]:
+            - 'textbox "附加参数 JSON（可选，如 {\"chat_template_kwargs\":{\"enable_thinking\":false}} 屏蔽思考）" [ref=f1e310]'
+          - paragraph [ref=f1e311]:
+            - generic [ref=f1e312]:
+              - checkbox "显示推理模型（含 think）" [ref=f1e313]
+              - text: 显示推理模型（含 think）
+        - generic [ref=f1e314]:
+          - heading "线上 API ●未配置" [level=3] [ref=f1e315]
+          - paragraph [ref=f1e316]:
+            - textbox "base_url（OpenAI 兼容）" [ref=f1e317]
+          - paragraph [ref=f1e318]:
+            - textbox "api_key" [ref=f1e319]
+          - paragraph [ref=f1e320]:
+            - textbox "模型名" [ref=f1e321]
+          - paragraph [ref=f1e322]:
+            - textbox "附加参数 JSON（可选）" [ref=f1e323]
+          - paragraph [ref=f1e324]:
+            - button "测试连接" [ref=f1e325] [cursor=pointer]
+    - paragraph [ref=f1e326]:
+      - button "💾 保存全部设置" [ref=f1e327] [cursor=pointer]
+      - text: 改模型/路由/映射立即生效

@@ -1,0 +1,158 @@
+- generic [ref=f1e2]:
+  - banner [ref=f1e3]:
+    - text: 漫剧工坊 comic_studio
+    - generic [ref=f1e4]:
+      - button "➕ 创建小说" [ref=f1e5] [cursor=pointer]
+      - button "📖 导引" [active] [ref=f1e6] [cursor=pointer]
+      - button "设置" [ref=f1e7] [cursor=pointer]
+  - main [ref=f1e156]:
+    - generic [ref=f1e157]:
+      - heading "🎬 漫剧工坊" [level=1] [ref=f1e158]
+      - paragraph [ref=f1e159]: 小说 / 主题 / 漫画 → 全自动漫剧视频生产线
+      - generic [ref=f1e160]:
+        - generic [ref=f1e161]: 📚 小说改编
+        - generic [ref=f1e162]: 🎨 主题生成
+        - generic [ref=f1e163]: 🖼 漫画转视频
+    - heading "📁 项目类型与操作流程" [level=2] [ref=f1e164]
+    - generic [ref=f1e165]:
+      - generic [ref=f1e166]:
+        - heading "📎 上传小说" [level=3] [ref=f1e167]
+        - generic [ref=f1e168]:
+          - generic [ref=f1e169]: ① 上传 txt 章节文件
+          - generic [ref=f1e170]: ② 选画风 / 画幅 / 时长参数
+          - generic [ref=f1e171]: ─────────
+          - generic [ref=f1e172]: ③ LLM 分析 → 提取角色/场景/道具
+          - generic [ref=f1e173]: ④ 生成参考图（主图+三视图）
+          - generic [ref=f1e174]: ⑤ ✓ 确认资产（门1）
+          - generic [ref=f1e175]: ⑥ 拆分镜 + 生成提示词
+          - generic [ref=f1e176]: ⑦ ✓ 确认分镜（门2）
+          - generic [ref=f1e177]: ⑧ 逐镜渲染 → 合成成片
+        - generic [ref=f1e178]: 💡 支持多章节（第X章切分）和分镜数指定
+      - generic [ref=f1e179]:
+        - heading "🎨 主题生成" [level=3] [ref=f1e180]
+        - generic [ref=f1e181]:
+          - generic [ref=f1e182]: ① 选预设主题（或自建）
+          - generic [ref=f1e183]: ② 可加补充描述 / 主角名 / 字数
+          - generic [ref=f1e184]: ③ ✨ 生成正文（1-3分钟）
+          - generic [ref=f1e185]: ④ 预览 / 编辑 → ✔ 确认创建
+          - generic [ref=f1e186]: ─────────
+          - generic [ref=f1e187]: ⑤ 后续流程同小说（分析→渲染）
+        - generic [ref=f1e188]: 💡 内置短剧结构规范：黄金3秒钩子 / 情绪流变 / 断章卡点 / 对白语速公式
+      - generic [ref=f1e189]:
+        - heading "🖼 漫画导入" [level=3] [ref=f1e190]
+        - generic [ref=f1e191]:
+          - generic [ref=f1e192]: 📖 动态漫模式（快）
+          - generic [ref=f1e193]: ① 导入漫画页（自动排序+压缩）
+          - generic [ref=f1e194]: ② 👁 读图生成提示词（VLM 看图）
+          - generic [ref=f1e195]: ③ ✓ 确认 → fl2v 翻页渲染
+          - generic [ref=f1e196]: ──── ~100s/镜 ────
+          - generic [ref=f1e197]: 🎬 漫改电影模式（慢）
+          - generic [ref=f1e198]: ① 导入 + 选「漫改电影」
+          - generic [ref=f1e199]: ② 🎭 提取角色（可选，多次只留最新）
+          - generic [ref=f1e200]: ③ 生成参考图 → 👁 读图提示词
+          - generic [ref=f1e201]: ④ ✓ 确认 → ref2va 角色动画渲染
+          - generic [ref=f1e202]: ──── ~3-5min/镜 ────
+        - generic [ref=f1e203]: 💡 漫改自动画风转换（二次元↔真人）+ 多角色识别
+    - heading "⚡ 核心功能" [level=2] [ref=f1e204]
+    - generic [ref=f1e205]:
+      - generic [ref=f1e206]:
+        - generic [ref=f1e207]: 🚀
+        - text: 一键出片
+        - generic [ref=f1e208]: 全自动：分析→参考图→拆镜→提示词→渲染→配音→字幕→合成
+      - generic [ref=f1e209]:
+        - generic [ref=f1e210]: 🚄
+        - text: 整段快车道
+        - generic [ref=f1e211]: 导演台批量渲染（分批 latent 连贯 + 批间首帧接力 + 整片混音）
+      - generic [ref=f1e212]:
+        - generic [ref=f1e213]: 🎵
+        - text: 角色音色
+        - generic [ref=f1e214]: 15 预设+自定义音色（克隆上传）→ 渲染注入 H3 原生配音（口型同步）；LLM 分析自动匹配，可手动改绑
+      - generic [ref=f1e215]:
+        - generic [ref=f1e216]: 🎙
+        - text: 配音+字幕
+        - generic [ref=f1e217]: 未绑音色走 Edge-TTS 按性别；绑了音色保 H3 原声；SRT 字幕烧录
+      - generic [ref=f1e218]:
+        - generic [ref=f1e219]: 🖱
+        - text: 分镜框选
+        - generic [ref=f1e220]: 分镜导航数字条按住左键扫框批量勾选（Shift 追加）→ 批量无效/生效/删除
+      - generic [ref=f1e221]:
+        - generic [ref=f1e222]: 🔍
+        - text: 媒体查看器
+        - generic [ref=f1e223]: 点首尾帧/视频全尺寸弹窗，← → 连续翻页浏览各镜媒体
+      - generic [ref=f1e224]:
+        - generic [ref=f1e225]: 👁
+        - text: VLM 读图
+        - generic [ref=f1e226]: 视觉模型看漫画页 → 生成动画提示词 + 提取对白（逐镜/批量）
+      - generic [ref=f1e227]:
+        - generic [ref=f1e228]: ⏹
+        - text: 停止任务
+        - generic [ref=f1e229]: 项目级一键停止（取消待跑 + ComfyUI 清队中断在跑的）
+      - generic [ref=f1e230]:
+        - generic [ref=f1e231]: 🔄
+        - text: 分镜控制
+        - generic [ref=f1e232]: 批量 无效/生效/删除 · 无效镜不进渲染和合成 · 分镜数指定
+    - heading "⚙️ 设置速查" [level=2] [ref=f1e233]
+    - generic [ref=f1e234]:
+      - generic [ref=f1e235]: 🤖 LLM 设置：本地服务商切换（Ollama/LM Studio/自定义，预设地址一键填）+ 线上 API
+      - generic [ref=f1e236]: 🔀 任务路由：每个任务可独立选服务商/模型（长文本建议对话模型）
+      - generic [ref=f1e237]: 🎬 工作流：模板映射（主图/三视图/视频/导演台）+ 模型切换 + 性能开关
+      - generic [ref=f1e238]: 📚 预设主题：主题模板管理（导入/编辑/删除）
+      - generic [ref=f1e239]: 🎵 音色库：15 预设批量生成（⟳ 可重生成+试听）· 全局/项目级自定义上传（裁剪→克隆→试听→确认入库）
+    - generic [ref=f1e240]: 💡 提示：操作日志在项目详情页底部实时滚动 · 队列状态在工具栏（运行/排队/失败）· 修改 Python 代码后需重启服务 🖱 操作技巧：点顶部「漫剧工坊」回首页 · 分镜导航条按住左键扫框=批量选择（Shift 追加）· 点分镜首尾帧/视频=全尺寸查看器（← → 翻页）
+    - heading "🚀 一键出片流程图" [level=2] [ref=f1e241]
+    - generic [ref=f1e242]:
+      - generic [ref=f1e243]:
+        - heading "📚 小说 / 主题项目" [level=3] [ref=f1e244]
+        - generic [ref=f1e245]:
+          - generic [ref=f1e246]:
+            - generic [ref=f1e247]: ①
+            - text: LLM 分析 → 提取角色/场景/道具 + 自动匹配音色
+          - generic [ref=f1e248]: ↓
+          - generic [ref=f1e249]:
+            - generic [ref=f1e250]: ②
+            - text: 生成参考图（主图 + 三视图）
+          - generic [ref=f1e251]: ↓ 门1
+          - generic [ref=f1e252]:
+            - generic [ref=f1e253]: ③
+            - text: 拆分镜 + 文本提示词生成
+          - generic [ref=f1e254]: ↓ 门2
+          - generic [ref=f1e255]:
+            - generic [ref=f1e256]: ④
+            - text: 逐镜渲染（ref2va / fl2v / t2v）
+          - generic [ref=f1e257]: ↓ 门3
+          - generic [ref=f1e258]:
+            - generic [ref=f1e259]: ⑤
+            - text: 配音（绑音色=H3 原声口型同步 / 未绑=Edge-TTS）+ SRT 字幕
+          - generic [ref=f1e260]: ↓
+          - generic [ref=f1e261]:
+            - generic [ref=f1e262]: ✓
+            - text: FFmpeg 合成成片
+      - generic [ref=f1e263]:
+        - heading "🖼 漫画项目" [level=3] [ref=f1e264]
+        - generic [ref=f1e265]:
+          - generic [ref=f1e266]:
+            - generic [ref=f1e267]: ①
+            - text: 导入漫画页（直达分镜就绪）
+            - generic [ref=f1e268]: 📖 动态漫
+          - generic [ref=f1e269]: ⤷ 漫改可选：🎭 提取角色 → 生成参考图
+          - generic [ref=f1e270]: ↓
+          - generic [ref=f1e271]:
+            - generic [ref=f1e272]: ②
+            - text: VLM 读图生成动画提示词
+            - generic [ref=f1e273]: （含对白提取 + 对白角色自动配音色 + 画风转换）
+          - generic [ref=f1e274]: ↓ 门2
+          - generic [ref=f1e275]:
+            - generic [ref=f1e276]: ③
+            - text: 逐镜渲染
+            - generic [ref=f1e277]: fl2v 翻页插值
+          - generic [ref=f1e278]: ↓ 门3
+          - generic [ref=f1e279]:
+            - generic [ref=f1e280]: ④
+            - text: 配音 + 字幕（有对白时；绑音色走 H3 原声）
+          - generic [ref=f1e281]: ↓
+          - generic [ref=f1e282]:
+            - generic [ref=f1e283]: ✓
+            - text: FFmpeg 合成成片
+    - generic [ref=f1e284]: ⏸ 暂停与续跑： · 点「⏹ 停止自动」暂停 → 可手动编辑任何内容（提示词/分镜/资产） · 点「🚀 一键出片」恢复 → 系统重新评估当前状态，从断点继续 · 全程无需人工介入（小说和漫画项目均支持）
+    - paragraph [ref=f1e285]:
+      - button "← 返回项目列表" [ref=f1e286] [cursor=pointer]

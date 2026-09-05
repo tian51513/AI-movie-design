@@ -44,18 +44,27 @@ def list_merges(request: Request, project_id: int):
     return out
 
 
+_TTS_BUSY: set = set()  # M7（2026-09-05 审计）：同项目并发生成会双烧
+                            # ComfyUI 并覆写同一 dialogue.mp3——进程内互斥
+
+
 @router.post("/api/projects/{project_id}/tts", status_code=200)
 def generate_tts(request: Request, project_id: int):
-    """P6：一键生成 TTS 配音 + SRT 字幕（同步执行，通常 < 10 秒）。"""
+    """P6：一键生成 TTS 配音 + SRT 字幕（同步执行）。大项目克隆可达数分钟。"""
     from ..engine.tts import generate_dialogue_audio
     from ..engine.subtitles import generate_srt
     from ..engine.projects import get_project as _gp
     db = request.app.state.db
     if _gp(db, project_id) is None:
         raise HTTPException(404, "项目不存在")
+    if project_id in _TTS_BUSY:
+        raise HTTPException(409, "配音生成中（大项目克隆可达数分钟），请勿重复触发")
+    _TTS_BUSY.add(project_id)
     try:
         audio = generate_dialogue_audio(db, request.app.state.data_dir, project_id)
         srt = generate_srt(db, request.app.state.data_dir, project_id)
         return {"shots_with_dialogue": len(audio), "srt": str(srt)}
     except Exception as exc:
         raise HTTPException(502, f"TTS/字幕生成失败：{exc}")
+    finally:
+        _TTS_BUSY.discard(project_id)

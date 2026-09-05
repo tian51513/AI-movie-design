@@ -58,3 +58,33 @@ def test_remerge_allowed_when_merged(tmp_path):
         assert r.status_code == 202 and "job_id" in r.json()
         # 队列去重守卫照常生效
         assert c.post(f"/api/projects/{pid}/merge").status_code == 409
+
+
+def test_tts_endpoint_rejects_concurrent(tmp_path, monkeypatch):
+    """M7（2026-09-05 审计）：POST /tts 无去重锁——与 autopilot/手动并发双烧
+    ComfyUI、覆写同一 mp3。同项目并发生成 → 409。"""
+    import io
+    import threading
+    import time as _t
+    from pathlib import Path
+    from comic_studio.engine.projects import set_stage
+
+    def slow_tts(db, dd, pid):
+        _t.sleep(0.5)
+        return []
+
+    monkeypatch.setattr("comic_studio.engine.tts.generate_dialogue_audio", slow_tts)
+    monkeypatch.setattr("comic_studio.engine.subtitles.generate_srt",
+                        lambda db, dd, pid: Path("/tmp/x.srt"))
+    with TestClient(create_app(tmp_path / "t.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        r = c.post("/api/projects", data={"name": "锁剧", "aspect_ratio": "16:9"},
+                   files={"novel": ("n.txt", io.BytesIO("正文".encode()), "text/plain")})
+        pid = r.json()["id"]
+        set_stage(Database(tmp_path / "t.db"), pid, "rendered")
+        t = threading.Thread(target=lambda: c.post(f"/api/projects/{pid}/tts"))
+        t.start()
+        _t.sleep(0.15)
+        r2 = c.post(f"/api/projects/{pid}/tts")
+        assert r2.status_code == 409
+        t.join()
