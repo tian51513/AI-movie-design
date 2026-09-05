@@ -191,6 +191,36 @@ def create_from_comic(request: Request,
     return _public(proj)
 
 
+_CLEANUP_BUSY: set = set()   # 同项目并发校对互斥（/tts 先例）
+
+
+@router.post("/{project_id}/asr-cleanup")
+def asr_cleanup_route(request: Request, project_id: int):
+    """P10C 转写校对遍（2026-09-05 用户需求：语气词+同音错字）：转写文本发
+    LLM 按段清洗（纯文本任务，本地模型可做），重写正文/段落盘/章节。"""
+    db = request.app.state.db
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    from ..engine.asr import load_segments
+    from ..engine.paths import data_to_abs as _dta
+    if not load_segments(request.app.state.data_dir, proj["slug"]):
+        raise HTTPException(409, "无转写段落（非音频项目或转写未完成）")
+    if project_id in _CLEANUP_BUSY:
+        raise HTTPException(409, "校对进行中，请勿重复触发")
+    _CLEANUP_BUSY.add(project_id)
+    try:
+        from ..engine.llm.provider import client_for_task
+        from ..engine.asr import cleanup_transcription
+        return cleanup_transcription(
+            db, request.app.state.data_dir, project_id,
+            client_for_task(db, "asr_cleanup"))
+    except Exception as exc:
+        raise HTTPException(502, f"转写校对失败：{exc}")
+    finally:
+        _CLEANUP_BUSY.discard(project_id)
+
+
 @router.get("/{project_id}/novel-text")
 def novel_text(request: Request, project_id: int):
     """2026-09-05 用户需求：详情页查看正文（上传小说/音频转写通用）。

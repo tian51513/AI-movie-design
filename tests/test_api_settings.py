@@ -3,7 +3,8 @@ from fastapi.testclient import TestClient
 
 from comic_studio.web.app import create_app
 
-ROUTING_DEFAULTS = {
+ROUTING_DEFAULTS = {   # asr_cleanup（2026-09-05 P10C）随后端默认同步
+    "asr_cleanup": "local",
     "extract_assets": "local",
     "fix_appearance": "local",
     "split_storyboards": "online",

@@ -166,3 +166,57 @@ def span_duration_for(segments: list, text: str):
     if not hits:
         return None
     return max(s["end"] for s in hits) - min(s["start"] for s in hits)
+
+
+_CLEANUP_SYSTEM = """你在清洗 ASR（语音转文字）结果。给你带序号的转写段，逐段处理：
+1. 修正同音/近音错字（依上下文猜正确词，如「陈薄了」→「承不住了」）
+2. 纯语气词段（嗯/啊/哦/呃……无实义）返回空串
+3. 保留原意与口语风格，不扩写不润色不合并段
+只输出一个 JSON 对象：{"段序号": "清洗后文本或空串"}，覆盖所有给出的序号。"""
+
+
+def cleanup_transcription(db, data_dir, project_id, client) -> dict:
+    """P10C 转写校对遍（2026-09-05 用户需求：语气词+同音错字）：按段 LLM 清洗，
+    时间轴原样保留，空串段丢弃；重写 segments.json + novel.txt + 章节重算。"""
+    import re as _re
+    from .chapters import parse_chapters
+    from .logbus import emit as emit_log
+    from .projects import get_project
+
+    def _parse_json(text):
+        m = _re.search(r"\{.*\}", text or "", _re.S)
+        if not m:
+            raise ValueError(f"校对输出非 JSON：{(text or '')[:80]}")
+        return json.loads(m.group(0))
+
+    proj = get_project(db, project_id)
+    segs = load_segments(data_dir, proj["slug"])
+    if not segs:
+        return {"removed": 0, "segments": 0}
+    out, removed = [], 0
+    BATCH = 40
+    for i in range(0, len(segs), BATCH):
+        chunk = segs[i:i + BATCH]
+        lines = "\n".join(f"{j + 1}: {s['text']}" for j, s in enumerate(chunk))
+        text, _u = client.raw_chat(
+            [{"role": "system", "content": _CLEANUP_SYSTEM},
+             {"role": "user", "content": lines}], temperature=0.2)
+        fixed = _parse_json(text)
+        for j, s in enumerate(chunk):
+            t = str(fixed.get(str(j + 1), s["text"])).strip()
+            if not t:
+                removed += 1
+                continue
+            out.append({**s, "text": t})
+    save_segments(data_dir, proj["slug"], out)
+    full = "\n\n".join(s["text"] for s in out)
+    from .paths import data_to_abs
+    data_to_abs(data_dir, proj["novel_path"]).write_text(full, encoding="utf-8")
+    conn = db.connect()
+    conn.execute("UPDATE projects SET chapters_json=? WHERE id=?",
+                 (json.dumps(parse_chapters(full), ensure_ascii=False), project_id))
+    conn.commit()
+    emit_log(db, "asr", "info",
+             f"转写校对完成：{len(out)} 段保留 / {removed} 段语气词丢弃",
+             project_id=project_id)
+    return {"removed": removed, "segments": len(out)}

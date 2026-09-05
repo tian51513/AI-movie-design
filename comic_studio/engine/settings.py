@@ -33,6 +33,7 @@ DEFAULT_SETTINGS = {
         "optimize_prompt": "online",
         "gen_story": "online",
         "describe_shot": "local",
+        "asr_cleanup": "local",
     },
     "comfy": {"base_url": "http://127.0.0.1:8188", "min_free_vram_gb": 8,
               "merge_xfade": False, "merge_grade": False,  # C6 段间交叉淡化/统一调色（2026-09-01）

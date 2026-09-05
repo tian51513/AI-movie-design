@@ -1,0 +1,131 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - text: 漫剧工坊 comic_studio
+    - generic [ref=e4]:
+      - button "➕ 创建小说" [ref=e5] [cursor=pointer]
+      - button "📖 导引" [ref=e6] [cursor=pointer]
+      - button "设置" [ref=e7] [cursor=pointer]
+  - main [ref=e119]:
+    - paragraph [ref=e120]:
+      - link "← 返回" [ref=e121] [cursor=pointer]:
+        - /url: "#"
+    - heading "有声1 📄 正文 16:9 已创建 色情电影，真人电影… 16:9 · 0.4MP · 32倍 · 标准 · 段0s · D模式 · LoRA0.75" [level=2] [ref=e122]:
+      - text: 有声1
+      - generic "查看项目正文（上传的小说 / 音频转写文本）" [ref=e123] [cursor=pointer]: 📄 正文
+      - generic [ref=e124]: 16:9
+      - generic [ref=e125]: 已创建
+      - generic "点击修改画风（改后重新生成资产参考图生效）" [ref=e126] [cursor=pointer]: 色情电影，真人电影…
+      - generic "点击展开/收起视频参数面板" [ref=e127] [cursor=pointer]: 16:9 · 0.4MP · 32倍 · 标准 · 段0s · D模式 · LoRA0.75
+    - paragraph [ref=e128]:
+      - button "资产（0）" [ref=e129] [cursor=pointer]
+      - button "分镜（0）" [ref=e130] [cursor=pointer]
+    - paragraph [ref=e131]:
+      - button "LLM 分析资产" [ref=e132] [cursor=pointer]
+      - button "🎭 角色配音" [ref=e133] [cursor=pointer]
+    - paragraph [ref=e134]:
+      - button "全部（0）" [ref=e135] [cursor=pointer]
+      - button "角色（0）" [ref=e136] [cursor=pointer]
+      - button "场景（0）" [ref=e137] [cursor=pointer]
+      - button "道具（0）" [ref=e138] [cursor=pointer]
+      - generic [ref=e139]:
+        - text: 每行
+        - combobox [ref=e140]:
+          - option "2" [selected]
+          - option "3"
+          - option "4"
+        - text: 个
+    - paragraph [ref=e141]:
+      - 'generic "#38699: interrupted by restart #38698: RuntimeError: Library cublas64_12.dll is not found or cannot be loaded #38697: TypeError: transcribe() got an unexpected keyword argument ''progress'' #38696: interrupted by restart" [ref=e142]': 运行 0 · 排队 0 · 失败 4 · ComfyUI ●
+    - heading [level=3] [ref=e143]:
+      - text: 执行日志（21）
+      - button "收起" [ref=e144] [cursor=pointer]
+    - generic [ref=e145]:
+      - generic [ref=e146]:
+        - text: 09-05 19:42:14
+        - generic [ref=e147]: asr
+        - text: 转写完成：15 段 / 232 字（正文已回填，可继续 分析→一键出片）
+      - generic [ref=e148]:
+        - text: 09-05 19:42:13
+        - generic [ref=e149]: asr
+        - text: 转写进行中…已 25 段
+      - generic [ref=e150]:
+        - text: 09-05 19:41:53
+        - generic [ref=e151]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e152]:
+        - text: 09-05 18:47:02
+        - generic [ref=e153]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e154]:
+        - text: 09-05 18:47:02
+        - generic [ref=e155]: comfy
+        - text: "job 38700（transcribe）失败：RuntimeError: Library cublas64_12.dll is not found or cannot be loaded"
+      - generic [ref=e156]:
+        - text: 09-05 18:46:53
+        - generic [ref=e157]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e158]:
+        - text: 09-05 18:43:20
+        - generic [ref=e159]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e160]:
+        - text: 09-05 18:43:20
+        - generic [ref=e161]: comfy
+        - text: "job 38699（transcribe）失败：RuntimeError: Library cublas64_12.dll is not found or cannot be loaded"
+      - generic [ref=e162]:
+        - text: 09-05 18:43:12
+        - generic [ref=e163]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e164]:
+        - text: 09-05 18:40:02
+        - generic [ref=e165]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e166]:
+        - text: 09-05 18:39:55
+        - generic [ref=e167]: comfy
+        - text: "job 38698（transcribe）失败：RuntimeError: Library cublas64_12.dll is not found or cannot be loaded"
+      - generic [ref=e168]:
+        - text: 09-05 18:39:46
+        - generic [ref=e169]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e170]:
+        - text: 09-05 18:26:46
+        - generic [ref=e171]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e172]:
+        - text: 09-05 18:26:46
+        - generic [ref=e173]: comfy
+        - text: "job 38698（transcribe）失败：RuntimeError: Library cublas64_12.dll is not found or cannot be loaded"
+      - generic [ref=e174]:
+        - text: 09-05 18:26:37
+        - generic [ref=e175]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e176]:
+        - text: 09-05 18:05:04
+        - generic [ref=e177]: comfy
+        - text: "job 38697（transcribe）失败：TypeError: transcribe() got an unexpected keyword argument 'progress'"
+      - generic [ref=e178]:
+        - text: 09-05 18:05:04
+        - generic [ref=e179]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e180]:
+        - text: 09-05 18:05:04
+        - generic [ref=e181]: comfy
+        - text: "job 38697（transcribe）失败：TypeError: transcribe() got an unexpected keyword argument 'progress'"
+      - generic [ref=e182]:
+        - text: 09-05 18:05:04
+        - generic [ref=e183]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+      - generic [ref=e184]:
+        - text: 09-05 18:05:04
+        - generic [ref=e185]: comfy
+        - text: "job 38697（transcribe）失败：TypeError: transcribe() got an unexpected keyword argument 'progress'"
+      - generic [ref=e186]:
+        - text: 09-05 18:05:04
+        - generic [ref=e187]: asr
+        - text: 转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）
+  - generic [ref=e189]:
+    - generic [ref=e190]:
+      - generic [ref=e191]: 📄 有声1 正文 （232 字 · 音频转写）
+      - button "✕" [ref=e192] [cursor=pointer]
+    - generic [ref=e193]: 儿子 妈要去上班起来没啊 都几点了 怎么还不起来 我先被窝了 儿子 你这是怎么了 陈薄了 你想妈帮你吗 小坏蛋 妈都准备去上班了 还得先帮你一下 以后你 以后你沉默的叫妈妈好不好 你要是再来一场 妈妈就舔你 知不知道 听到没 白天给你舔 晚上给你爸爸舔 妈妈也够忙的 听到没 以后早上陈薄就叫妈妈 妈妈给你舔了再去上班 早餐也给你做好了 儿子 妈妈的口渴怎么样 赶不去啊 就是去了 妈妈脚趾要上班了 快去到了 睡了吧儿子 吓嘴 睡起来了

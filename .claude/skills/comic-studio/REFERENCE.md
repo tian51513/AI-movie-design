@@ -103,6 +103,7 @@ fl2v/i2v/t2v（无音频槽）→ 单说话人+绑音色 → qwen_tts_clone 整�
 
 - LLM provider：路由值支持 `provider:model` 点对点钉选；local2=重度模型（extra_body 恒 null 物理隔离）；思考模型烧窗用 extra_body `{"reasoning_effort":"none"}`（Ollama /v1 实测有效）
 - Ollama num_ctx=16384：拆分块 1300 字上限的推导依据；截断先查 finish_reason
+- 转写校对遍（P10C 提前落地 2026-09-05）：cleanup_transcription 按段 LLM 清洗（同音错字/纯语气词段丢弃，时间轴保留）→ 重写正文+段落盘+章节；路由键 asr_cleanup 默认 local；正文弹窗「✨ LLM 校对」按钮触发
 - 提示词模式 A-E 契约见 [PROMPTS.md](PROMPTS.md)（默认 E 英文控制式；heal 自愈不耗重试）
 - 画幅五档 ASPECT_RATIOS 统一校验；工作流不支持的画幅回落 16:9
 - 模板：templates/workflows/*.yaml manifest（inject slots: prompt/params/images/audio）+ filler 注入
@@ -112,7 +113,8 @@ fl2v/i2v/t2v（无音频槽）→ 单说话人+绑音色 → qwen_tts_clone 整�
 ```
 POST /api/projects（上传）· /from-theme[/preview] · /from-comic · /from-audio（🎧，P10A）
 POST transcribe 经 from-audio 自动入队（无手动重发入口——失败重传项目）
-POST /api/projects/{id}/analyze | /split-storyboards | /describe-shots | /merge | /tts | /stop-jobs
+POST /api/projects/{id}/analyze | /split-storyboards | /describe-shots | /merge | /tts | /stop-jobs | /asr-cleanup（✨转写校对）/retry-transcribe
+GET  /api/projects/{id}/novel-text（📄正文查看）
 POST /api/shots/{id}/render | /regen-prompt   · POST /api/projects/{id}/generate-prompts | /render-batch
 PATCH /api/projects/{id}（autopilot/style/画幅/段时长/render_mode…）
 GET  /api/projects/{id}/merges · /api/jobs/{id}/snapshot

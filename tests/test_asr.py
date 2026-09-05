@@ -351,3 +351,71 @@ def test_inference_stage_dll_fallback(tmp_path, monkeypatch):
     segs = transcribe(tmp_path / "a.mp3")
     assert segs and segs[0]["text"] == "甲"
     assert ("cpu", "int8") in calls          # 推理期回退重建了 CPU 模型
+
+
+
+
+def test_cleanup_transcription_by_llm(tmp_path):
+    """P10C 校对遍（2026-09-05 用户决策：机械规则不如发 LLM）：按段清洗——
+    修同音错字、纯语气词段返回空串丢弃；时间轴保留；正文/段落盘/章节重写。"""
+    from comic_studio.engine.asr import (cleanup_transcription, load_segments,
+                                         save_segments)
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project, get_project
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "校剧", "16:9", "（占位）")["id"]
+    save_segments(tmp_path / "d", "校剧", [
+        {"start": 0.0, "end": 1.0, "text": "嗯"},
+        {"start": 1.2, "end": 3.0, "text": "儿子 你这是怎么了"},
+        {"start": 3.5, "end": 5.0, "text": "陈薄了 你想妈帮你吗"},
+    ])
+    # 正文预填为原始转写（模拟转写完成态）
+    from comic_studio.engine.paths import data_to_abs
+    data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).write_text(
+        "嗯\n\n儿子 你这是怎么了\n\n陈薄了 你想妈帮你吗", encoding="utf-8")
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.2):
+            assert "陈薄了" in messages[1]["content"]   # 原文进上下文
+            return ('{"1": "", "2": "儿子 你这是怎么了", '
+                    '"3": "承不住了 你想妈帮你吗"}', {})
+    res = cleanup_transcription(db, tmp_path / "d", pid, FakeLLM())
+    assert res == {"removed": 1, "segments": 2}
+    segs = load_segments(tmp_path / "d", "校剧")
+    assert [s["text"] for s in segs] == ["儿子 你这是怎么了", "承不住了 你想妈帮你吗"]
+    assert segs[0]["start"] == 1.2 and segs[0]["end"] == 3.0   # 时间轴保留
+    novel = data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).read_text(
+        encoding="utf-8")
+    assert "承不住了" in novel and "陈薄了" not in novel and "嗯" not in novel
+
+
+def test_asr_cleanup_endpoint(tmp_path, monkeypatch):
+    """POST /{id}/asr-cleanup：路由走 asr_cleanup 任务键（默认 local），
+    同步返回清洗统计；无转写 409；在飞 409。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project, get_project
+    from comic_studio.engine.asr import save_segments
+    from comic_studio.engine.paths import data_to_abs
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.2):
+            return '{"1": ""}', {}   # 桩：语气词段返回空串=丢弃
+    monkeypatch.setattr("comic_studio.engine.llm.provider.client_for_task",
+                        lambda db, task: FakeLLM())
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "清剧", "16:9", "占位")["id"]
+    save_segments(tmp_path / "d", "清剧", [{"start": 0.0, "end": 1.0, "text": "嗯"}])
+    data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).write_text(
+        "嗯", encoding="utf-8")
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    with TestClient(create_app(db_path=tmp_path / "s.db", data_dir=tmp_path / "d",
+                               start_workers=False)) as c:
+        r = c.post(f"/api/projects/{pid}/asr-cleanup")
+        assert r.status_code == 200, r.text
+        assert r.json() == {"removed": 1, "segments": 0}
+        # 无转写项目 → 409
+        pid2 = create_project(db, tmp_path / "d", "无段剧", "16:9", "t")["id"]
+        assert c.post(f"/api/projects/{pid2}/asr-cleanup").status_code == 409
