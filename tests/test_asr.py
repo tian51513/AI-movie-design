@@ -319,6 +319,35 @@ def test_gpu_dll_fallback_to_cpu(tmp_path, monkeypatch):
 
     stub.WhisperModel = WM
     monkeypatch.setitem(sys.modules, "faster_whisper", stub)
+    # 预检失败路径：直接构造 CPU（构造器不再承担回退探测）
+    monkeypatch.setattr("comic_studio.engine.asr._gpu_ready", lambda: False)
     segs = transcribe(tmp_path / "a.mp3")
     assert segs == []
-    assert calls == [("auto", "auto"), ("cpu", "int8")]
+    assert calls == [("cpu", "int8")]
+
+
+def test_gpu_ready_returns_bool():
+    from comic_studio.engine.asr import _gpu_ready
+    assert isinstance(_gpu_ready(), bool)
+
+
+def test_inference_stage_dll_fallback(tmp_path, monkeypatch):
+    """推理期才炸的缺库（构造器惰性加载）也要能回退 CPU 重跑。"""
+    import sys, types
+    calls = []
+    stub = types.ModuleType("faster_whisper")
+
+    class WM:
+        def __init__(self, model_size, device="auto", compute_type="auto"):
+            calls.append((device, compute_type))
+        def transcribe(self, *a, **k):
+            if len(calls) == 1:   # 首个（auto）模型在推理期炸
+                raise RuntimeError("Library cudnn64_9.dll is not found")
+            return iter([types.SimpleNamespace(start=0.0, end=1.0, text="甲")]), {}
+
+    stub.WhisperModel = WM
+    monkeypatch.setitem(sys.modules, "faster_whisper", stub)
+    monkeypatch.setattr("comic_studio.engine.asr._gpu_ready", lambda: True)
+    segs = transcribe(tmp_path / "a.mp3")
+    assert segs and segs[0]["text"] == "甲"
+    assert ("cpu", "int8") in calls          # 推理期回退重建了 CPU 模型

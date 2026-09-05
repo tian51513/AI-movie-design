@@ -56,21 +56,27 @@ def _add_nvidia_dll_dirs() -> int:
     return n
 
 
-def _default_backend(audio_path: Path, model_size: str, progress=None):
-    # 先吃项目根 .env（HF_TOKEN 等）——在 huggingface_hub 读环境之前
-    load_env_file(Path(__file__).resolve().parents[2] / ".env")
-    try:
-        from faster_whisper import WhisperModel
-    except ModuleNotFoundError as e:
-        raise TranscribeUnavailable(_INSTALL_HINT) from e
+def _gpu_ready() -> bool:
+    """GPU 预检（2026-09-05 真机 18:47）：构造器可能惰性加载 CUDA 库——
+    推理期才炸 cublas/cudnn 且原始 RuntimeError 穿透。预检=注入 DLL 目录后
+    ctypes 试载 cublas64_12 + 任一 cudnn64_*；失败直接走 CPU int8。"""
     _add_nvidia_dll_dirs()
+    import ctypes
+    import sysconfig
+    sp = Path(sysconfig.get_paths()["purelib"])
+    cublas = sorted((sp / "nvidia" / "cublas" / "bin").glob("cublas64_*.dll"))
+    cudnn = sorted((sp / "nvidia" / "cudnn" / "bin").glob("cudnn64_*.dll"))
+    if not cublas or not cudnn:
+        return False
     try:
-        model = WhisperModel(model_size, device="auto", compute_type="auto")
-    except RuntimeError as e:
-        # GPU 运行库缺失（cublas/cudnn DLL）→ 回退 CPU int8 保底转写
-        if not any(k in str(e).lower() for k in ("cublas", "cudnn", "cudart")):
-            raise
-        model = WhisperModel(model_size, device="cpu", compute_type="int8")
+        ctypes.CDLL(str(cublas[0]))
+        ctypes.CDLL(str(cudnn[0]))
+        return True
+    except OSError:
+        return False
+
+
+def _run_model(model, audio_path: Path, progress):
     segs, _info = model.transcribe(str(audio_path), language="zh",
                                    vad_filter=True, beam_size=5)
     out = []
@@ -79,6 +85,26 @@ def _default_backend(audio_path: Path, model_size: str, progress=None):
         if progress and len(out) % 25 == 0:
             progress(len(out))
     return out
+
+
+def _default_backend(audio_path: Path, model_size: str, progress=None):
+    # 先吃项目根 .env（HF_TOKEN 等）——在 huggingface_hub 读环境之前
+    load_env_file(Path(__file__).resolve().parents[2] / ".env")
+    try:
+        from faster_whisper import WhisperModel
+    except ModuleNotFoundError as e:
+        raise TranscribeUnavailable(_INSTALL_HINT) from e
+    if _gpu_ready():
+        try:
+            return _run_model(WhisperModel(model_size, device="auto",
+                                           compute_type="auto"),
+                              audio_path, progress)
+        except RuntimeError as e:
+            # 推理期才炸的缺库（构造器惰性加载）→ 回退 CPU int8 重跑
+            if not any(k in str(e).lower() for k in ("cublas", "cudnn", "cudart")):
+                raise
+    return _run_model(WhisperModel(model_size, device="cpu",
+                                   compute_type="int8"), audio_path, progress)
 
 
 def transcribe(audio_path: Path, model_size: str = "large-v3",
