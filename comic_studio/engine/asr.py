@@ -178,6 +178,14 @@ _ENRICH_SYSTEM = """你在把 ASR 对白转写扩写成小说正文。给你带�
 只输出一个 JSON 对象：{"段序号": "扩写文本或空串"}，覆盖所有给出的序号。"""
 
 
+_FREE_WHOLE_SYSTEM = """你在把 ASR 对白转写改写成小说正文（自由改写）。给你带序号的
+全部转写段与【内容主题】。把整段文本改写成连贯流畅的小说正文：
+1. 围绕【内容主题】润色：加动作/环境/神态衔接，修同音错字，删纯语气词
+2. 不要求逐段对应、不要求保留原句措辞——整体重写，篇幅与原文相当或略丰
+3. 纯语气词（嗯/啊）直接略过
+直接输出改写后的正文（纯文本，不要 JSON、不要序号、不要解释）。"""
+
+
 _FREE_SYSTEM = """你在把 ASR 对白转写改写成小说正文（自由扩写）。给你带序号的
 转写段与【内容主题】，自由改写：
 1. 围绕【内容主题】扩写成连贯小说：加动作/环境/神态/心理/衔接，原意不变
@@ -243,6 +251,29 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "",
         theme = tfile.read_text(encoding="utf-8").strip()   # 复用持久化主题
     theme_line = (f"\n【内容主题（校对围绕此核心纠错）】{theme.strip()}\n"
                   if theme.strip() else "")
+    # free 整文单调（2026-09-06 用户手动实测：全文 1598 字一次 1~2 分钟稳定
+    # 完成——分批+逐段扩写指令是错误假设，输出体量才是慢因；整文=用户验证
+    # 形态）。超长文本（>3000 字）退回分批防输出不全。
+    if mode == "free" and sum(len(x["text"]) for x in segs) <= 3000:
+        full_in = "\n".join(f"{i+1}: {x['text']}" for i, x in enumerate(segs))
+        _sys = _FREE_WHOLE_SYSTEM + theme_line
+        text, _u = client.raw_chat(
+            [{"role": "system", "content": _sys},
+             {"role": "user", "content": full_in}], temperature=0.4)
+        full = (text or "").strip()
+        if not full:
+            raise RuntimeError("自由扩写：模型返回空文本")
+        from .paths import data_to_abs as _dta
+        _dta(data_dir, proj["novel_path"]).write_text(full, encoding="utf-8")
+        conn = db.connect()
+        conn.execute("UPDATE projects SET chapters_json=? WHERE id=?",
+                     (json.dumps(parse_chapters(full), ensure_ascii=False), project_id))
+        conn.commit()
+        emit_log(db, "asr", "info",
+                 f"转写扩写完成（free 整文单调）：{len(full)} 字，"
+                 f"segments（音频锚点）未动", project_id=project_id)
+        return {"removed": 0, "segments": len(segs), "mode": "free"}
+
     out, removed = [], 0
     # 15 段/批（2026-09-06 真机：40 段批对 IQ2_M 量化输出 3000+ token，
     # 单批 15 分钟不出（用户手动验证 15 段规模 2~3 分钟稳定完成）——

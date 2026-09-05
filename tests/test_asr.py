@@ -623,3 +623,37 @@ def test_cleanup_free_mode(tmp_path):
         {"start": 0.0, "end": 3.0, "text": "儿子 你这是怎么了"},
         {"start": 3.5, "end": 6.0, "text": "妈都准备去上班了"}]
     assert res["mode"] == "free"
+
+
+def test_cleanup_free_mode_whole_text_single_call(tmp_path):
+    """free 模式整文单调（2026-09-06 用户手动实测：全文 1598 字一次 1~2 分钟
+    稳定完成——分批+高倍率扩写指令是我错误的设计假设）。输出整文直接作正文，
+    segments 不动；仅超长文本（>3000 字）才分批。"""
+    from comic_studio.engine.asr import cleanup_transcription, load_segments, save_segments
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project, get_project
+    from comic_studio.engine.paths import data_to_abs
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "整剧", "16:9", "占位")["id"]
+    # 16 段 > 15 段批上限——旧分批逻辑会拆 2 批，整文模式必须 1 次调用
+    segs = [{"start": float(i) * 3, "end": float(i) * 3 + 2.5, "text": f"第{i}句台词内容"}
+            for i in range(1, 17)]
+    save_segments(tmp_path / "d", "整剧", segs)
+    data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).write_text(
+        "\n\n".join(s_["text"] for s_ in segs), encoding="utf-8")
+    calls = []
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=None, **kw):
+            calls.append(messages[1]["content"])
+            return "阳光斜进卧室。母亲回头看着赖床的儿子，你这是怎么了？她探了探额头。妈都准备去上班了，还得先帮他一把。", {}
+    res = cleanup_transcription(db, tmp_path / "d", pid, FakeLLM(),
+                                theme="母子日常", mode="free")
+    assert len(calls) == 1                     # 整文一次调用（不分批）
+    assert "第1句" in calls[0] and "第16句" in calls[0]  # 全文进上下文
+    novel = data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).read_text(
+        encoding="utf-8")
+    assert "探了探额头" in novel               # 整文输出直接作正文
+    assert load_segments(tmp_path / "d", "整剧") and len(load_segments(tmp_path / "d", "整剧")) == 2  # 锚点不动
+    assert res["mode"] == "free"
