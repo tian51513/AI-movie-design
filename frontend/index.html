@@ -319,7 +319,7 @@
     <!-- 暂停/续跑说明 -->
     <div style="background:rgba(250,204,21,.04);border:1px solid rgba(250,204,21,.12);border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px;color:#fde047;line-height:1.8">
       ⏸ <b>暂停与续跑</b>：<br>
-      · 点「⏹ 停止自动」= 联动全停（关自动 + 取消排队 + 打断在跑）→ 可安心手动编辑任何内容（提示词/分镜/资产）<br>
+      · 点「⏹ 停止自动」= 关自动 + 取消排队（在跑任务跑完即止、不再重试；要立即打断在跑用「⏹ 停止任务」）→ 可安心手动编辑任何内容（提示词/分镜/资产）<br>
       · 点「🚀 一键出片」恢复 → 系统重新评估当前状态，从断点继续<br>
       · 全程无需人工介入（小说和漫画项目均支持）
     </div>
@@ -850,8 +850,8 @@
     </div>
     <p v-if="['analyzed','assets_ready','storyboard_ready'].includes(project.stage)">
       <button @click="genAllRefs">批量生成参考图</button>
-      <button v-if="allHaveViews" @click="passGate1" style="background:#16a34a">
-        ✓ 确认资产（过门1）</button>
+      <button v-if="allHaveViews && project.stage==='analyzed'" @click="passGate1" style="background:#16a34a">
+        ✓ 确认资产（过门1）</button><!-- N1：门1 仅 analyzed 可过，其他阶段露出必 409 -->
     </p>
     </template>
     <p><span class="muted" :title="failedTooltip()">运行 {{queue.running}} · 排队 {{queue.pending}} · 失败 {{queue.failed}}
