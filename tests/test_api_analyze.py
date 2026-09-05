@@ -57,7 +57,7 @@ def test_conflict_while_running_or_done_guard(tmp_path, monkeypatch):
                 break
             time.sleep(0.05)
         # 已 analyzed 阶段再次触发 → 202（2026-09-05 语义变更：重析放行补角色）
-        assert c.post(f"/api/projects/{pid}/analyze").status_code == 409
+        assert c.post(f"/api/projects/{pid}/analyze").status_code == 202
         assert c.get("/api/projects/999/analyze/status").status_code == 404
 
 
