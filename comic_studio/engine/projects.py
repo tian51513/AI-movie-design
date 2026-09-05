@@ -90,8 +90,8 @@ def update_video_params(db: Database, project_id: int, *, video_megapixels: floa
             raise ValueError("video_speed 必须为 '快速'、'标准' 或 '高质量'")
         updates["video_speed"] = video_speed
     if default_shot_duration is not None:
-        if not (1 <= default_shot_duration <= 15):
-            raise ValueError("default_shot_duration 必须在 1~15 范围内")
+        if not (0 <= default_shot_duration <= 15):
+            raise ValueError("default_shot_duration 必须在 0~15 范围内（0=LLM 动态估时）")
         updates["default_shot_duration"] = default_shot_duration
     if prompt_mode is not None:
         if prompt_mode not in ("A", "B", "C", "D", "E"):
@@ -125,7 +125,8 @@ def update_video_params(db: Database, project_id: int, *, video_megapixels: floa
             conn.execute("UPDATE projects SET default_shot_duration=? WHERE id=?",
                          (per, project_id))
             conn.commit()
-    elif default_shot_duration is not None:
+    elif default_shot_duration is not None and default_shot_duration > 0:
+        # 0=拆解时 LLM 动态估时：只改字段，不把存量镜清零（2026-09-05）
         conn.execute("UPDATE shots SET duration=? WHERE project_id=?",
                      (default_shot_duration, project_id))
         conn.commit()

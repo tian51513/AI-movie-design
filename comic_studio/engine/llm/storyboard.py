@@ -102,7 +102,8 @@ class ChunkStoryboard(BaseModel):
         return v
 
 
-def build_split_user_prompt(chunk_text: str, assets_rows, quota_line: str | None = None) -> str:
+def build_split_user_prompt(chunk_text: str, assets_rows, quota_line: str | None = None,
+                            dur_hint: float | None = None) -> str:
     roster = {"character": [], "scene": [], "prop": []}
     for r in assets_rows:
         appearance_json = r["appearance_json"] if hasattr(r, '__getitem__') else r.appearance_json
@@ -114,6 +115,16 @@ def build_split_user_prompt(chunk_text: str, assets_rows, quota_line: str | None
     lines = []
     if quota_line:
         lines.append(quota_line)
+        lines.append("")
+    if dur_hint is not None:
+        # 2026-09-05：段时长基准进上下文（此前规则 8 声称「上下文给出」实际没给）；
+        # 0=LLM 动态估时（无对白镜也按动作复杂度自估）
+        if dur_hint > 0:
+            lines.append(f"【时长基准】项目统一段时长 {dur_hint:g} 秒——"
+                         f"无对白镜的简单反应/走位一律用 {dur_hint:g} 秒，复杂动作按规则 8 上调")
+        else:
+            lines.append("【时长基准】本项目无统一段时长（0）——所有镜 duration 由你按规则 8 逐镜估"
+                         "（对白按字数÷4，无对白按动作复杂度），不要一律填 5")
         lines.append("")
     lines.append("可用资产白名单（只允许绑定以下 id；名单外一律转无名背景）：")
     for kind, label in (("character", "角色"), ("scene", "场景"), ("prop", "道具")):
@@ -299,6 +310,8 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
              project_id=project_id)
     client = client_factory("split_storyboards")
     provider = get_setting(db, "llm_routing")["split_storyboards"]
+    # 段时长基准（2026-09-05）：进拆解上下文；0=LLM 动态估时（无对白镜也自估）
+    _dur = float(proj["default_shot_duration"] or 0.0)
     staged, link_first_of_block = [], []   # link_first_of_block[i] = i 块首镜在 staged 中的下标（需链上一块末镜）
     for i, chunk in enumerate(chunks, 1):
         emit_log(db, "storyboard", "info", f"分块 {i}/{len(chunks)} 拆解中（{len(chunk)} 字）",
@@ -307,7 +320,8 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
         quota_line = (f"【数量约束】全文目标 {target_count} 个分镜，本块目标拆出约 {quotas[i-1]} 个分镜"
                       f"（按篇幅分配，允许 ±1 浮动）") if quotas else None
         result, usage = ask_validated(client, SPLIT_SYSTEM,
-                                      build_split_user_prompt(chunk, assets, quota_line),
+                                      build_split_user_prompt(chunk, assets, quota_line,
+                                                              dur_hint=_dur),
                                       ChunkStoryboard)
         emit_log(db, "llm", "info",
                  f"split_storyboards 完成 · {getattr(client, 'model', '?')} · "
@@ -317,9 +331,6 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
         #     _content_guard(d.description + " " + d.text_span)
         if result.shots[0].continue_prev and staged:
             link_first_of_block.append(len(staged))
-        from ..projects import get_project as _gp
-        _proj = _gp(db, project_id)
-        _dur = float(_proj["default_shot_duration"]) if _proj else 5.0
         # B 级（2026-09-01）：延续状态在 staging 逐镜累积——组 seed 继承与
         # workflow 机械校准都要看「上一镜的 continuity」
         _prev_con = ""
@@ -341,9 +352,10 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
                 text_span=d.text_span, description=d.description, shot_type=d.shot_type,
                 camera=d.camera,
                 # 台词组拆镜 A1（2026-09-01）：有对白的镜用 LLM 估时长（机械钳 4~15，
-                # 多句台词要说完）；无对白镜维持项目统一段时长
+                # 多句台词要说完）；无对白镜维持项目统一段时长——
+                # 2026-09-05 段时长 0=动态：无对白镜也用 LLM 估时（钳 4~15）
                 duration=(min(15.0, max(4.0, float(d.duration)))
-                          if (d.dialogue or []) else _dur),
+                          if ((d.dialogue or []) or _dur <= 0) else _dur),
                 workflow_type=wf,
                 emotion=d.emotion if d.emotion in EMOTIONS else "",
                 gesture=d.gesture.strip(),

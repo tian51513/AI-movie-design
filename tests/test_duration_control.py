@@ -115,3 +115,52 @@ def test_patch_render_mode_batch_updates(tmp_path):
         # 非法值 422
         assert c.patch(f"/api/projects/{pid}",
                        json={"render_mode": "xxx"}).status_code == 422
+
+
+# ── 段时长 0 = LLM 动态估时（2026-09-05 需求）──
+
+def test_split_dynamic_duration_when_segment_zero(tmp_path):
+    """段时长=0 → 无对白镜用 LLM 估时（钳 4~15），不再统一段时长。"""
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    from comic_studio.engine.paths import data_to_abs
+    from tests.test_storyboard_split import FakeLLM
+    db, pid = _proj(tmp_path, default_shot_duration=0)
+    novel = data_to_abs(tmp_path / "data", get_project(db, pid)["novel_path"])
+    novel.parent.mkdir(parents=True, exist_ok=True)
+    novel.write_text("甲" * 60, encoding="utf-8")
+    fake = FakeLLM([CHUNK.format(desc="甲", dur=9)])
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
+    assert [s["duration"] for s in list_shots(db, pid)] == [9.0]
+    # 越界照钳（schema 宽进 1~30，staging 钳 15）
+    fake2 = FakeLLM([CHUNK.format(desc="乙", dur=30)])
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake2)
+    durs = [s["duration"] for s in list_shots(db, pid)]
+    assert durs[-1] == 15.0
+
+
+def test_patch_segment_zero_updates_field_only(tmp_path):
+    """PATCH 段时长 0 = 只改字段（拆解时动态），不把存量镜时长清零。"""
+    db, pid = _proj(tmp_path)
+    persist_shots(db, pid, [_shot("a", 6)])
+    with TestClient(create_app(tmp_path / "s.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        r = c.patch(f"/api/projects/{pid}", json={"default_shot_duration": 0})
+    assert r.status_code == 200 and r.json()["default_shot_duration"] == 0
+    assert [s["duration"] for s in list_shots(db, pid)] == [6.0]
+
+
+def test_update_rejects_negative_segment(tmp_path):
+    import pytest
+    from comic_studio.engine.projects import update_video_params
+    db, pid = _proj(tmp_path)
+    with pytest.raises(ValueError):
+        update_video_params(db, pid, default_shot_duration=-1)
+
+
+def test_split_prompt_carries_duration_hint():
+    """段时长基准进拆解上下文（此前规则 8 说「上下文给出」实际没给）。"""
+    from comic_studio.engine.llm.storyboard import build_split_user_prompt
+    p0 = build_split_user_prompt("正文", [], None, dur_hint=0)
+    assert "无统一段时长" in p0
+    p5 = build_split_user_prompt("正文", [], None, dur_hint=5)
+    assert "统一段时长 5" in p5

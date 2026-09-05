@@ -72,7 +72,7 @@ def test_update_video_params_validation(tmp_path):
     with pytest.raises(ValueError):
         update_video_params(db, row["id"], video_multiple=24)
     with pytest.raises(ValueError):
-        update_video_params(db, row["id"], default_shot_duration=0)
+        update_video_params(db, row["id"], default_shot_duration=16)  # 0 已合法（LLM 动态估时，2026-09-05）
 
 
 def test_update_aspect_ratio(tmp_path):
