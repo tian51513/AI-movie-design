@@ -1,5 +1,7 @@
 # comic_studio 开发约定
 
+> **项目 skill**：`.claude/skills/comic-studio/`（SKILL.md 入口 + REFERENCE.md 生产线细则 + TROUBLESHOOTING.md 真机排障判例）——新会话优先调它定位；本文件仍是模块地图权威。
+
 - 架构边界：`comic_studio/engine/` 禁止 import fastapi/starlette/uvicorn（未来抽取为 ComfyUI 节点）
 - 测试：pytest，TDD（先失败测试后实现）；运行 `pytest -q`
 - 安装：WSL 用 `.venv`、Windows 原生用 `.venv-win`（二进制不可混装）；激活后 `pip install -e ".[dev]"`
