@@ -168,6 +168,16 @@ def span_duration_for(segments: list, text: str):
     return max(s["end"] for s in hits) - min(s["start"] for s in hits)
 
 
+_ENRICH_SYSTEM = """你在把 ASR 对白转写扩写成小说正文。给你带序号的转写段与
+【内容主题】，逐段扩写：
+1. **原句逐字保留**——可加引号变对白、可调语序外的标点，但字不得增删改
+   （后续要与音频时间轴对齐，改字=锚点失效）
+2. 句间自由加旁白：动作/环境/神态/心理/衔接，围绕【内容主题】让剧情连贯丰富
+3. 纯语气词段（嗯/啊）可融入邻近段的旁白或返回空串
+4. 每段扩写 50~150 字，输出仍按段对应
+只输出一个 JSON 对象：{"段序号": "扩写文本或空串"}，覆盖所有给出的序号。"""
+
+
 _CLEANUP_SYSTEM = """你在清洗 ASR（语音转文字）结果。给你带序号的转写段，逐段处理：
 1. 修正同音/近音错字（依上下文猜正确词，如「陈薄了」→「承不住了」）
 2. 纯语气词段（嗯/啊/哦/呃……无实义）返回空串
@@ -175,11 +185,15 @@ _CLEANUP_SYSTEM = """你在清洗 ASR（语音转文字）结果。给你带序�
 只输出一个 JSON 对象：{"段序号": "清洗后文本或空串"}，覆盖所有给出的序号。"""
 
 
-def cleanup_transcription(db, data_dir, project_id, client, theme: str = "") -> dict:
+def cleanup_transcription(db, data_dir, project_id, client, theme: str = "",
+                          mode: str = "conservative") -> dict:
     """P10C 转写校对遍（2026-09-05 用户需求：语气词+同音错字）：按段 LLM 清洗，
     时间轴原样保留，空串段丢弃；重写 segments.json + novel.txt + 章节重算。
     theme（2026-09-05 用户需求：内容主题锚）：注入提示词供纠错围绕核心；
-    持久化 audio/theme.txt——下次不带参自动复用。"""
+    持久化 audio/theme.txt——下次不带参自动复用。
+    mode：conservative（默认，保守修错+重写段落盘）｜enrich（丰富扩写：
+    原句逐字保留+围绕主题加旁白；**segments.json 不动**——音频段是时长/
+    原声锚点，扩写文本靠原句子串双向包含仍能命中 span_duration_for）。"""
     import re as _re
     from .chapters import parse_chapters
     from .logbus import emit as emit_log
@@ -205,8 +219,9 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "") -> 
     for i in range(0, len(segs), BATCH):
         chunk = segs[i:i + BATCH]
         lines = "\n".join(f"{j + 1}: {s['text']}" for j, s in enumerate(chunk))
+        sys_prompt = (_ENRICH_SYSTEM if mode == "enrich" else _CLEANUP_SYSTEM) + theme_line
         text, _u = client.raw_chat(
-            [{"role": "system", "content": _CLEANUP_SYSTEM + theme_line},
+            [{"role": "system", "content": sys_prompt},
              {"role": "user", "content": lines}], temperature=0.2)
         fixed = _parse_json(text)
         for j, s in enumerate(chunk):
@@ -218,7 +233,11 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "") -> 
     if theme.strip():
         tfile.parent.mkdir(parents=True, exist_ok=True)
         tfile.write_text(theme.strip(), encoding="utf-8")
-    save_segments(data_dir, proj["slug"], out)
+    if mode != "enrich":
+        # 保守模式才重写段落盘（丰富模式 segments=音频锚点，原样保留）
+        save_segments(data_dir, proj["slug"], out)
+    removed = removed if mode != "enrich" else sum(
+        1 for _ in range(0)) or removed  # enrich 的空串=融入，不计丢弃
     full = "\n\n".join(s["text"] for s in out)
     from .paths import data_to_abs
     data_to_abs(data_dir, proj["novel_path"]).write_text(full, encoding="utf-8")
@@ -227,6 +246,8 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "") -> 
                  (json.dumps(parse_chapters(full), ensure_ascii=False), project_id))
     conn.commit()
     emit_log(db, "asr", "info",
-             f"转写校对完成：{len(out)} 段保留 / {removed} 段语气词丢弃",
+             (f"转写扩写完成（丰富模式）：{len(out)} 段，原句逐字保留、"
+              "段落盘（音频锚点）未动" if mode == "enrich" else
+              f"转写校对完成：{len(out)} 段保留 / {removed} 段语气词丢弃"),
              project_id=project_id)
-    return {"removed": removed, "segments": len(out)}
+    return {"removed": removed, "segments": len(out), "mode": mode}

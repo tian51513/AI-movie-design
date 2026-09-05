@@ -215,7 +215,8 @@ def asr_cleanup_route(request: Request, project_id: int, body: dict | None = Non
         return cleanup_transcription(
             db, request.app.state.data_dir, project_id,
             client_for_task(db, "asr_cleanup"),
-            theme=str((body or {}).get("theme") or ""))
+            theme=str((body or {}).get("theme") or ""),
+            mode=str((body or {}).get("mode") or "conservative"))
     except Exception as exc:
         raise HTTPException(502, f"转写校对失败：{exc}")
     finally:

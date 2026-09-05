@@ -447,3 +447,50 @@ def test_cleanup_with_theme_anchor(tmp_path):
     save_segments(tmp_path / "d", "题剧", [{"start": 0.0, "end": 2.0, "text": "陈薄了"}])
     cleanup_transcription(db, tmp_path / "d", pid, FakeLLM())
     assert "母子清晨日常" in captured["prompt"]
+
+
+def test_cleanup_enrich_mode_preserves_sentences_and_segments(tmp_path):
+    """丰富模式（2026-09-05 用户决策 2）：围绕主题扩写旁白/衔接，原句逐字
+    保留（时长锚不破坏）；segments.json 不动（音频段=时长/原声锚点），
+    只重写 novel.txt。"""
+    from comic_studio.engine.asr import (cleanup_transcription, load_segments,
+                                         save_segments)
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project, get_project
+    from comic_studio.engine.paths import data_to_abs
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "丰剧", "16:9", "占位")["id"]
+    save_segments(tmp_path / "d", "丰剧", [
+        {"start": 0.0, "end": 3.0, "text": "儿子 你这是怎么了"},
+        {"start": 3.5, "end": 5.0, "text": "嗯"}])
+    data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).write_text(
+        "儿子 你这是怎么了\n\n嗯", encoding="utf-8")
+    captured = {}
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.2):
+            captured["system"] = messages[0]["content"]
+            return ('{"1": "清晨的阳光斜照进卧室，母亲一边整理着装一边回头——'
+                    '儿子 你这是怎么了——她伸手探了探儿子的额头，语气里满是关切。", '
+                    '"2": ""}', {})
+    res = cleanup_transcription(db, tmp_path / "d", pid, FakeLLM(),
+                                theme="母子清晨日常", mode="enrich")
+    assert "扩写" in captured["system"] and "逐字保留" in captured["system"]
+    assert "母子清晨日常" in captured["system"]
+    novel = data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).read_text(
+        encoding="utf-8")
+    assert "儿子 你这是怎么了" in novel or "儿子，你这是怎么了" in novel  # 原句在
+    assert "探了探儿子的额头" in novel          # 扩写旁白在
+    # segments.json 原样（含语气词段——时长/原声锚不破坏）
+    segs = load_segments(tmp_path / "d", "丰剧")
+    assert len(segs) == 2 and segs[0]["text"] == "儿子 你这是怎么了"
+    assert res["mode"] == "enrich"
+    # 保守模式照旧重写 segments
+    save_segments(tmp_path / "d", "丰剧", [{"start": 0.0, "end": 3.0, "text": "嗯"}])
+    class F2:
+        model = "f"
+        def raw_chat(self, m, temperature=0.2):
+            return '{"1": ""}', {}
+    cleanup_transcription(db, tmp_path / "d", pid, F2())
+    assert load_segments(tmp_path / "d", "丰剧") == []

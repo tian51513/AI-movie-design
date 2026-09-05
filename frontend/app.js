@@ -68,7 +68,7 @@ function data() {
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
       optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文',
       describe_shot: 'VLM 读图' },  // L4：路由标签补全
-    novelOpen: false, novelInfo: {text: '', char_count: 0, from_audio: false}, cleanupBusy: false, cleanupTheme: '',
+    novelOpen: false, novelInfo: {text: '', char_count: 0, from_audio: false}, cleanupBusy: false, cleanupTheme: '', cleanupMode: 'conservative',
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     // 日志折叠（2026-09-01 移动版）：桌面默认展开、窄屏默认折叠（详情页缩短，成片/视频优先露出）
     logsOpen: (typeof window !== 'undefined' && window.matchMedia)
@@ -537,11 +537,13 @@ const methods = {
     try {
       const r = await fetch(`/api/projects/${this.project.id}/asr-cleanup`, {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({theme: this.cleanupTheme})});
+        body: JSON.stringify({theme: this.cleanupTheme, mode: this.cleanupMode})});
       if (!r.ok) { alert(await r.text()); return; }
       const b = await r.json();
       await this.openNovel();   // 重开=刷新正文
-      alert(`校对完成：保留 ${b.segments} 段 / 丢弃语气词 ${b.removed} 段`);
+      alert(b.mode === 'enrich'
+        ? `扩写完成：${b.segments} 段（原句保留，音频锚点未动）`
+        : `校对完成：保留 ${b.segments} 段 / 丢弃语气词 ${b.removed} 段`);
     } finally { this.cleanupBusy = false; }
   },
   async openNovel() {
