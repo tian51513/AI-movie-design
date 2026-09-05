@@ -215,7 +215,10 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "",
     theme_line = (f"\n【内容主题（校对围绕此核心纠错）】{theme.strip()}\n"
                   if theme.strip() else "")
     out, removed = [], 0
-    BATCH = 40
+    # 15 段/批（2026-09-06 真机：40 段批对 IQ2_M 量化输出 3000+ token，
+    # 单批 15 分钟不出（用户手动验证 15 段规模 2~3 分钟稳定完成）——
+    # 小批多次：每批落在成功规模内，进度可见、失败隔离
+    BATCH = 15
     n_batches = (len(segs) + BATCH - 1) // BATCH
     from .logbus import emit as _el
     _el(db, "asr", "info",
