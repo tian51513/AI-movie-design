@@ -516,8 +516,9 @@ def test_merge_handler_skips_tts_when_busy(tmp_path, monkeypatch):
 def test_burn_subtitles_skips_empty_srt(tmp_path):
     """2026-09-06 真机（有声1）：全镜无对白 → SRT 0 字节 → subtitles 滤镜
     打不开直接崩、合成三连败。空文件跳过烧录（成片无字幕但不失败）。"""
-    from comic_studio.engine.merge import _burn_subtitles, _make
-    v = _make(tmp_path / "v.mp4", 1)
+    from comic_studio.engine.merge import _burn_subtitles
+    v = tmp_path / "v.mp4"
+    v.write_bytes(b"v")   # 跳过路径不触 ffmpeg，假视频即可
     empty = tmp_path / "subtitles.srt"
     empty.write_text("", encoding="utf-8")
     _burn_subtitles(v, empty)          # 不得抛
