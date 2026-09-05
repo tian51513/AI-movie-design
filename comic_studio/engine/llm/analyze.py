@@ -152,6 +152,30 @@ def _system_with_voices(db, data_dir, project_id) -> str:
     lib = voice_library_prompt(data_dir, proj["slug"] if proj else None)
     return EXTRACT_SYSTEM + "\n\n可用音色库（suggested_voice 只能从中选）：\n" + lib
 
+_KINSHIP_GROUPS = [
+    {"母亲", "妈妈", "妈", "娘", "老妈", "妈咪", "家母"},
+    {"父亲", "爸爸", "爸", "爹", "老爹", "老爸", "家父"},
+    {"儿子", "儿", "孩儿"},
+    {"女儿", "闺女"},
+    {"爷爷", "奶奶", "姥姥", "外婆", "姥爷", "外公"},
+    {"哥哥", "姐姐", "弟弟", "妹妹", "大哥", "大姐"},
+    {"丈夫", "妻子", "老公", "老婆", "夫人"},
+    {"老师", "师傅", "师父"},
+]
+
+
+def _is_ghost_name(name: str, text: str) -> bool:
+    """幻觉名判定：名字（或亲属称谓组内任一别名）不在原文 → 幻觉。
+    P10 真机（2026-09-05 有声1）：LLM 把「妈妈」规范化成「母亲」被误杀——
+    组内任一别名词在原文出现即放行。"""
+    if name in text:
+        return False
+    for group in _KINSHIP_GROUPS:
+        if name in group and any(a in text for a in group):
+            return False
+    return True
+
+
 # 音色绑定 UPDATE。LIMIT 1 必须在子查询括号**内**——括号外即 UPDATE...LIMIT：
 # Windows 版 sqlite3 未编译 SQLITE_ENABLE_UPDATE_DELETE_LIMIT，直接
 # OperationalError: near "LIMIT"（WSL Debian 版却接受——同 SQL 跨环境两种命运，
@@ -227,8 +251,10 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
         log_llm_call(db, "extract_assets", provider_name, extract_client.model, merge_usage)
     # R6 机械防污染（2026-09-02 用户需求）：幻觉名（原文中不存在的角色名）落库
     # 前丢弃——真角色的名字（含别名）必然在原文出现过；不存在=模型编造。
+    # P10 别名兜底（2026-09-05 真机）：LLM 常把口语称谓规范化成书面语
+    # （妈妈→母亲）——亲属称谓组内任一词在原文出现即放行
     _ghost = {c.name.strip() for c in final.characters
-              if c.name.strip() and c.name.strip() not in text}
+              if c.name.strip() and _is_ghost_name(c.name.strip(), text)}
     if _ghost:
         final = final.model_copy(update={"characters": [
             c for c in final.characters if c.name.strip() not in _ghost]})

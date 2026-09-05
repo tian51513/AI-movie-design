@@ -286,3 +286,14 @@ def test_extract_system_covers_dialogue_only_text():
     from comic_studio.engine.llm.analyze import EXTRACT_SYSTEM
     assert "对白体" in EXTRACT_SYSTEM
     assert "第一人称说话人" in EXTRACT_SYSTEM
+
+
+def test_kinship_alias_survives_ghost_filter():
+    """P10 真机（2026-09-05 有声1 重析）：LLM 把「妈妈」规范化成「母亲」被
+    幻觉名护栏误杀——亲属称谓别名词典兜底（原文任一别名词出现即保留）。"""
+    from comic_studio.engine.llm.analyze import _is_ghost_name
+    text = "儿子 你这是怎么了 妈妈给你舔了"
+    assert _is_ghost_name("母亲", text) is False   # 妈妈在文 → 别名放行
+    assert _is_ghost_name("妈妈", text) is False
+    assert _is_ghost_name("林凡", text) is True    # 真幻觉仍拦
+    assert _is_ghost_name("路人甲", text) is True
