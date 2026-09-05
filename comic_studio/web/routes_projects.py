@@ -194,7 +194,7 @@ def create_from_audio(request: Request, name: str = Form(...),
     from ..engine.asr import TranscribeUnavailable  # noqa: 探测依赖
     try:
         from faster_whisper import WhisperModel  # noqa: F401 —— 缺包即 422
-    except (ModuleNotFoundError, TranscribeUnavailable) as e:
+    except (ImportError, TranscribeUnavailable) as e:  # 破损安装抛普通 ImportError
         raise HTTPException(422, f"ASR 依赖未安装：{e}；"
                                  "WSL `.venv/bin/pip install -e '.[asr]'` / "
                                  "Windows `.venv-win/Scripts/pip.exe install -e '.[asr]'`")

@@ -34,8 +34,8 @@ def test_segments_roundtrip(tmp_path):
 def _stub_faster_whisper(monkeypatch):
     """Ruling-1：测试环境无 asr 包，用桩模块通过路由依赖探测
     （缺包 → 422 的生产语义由真机验证，不在无包环境覆盖）。
-    探测是 `from faster_whisper import WhisperModel`——空模块会抛普通
-    ImportError（不被 except ModuleNotFoundError 捕获→500），桩需带该名。"""
+    探测是 `from faster_whisper import WhisperModel`——桩需带该名才能
+    走通到建项目分支（空模块的 ImportError→422 语义见上面的破装测试）。"""
     stub = types.ModuleType("faster_whisper")
     stub.WhisperModel = object  # 探测仅验证可导入
     monkeypatch.setitem(sys.modules, "faster_whisper", stub)
@@ -95,6 +95,10 @@ def test_transcribe_job_fills_novel_and_segments(tmp_path, monkeypatch):
         "SELECT COUNT(*) c FROM logs WHERE message LIKE '%转写完成%'"
     ).fetchone()["c"]
     assert n == 1
+    # 终审顺手项：完成日志带 job_id（与同文件兄弟 handler 一致，可溯源）
+    lrow = db.connect().execute(
+        "SELECT job_id FROM logs WHERE message LIKE '%转写完成%'").fetchone()
+    assert lrow["job_id"] == jid
 
 
 # ---- P10 Task 4: 分镜时长音频驱动（segments 对齐 text_span 覆盖估时）----
@@ -120,6 +124,41 @@ def test_split_uses_audio_durations(tmp_path):
     split_storyboards(db, tmp_path / "data", pid,
                       client_factory=lambda t: FakeLLM([CHUNK.format(desc="推门", dur=5)]))
     assert [s["duration"] for s in list_shots(db, pid)] == [8.0]  # 音频覆盖 LLM 估时
+
+
+def test_split_audio_beats_target_average(tmp_path):
+    """终审 I-2：音频实测时长是权威——项目设了预设总时长也不得均摊覆盖
+    （旧代码均摊是全表 UPDATE，把逐镜音频覆盖整批抹平回均摊值）。"""
+    import json as _json
+    from tests.test_duration_control import _proj, _split_shot
+    from tests.test_storyboard_split import FakeLLM
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    from comic_studio.engine.shots import list_shots
+    from comic_studio.engine import asr as asr_mod
+    db, pid = _proj(tmp_path, target_duration=10)  # 若均摊：2 镜 → 每镜 5s
+    asr_mod.save_segments(tmp_path / "data", "时长剧",
+                          [{"start": 0.0, "end": 7.0, "text": "推门"}])
+    two = _json.dumps({"shots": [_split_shot("甲镜"), _split_shot("乙镜")]},
+                      ensure_ascii=False)
+    split_storyboards(db, tmp_path / "data", pid,
+                      client_factory=lambda t: FakeLLM([two]))
+    assert [s["duration"] for s in list_shots(db, pid)] == [7.0, 7.0]  # 音频 7s 存活
+
+
+def test_from_audio_broken_install_returns_422(tmp_path, monkeypatch):
+    """终审顺手项：破损安装（模块在、缺 WhisperModel → 普通 ImportError，
+    不是 ModuleNotFoundError）也走 422 安装指引，不 500。"""
+    stub = types.ModuleType("faster_whisper")  # 故意不带 WhisperModel 属性
+    monkeypatch.setitem(sys.modules, "faster_whisper", stub)
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    with TestClient(create_app(tmp_path / "t.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        r = c.post("/api/projects/from-audio",
+                   data={"name": "破装剧", "aspect_ratio": "16:9"},
+                   files={"audio": ("b.mp3", io.BytesIO(b"x"), "audio/mpeg")})
+        assert r.status_code == 422
+        assert "ASR 依赖未安装" in r.text
 
 
 def test_from_audio_rejects_oversize(tmp_path, monkeypatch):

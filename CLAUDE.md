@@ -183,3 +183,11 @@
 - **审计高危三修（2026-09-05 docs/2026-09-05-feature-audit.md）** — H1 漫改参考图判断改 has_views（目录存在≠有图，persist 恒建空目录）；H2 TTS/SRT 前置挪进 merge handler（巡检线程不再同步跑 5min 卡停全部项目；手动合成同待遇自动重生配音）+ client.wait 排队不计失速 + interrupt 只打 /queue 确认在跑的自己（排队超宽限 DELETE 出队，不误杀他任务）；H3 storyboard_ready 放行重拆（对齐 UI 承诺，引擎删镜已清外键）
 - **审计中危清零（2026-09-05 晚，M1~M20 四批）** — A 生命周期：stale 纳入 autopilot 缺口/停止任务自动关 autopilot/全无效镜明确 wait/director 重合成防呆/重提取清 ledger 绑定；B 合成：normalize 无轨补 anullsrc/xfade 字幕扣交叠/_sil 进临时目录/epNNN max+1/h3_native_voice 双修（无槽渲染清 flag+字幕判 flag）/版本切换删旧 mp3/快车道 TTS 超段 warn；C 队列设置：stop-jobs 定向删队（只删本项目 prompt_id+确认在跑才 interrupt）/cancelled 补 finished_at/llm_providers 局部 PUT exclude_unset+子字典增量；D 前端：POST /tts 并发 409 锁/漫画 tab 时长透传/参考图按钮阶段放宽/v-if v-for 解耦/describe_shots 标签/导引联动全停文案
 - 注意：估时改字数只影响新拆解项目；存量项目想生效需重拆或手改镜时长；`merged` 阶段开放「重新合成」（POST /merge 放行 rendered/merged）
+
+## 模块地图（P10 有声书 A 期 2026-09-05）
+
+- 入口：`POST /api/projects/from-audio`（创建弹窗🎧有声书 tab）——存源音频 → 建项目（占位正文）→ 入队 `transcribe`（`engine/pipeline_jobs.py` @register）；转写完回填 `novel.txt` + `parse_chapters` 重算章节，之后走现有小说链（分析→拆分镜→出片）
+- 约定路径：源音频 `projects/<slug>/audio/source.<ext>`；实测段 `projects/<slug>/audio/segments.json`——目录基名唯一出口 `engine/asr.audio_rel(slug)`，勿手拼
+- asr extra 装法：`faster-whisper` 不进基础依赖——WSL `.venv/bin/pip install -e ".[asr]"` / Windows `.venv-win/Scripts/pip.exe install -e ".[asr]"`；缺包时入口路由显式 422 给安装指引（探测用 `except ImportError`，破损安装抛普通 ImportError 同待遇，终审顺手修）；转写函数惰性导入，无 asr 环境不影响服务
+- audio_rel 语义：segments.json 存在 = 音频项目 → **分镜时长以音频实测为最终权威**（`span_duration_for` 规范化对齐 text_span 覆盖估时；终审 I-2：设了预设总时长也不得均摊覆盖，否则逐镜实测被全表 UPDATE 抹平）
+- 注意：**转写期间全队列串行（单 worker，resource=None）——长书先切分或临时调 workers>1；running 转写不可中断**

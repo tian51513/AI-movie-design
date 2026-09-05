@@ -126,4 +126,4 @@ def handle_transcribe(db, data_dir, job, comfy):
     conn.commit()
     emit_log(db, "asr", "info",
              f"转写完成：{len(segs)} 段 / {len(full)} 字（正文已回填，"
-             "可继续 分析→一键出片）", project_id=pid)
+             "可继续 分析→一键出片）", project_id=pid, job_id=job["id"])
