@@ -494,3 +494,31 @@ def test_cleanup_enrich_mode_preserves_sentences_and_segments(tmp_path):
             return '{"1": ""}', {}
     cleanup_transcription(db, tmp_path / "d", pid, F2())
     assert load_segments(tmp_path / "d", "丰剧") == []
+
+
+def test_split_audio_project_gets_dialogue_rules(tmp_path):
+    """有声书分镜对白规则（2026-09-05 真机：转写无引号 → LLM 不识台词 →
+    dialogue 空 → 提示词无对白）：音频项目（segments 在）拆解系统词注入
+    「全篇皆对白」规则+说话人推断指引+主题（若有）。"""
+    from comic_studio.engine.llm.provider import Usage
+    from comic_studio.engine.asr import save_segments
+    from tests.test_duration_control import CHUNK, _proj
+    from tests.test_storyboard_split import FakeLLM
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    captured = {}
+
+    class CaptureLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            captured["system"] = messages[0]["content"]
+            return CHUNK.format(desc="甲", dur=5), Usage(1, 2)
+    db, pid = _proj(tmp_path)
+    save_segments(tmp_path / "data", "时长剧", [{"start": 0.0, "end": 4.0, "text": "儿子 你这是怎么了"}])
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: CaptureLLM())
+    assert "全篇皆对白" in captured["system"]
+    assert "说话人" in captured["system"]
+    # 非音频项目不注入
+    captured.clear()
+    db3, pid3 = _proj(tmp_path / "x")
+    split_storyboards(db3, tmp_path / "x", pid3, client_factory=lambda t: CaptureLLM())
+    assert "全篇皆对白" not in captured.get("system", "")

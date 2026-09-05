@@ -312,6 +312,25 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     provider = get_setting(db, "llm_routing")["split_storyboards"]
     # 段时长基准（2026-09-05）：进拆解上下文；0=LLM 动态估时（无对白镜也自估）
     _dur = float(proj["default_shot_duration"] or 0.0)
+    # 有声书对白规则（2026-09-05 真机：转写无引号 → LLM 不识台词 → dialogue
+    # 空 → 提示词无对白）：音频项目注入「全篇皆对白」规则+说话人推断+主题
+    _audio_rules = ""
+    from .asr import load_segments
+    _segs_for_rules = load_segments(data_dir, proj["slug"])
+    if _segs_for_rules:
+        _theme = ""
+        _tfile = Path(data_dir) / f"projects/{proj['slug']}/audio" / "theme.txt"
+        if _tfile.exists():
+            _theme = _tfile.read_text(encoding="utf-8").strip()
+        _audio_rules = (
+
+            "\n\n【有声书对白规则——本文来自语音转写，全篇皆对白】\n"
+            "- text_span 里的每一句话都是人物台词：必须把本镜全部语句逐字录入 "
+            "dialogue 字段（[{"speaker","line"}]），没有引号也要照录\n"
+            "- 说话人按语境推断：自称（妈妈/老师）或称呼对方（儿子/宝贝）者即该角色；"
+            "无法判断时按上下文交替惯例\n"
+            "- 台词是这类项目的核心内容，漏录=成片无对白无口型"
+            + (f"\n- 内容主题（说话人推断参考）：{_theme}" if _theme else ""))
     staged, link_first_of_block = [], []   # link_first_of_block[i] = i 块首镜在 staged 中的下标（需链上一块末镜）
     for i, chunk in enumerate(chunks, 1):
         emit_log(db, "storyboard", "info", f"分块 {i}/{len(chunks)} 拆解中（{len(chunk)} 字）",
@@ -319,7 +338,7 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
         t0 = time.monotonic()
         quota_line = (f"【数量约束】全文目标 {target_count} 个分镜，本块目标拆出约 {quotas[i-1]} 个分镜"
                       f"（按篇幅分配，允许 ±1 浮动）") if quotas else None
-        result, usage = ask_validated(client, SPLIT_SYSTEM,
+        result, usage = ask_validated(client, SPLIT_SYSTEM + _audio_rules,
                                       build_split_user_prompt(chunk, assets, quota_line,
                                                               dur_hint=_dur),
                                       ChunkStoryboard)
