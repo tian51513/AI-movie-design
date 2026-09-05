@@ -136,6 +136,12 @@ def retry_or_fail(db, job_id: int, error: str, max_attempts: int = 3,
     return "failed"
 
 
+REQUEUE_ON_RESTART_TYPES = ("gen_ref", "split_storyboards", "gen_prompt",
+                            "gen_shot", "transcribe")
+# transcribe（2026-09-05 真机）：转写幂等可重跑——此前不在白名单，卡死 job
+# 重启即 'interrupted by restart' 落 failed 且无入口再触发
+
+
 def requeue_on_restart(db, requeue_types: tuple, exclude_ids=()) -> int:
     """重启对账：running → pending（重跑）。exclude_ids：等待接回的 job 不动（防双渲）。"""
     conn = db.connect()

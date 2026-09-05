@@ -147,14 +147,14 @@ def create_app(db_path: str | Path = "./data/studio.db",
             emit_log(db, "system", "warn", f"主题模板同步失败：{exc}")  # 不阻塞启动
         # 断点对账（spec §5）：先收集可对账的 gen_shot，再 requeue。
         # ComfyUI 可达且 /history 显示已完成 → 直接下载落盘不重渲；否则照常 requeue。
-        from ..engine.jobs import collect_reattach_candidates, requeue_on_restart
+        from ..engine.jobs import (REQUEUE_ON_RESTART_TYPES,
+                                    collect_reattach_candidates, requeue_on_restart)
         reattach_rows = collect_reattach_candidates(db, "gen_shot")
         reattached, waiting_ids = _try_reattach(db, data_dir, reattach_rows)
         # 重启后 BackgroundTasks 已消亡，running job 不可能合法存在
         #（waiting_ids：ComfyUI 仍在跑的保持 running 由后台接回，跳过重排防双渲）
         requeued = requeue_on_restart(
-            db, ("gen_ref", "split_storyboards", "gen_prompt", "gen_shot"),
-            exclude_ids=waiting_ids)
+            db, REQUEUE_ON_RESTART_TYPES, exclude_ids=waiting_ids)
         if waiting_ids:
             from threading import Thread
             from ..engine.settings import get_setting

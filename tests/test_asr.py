@@ -243,3 +243,55 @@ def test_transcribe_job_emits_start_and_heartbeat(tmp_path, monkeypatch):
         "SELECT message FROM logs WHERE source='asr'").fetchall()]
     assert any("转写任务开始" in m for m in msgs)
     assert any("转写进行中…已 25 段" in m for m in msgs)
+
+
+def test_transcribe_requeued_on_restart(tmp_path):
+    """重启重排白名单补 transcribe（2026-09-05 真机：卡死 job 被
+    'interrupted by restart' 落 failed 且无人再触发）。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.jobs import (REQUEUE_ON_RESTART_TYPES,
+                                          enqueue_job, requeue_on_restart)
+    assert "transcribe" in REQUEUE_ON_RESTART_TYPES
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project_stub = None
+    from comic_studio.engine.projects import create_project
+    pid = create_project(db, tmp_path / "d", "重排剧", "16:9", "t")["id"]
+    jid = enqueue_job(db, "transcribe", project_id=pid, payload={})
+    conn = db.connect()
+    conn.execute("UPDATE jobs SET status='running' WHERE id=?", (jid,))
+    conn.commit()
+    n = requeue_on_restart(db, REQUEUE_ON_RESTART_TYPES)
+    assert n >= 1
+    assert db.connect().execute(
+        "SELECT status FROM jobs WHERE id=?", (jid,)).fetchone()["status"] == "pending"
+
+
+def test_retry_transcribe_endpoint(tmp_path):
+    """手动重发入口（真机：failed transcribe 此前只能删项目重传）。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.jobs import enqueue_job, finish_job
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "重发剧", "16:9", "占位")["id"]
+    adir = tmp_path / "d" / "projects" / "重发剧" / "audio"
+    adir.mkdir(parents=True)
+    (adir / "source.mp3").write_bytes(b"f")
+    jid = enqueue_job(db, "transcribe", project_id=pid,
+                      payload={"project_id": pid, "ext": "mp3"})
+    conn = db.connect()
+    conn.execute("UPDATE jobs SET status='running' WHERE id=?", (jid,))
+    conn.commit()
+    finish_job(db, jid, "interrupted by restart")
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    with TestClient(create_app(db_path=tmp_path / "s.db", data_dir=tmp_path / "d",
+                               start_workers=False)) as c:
+        r = c.post(f"/api/projects/{pid}/retry-transcribe")
+        assert r.status_code == 202, r.text
+        row = db.connect().execute(
+            "SELECT type, status FROM jobs WHERE project_id=? "
+            "ORDER BY id DESC LIMIT 1", (pid,)).fetchone()
+        assert row["type"] == "transcribe" and row["status"] == "pending"
+        # 源音频缺失 → 422
+        pid2 = create_project(db, tmp_path / "d", "无源剧", "16:9", "t")["id"]
+        assert c.post(f"/api/projects/{pid2}/retry-transcribe").status_code == 422

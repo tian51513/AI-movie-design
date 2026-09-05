@@ -40,6 +40,33 @@ _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", 
                     "prompt_mode", "lora_realism", "target_duration", "autopilot")
 
 
+@router.post("/{project_id}/retry-transcribe", status_code=202)
+def retry_transcribe(request: Request, project_id: int):
+    """P10 转写手动重发（2026-09-05 真机：interrupted/failed 后此前只能删项目
+    重传）。源音频在即可重发；在飞 409。"""
+    db = request.app.state.db
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    from ..engine.asr import load_segments
+    from ..engine.paths import data_to_abs as _dta
+    adir = _dta(request.app.state.data_dir, f"projects/{proj['slug']}/audio")
+    src = next(adir.glob("source.*"), None) if adir.is_dir() else None
+    if src is None:
+        raise HTTPException(422, "项目无源音频（非有声书项目？）")
+    if load_segments(request.app.state.data_dir, proj["slug"]) is not None:
+        raise HTTPException(409, "转写已完成（segments 在盘）——无需重发")
+    from ..engine import jobs as jobs_mod
+    act = jobs_mod.latest_job(db, project_id, "transcribe")
+    if act and act["status"] in ("pending", "running"):
+        raise HTTPException(409, "转写已在队列/进行中")
+    from ..engine.jobs import enqueue_job
+    jid = enqueue_job(db, "transcribe", project_id=project_id,
+                      payload={"project_id": project_id,
+                               "ext": src.suffix.lstrip(".") or "mp3"})
+    return {"job_id": jid}
+
+
 @router.delete("/{project_id}")
 def delete_project(request: Request, project_id: int):
     """删除项目：行（jobs/shots/关联/日志/项目）+ 磁盘 projects/<slug>/ 全清；
