@@ -108,3 +108,32 @@ def test_new_project_defaults_to_mode_d(tmp_path):
     db = Database(tmp_path / "s.db"); db.migrate()
     row = create_project(db, tmp_path / "d", "D默认剧", "9:16", "t")
     assert row["prompt_mode"] == "D"
+
+
+def test_e_mode_audio_line_pins_no_music():
+    """2026-09-05 提案落地：E 音频行为句尾固定 No background music——与结尾
+    负面清单呼应，更早锚定抑制配乐。"""
+    spec = PROMPT_MODES["E"]["spec"]
+    assert "No background music." in spec
+
+
+def test_heal_strips_ad_fields_from_e_prompt():
+    """heal ⑨（2026-09-05 提案落地）：E 模式混入 A-D 字段段整段删除（小模型
+    混合结构时保 E 五段纯度，不转换避免半结构产物）；A-D 模式字段不动。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.prompts.gen import heal_h3_prompt
+    mixed = ("subject_definitions:\n<Subject 1> 是来自 <Picture 1> 的人物，外观由该图提供\n\n"
+             "<Picture 1> is the global character design reference.\n"
+             "[Shot 1] 5-second continuous cinematic shot. 雨夜庭院，林晚缓缓抬头。\n"
+             "overall_soundscape: 雨声，音量轻微\n\n"
+             "No dialogue, no humming, no speech.\n"
+             "Preserve rain sound. Add fabric movement.\n"
+             "No subtitles, logos, watermarks, or text.")
+    shot = NS(ledger_json="{}")
+    out, fixes = heal_h3_prompt(mixed, shot, mode="E")
+    assert "subject_definitions" not in out and "overall_soundscape" not in out
+    assert "global character design reference" in out   # E 内容保留
+    assert "[Shot 1]" in out
+    assert any("清除混入字段" in f for f in fixes)
+    out_d, _ = heal_h3_prompt(mixed, shot, mode="D")
+    assert "subject_definitions" in out_d               # A-D 模式不动

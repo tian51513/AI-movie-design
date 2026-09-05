@@ -114,8 +114,8 @@ D 版实测模板：大全景缓推 → 近景跟拍 → 中景仰拍轮廓光�
 <角色名> looks at <对象> and says in natural Mandarin: <d>[Mandarin Chinese]台词原文</d>
 无对白的镜写：No dialogue, no humming, no speech.
 
-四、音频行为（英文短句，与画面逐项绑定）：
-Preserve <环境声>. Add <动作声>.（如 courtyard ambient sound / fabric movement / footsteps）
+四、音频行为（英文短句，与画面逐项绑定；句尾固定加 No background music.）：
+Preserve <环境声>. Add <动作声>. No background music.（如 courtyard ambient sound / fabric movement / footsteps）
 
 五、结尾固定句（逐字照抄）：
 No subtitles, logos, watermarks, or text. Prevent identity drift, facial distortion, lip-sync delay, extra fingers, wrong hand poses, and background warping.

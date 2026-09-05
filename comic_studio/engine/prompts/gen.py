@@ -260,6 +260,25 @@ def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = No
         if t2 != t:
             t = t2.strip()
             fixes.append("剥离代码块（工具片段/围栏）")
+    # ⑨ E 纯度（2026-09-05 提案落地）：E 模式混入 A-D 字段段——整段删除
+    #（小模型混合结构时保 E 五段纯度，不转换避免半结构产物）；A-D 模式不动
+    if mode == "E":
+        _AD_HEADERS = ("subject_definitions", "summary:", "retention_analysis",
+                       "detailed_description", "overall_soundscape",
+                       "non_diegetic_music")
+        _out, _dropping, _n = [], False, 0
+        for _ln in t.splitlines():
+            if any(_ln.strip().startswith(_h) for _h in _AD_HEADERS):
+                _dropping, _n = True, _n + 1
+                continue
+            if _dropping:
+                if not _ln.strip():   # 空行=段界，结束丢弃
+                    _dropping = False
+                continue              # 段内容一并丢弃
+            _out.append(_ln)
+        if _n:
+            t = "\n".join(_out).strip()
+            fixes.append(f"E 清除混入字段段（{_n} 段）")
     if "可自行补充" in t:
         t = "\n".join(l for l in t.splitlines() if "可自行补充" not in l)
         fixes.append("删除占位语")

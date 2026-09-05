@@ -30,7 +30,7 @@
 |---|---|---|
 | A~D | `overall_soundscape` | 只写与画面一致的环境声/动作音效/人物非语言声（音量轻微）；禁广播、嘈杂人群、电话铃等无关声源 |
 | A~D | `non_diegetic_music` | 默认 **N/A**（配乐归后期）；仅歌舞/演出/情绪高潮分镜可写 |
-| E | `Preserve/Add` 句 | `Preserve <环境声>. Add <动作声>.`（如 courtyard ambient / fabric movement / footsteps） |
+| E | `Preserve/Add` 句 | `Preserve <环境声>. Add <动作声>. No background music.`（如 courtyard ambient / fabric movement / footsteps；2026-09-05 提案落地） |
 | 通用 | 同步声音 | 人物非语言声（哼/喘/衣物声）在描述末尾加「同步声音：…」 |
 
 ## 4. A~D 官方骨架（节标题逐字照抄，不可增删改序）
@@ -52,12 +52,12 @@ non_diegetic_music:    N/A
    **尾帧续镜时**首段整体替换为：`<Picture 1> is the EXACT starting key frame at 0.00 seconds. The video must begin pixel-consistently with <Picture 1> for scene composition, lighting, character appearance and camera framing. The opening frame must not be reinterpreted, redesigned, or changed into a different scene.`
 2. **镜头段**：`[Shot 1] <时长>-second continuous cinematic shot.` 环境光影动态（光怎么动/粒子布料头发怎么飘）→ 角色动作表情（禁代词）→ 具体运镜幅度（camera pushes in slowly 等）
 3. **对白段**：`<角色名> looks at <对象> and says in natural Mandarin: <d>[Mandarin Chinese]台词</d>`
-4. **音频行为**：`Preserve <环境声>. Add <动作声>.`
+4. **音频行为**：`Preserve <环境声>. Add <动作声>. No background music.`
 5. **结尾固定句**：`No subtitles, logos, watermarks, or text. Prevent identity drift, facial distortion, lip-sync delay, extra fingers, wrong hand poses, and background warping.`
 
 ## 6. 机械配套（engine/prompts/gen.py，实际存在）
 
-- **heal 自愈（不耗重试）**：⑥结尾后缀（缺「无字幕/No subtitles」→ 补中文句「无字幕，无背景音乐」）｜⑦音频协议兜底（缺 soundscape/music 机械补，已有配乐不覆盖）｜⑧围栏卫生（代码围栏：协议正文拆栏保文、工具代码整删）＋Meta 词剥离
+- **heal 自愈（不耗重试）**：⑥结尾后缀（缺「无字幕/No subtitles」→ 补中文句「无字幕，无背景音乐」）｜⑦音频协议兜底（缺 soundscape/music 机械补，已有配乐不覆盖）｜⑧围栏卫生（代码围栏：协议正文拆栏保文、工具代码整删）＋Meta 词剥离｜⑨E 纯度（mode=E 混入 A-D 字段段整段删除，2026-09-05 提案落地）
 - **结构失败** → `_compact_system` 短骨架紧凑重试（上下文重开，不背失败输出）
 - **FL2V 机械注入**：首尾帧对齐头（Picture1→0.00s / Picture2→镜时长）+ KF_NO_CUT 镜内禁切（英文句）——节点参数侧注入，正文不写
 - **系统词净化**：注入前 `_strip_code_blocks`（防校验节被 9B 抄入）
@@ -84,9 +84,8 @@ non_diegetic_music:    N/A
 ## 9. 提案区（未实现——采纳前必须先改 modes.py/gen.py 并同步本文档）
 
 - **JSON 调用契约 + 错误码体系**（ERR_MODE_INVALID/ERR_REF_GAP/…、warning_list、后端路由返回）——当前 gen.py 是引擎内函数调用，无此接口
-- E 音频句尾追加 `No background music.`（与结尾负面清单呼应，更早锚定）
 - E 素材声明「角色参考图兼任首帧」合并句式（`both the global reference AND the EXACT starting key frame…`）
 - A-D 追加中文防崩坏尾句（五官变形/手指畸形清单——目前仅 E 有英文版）
-- heal 扩步：E 混入 A-D 字段整段删除、多运镜检测拦截（ERR_MULTI_CAMERA 类）
+- heal 扩步：多运镜检测拦截（ERR_MULTI_CAMERA 类）
 - D 废弃多镜写法改单镜+接力（与现行 D 设计相反，需产品决策）
 - turbo 精简分支、参考视频/音频（VideoN/AudioN）素材语法、Token 超限自动通知拆镜
