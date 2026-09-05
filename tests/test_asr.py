@@ -195,3 +195,18 @@ def test_dotenv_loader_sets_missing_and_respects_existing(tmp_path, monkeypatch)
 def test_dotenv_loader_missing_file_noop(tmp_path):
     from comic_studio.engine.asr import load_env_file
     assert load_env_file(tmp_path / "不存在.env") == 0
+
+
+def test_transcribe_progress_callback(tmp_path):
+    """转写心跳（真机 2026-09-05「看不到等转写的日志」）：backend 逐段回调，
+    默认每 25 段一跳。"""
+    seen = []
+    def fake(path, model, progress=None):
+        for i in range(60):
+            if progress and i % 25 == 0 and i:
+                progress(i)
+        return [(0.0, 1.0, "a"), (1.5, 2.5, "b")]
+    segs = transcribe(tmp_path / "a.mp3", _backend=fake)
+    assert len(segs) == 2
+    assert seen == []   # 未提供回调时零开销
+    transcribe(tmp_path / "a.mp3", _backend=lambda p, m, progress=None: [])
