@@ -29,10 +29,10 @@ def _shot(sid_desc="a", dur=5):
 
 
 def test_split_uses_uniform_project_duration(tmp_path):
-    """LLM 自选 4/6 也统一为项目段时长（默认 5）。"""
+    """LLM 自选 4/6 也统一为项目段时长（显式 5；默认已改 0=动态）。"""
     from comic_studio.engine.llm.storyboard import split_storyboards
     from tests.test_storyboard_split import FakeLLM
-    db, pid = _proj(tmp_path)
+    db, pid = _proj(tmp_path, default_shot_duration=5)
     fake = FakeLLM([CHUNK.format(desc="甲", dur=4)])  # LLM 给 4s 也统一为项目 5s
     split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
     durs = [s["duration"] for s in list_shots(db, pid)]
@@ -164,3 +164,25 @@ def test_split_prompt_carries_duration_hint():
     assert "无统一段时长" in p0
     p5 = build_split_user_prompt("正文", [], None, dur_hint=5)
     assert "统一段时长 5" in p5
+
+
+def test_create_defaults_to_dynamic_durations(tmp_path):
+    """2026-09-05 用户需求：创建项目默认 段时长=0/总时长=0（系统自动控制），
+    人为可调。API 上传流与 from-theme 直建两路都默认 0。"""
+    import io
+    with TestClient(create_app(tmp_path / "t.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        r = c.post("/api/projects", data={"name": "默认剧", "aspect_ratio": "16:9"},
+                   files={"novel": ("n.txt", io.BytesIO("正文".encode()), "text/plain")})
+        assert r.status_code == 201
+        assert r.json()["default_shot_duration"] == 0
+        assert r.json()["target_duration"] == 0
+        from comic_studio.engine.db import Database
+        from comic_studio.engine.themes import list_themes
+        tid = list_themes(Database(tmp_path / "t.db"))[0]["id"]
+        r2 = c.post("/api/projects/from-theme", json={
+            "theme_id": tid, "text": "字" * 120,
+            "aspect_ratio": "16:9", "extra_prompt": ""})
+        assert r2.status_code == 201
+        assert r2.json()["default_shot_duration"] == 0
+        assert r2.json()["target_duration"] == 0

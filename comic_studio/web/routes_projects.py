@@ -225,7 +225,7 @@ def create_from_theme(request: Request, body: dict):
     row = create_project(db, data_dir, body.get("name") or theme["name"], aspect,
                          text, style=(body.get("style") or ""),
                          style_vis=(body.get("style_vis") or ""),
-                         default_shot_duration=float(body.get("default_shot_duration") or 5.0),
+                         default_shot_duration=float(body.get("default_shot_duration") or 0.0),
                          target_duration=float(body.get("target_duration") or 0.0))
     return _public(row)
 
@@ -240,7 +240,7 @@ def create(request: Request, name: str = Form(...),
            style: str = Form(""), style_vis: str = Form(""),
            video_megapixels: float = Form(0.4),
            video_multiple: int = Form(32), video_speed: str = Form("标准"),
-           default_shot_duration: float = Form(5.0),
+           default_shot_duration: float = Form(0.0),  # 0=LLM 动态估时（2026-09-05 默认）
            prompt_mode: str = Form("D"), lora_realism: float = Form(0.75),
            target_duration: float = Form(0.0)):
     from ..engine.projects import ASPECT_RATIOS

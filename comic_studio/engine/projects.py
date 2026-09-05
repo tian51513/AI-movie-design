@@ -24,7 +24,7 @@ def create_project(db: Database, data_dir: Path, name: str,
                    aspect_ratio: str, novel_text: str, style: str = "",
                    style_vis: str = "", comic_mode: str = "",
                    video_megapixels: float = 0.4, video_multiple: int = 32,
-                   video_speed: str = "标准", default_shot_duration: float = 5.0,
+                   video_speed: str = "标准", default_shot_duration: float = 0.0,  # 0=LLM 动态估时（2026-09-05 默认）
                    prompt_mode: str = "D", lora_realism: float = 0.75,
                    target_duration: float = 0.0) -> sqlite3.Row:
     assert aspect_ratio in ASPECT_RATIOS, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}"

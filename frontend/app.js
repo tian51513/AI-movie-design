@@ -40,7 +40,7 @@ function data() {
     comicMode: 'motion_comic',
     describingShots: new Set(),  // 正在读图的镜 id 集合（支持多镜并发提交）
     projectsView: (() => { try { return localStorage.getItem('cs.projectsView') || 'grid'; } catch (e) { return 'grid'; } })(),
-    newSegDur: 5, newTotalDur: 0,
+    newSegDur: 0, newTotalDur: 0,  // 0=系统自动（2026-09-05 默认）
     settingsTab: 'llm', wfImportFile: null, wfImporting: false, activeShotSeq: 1,
     themesManage: [], themeImportFile: null, themeImporting: false,
     editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character',
@@ -151,7 +151,7 @@ const methods = {
     fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : presetStyle(this.newStyleKey));
     fd.append('style_vis', this.newStyleKey === '自定义' ? this.newStyleText : presetStyleVis(this.newStyleKey));
     fd.append('novel', this.newFile);
-    fd.append('default_shot_duration', this.newSegDur || 5);
+    fd.append('default_shot_duration', this.newSegDur ?? 0);
     fd.append('target_duration', this.newTotalDur || 0);
     const resp = await fetch('/api/projects', { method: 'POST', body: fd });
     if (!resp.ok) { alert(await resp.text()); }
@@ -452,7 +452,7 @@ const methods = {
           word_count: this.newWordCount || undefined,
           extra_prompt: this.newExtraPrompt || undefined,
           text: this.themePreview || undefined,  // 两步流：确认/编辑后的正文直建，不再调 LLM
-          default_shot_duration: this.newSegDur || 5,
+          default_shot_duration: this.newSegDur ?? 0,
           target_duration: this.newTotalDur || 0 }) });
       if (!resp.ok) { alert(await resp.text()); }
       else { this.newName = ''; this.newProtagonist = ''; this.newThemeId = '';
