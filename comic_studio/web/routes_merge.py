@@ -15,8 +15,10 @@ def start_merge(request: Request, project_id: int):
     proj = get_project(db, project_id)
     if proj is None:
         raise HTTPException(404, "项目不存在")
-    if proj["stage"] != "rendered":
-        raise HTTPException(409, f"阶段 {proj['stage']} 不能合成（需 rendered）")
+    if proj["stage"] not in ("rendered", "merged"):
+        # 2026-09-05：merged 也放行——修复合成链后重出片（ep006 音频废，
+        # 修复在合成侧，merged 阶段原本无重合成入口）；出新的 epNNN 不覆盖旧片
+        raise HTTPException(409, f"阶段 {proj['stage']} 不能合成（需 rendered/merged）")
     dup = db.connect().execute(
         "SELECT 1 FROM jobs WHERE type='merge' AND project_id=? "
         "AND status IN ('pending','running')", (project_id,)).fetchone()

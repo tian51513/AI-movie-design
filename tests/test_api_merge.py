@@ -46,3 +46,15 @@ def test_merge_guard_dedupe_and_listing(tmp_path):
         merges = c.get(f"/api/projects/{pid}/merges").json()
         assert len(merges) == 1 and merges[0]["file"] == "ep001.mp4"
         assert merges[0]["url"].startswith("/media/")
+
+
+def test_remerge_allowed_when_merged(tmp_path):
+    """2026-09-05 真机需求：修复音频参数后要重出片，但 merged 阶段无入口
+    （ep006 音频废、修复在合成链上）。merged 允许再次发起 → 出新 epNNN。"""
+    db, pid, c = _client(tmp_path)
+    with c:
+        set_stage(db, pid, "merged")
+        r = c.post(f"/api/projects/{pid}/merge")
+        assert r.status_code == 202 and "job_id" in r.json()
+        # 队列去重守卫照常生效
+        assert c.post(f"/api/projects/{pid}/merge").status_code == 409

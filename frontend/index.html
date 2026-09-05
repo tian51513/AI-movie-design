@@ -912,8 +912,8 @@
         <button @click="shotSel=[]" style="font-size:12px;padding:3px 8px">取消选择</button>
       </template>
       <button v-if="allShotsRendered && project.stage==='storyboard_ready'" @click="passGate3" style="background:#16a34a">✓ 确认渲染（门3）</button>
-      <button v-if="project.stage==='rendered'" @click="startMerge"
-              style="background:#7c3aed">🎬 合成成片</button>
+      <button v-if="project.stage==='rendered' || project.stage==='merged'" @click="startMerge"
+              style="background:#7c3aed">{{ project.stage==='merged' ? '🎬 重新合成' : '🎬 合成成片' }}</button>
     </p>
     </div><!-- /film-strip -->
     <!-- 框选选框覆盖层（原生 DOM 直写坐标不走 Vue 响应式，拖拽零重渲染；不拦截事件） -->
@@ -1075,7 +1075,7 @@
         <button v-if="project.stage==='analyzed' && allHaveViews" @click="passGate1" style="background:#16a34a">✓ 过门1</button>
         <button v-if="allShotsReady && project.stage==='assets_ready'" @click="passGate2" style="background:#16a34a">✓ 过门2</button>
         <button v-if="allShotsRendered && project.stage==='storyboard_ready'" @click="passGate3" style="background:#16a34a">✓ 过门3</button>
-        <button v-if="project.stage==='rendered'" @click="startMerge" style="background:#7c3aed">🎬 合成成片</button>
+        <button v-if="project.stage==='rendered' || project.stage==='merged'" @click="startMerge" style="background:#7c3aed">{{ project.stage==='merged' ? '🎬 重新合成' : '🎬 合成成片' }}</button>
       </div>
     </div>
   </main>
