@@ -171,10 +171,14 @@ def _replace_audio(video: Path, audio: Path, output: Path, pad: float = 0.0) -> 
                         *audio_args, "-shortest", str(output)],
                        check=True, capture_output=True, timeout=600)
         return output
+    # apad 静音补齐到视频全长——绝不截视频（2026-09-05 真机：-shortest 裸用把
+    # 17 个短对白镜截掉 ~40s，片长塌缩+轴全面错位）。注意 copy 视频 + apad
+    # 无限音频 + -shortest 会熄火（muxer 等不到 copy 流 EOF）→ 显式 -t 视频时长
+    v_dur = probe(video)["duration"] or 0.0
     subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-i", str(audio),
                     "-map", "0:v", "-map", "1:a",
-                    "-c:v", "copy", *audio_args, "-shortest",
-                    str(output)],
+                    "-af", "apad", "-c:v", "copy", *audio_args,
+                    "-t", f"{v_dur:.3f}", str(output)],
                    check=True, capture_output=True, timeout=300)
     return output
 

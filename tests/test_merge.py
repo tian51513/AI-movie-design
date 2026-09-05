@@ -335,3 +335,15 @@ def test_probe_reports_audio_params_and_absence(tmp_path):
     assert p["sample_rate"] == 24000 and p["channels"] == 1
     v = probe(_make(tmp_path / "v.mp4", 1))  # _make 无音轨
     assert v["sample_rate"] is None and v["channels"] is None
+
+
+def test_replace_audio_never_truncates_video(tmp_path):
+    """2026-09-05 真机（ep006/007 片长 197s 应为 237s）：非补长路 -shortest 把
+    「配音短于视频」的镜整段截到配音长度（镜19 4.5→1.0s，17 镜共截 ~40s），
+    片长塌缩+字幕轴全面错位。改为 apad 静音补齐到视频全长，段长=视频长。"""
+    from comic_studio.engine.merge import _replace_audio, probe
+    v = _make(tmp_path / "v.mp4", 2)
+    out = _replace_audio(v, _make_mp3_24k_mono(tmp_path / "a.mp3", 1.2),
+                         tmp_path / "o.mp4")
+    d = probe(out)["duration"]
+    assert d > 1.9, d  # 视频全长保留（旧行为 1.2s）

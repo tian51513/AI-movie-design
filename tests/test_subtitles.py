@@ -109,3 +109,27 @@ def test_srt_uses_audio_duration_when_longer(tmp_path):
     content = generate_srt(db, tmp_path / "data", pid).read_text(encoding="utf-8")
     assert "00:00:08" in content          # 镜2 台词起点 8s（旧逻辑漂移到 5s）
     assert "00:00:05 -->" not in content
+
+
+def test_srt_timeline_follows_real_media_durations(tmp_path):
+    """2026-09-05 真机（ep007 配音/分镜错位）：轴长不能再信 duration 字段——
+    17k+5 帧对齐让 4.0→4.5/5.0→5.2，46 镜累计 ~9s 漂移。改按真实视频时长排轴；
+    有配音且更长的镜按 音频+0.1（与 merge 补长段长一致）。"""
+    import subprocess
+    from comic_studio.engine.merge import ffmpeg_bin, probe
+    from comic_studio.engine.shots import update_shot
+    db, pid = _proj(tmp_path)
+    ids = list_shots_ids = db.connect().execute(
+        "SELECT id, seq FROM shots WHERE project_id=? ORDER BY seq", (pid,)).fetchall()
+    shot1_dir = tmp_path / "data" / "projects" / "字幕剧" / "shots" / "1"
+    shot1_dir.mkdir(parents=True)
+    subprocess.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
+                    "testsrc=duration=6:size=320x240:rate=10",
+                    "-pix_fmt", "yuv420p", str(shot1_dir / "video_v1.mp4")],
+                   check=True, capture_output=True, timeout=60)
+    update_shot(db, ids[0]["id"], {"video_path": "projects/字幕剧/shots/1/video_v1.mp4"})
+    from comic_studio.engine.subtitles import generate_srt
+    content = generate_srt(db, tmp_path / "data", pid).read_text(encoding="utf-8")
+    # 镜1 真实 6s（duration 字段 5.0）→ 镜2 台词起点 6s，不是 5s
+    assert "00:00:06" in content, content
+    assert "00:00:05 -->" not in content
