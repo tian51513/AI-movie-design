@@ -520,5 +520,5 @@ def test_split_audio_project_gets_dialogue_rules(tmp_path):
     # 非音频项目不注入
     captured.clear()
     db3, pid3 = _proj(tmp_path / "x")
-    split_storyboards(db3, tmp_path / "x", pid3, client_factory=lambda t: CaptureLLM())
+    split_storyboards(db3, tmp_path / "x" / "data", pid3, client_factory=lambda t: CaptureLLM())
     assert "全篇皆对白" not in captured.get("system", "")
