@@ -1269,9 +1269,12 @@
                   justify-content:space-between;align-items:center">
         <b>📄 {{ project.name }} 正文
           <span class="muted" style="font-size:12px">（{{ novelInfo.char_count }} 字{{ novelInfo.from_audio ? ' · 音频转写' : '' }}）</span></b>
-        <span v-if="novelInfo.from_audio" style="display:flex;gap:6px">
+        <span v-if="novelInfo.from_audio" style="display:flex;gap:6px;align-items:center">
+          <input v-model="cleanupTheme" placeholder="内容主题（如：母子清晨日常）"
+                 style="width:180px;font-size:12px;padding:2px 8px"
+                 title="纠错围绕的核心语境——存进项目，下次自动带出">
           <button v-if="!cleanupBusy" @click="cleanupTranscription" style="padding:2px 10px;font-size:12px"
-                  title="转写文本发 LLM 按段清洗：修同音错字、删纯语气词段（时间轴保留）">✨ LLM 校对</button>
+                  title="转写文本发 LLM 按段清洗：修同音错字、删纯语气词段（时间轴保留）；主题帮助同音字定方向">✨ LLM 校对</button>
           <span v-else class="muted" style="font-size:12px">校对中…</span>
         </span>
         <button @click="novelOpen=false" style="padding:2px 10px">✕</button>

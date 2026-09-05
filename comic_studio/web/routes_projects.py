@@ -195,7 +195,7 @@ _CLEANUP_BUSY: set = set()   # 同项目并发校对互斥（/tts 先例）
 
 
 @router.post("/{project_id}/asr-cleanup")
-def asr_cleanup_route(request: Request, project_id: int):
+def asr_cleanup_route(request: Request, project_id: int, body: dict | None = None):
     """P10C 转写校对遍（2026-09-05 用户需求：语气词+同音错字）：转写文本发
     LLM 按段清洗（纯文本任务，本地模型可做），重写正文/段落盘/章节。"""
     db = request.app.state.db
@@ -214,7 +214,8 @@ def asr_cleanup_route(request: Request, project_id: int):
         from ..engine.asr import cleanup_transcription
         return cleanup_transcription(
             db, request.app.state.data_dir, project_id,
-            client_for_task(db, "asr_cleanup"))
+            client_for_task(db, "asr_cleanup"),
+            theme=str((body or {}).get("theme") or ""))
     except Exception as exc:
         raise HTTPException(502, f"转写校对失败：{exc}")
     finally:

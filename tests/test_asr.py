@@ -419,3 +419,31 @@ def test_asr_cleanup_endpoint(tmp_path, monkeypatch):
         # 无转写项目 → 409
         pid2 = create_project(db, tmp_path / "d", "无段剧", "16:9", "t")["id"]
         assert c.post(f"/api/projects/{pid2}/asr-cleanup").status_code == 409
+
+
+def test_cleanup_with_theme_anchor(tmp_path):
+    """2026-09-05 用户需求：校对加内容主题锚——主题进提示词（纠错围绕核心），
+    持久化 audio/theme.txt（下次不带参自动复用）。"""
+    from comic_studio.engine.asr import cleanup_transcription, load_segments, save_segments
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "题剧", "16:9", "占位")["id"]
+    save_segments(tmp_path / "d", "题剧", [{"start": 0.0, "end": 2.0, "text": "陈薄了"}])
+    captured = {}
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.2):
+            captured["prompt"] = messages[1]["content"] + messages[0]["content"]
+            return '{"1": "承不住了"}', {}
+    cleanup_transcription(db, tmp_path / "d", pid, FakeLLM(),
+                          theme="母子清晨日常，妈妈准备上班")
+    assert "母子清晨日常" in captured["prompt"]          # 主题进词
+    assert (tmp_path / "d" / "projects" / "题剧" / "audio" / "theme.txt"
+            ).read_text(encoding="utf-8") == "母子清晨日常，妈妈准备上班"
+    # 第二次不带 theme → 自动复用持久化主题
+    captured.clear()
+    save_segments(tmp_path / "d", "题剧", [{"start": 0.0, "end": 2.0, "text": "陈薄了"}])
+    cleanup_transcription(db, tmp_path / "d", pid, FakeLLM())
+    assert "母子清晨日常" in captured["prompt"]

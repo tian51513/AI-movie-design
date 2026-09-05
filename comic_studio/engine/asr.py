@@ -175,9 +175,11 @@ _CLEANUP_SYSTEM = """你在清洗 ASR（语音转文字）结果。给你带序�
 只输出一个 JSON 对象：{"段序号": "清洗后文本或空串"}，覆盖所有给出的序号。"""
 
 
-def cleanup_transcription(db, data_dir, project_id, client) -> dict:
+def cleanup_transcription(db, data_dir, project_id, client, theme: str = "") -> dict:
     """P10C 转写校对遍（2026-09-05 用户需求：语气词+同音错字）：按段 LLM 清洗，
-    时间轴原样保留，空串段丢弃；重写 segments.json + novel.txt + 章节重算。"""
+    时间轴原样保留，空串段丢弃；重写 segments.json + novel.txt + 章节重算。
+    theme（2026-09-05 用户需求：内容主题锚）：注入提示词供纠错围绕核心；
+    持久化 audio/theme.txt——下次不带参自动复用。"""
     import re as _re
     from .chapters import parse_chapters
     from .logbus import emit as emit_log
@@ -193,13 +195,18 @@ def cleanup_transcription(db, data_dir, project_id, client) -> dict:
     segs = load_segments(data_dir, proj["slug"])
     if not segs:
         return {"removed": 0, "segments": 0}
+    tfile = Path(data_dir) / audio_rel(proj["slug"]) / "theme.txt"
+    if not theme.strip() and tfile.exists():
+        theme = tfile.read_text(encoding="utf-8").strip()   # 复用持久化主题
+    theme_line = (f"\n【内容主题（校对围绕此核心纠错）】{theme.strip()}\n"
+                  if theme.strip() else "")
     out, removed = [], 0
     BATCH = 40
     for i in range(0, len(segs), BATCH):
         chunk = segs[i:i + BATCH]
         lines = "\n".join(f"{j + 1}: {s['text']}" for j, s in enumerate(chunk))
         text, _u = client.raw_chat(
-            [{"role": "system", "content": _CLEANUP_SYSTEM},
+            [{"role": "system", "content": _CLEANUP_SYSTEM + theme_line},
              {"role": "user", "content": lines}], temperature=0.2)
         fixed = _parse_json(text)
         for j, s in enumerate(chunk):
@@ -208,6 +215,9 @@ def cleanup_transcription(db, data_dir, project_id, client) -> dict:
                 removed += 1
                 continue
             out.append({**s, "text": t})
+    if theme.strip():
+        tfile.parent.mkdir(parents=True, exist_ok=True)
+        tfile.write_text(theme.strip(), encoding="utf-8")
     save_segments(data_dir, proj["slug"], out)
     full = "\n\n".join(s["text"] for s in out)
     from .paths import data_to_abs

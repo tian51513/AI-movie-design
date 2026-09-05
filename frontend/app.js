@@ -68,7 +68,7 @@ function data() {
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
       optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文',
       describe_shot: 'VLM 读图' },  // L4：路由标签补全
-    novelOpen: false, novelInfo: {text: '', char_count: 0, from_audio: false}, cleanupBusy: false,
+    novelOpen: false, novelInfo: {text: '', char_count: 0, from_audio: false}, cleanupBusy: false, cleanupTheme: '',
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     // 日志折叠（2026-09-01 移动版）：桌面默认展开、窄屏默认折叠（详情页缩短，成片/视频优先露出）
     logsOpen: (typeof window !== 'undefined' && window.matchMedia)
@@ -535,7 +535,9 @@ const methods = {
   async cleanupTranscription() {
     this.cleanupBusy = true;
     try {
-      const r = await fetch(`/api/projects/${this.project.id}/asr-cleanup`, {method: 'POST'});
+      const r = await fetch(`/api/projects/${this.project.id}/asr-cleanup`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({theme: this.cleanupTheme})});
       if (!r.ok) { alert(await r.text()); return; }
       const b = await r.json();
       await this.openNovel();   // 重开=刷新正文
