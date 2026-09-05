@@ -178,6 +178,35 @@ _ENRICH_SYSTEM = """你在把 ASR 对白转写扩写成小说正文。给你带�
 只输出一个 JSON 对象：{"段序号": "扩写文本或空串"}，覆盖所有给出的序号。"""
 
 
+_FREE_SYSTEM = """你在把 ASR 对白转写改写成小说正文（自由扩写）。给你带序号的
+转写段与【内容主题】，自由改写：
+1. 围绕【内容主题】扩写成连贯小说：加动作/环境/神态/心理/衔接，原意不变
+2. 不要求保留原句措辞，可以改写、合并语气词、调顺句子
+3. 纯语气词段（嗯/啊）直接并入邻近内容，不单独成段
+4. 输出格式（严格遵守）：每段以 ###序号### 开头，后跟改写文本；
+   被并入的段输出 ###序号###（空）。
+例：
+###1###
+改写后的第一段……
+###2###
+（空）
+不要 JSON，不要解释，只输出 ###分隔的段。"""
+
+
+def _parse_free_blocks(text: str, expected: int) -> list:
+    """解析 ###N### 分隔的自由输出（弱模型友好格式）。缺号/乱序容错：
+    按分隔符切，取编号后文本；无分隔符→整文作首段。返回 [(序号,文本)]。"""
+    parts = _re2.split(r"###\s*(\d+)\s*###", text or "")
+    out = []
+    for i in range(1, len(parts) - 1, 2):
+        num, body = int(parts[i]), parts[i + 1].strip()
+        if body:
+            out.append((num, body))
+    if not out and (text or "").strip():
+        out.append((1, text.strip()))
+    return out
+
+
 _CLEANUP_SYSTEM = """你在清洗 ASR（语音转文字）结果。给你带序号的转写段，逐段处理：
 1. 修正同音/近音错字（依上下文猜正确词，如「陈薄了」→「承不住了」）
 2. 纯语气词段（嗯/啊/哦/呃……无实义）返回空串
@@ -227,23 +256,34 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "",
     for bi, i in enumerate(range(0, len(segs), BATCH), 1):
         chunk = segs[i:i + BATCH]
         lines = "\n".join(f"{j + 1}: {s['text']}" for j, s in enumerate(chunk))
-        sys_prompt = (_ENRICH_SYSTEM if mode == "enrich" else _CLEANUP_SYSTEM) + theme_line
         _el(db, "asr", "info", f"校对批 {bi}/{n_batches} 调用中（{len(chunk)} 段）…",
             project_id=project_id)
+        sys_prompt = ({ "free": _FREE_SYSTEM,
+                        "enrich": _ENRICH_SYSTEM }.get(mode) or _CLEANUP_SYSTEM) + theme_line
         text, _u = client.raw_chat(
             [{"role": "system", "content": sys_prompt},
-             {"role": "user", "content": lines}], temperature=0.2)
-        fixed = _parse_json(text)
-        for j, s in enumerate(chunk):
-            t = str(fixed.get(str(j + 1), s["text"])).strip()
-            if not t:
-                removed += 1
-                continue
-            out.append({**s, "text": t})
+             {"role": "user", "content": lines}],
+            temperature=0.4 if mode == "free" else 0.2)
+        if mode == "free":
+            got = dict(_parse_free_blocks(text, len(chunk)))
+            for j, s in enumerate(chunk):
+                t = str(got.get(j + 1, "")).strip()
+                if not t:
+                    removed += 1
+                    continue
+                out.append({**s, "text": t})
+        else:
+            fixed = _parse_json(text)
+            for j, s in enumerate(chunk):
+                t = str(fixed.get(str(j + 1), s["text"])).strip()
+                if not t:
+                    removed += 1
+                    continue
+                out.append({**s, "text": t})
     if theme.strip():
         tfile.parent.mkdir(parents=True, exist_ok=True)
         tfile.write_text(theme.strip(), encoding="utf-8")
-    if mode != "enrich":
+    if mode not in ("enrich", "free"):
         # 保守模式才重写段落盘（丰富模式 segments=音频锚点，原样保留）
         save_segments(data_dir, proj["slug"], out)
     removed = removed if mode != "enrich" else sum(
@@ -256,8 +296,8 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "",
                  (json.dumps(parse_chapters(full), ensure_ascii=False), project_id))
     conn.commit()
     emit_log(db, "asr", "info",
-             (f"转写扩写完成（丰富模式）：{len(out)} 段，原句逐字保留、"
-              "段落盘（音频锚点）未动" if mode == "enrich" else
+             (f"转写扩写完成（{mode} 模式）：{len(out)} 段，"
+              "段落盘（音频锚点）未动" if mode in ("enrich", "free") else
               f"转写校对完成：{len(out)} 段保留 / {removed} 段语气词丢弃"),
              project_id=project_id)
     return {"removed": removed, "segments": len(out), "mode": mode}

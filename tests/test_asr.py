@@ -585,3 +585,41 @@ def test_transcribe_engine_setting_branch(tmp_path, monkeypatch):
     assert called["engine"] == "comfy"
     from comic_studio.engine.asr import load_segments
     assert load_segments(tmp_path / "d", "擎剧")[0]["text"] == "甲"
+
+
+def test_cleanup_free_mode(tmp_path):
+    """自由扩写模式（2026-09-06 用户决策）：无逐字保留约束、无 JSON——
+    纯文本按 ###N### 分隔符输出（弱模型友好，同用户手动测试形态）；
+    segments 不动；正文=拼接扩写文本。"""
+    from comic_studio.engine.asr import cleanup_transcription, load_segments, save_segments
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project, get_project
+    from comic_studio.engine.paths import data_to_abs
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "自剧", "16:9", "占位")["id"]
+    save_segments(tmp_path / "d", "自剧", [
+        {"start": 0.0, "end": 3.0, "text": "儿子 你这是怎么了"},
+        {"start": 3.5, "end": 6.0, "text": "妈都准备去上班了"}])
+    data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).write_text(
+        "儿子 你这是怎么了\n\n妈都准备去上班了", encoding="utf-8")
+    captured = {}
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.4):
+            captured["sys"] = messages[0]["content"]
+            return ("###1###\n阳光斜进卧室，母亲回头看着赖床的儿子——"
+                    "儿子，你这是怎么了？她伸手探了探额头。\n\n"
+                    "###2###\n妈都准备去上班了，还得先帮他一把。", {})
+    res = cleanup_transcription(db, tmp_path / "d", pid, FakeLLM(),
+                                theme="母子日常", mode="free")
+    assert "逐字保留" not in captured["sys"]        # 无硬约束
+    assert "不要 JSON" in captured["sys"]           # 明示免除 JSON 负担
+    assert "母子日常" in captured["sys"]            # 主题仍在
+    novel = data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).read_text(
+        encoding="utf-8")
+    assert "探了探额头" in novel and "妈都准备去上班了" in novel
+    assert load_segments(tmp_path / "d", "自剧") == [   # segments 原样
+        {"start": 0.0, "end": 3.0, "text": "儿子 你这是怎么了"},
+        {"start": 3.5, "end": 6.0, "text": "妈都准备去上班了"}]
+    assert res["mode"] == "free"

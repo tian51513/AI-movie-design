@@ -543,8 +543,8 @@ const methods = {
       if (!r.ok) { alert(await r.text()); return; }
       const b = await r.json();
       await this.openNovel();   // 重开=刷新正文
-      alert(b.mode === 'enrich'
-        ? `扩写完成：${b.segments} 段（原句保留，音频锚点未动）`
+      alert((b.mode === 'enrich' || b.mode === 'free')
+        ? `扩写完成：${b.segments} 段（音频锚点未动）`
         : `校对完成：保留 ${b.segments} 段 / 丢弃语气词 ${b.removed} 段`);
     } finally { this.cleanupBusy = false; }
   },
