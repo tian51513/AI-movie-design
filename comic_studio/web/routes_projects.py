@@ -174,6 +174,43 @@ def create_from_comic(request: Request,
     return _public(proj)
 
 
+@router.post("/from-audio", status_code=201)
+def create_from_audio(request: Request, name: str = Form(...),
+                      aspect_ratio: str = Form("9:16"),
+                      default_shot_duration: float = Form(0.0),
+                      target_duration: float = Form(0.0),
+                      audio: UploadFile = File(...)):
+    """P10 有声书导入（2026-09-05 计划）：存源音频 → 建项目（占位正文）→
+    入队 transcribe；转写完成后回填 novel.txt，之后走现有小说链。"""
+    from ..engine.projects import ASPECT_RATIOS
+    if aspect_ratio not in ASPECT_RATIOS:
+        raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
+    data = audio.file.read()
+    if len(data) > 200 * 1024 * 1024:
+        raise HTTPException(422, "音频超过 200MB 上限（请先切分）")
+    ext = (Path(audio.filename or "a.mp3").suffix.lstrip(".") or "mp3").lower()
+    if ext not in ("mp3", "wav", "m4a", "flac", "ogg"):
+        raise HTTPException(422, f"不支持的音频格式 .{ext}")
+    from ..engine.asr import TranscribeUnavailable  # noqa: 探测依赖
+    try:
+        from faster_whisper import WhisperModel  # noqa: F401 —— 缺包即 422
+    except (ModuleNotFoundError, TranscribeUnavailable) as e:
+        raise HTTPException(422, f"ASR 依赖未安装：{e}；"
+                                 "WSL `.venv/bin/pip install -e '.[asr]'` / "
+                                 "Windows `.venv-win/Scripts/pip.exe install -e '.[asr]'`")
+    proj = create_project(request.app.state.db, request.app.state.data_dir,
+                          name, aspect_ratio, "（有声书转写中，转写完成后自动回填正文）",
+                          default_shot_duration=default_shot_duration,
+                          target_duration=target_duration)
+    adir = Path(request.app.state.data_dir) / f"projects/{proj['slug']}/audio"
+    adir.mkdir(parents=True, exist_ok=True)
+    (adir / f"source.{ext}").write_bytes(data)
+    from ..engine.jobs import enqueue_job
+    enqueue_job(request.app.state.db, "transcribe", project_id=proj["id"],
+                payload={"project_id": proj["id"], "ext": ext})
+    return _public(proj)
+
+
 @router.post("/{project_id}/extract-comic-characters", status_code=202)
 def extract_comic_characters_route(project_id: int, request: Request):
     """P8-B 漫改模式：VLM 读前几页提取角色 → 建资产（队列任务）。"""
