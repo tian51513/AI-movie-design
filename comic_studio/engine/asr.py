@@ -16,7 +16,30 @@ class TranscribeUnavailable(Exception):
     pass
 
 
+def load_env_file(path) -> int:
+    """项目根 .env 加载（2026-09-05 用户需求）：缺失键注入进程环境，已存在键
+    不覆盖（系统级变量/setx 优先于文件）。只做 KEY=VALUE 与 # 注释，够用即止
+    ——不引 python-dotenv 依赖。返回注入数。"""
+    import os
+    f = Path(path)
+    if not f.exists():
+        return 0
+    n = 0
+    for ln in f.read_text(encoding="utf-8").splitlines():
+        ln = ln.strip()
+        if not ln or ln.startswith("#") or "=" not in ln:
+            continue
+        k, _, v = ln.partition("=")
+        k, v = k.strip(), v.strip().strip('"').strip("'")
+        if k and k not in os.environ and v:
+            os.environ[k] = v
+            n += 1
+    return n
+
+
 def _default_backend(audio_path: Path, model_size: str):
+    # 先吃项目根 .env（HF_TOKEN 等）——在 huggingface_hub 读环境之前
+    load_env_file(Path(__file__).resolve().parents[2] / ".env")
     try:
         from faster_whisper import WhisperModel
     except ModuleNotFoundError as e:

@@ -172,3 +172,26 @@ def test_from_audio_rejects_oversize(tmp_path, monkeypatch):
                    files={"audio": ("big.mp3", io.BytesIO(b"x" * (200 * 1024 * 1024 + 1)),
                                     "audio/mpeg")})
         assert r.status_code == 422
+
+
+def test_dotenv_loader_sets_missing_and_respects_existing(tmp_path, monkeypatch):
+    """P10 配套：.env 加载——缺失键注入、已存在键不覆盖（系统 env 优先）。"""
+    import os
+    from comic_studio.engine.asr import load_env_file
+    envf = tmp_path / ".env"
+    envf.write_text("HF_TOKEN=hf_test123\n"
+                    "# 注释行忽略\n"
+                    "HF_HUB_DISABLE_SYMLINKS_WARNING=1\n"
+                    "\n"
+                    "BAD_LINE_NO_EQ\n", encoding="utf-8")
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    monkeypatch.setenv("HF_HUB_DISABLE_SYMLINKS_WARNING", "0")  # 已存在→不覆盖
+    n = load_env_file(envf)
+    assert os.environ.get("HF_TOKEN") == "hf_test123"
+    assert os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] == "0"
+    assert n == 1  # 只注入了缺失的一个
+
+
+def test_dotenv_loader_missing_file_noop(tmp_path):
+    from comic_studio.engine.asr import load_env_file
+    assert load_env_file(tmp_path / "不存在.env") == 0

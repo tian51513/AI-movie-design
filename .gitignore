@@ -8,3 +8,5 @@ data/
 .venv-win/
 templates/workflows/_raw/
 projects/
+
+.env
