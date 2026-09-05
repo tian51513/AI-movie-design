@@ -176,4 +176,6 @@
 - **B1 时长字数基准** — `llm/storyboard.reestimate_durations`：⌈字数/4⌉+0.6×(句数-1)（中文 TTS 语速约 4 字/s；句数×2.5 无视句长，长句对白被 -shortest 截半）；B2 规则8/10：无对白镜按动作复杂度估（打斗 8~12s/全景 6~8s）、打包字数预算 ≤48 字
 - **B3 合成端兜底** — `merge._replace_audio(pad=)`：配音长于视频 → tpad 末帧定格补齐+warn（tpad 需重编码 libx264）；`subtitles.generate_srt` 有配音镜按 dialogue.mp3 实际时长排轴（与补长一致防漂移）；**快车道 director_mix 未做**（帧数轴重切代价大，当前主链逐镜合成）
 - **字幕烧录 Windows 修复** — `merge._burn_subtitles`：滤镜串里 `\` 是转义符+非 ASCII 项目名滤镜内打开不可靠（job 38665 三连败，WSL POSIX 侧从未触发）→ 滤镜只用裸 `subtitles.srt`、srt 目录走 `cwd=`；**edge-tts 补进 pyproject dependencies**（.venv-win 缺包致 Edge-TTS 回退全灭，WSL interop 可直装 `.venv-win/Scripts/pip.exe`）
-- 注意：估时改字数只影响新拆解项目；存量项目想生效需重拆或手改镜时长
+- **音频收口（2026-09-05 下午）** — `_replace_audio(target=)`：对白镜段长恒=配音+0.5s 呼吸（长者 tpad 末帧补齐、短者截尾收口——H3 口型表演撑满整镜的「嘴动无声尾巴」消灭）；字幕轴同规则镜像；`-t` 显式截断（copy+apad+shortest 组合实测熄火 48 字节挂死）；旧 `-shortest` 裸用曾把 17 个短对白镜截掉 ~40s（片长 197 vs 237）；搭配建议：无对白镜开 mute_quiet_shots 封 H3 原生杂音/乱语
+- **段时长 0=LLM 动态估时（2026-09-05 用户需求）** — 校验 0~15、PATCH 0 不动存量镜、拆解时无对白镜也用 LLM 估时钳 4~15；【时长基准】行注入拆解上下文（规则 8 的「上下文给出」此前是空头支票）
+- 注意：估时改字数只影响新拆解项目；存量项目想生效需重拆或手改镜时长；`merged` 阶段开放「重新合成」（POST /merge 放行 rendered/merged）
