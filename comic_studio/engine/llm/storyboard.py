@@ -315,7 +315,7 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     # 有声书对白规则（2026-09-05 真机：转写无引号 → LLM 不识台词 → dialogue
     # 空 → 提示词无对白）：音频项目注入「全篇皆对白」规则+说话人推断+主题
     _audio_rules = ""
-    from .asr import load_segments
+    from ..asr import load_segments
     _segs_for_rules = load_segments(data_dir, proj["slug"])
     if _segs_for_rules:
         _theme = ""
