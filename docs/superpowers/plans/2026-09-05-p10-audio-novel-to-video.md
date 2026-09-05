@@ -8,6 +8,8 @@
 
 **Tech Stack:** faster-whisper（A/B，词级时间戳，CPU/GPU）、pyannote.audio（C，可选）、ffmpeg（切片，复用 engine/merge.ffmpeg_bin）、现有 FastAPI+SQLite+Vue3。
 
+**执行状态：Phase A 已完成（2026-09-05，fede9bb..962167f，5 任务+终审修复波全 review clean）；B/C 待执行。**
+
 **Spec:** 2026-09-05 会话内可行性评估（对话记录）+ `docs/2026-09-05-feature-audit.md` §2 功能全景。评估结论：音频自带精确时长与成品配音两大优势；风险=转写人名错误/单人多角色/重依赖。
 
 ## Global Constraints
