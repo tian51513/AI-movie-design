@@ -80,7 +80,7 @@ def test_transcribe_job_fills_novel_and_segments(tmp_path, monkeypatch):
     adir.mkdir(parents=True)
     (adir / "source.mp3").write_bytes(b"f")
     monkeypatch.setattr(asr_mod, "transcribe",
-                        lambda p, model_size="large-v3", _backend=None: [
+                        lambda p, model_size="large-v3", _backend=None, progress=None: [
                             {"start": 0.0, "end": 2.0, "text": "林凡推门。"},
                             {"start": 2.2, "end": 5.0, "text": "雨夜。"}])
     jid = enqueue_job(db, "transcribe", project_id=pid,
@@ -210,3 +210,36 @@ def test_transcribe_progress_callback(tmp_path):
     assert len(segs) == 2
     assert seen == []   # 未提供回调时零开销
     transcribe(tmp_path / "a.mp3", _backend=lambda p, m, progress=None: [])
+
+
+def test_transcribe_job_emits_start_and_heartbeat(tmp_path, monkeypatch):
+    """handler 级护栏（2026-09-05 空打事故：asr 层心跳全绿但 handler 没挂上）：
+    开始日志必打；transcribe 收到 progress 回调且回调写日志。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.queue.worker import HANDLERS
+    import comic_studio.engine.pipeline_jobs as PJ  # noqa: F401 注册
+    from comic_studio.engine import asr as asr_mod
+    from comic_studio.engine.jobs import enqueue_job
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "心剧", "16:9", "占位")["id"]
+    adir = tmp_path / "data" / "projects" / "心剧" / "audio"
+    adir.mkdir(parents=True)
+    (adir / "source.mp3").write_bytes(b"f")
+    calls = {}
+
+    def fake_transcribe(path, model_size="large-v3", _backend=None, progress=None):
+        calls["progress"] = progress
+        if progress:
+            progress(25)
+        return [{"start": 0.0, "end": 1.0, "text": "甲"}]
+    monkeypatch.setattr(asr_mod, "transcribe", fake_transcribe)
+    jid = enqueue_job(db, "transcribe", project_id=pid,
+                      payload={"project_id": pid, "ext": "mp3"})
+    job = dict(db.connect().execute("SELECT * FROM jobs WHERE id=?", (jid,)).fetchone())
+    HANDLERS["transcribe"](db, tmp_path / "data", job, None)
+    assert callable(calls.get("progress"))
+    msgs = [r[0] for r in db.connect().execute(
+        "SELECT message FROM logs WHERE source='asr'").fetchall()]
+    assert any("转写任务开始" in m for m in msgs)
+    assert any("转写进行中…已 25 段" in m for m in msgs)

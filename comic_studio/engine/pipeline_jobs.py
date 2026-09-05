@@ -114,9 +114,18 @@ def handle_transcribe(db, data_dir, job, comfy):
         raise ValueError(f"项目不存在: {pid}")
     src = data_to_abs(data_dir, f"{asr_mod.audio_rel(proj['slug'])}"
                                 f"/source.{payload.get('ext', 'mp3')}")
+    # 开始日志（2026-09-05 真机：模型下载/加载期完全黑盒，「连开始日志都没有」）
+    emit_log(db, "asr", "info",
+             "转写任务开始（首次需下载/加载 large-v3 模型——下载期数分钟无进度提示）",
+             project_id=pid, job_id=job["id"])
     if not src.exists():
         raise ValueError(f"源音频缺失: {src}")
-    segs = asr_mod.transcribe(src)
+
+    def _heartbeat(n):
+        emit_log(db, "asr", "info", f"转写进行中…已 {n} 段",
+                 project_id=pid, job_id=job["id"])
+
+    segs = asr_mod.transcribe(src, progress=_heartbeat)
     asr_mod.save_segments(data_dir, proj["slug"], segs)
     full = "\n\n".join(x["text"] for x in segs)
     data_to_abs(data_dir, proj["novel_path"]).write_text(full, encoding="utf-8")
