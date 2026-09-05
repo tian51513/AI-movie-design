@@ -37,6 +37,25 @@ def load_env_file(path) -> int:
     return n
 
 
+def _add_nvidia_dll_dirs() -> int:
+    """把 pip 装的 nvidia-cublas-cu12 / nvidia-cudnn-cu12 的 bin 目录加进
+    DLL 搜索路径（2026-09-05 真机：cublas64_12.dll 缺失——ctranslate2 GPU
+    模式必需，装在 site-packages 里 Windows 不会自动找到）。返回命中目录数。"""
+    import os
+    import sysconfig
+    sp = Path(sysconfig.get_paths()["purelib"])
+    n = 0
+    for pkg in ("cublas", "cudnn"):
+        base = sp / "nvidia" / pkg / "bin"
+        if base.is_dir():
+            try:
+                os.add_dll_directory(str(base))
+                n += 1
+            except OSError:
+                pass
+    return n
+
+
 def _default_backend(audio_path: Path, model_size: str, progress=None):
     # 先吃项目根 .env（HF_TOKEN 等）——在 huggingface_hub 读环境之前
     load_env_file(Path(__file__).resolve().parents[2] / ".env")
@@ -44,7 +63,14 @@ def _default_backend(audio_path: Path, model_size: str, progress=None):
         from faster_whisper import WhisperModel
     except ModuleNotFoundError as e:
         raise TranscribeUnavailable(_INSTALL_HINT) from e
-    model = WhisperModel(model_size, device="auto", compute_type="auto")
+    _add_nvidia_dll_dirs()
+    try:
+        model = WhisperModel(model_size, device="auto", compute_type="auto")
+    except RuntimeError as e:
+        # GPU 运行库缺失（cublas/cudnn DLL）→ 回退 CPU int8 保底转写
+        if not any(k in str(e).lower() for k in ("cublas", "cudnn", "cudart")):
+            raise
+        model = WhisperModel(model_size, device="cpu", compute_type="int8")
     segs, _info = model.transcribe(str(audio_path), language="zh",
                                    vad_filter=True, beam_size=5)
     out = []

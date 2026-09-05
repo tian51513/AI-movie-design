@@ -295,3 +295,30 @@ def test_retry_transcribe_endpoint(tmp_path):
         # 源音频缺失 → 422
         pid2 = create_project(db, tmp_path / "d", "无源剧", "16:9", "t")["id"]
         assert c.post(f"/api/projects/{pid2}/retry-transcribe").status_code == 422
+
+
+def test_gpu_dll_dirs_discovery_no_crash():
+    from comic_studio.engine.asr import _add_nvidia_dll_dirs
+    assert isinstance(_add_nvidia_dll_dirs(), int)
+
+
+def test_gpu_dll_fallback_to_cpu(tmp_path, monkeypatch):
+    """缺 cuBLAS/cuDNN 时回退 CPU int8（真机 2026-09-05 cublas64_12.dll），
+    而非直接失败——装齐 nvidia-cublas-cu12/cudnn-cu12 后自动走 GPU。"""
+    import sys, types
+    calls = []
+    stub = types.ModuleType("faster_whisper")
+
+    class WM:
+        def __init__(self, model_size, device="auto", compute_type="auto"):
+            calls.append((device, compute_type))
+            if device == "auto":
+                raise RuntimeError("Library cublas64_12.dll is not found or cannot be loaded")
+        def transcribe(self, *a, **k):
+            return iter([]), {}
+
+    stub.WhisperModel = WM
+    monkeypatch.setitem(sys.modules, "faster_whisper", stub)
+    segs = transcribe(tmp_path / "a.mp3")
+    assert segs == []
+    assert calls == [("auto", "auto"), ("cpu", "int8")]
