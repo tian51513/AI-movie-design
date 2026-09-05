@@ -20,7 +20,8 @@ def test_action_by_stage(tmp_path):
     db, pid = _proj(tmp_path)
     assert next_action(db, tmp_path / "data", pid)["action"] == "analyze"
     set_stage(db, pid, "analyzed")
-    assert next_action(db, tmp_path / "data", pid)["action"] == "gen_refs"
+    # 2026-09-05 语义修正：0 资产明确 wait（旧期望 gen_refs 实为「入队 0 张」空转）
+    assert next_action(db, tmp_path / "data", pid)["action"] == "wait"
     set_stage(db, pid, "assets_ready")
     assert next_action(db, tmp_path / "data", pid)["action"] == "split"
 
