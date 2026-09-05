@@ -326,7 +326,7 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
 
             "\n\n【有声书对白规则——本文来自语音转写，全篇皆对白】\n"
             "- text_span 里的每一句话都是人物台词：必须把本镜全部语句逐字录入 "
-            "dialogue 字段（[{"speaker","line"}]），没有引号也要照录\n"
+            "dialogue 字段（每条含 speaker 与 line），没有引号也要照录\n"
             "- 说话人按语境推断：自称（妈妈/老师）或称呼对方（儿子/宝贝）者即该角色；"
             "无法判断时按上下文交替惯例\n"
             "- 台词是这类项目的核心内容，漏录=成片无对白无口型"
