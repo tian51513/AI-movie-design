@@ -679,7 +679,10 @@
   <main v-else>
     <p><a href="#" @click.prevent="back">← 返回</a></p>
 
-    <h2>{{ project.name }} <span class="pill">{{ project.aspect_ratio }}</span>
+    <h2>{{ project.name }} <span class="pill" style="cursor:pointer;background:#14532d;color:#86efac"
+              title="查看项目正文（上传的小说 / 音频转写文本）"
+              @click="openNovel">📄 正文</span>
+        <span class="pill">{{ project.aspect_ratio }}</span>
         <span class="pill">{{ stageName(project.stage) }}</span>
         <span v-if="project.comic_mode==='motion_comic'" class="pill"
               style="background:#164e63;color:#67e8f9"

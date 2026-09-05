@@ -68,6 +68,7 @@ function data() {
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
       optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文',
       describe_shot: 'VLM 读图' },  // L4：路由标签补全
+    novelOpen: false, novelInfo: {text: '', char_count: 0, from_audio: false},
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     // 日志折叠（2026-09-01 移动版）：桌面默认展开、窄屏默认折叠（详情页缩短，成片/视频优先露出）
     logsOpen: (typeof window !== 'undefined' && window.matchMedia)
@@ -530,6 +531,12 @@ const methods = {
       gen_prompts: '生成提示词', gate2: '提示词检查', render: '批量渲染', gate3: '过门3',
       merge: '合成成片', done: '已完成',
       describe_shots: 'VLM 读图' }[a.action] || a.action;  // M19：漫画项目角标不再显英文原词
+  },
+  async openNovel() {
+    const r = await fetch(`/api/projects/${this.project.id}/novel-text`);
+    if (!r.ok) { alert(await r.text()); return; }
+    this.novelInfo = await r.json();
+    this.novelOpen = true;
   },
   async startMerge() {
     const r = await fetch(`/api/projects/${this.project.id}/merge`, {method: 'POST'});

@@ -190,3 +190,32 @@ def test_patch_autopilot_off_stops_jobs(tmp_path):
         j3 = jobs_mod.enqueue_job(db, "gen_prompt", project_id=pid, payload={})
         assert c.patch(f"/api/projects/{pid}", json={"autopilot": True}).status_code == 200
         assert conn.execute("SELECT status FROM jobs WHERE id=?", (j3,)).fetchone()[0] == "pending"
+
+
+def test_novel_text_endpoint(tmp_path, monkeypatch):
+    """2026-09-05 用户需求：详情页查看正文（上传小说/音频转写通用）。
+    返回文本+字数+来源标记；正文文件缺失 404。"""
+    with _client(tmp_path) as c:
+        pid = _upload(c, text="林凡推门而入，雨水顺着发梢滴落。他愣住了。").json()["id"]
+        r = c.get(f"/api/projects/{pid}/novel-text")
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert "林凡推门" in body["text"]
+        assert body["char_count"] == len("林凡推门而入，雨水顺着发梢滴落。他愣住了。")
+        assert body["from_audio"] is False
+        # 音频项目标记（桩模块过依赖探测——Ruling-1 惯例）
+        import io as _io
+        import sys as _sys
+        import types as _types
+        _stub = _types.ModuleType("faster_whisper")
+        _stub.WhisperModel = object
+        monkeypatch.setitem(_sys.modules, "faster_whisper", _stub)
+        r2 = c.post("/api/projects/from-audio",
+                    data={"name": "音剧", "aspect_ratio": "16:9"},
+                    files={"audio": ("a.mp3", _io.BytesIO(b"f"), "audio/mpeg")})
+        pid2 = r2.json()["id"]
+        body2 = c.get(f"/api/projects/{pid2}/novel-text").json()
+        assert body2["from_audio"] is True
+        # 删除正文文件 → 404
+        (tmp_path / "data" / "projects" / "测试剧" / "novel.txt").unlink()
+        assert c.get(f"/api/projects/{pid}/novel-text").status_code == 404

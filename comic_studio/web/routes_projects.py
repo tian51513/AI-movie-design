@@ -191,6 +191,25 @@ def create_from_comic(request: Request,
     return _public(proj)
 
 
+@router.get("/{project_id}/novel-text")
+def novel_text(request: Request, project_id: int):
+    """2026-09-05 用户需求：详情页查看正文（上传小说/音频转写通用）。
+    from_audio=源音频在盘（转写正文）；文件缺失 404。"""
+    db = request.app.state.db
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    from ..engine.paths import data_to_abs
+    f = data_to_abs(request.app.state.data_dir, proj["novel_path"])
+    if not f.exists():
+        raise HTTPException(404, "正文文件缺失（转写未完成或已删除）")
+    text = f.read_text(encoding="utf-8")
+    adir = data_to_abs(request.app.state.data_dir,
+                       f"projects/{proj['slug']}/audio")
+    from_audio = adir.is_dir() and next(adir.glob("source.*"), None) is not None
+    return {"text": text, "char_count": len(text), "from_audio": from_audio}
+
+
 @router.post("/from-audio", status_code=201)
 def create_from_audio(request: Request, name: str = Form(...),
                       aspect_ratio: str = Form("9:16"),
