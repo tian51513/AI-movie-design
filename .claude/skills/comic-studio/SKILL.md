@@ -5,7 +5,7 @@ description: comic_studio（漫剧工坊）项目全流程操作手册——开�
 
 # comic_studio 漫剧工坊 · 项目 Skill
 
-小说/主题/漫画 → 全自动漫剧视频生产线。FastAPI + 纯 engine + SQLite + Vue3 单页 + ComfyUI + 本地/云端 LLM。
+小说/主题/漫画/有声书 → 全自动漫剧视频生产线。FastAPI + 纯 engine + SQLite + Vue3 单页 + ComfyUI + 本地/云端 LLM。
 
 ## 文档地图（按需深读，一处一层）
 
@@ -34,8 +34,8 @@ description: comic_studio（漫剧工坊）项目全流程操作手册——开�
 
 ## 生产线总览（细节见 REFERENCE.md）
 
-**四类项目同一终点 merged，路径两类：**
-- 小说/主题：`created→analyze→gen_refs→门1→assets_ready→split→gen_prompts→门2→storyboard_ready→render→门3→rendered→merge→merged`
+**五类入口同一终点 merged，路径两类：**
+- 小说/主题/**🎧有声书**（上传音频→transcribe 回填正文，之后同小说链；**分镜时长=音频实测段**；转写未完成守卫拦分析；转写期间全队列串行）：`created→[transcribe]→analyze→gen_refs→门1→assets_ready→split→gen_prompts→门2→storyboard_ready→render→门3→rendered→merge→merged`
 - 漫画（动态漫/漫改）：导入直达 `storyboard_ready→describe_shots(读图+提角色+提示词)→[漫改 gen_refs]→render→门3→merge`
 
 **autopilot（🚀 一键出片）**：3s 巡检幂等续跑；失败守卫（批次失败不重烧等手动、单镜失败跳过推进）；跨类型在飞感知（重渲染未收尾不门3/不合成）；merged 自动关。
@@ -47,6 +47,7 @@ description: comic_studio（漫剧工坊）项目全流程操作手册——开�
 ## 常见操作 Playbook
 
 1. **出一部片**：创建项目（段时长留 0）→ 🚀 一键出片 → 等 merged → output/epNNN.mp4
+1b. **有声书**：🎧 上传音频 → 等「转写完成」日志（正文非占位）→ 检查人名 → 一键出片（配音暂为 TTS，原声直用= P10B 未做）
 2. **重合成**（修了合成侧问题）：merged 阶段「🎬 重新合成」——merge 任务会自动重生 TTS+字幕再拼
 3. **换角色音色**：🎭 角色配音面板换绑 → 「重新合成」（配音自动重生）；御姐系预设音色偏气声淡，要情绪选浪漫女声/元气少女类
 4. **暂停介入**：⏹ 停止自动（联动全停）→ 改提示词/分镜/时长 → 再点一键出片续跑

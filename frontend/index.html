@@ -112,16 +112,18 @@
   <main v-if="view==='guide'" style="max-width:960px;margin:0 auto;padding:20px">
     <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);border-radius:16px;padding:32px 28px;margin-bottom:20px;border:1px solid #2a2a4a;box-shadow:0 8px 32px rgba(0,0,0,.4)">
       <h1 style="margin:0;font-size:28px;background:linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🎬 漫剧工坊</h1>
-      <p style="margin:8px 0 0;font-size:15px;color:#94a3b8">小说 / 主题 / 漫画 → 全自动漫剧视频生产线</p>
+      <p style="margin:8px 0 0;font-size:15px;color:#94a3b8">小说 / 主题 / 漫画 / 有声书 → 全自动漫剧视频生产线</p>
       <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
         <span style="background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#60a5fa">📚 小说改编</span>
         <span style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#a78bfa">🎨 主题生成</span>
         <span style="background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#f472b6">🖼 漫画转视频</span>
+        <span style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#34d399">🎧 有声书转视频</span>
       </div>
     </div>
 
     <!-- 三种项目类型 -->
     <h2 style="color:#e2e8f0;border-left:4px solid #60a5fa;padding-left:12px;margin:24px 0 12px">📁 项目类型与操作流程</h2>
+    <!-- 四种项目类型（2026-09-05 增🎧有声书） -->
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:24px">
       <!-- 小说改编 -->
@@ -140,6 +142,22 @@
         </div>
         <div style="margin-top:10px;padding:8px;background:rgba(96,165,250,.08);border-radius:6px;font-size:12px;color:#93c5fd">
           💡 支持<b>多章节</b>（第X章切分）和<b>分镜数</b>指定
+        </div>
+      </div>
+
+      <!-- 有声书导入（P10A 2026-09-05） -->
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:12px;padding:18px;border-top:3px solid #34d399">
+        <h3 style="margin:0 0 10px;color:#34d399">🎧 有声书导入</h3>
+        <div style="font-size:13px;color:#cbd5e1;line-height:2">
+          <div>① <b>上传音频</b>（mp3/wav/m4a，≤200MB）</div>
+          <div>② 自动 <b>ASR 转写</b>回填正文（等 job 完成）</div>
+          <div style="color:#64748b">─────────</div>
+          <div>③ 之后的流程与小说<b>完全相同</b>（分析→参考图→分镜…）</div>
+          <div>④ <b>分镜时长 = 音频实测时长</b>（自动，无需设置）</div>
+          <div>⑤ 逐镜渲染 → 合成成片</div>
+        </div>
+        <div style="margin-top:10px;padding:8px;background:rgba(52,211,153,.08);border-radius:6px;font-size:12px;color:#6ee7b7">
+          💡 需装 asr extra；<b>转写期间全队列串行</b>（长书先切分）；转写未完成点一键出片会被拦
         </div>
       </div>
 
@@ -253,7 +271,7 @@
     <div class="grid-2">
       <!-- 小说流程 -->
       <div style="background:linear-gradient(180deg,#1a1f27 0%,#1e2632 100%);border:1px solid #2c3540;border-radius:12px;padding:18px">
-        <h3 style="margin:0 0 12px;color:#60a5fa">📚 小说 / 主题项目</h3>
+        <h3 style="margin:0 0 12px;color:#60a5fa">📚 小说 / 主题 / 🎧 有声书项目</h3>
         <div style="font-size:12px;color:#cbd5e1">
           <div style="display:flex;align-items:center;gap:6px;margin:6px 0;padding:6px 10px;background:rgba(96,165,250,.06);border-radius:6px">
             <span style="color:#60a5fa">①</span> LLM 分析 → 提取角色/场景/道具 + 自动匹配音色

@@ -5,6 +5,7 @@
 ## 1. 阶段状态机与门禁
 
 - stage：`created → analyzed → assets_ready → storyboard_ready → rendered → merged`（`rendering` 是死枚举，从未写入）
+- 🎧 有声书（P10A）：created 起 transcribe job 回填正文后才放行分析（源音频在+segments 缺 → wait/409）；analyzed 零资产 → wait 不空转；约定路径 `projects/<slug>/audio/{source.*,segments.json}`；拆解时长=音频段实测（音频项目禁 target 均摊）
 - 漫画导入（motion_comic 动态漫 / film_adaptation 漫改）直达 storyboard_ready
 - 唯一写入口 `engine/projects.set_stage`；门禁 `engine/pipeline_gates.gate_pass`（GateStageError=409）
   - 门1：全部角色资产有 views 图 → assets_ready
@@ -89,7 +90,7 @@ fl2v/i2v/t2v（无音频槽）→ 单说话人+绑音色 → qwen_tts_clone 整�
 → 无台词镜可选静音（mute_quiet_shots）→ concat（或 xfade，默认关）
 → 字幕烧录（滤镜裸名+cwd；路径全绝对化）→ output/epNNN.mp4（merged 可重合成出新号）
 ```
-已知坑（审计中危未修）：epNNN=len+1 非 max+1（删部分旧片会覆盖正片）；xfade 时 SRT 不扣交叠；硬拼 concat 无 _ensure_audio；快车道 director_mix 未适配收口。全清单见 docs/2026-09-05-feature-audit.md §4。
+已修（2026-09-05 审计批次）：epNNN=max+1（merge.next_ep_number，快车道共用）；xfade 时 SRT 扣 0.3s 交叠；normalize 无轨补 anullsrc；xfade _sil 进临时目录。**仍开放**：快车道 director_mix 未适配音频收口（TTS 超 span 截断仅 warn）；>120 段 xfade 回退硬拼时 SRT 仍扣交叠（罕见）。全清单 docs/2026-09-05-feature-audit.md §4。
 
 ## 9. 队列与资源
 
@@ -109,7 +110,8 @@ fl2v/i2v/t2v（无音频槽）→ 单说话人+绑音色 → qwen_tts_clone 整�
 ## 11. API 速查（常用）
 
 ```
-POST /api/projects（上传）· /from-theme[/preview] · /from-comic
+POST /api/projects（上传）· /from-theme[/preview] · /from-comic · /from-audio（🎧，P10A）
+POST transcribe 经 from-audio 自动入队（无手动重发入口——失败重传项目）
 POST /api/projects/{id}/analyze | /split-storyboards | /describe-shots | /merge | /tts | /stop-jobs
 POST /api/shots/{id}/render | /regen-prompt   · POST /api/projects/{id}/generate-prompts | /render-batch
 PATCH /api/projects/{id}（autopilot/style/画幅/段时长/render_mode…）
