@@ -382,6 +382,14 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     if n_dur:
         emit_log(db, "storyboard", "info",
                  f"对白镜时长重估：{n_dur} 镜（句数×2.5s，钳 4~15）", project_id=project_id)
+    # P10A（2026-09-05）：音频实测时长为最终权威——段文件存在时覆盖估时
+    from ..asr import load_segments, span_duration_for  # 惰性，避免无 P10 项目时的开销
+    _segs = load_segments(data_dir, proj["slug"])
+    if _segs:
+        for s in staged:
+            d = span_duration_for(_segs, s.text_span)
+            if d:
+                s.duration = min(15.0, max(4.0, d))
     ids = persist_shots(db, project_id, staged)
     conn = db.connect()
     # 尾帧接力链（连贯性① 2026-08-26）：全顺序镜自动链接（含跨块衔接——

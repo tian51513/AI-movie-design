@@ -97,6 +97,31 @@ def test_transcribe_job_fills_novel_and_segments(tmp_path, monkeypatch):
     assert n == 1
 
 
+# ---- P10 Task 4: 分镜时长音频驱动（segments 对齐 text_span 覆盖估时）----
+
+def test_span_duration_matching(tmp_path):
+    from comic_studio.engine.asr import span_duration_for
+    segs = [{"start": 0.0, "end": 6.4, "text": "林凡推门而入，雨水顺着发梢滴落"},
+            {"start": 6.5, "end": 9.0, "text": "他愣住了"}]
+    assert span_duration_for(segs, "林凡推门而入，雨水顺着发梢滴落") == 6.4
+    assert span_duration_for(segs, "林凡推门而入 雨水顺着发梢滴落 他愣住了") == 9.0  # 跨段并集
+    assert span_duration_for(segs, "完全无关的句子") is None
+
+
+def test_split_uses_audio_durations(tmp_path):
+    from tests.test_duration_control import CHUNK, _proj  # 复用 FakeLLM 模板
+    from tests.test_storyboard_split import FakeLLM
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    from comic_studio.engine.shots import list_shots
+    from comic_studio.engine import asr as asr_mod
+    db, pid = _proj(tmp_path)
+    asr_mod.save_segments(tmp_path / "data", "时长剧",
+                          [{"start": 0.0, "end": 8.0, "text": "推门"}])
+    split_storyboards(db, tmp_path / "data", pid,
+                      client_factory=lambda t: FakeLLM([CHUNK.format(desc="推门", dur=5)]))
+    assert [s["duration"] for s in list_shots(db, pid)] == [8.0]  # 音频覆盖 LLM 估时
+
+
 def test_from_audio_rejects_oversize(tmp_path, monkeypatch):
     _stub_faster_whisper(monkeypatch)
     from fastapi.testclient import TestClient

@@ -68,3 +68,20 @@ def load_segments(data_dir, slug: str) -> list | None:
         return json.loads(f.read_text(encoding="utf-8"))
     except ValueError:
         return None
+
+
+def _norm(t: str) -> str:
+    return "".join(ch for ch in t if ch.isalnum())
+
+
+def span_duration_for(segments: list, text: str):
+    """镜文本 → 音频段时长并集（P10A：转写文本与 text_span 同源，规范化后
+    子串匹配可靠）。返回 None=未命中（调用方回落估时公式）。"""
+    key = _norm(text)
+    if not key:
+        return None
+    hits = [s for s in segments if _norm(s["text"]) and (
+        key in _norm(s["text"]) or _norm(s["text"]) in key)]
+    if not hits:
+        return None
+    return max(s["end"] for s in hits) - min(s["start"] for s in hits)
