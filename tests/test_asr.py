@@ -381,7 +381,7 @@ def test_cleanup_transcription_by_llm(tmp_path):
             return ('{"1": "", "2": "儿子 你这是怎么了", '
                     '"3": "承不住了 你想妈帮你吗"}', {})
     res = cleanup_transcription(db, tmp_path / "d", pid, FakeLLM())
-    assert res == {"removed": 1, "segments": 2}
+    assert res == {"removed": 1, "segments": 2, "mode": "conservative"}
     segs = load_segments(tmp_path / "d", "校剧")
     assert [s["text"] for s in segs] == ["儿子 你这是怎么了", "承不住了 你想妈帮你吗"]
     assert segs[0]["start"] == 1.2 and segs[0]["end"] == 3.0   # 时间轴保留
@@ -415,7 +415,7 @@ def test_asr_cleanup_endpoint(tmp_path, monkeypatch):
                                start_workers=False)) as c:
         r = c.post(f"/api/projects/{pid}/asr-cleanup")
         assert r.status_code == 200, r.text
-        assert r.json() == {"removed": 1, "segments": 0}
+        assert r.json() == {"removed": 1, "segments": 0, "mode": "conservative"}
         # 无转写项目 → 409
         pid2 = create_project(db, tmp_path / "d", "无段剧", "16:9", "t")["id"]
         assert c.post(f"/api/projects/{pid2}/asr-cleanup").status_code == 409
