@@ -37,6 +37,7 @@ function data() {
     newMode: 'upload', themes: [], newThemeId: '', newProtagonist: '', newWordCount: '',
     newExtraPrompt: '', themePreview: '', themePreviewing: false,
     createOpen: false, projPage: 1, projPageSize: 12, comicFiles: [],
+    audioFile: null,  // P10A 有声书 tab（单文件）
     comicMode: 'motion_comic',
     describingShots: new Set(),  // 正在读图的镜 id 集合（支持多镜并发提交）
     projectsView: (() => { try { return localStorage.getItem('cs.projectsView') || 'grid'; } catch (e) { return 'grid'; } })(),
@@ -970,6 +971,23 @@ const methods = {
       this.newName = ''; this.comicFiles = []; this.createOpen = false;
       await this.refresh();
     } catch (e) { alert('导入失败：' + e); }
+    this.creating = false;
+  },
+  async fromAudio() {  // P10A 有声书：上传源音频 → 后端建项目并入队 transcribe
+    if (!this.audioFile) return;
+    this.creating = true;
+    try {
+      const fd = new FormData();
+      fd.append('name', this.newName || this.audioFile.name.replace(/\.\w+$/, ''));
+      fd.append('aspect_ratio', this.newRatio);
+      fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0
+      fd.append('target_duration', Number(this.newTotalDur) || 0);
+      fd.append('audio', this.audioFile);
+      const resp = await fetch('/api/projects/from-audio', { method: 'POST', body: fd });
+      if (!resp.ok) { alert(await resp.text()); return; }  // L19：失败保留表单可改后重试
+      this.newName = ''; this.audioFile = null; this.createOpen = false;
+      await this.refresh();
+    } catch (e) { alert('上传失败：' + e); }
     this.creating = false;
   },
   async extractCharacters() {

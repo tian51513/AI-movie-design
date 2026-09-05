@@ -1100,6 +1100,8 @@
                   :style="newMode==='theme'?'background:#16a34a':''">🎨 主题生成</button>
           <button type="button" style="margin-left:4px" @click="newMode='comic'"
                   :style="newMode==='comic'?'background:#16a34a':''">🖼 漫画导入</button>
+          <button type="button" style="margin-left:4px" @click="newMode='audio'"
+                  :style="newMode==='audio'?'background:#16a34a':''">🎧 有声书</button>
         </p>
         <!-- 三 tab 公共字段（名称/画幅/段时长/总时长）——原来每个表单各一份 -->
         <p><input v-model="newName" :placeholder="newMode==='theme' ? '漫剧名称（留空用主题名）' : '漫剧名称'"></p>
@@ -1124,6 +1126,17 @@
           <p class="muted" style="font-size:12px">已选 {{ comicFiles.length }} 页（一图一镜）</p>
           <p><button :disabled="creating || !comicFiles.length">
              {{ creating ? '创建中…' : '🖼 导入漫画' }}</button></p>
+        </form>
+
+        <form v-if="newMode==='audio'" @submit.prevent="fromAudio">
+          <p class="muted" style="font-size:12px">
+             faster-whisper 自动转写为正文（建项目后后台转写，完成后走既有分析/分镜链）</p>
+          <p><input type="file" accept="audio/*" required @change="f => audioFile = f.target.files[0]"
+                    style="width:90%" title="mp3/wav/m4a 等（≤200MB）"></p>
+          <p class="muted" style="font-size:12px" v-if="audioFile">
+             已选 {{ audioFile.name }}（{{ (audioFile.size/1048576).toFixed(1) }} MB）</p>
+          <p><button :disabled="creating || !audioFile">
+             {{ creating ? '上传中…（大文件请耐心）' : '🎧 上传有声书' }}</button></p>
         </form>
 
         <template v-if="newMode==='theme'">
