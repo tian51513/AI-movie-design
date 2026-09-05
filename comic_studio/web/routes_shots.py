@@ -354,26 +354,12 @@ def stop_jobs(request: Request, project_id: int):
         conn.commit()
         emit_log(db, "system", "info", "停止任务：已自动关闭一键出片", project_id=project_id)
     comfy_err = ""
-    try:
-        from ..engine.comfy.client import ComfyClient
-        from ..engine.settings import get_setting
-        base = (get_setting(db, "comfy") or {}).get("base_url")
-        if base:
-            comfy = ComfyClient(base)
-            # M13（2026-09-05 审计）：clear_queue 是全局的——误删他项目排在
-            # ComfyUI 侧的任务。改为：只删本项目提交的 prompt_id；仅当本
-            # 项目任务在执行时才 interrupt（全局手段，先确认是自己的）
-            ids = [r["comfy_prompt_id"] for r in db.connect().execute(
-                "SELECT comfy_prompt_id FROM jobs WHERE project_id=? "
-                "AND comfy_prompt_id IS NOT NULL", (project_id,)).fetchall()]
-            comfy.delete_from_queue(ids)
-            running, _pending = comfy._queue_state()
-            if running & set(ids):
-                comfy.interrupt()
-    except Exception as exc:  # ComfyUI 不在线也允许取消本地任务
-        comfy_err = f"（ComfyUI 侧清理失败：{exc}）"
+    # 温和停止（2026-09-05 用户决策 A）：不再 interrupt / 删 ComfyUI 队——
+    # 部分版本 interrupt 会崩 ComfyUI 实例；在跑任务自然跑完并落盘
+    #（M13 定向删队随之退役），pending 已取消、running 跑完即止不重试
     emit_log(db, "system", "info",
-             f"项目任务停止：取消待跑 {result['cancelled']}、停止在跑 {result['stopping']}{comfy_err}",
+             f"项目任务停止：取消待跑 {result['cancelled']}、停止在跑 {result['stopping']}"
+             "（ComfyUI 在跑任务将跑完落盘，不打断）",
              project_id=project_id)
     return result
 

@@ -11,7 +11,7 @@ from comic_studio.engine.asr import (TranscribeUnavailable, transcribe,
 
 def test_transcribe_normalizes_and_merges(tmp_path):
     fake = [(0.0, 2.0, "  你好 "), (2.1, 4.5, "世界"), (10.0, 12.0, "下一段")]
-    segs = transcribe(tmp_path / "a.mp3", _backend=lambda p, m: fake)
+    segs = transcribe(tmp_path / "a.mp3", _backend=lambda p, m, progress=None: fake)
     assert segs == [{"start": 0.0, "end": 4.5, "text": "你好 世界"},
                     {"start": 10.0, "end": 12.0, "text": "下一段"}]  # <0.2s 间隙合并
 
@@ -20,7 +20,7 @@ def test_transcribe_unavailable_message(tmp_path, monkeypatch):
     def boom(path, model):
         raise ModuleNotFoundError("No module named 'faster_whisper'")
     with pytest.raises(TranscribeUnavailable, match="pip install -e .\\[asr\\]"):
-        transcribe(tmp_path / "a.mp3", _backend=boom)
+        transcribe(tmp_path / "a.mp3", _backend=lambda p, m, progress=None: boom(p, m))
 
 
 def test_segments_roundtrip(tmp_path):
@@ -198,18 +198,18 @@ def test_dotenv_loader_missing_file_noop(tmp_path):
 
 
 def test_transcribe_progress_callback(tmp_path):
-    """转写心跳（真机 2026-09-05「看不到等转写的日志」）：backend 逐段回调，
-    默认每 25 段一跳。"""
+    """转写心跳（真机 2026-09-05 空打事故：asr 层从未接 progress——护栏硬化：
+    transcribe 必须把 progress 转发给 backend 且透传回调）。"""
     seen = []
     def fake(path, model, progress=None):
-        for i in range(60):
-            if progress and i % 25 == 0 and i:
-                progress(i)
+        assert progress is not None, "transcribe 未转发 progress"
+        for i in (25, 50):
+            progress(i)
         return [(0.0, 1.0, "a"), (1.5, 2.5, "b")]
-    segs = transcribe(tmp_path / "a.mp3", _backend=fake)
+    segs = transcribe(tmp_path / "a.mp3", _backend=fake,
+                      progress=lambda n: seen.append(n))
     assert len(segs) == 2
-    assert seen == []   # 未提供回调时零开销
-    transcribe(tmp_path / "a.mp3", _backend=lambda p, m, progress=None: [])
+    assert seen == [25, 50]   # 回调逐次透传
 
 
 def test_transcribe_job_emits_start_and_heartbeat(tmp_path, monkeypatch):

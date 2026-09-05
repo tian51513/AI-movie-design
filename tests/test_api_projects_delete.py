@@ -68,7 +68,7 @@ def test_delete_cancels_and_interrupts_running(tmp_path):
             jobs.create_job(db, project_id=pid, jtype="gen_shot")  # lifespan 后造 running
             r = c.delete(f"/api/projects/{pid}")
         assert r.status_code == 200
-        assert mock.interrupts == 1  # 在跑渲染向 ComfyUI 发了 interrupt
+        assert mock.interrupts == 0  # 温和停止（用户决策 A）：删除项目不打断 ComfyUI
         left = db.connect().execute(
             "SELECT COUNT(*) c FROM jobs WHERE project_id=?", (pid,)).fetchone()["c"]
         assert left == 0  # 任务行随项目清掉

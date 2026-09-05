@@ -165,5 +165,33 @@ def test_stop_jobs_targeted_queue_delete(tmp_path):
             set_setting(db, "comfy", {"base_url": m.base_url})
             r = c.post(f"/api/projects/{pid}/stop-jobs")
             assert r.status_code == 200
-            assert m.queue_deletes == ["px"]      # 只删自己
-            assert m.interrupts == 1              # 自己在跑 → interrupt
+            assert m.interrupts == 0             # 温和停止（决策 A）：不打断
+            assert m.queue_deletes == []          # 也不删 ComfyUI 队
+
+
+def test_stop_jobs_gentle_no_comfy_touch(tmp_path, monkeypatch):
+    """温和停止（2026-09-05 用户决策 A）：stop-jobs 不再 interrupt/删队——
+    ComfyUI 在跑任务跑完落盘（部分版本 interrupt 会崩实例）。"""
+    import sys
+    sys.path.insert(0, "tests")
+    from comfy_mock import comfy_server
+    from comic_studio.engine import jobs as jobs_mod
+    with _client(tmp_path) as c:
+        pid = _mk(c, "温停剧")
+        db = c.app.state.db
+        jid = jobs_mod.enqueue_job(db, "gen_shot", project_id=pid, payload={})
+        conn = db.connect()
+        conn.execute("UPDATE jobs SET status='running', comfy_prompt_id='px' "
+                     "WHERE id=?", (jid,))
+        conn.commit()
+        with comfy_server("ok", queue_running=["px"],
+                          queue_pending=["py"]) as m:
+            from comic_studio.engine.settings import set_setting
+            set_setting(db, "comfy", {"base_url": m.base_url})
+            r = c.post(f"/api/projects/{pid}/stop-jobs")
+            assert r.status_code == 200
+            assert m.interrupts == 0           # 不打断在跑
+            assert m.queue_deletes == []       # 不删 ComfyUI 队
+        assert db.connect().execute(
+            "SELECT autopilot FROM projects WHERE id=?",
+            (pid,)).fetchone()[0] == 0         # M2 自动关 autopilot 保留

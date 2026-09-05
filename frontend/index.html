@@ -876,7 +876,7 @@
         · ComfyUI <span :style="{color: queue.comfy_ok?'#4ade80':'#f87171'}">●</span></span>
        <button v-if="queue.pending || queue.running" @click="clearQueue"
                style="background:#dc2626;font-size:12px;padding:3px 10px"
-               title="取消本项目全部待跑/在跑任务（不清 ComfyUI 侧队列——需连 ComfyUI 排队一起清用「停止任务」）">🗑 清空队列</button></p>
+               title="取消本项目全部待跑/在跑任务（温和停止：ComfyUI 正在跑的任务会跑完落盘，不打断不崩实例）">🗑 清空队列</button></p>
     <!-- 分镜模式 -->
     <template v-if="detailMode==='shots'">
     <p v-if="project.stage==='assets_ready' || project.stage==='storyboard_ready'">

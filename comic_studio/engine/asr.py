@@ -37,7 +37,7 @@ def load_env_file(path) -> int:
     return n
 
 
-def _default_backend(audio_path: Path, model_size: str):
+def _default_backend(audio_path: Path, model_size: str, progress=None):
     # 先吃项目根 .env（HF_TOKEN 等）——在 huggingface_hub 读环境之前
     load_env_file(Path(__file__).resolve().parents[2] / ".env")
     try:
@@ -47,15 +47,21 @@ def _default_backend(audio_path: Path, model_size: str):
     model = WhisperModel(model_size, device="auto", compute_type="auto")
     segs, _info = model.transcribe(str(audio_path), language="zh",
                                    vad_filter=True, beam_size=5)
-    return [(s.start, s.end, s.text) for s in segs]
+    out = []
+    for s in segs:   # 生成器逐段产出——每 25 段回调（长转写心跳日志）
+        out.append((s.start, s.end, s.text))
+        if progress and len(out) % 25 == 0:
+            progress(len(out))
+    return out
 
 
 def transcribe(audio_path: Path, model_size: str = "large-v3",
-               _backend=None) -> list[dict]:
-    """转写 → 归一化段列表（升序、<0.2s 间隙合并、文本首尾剥离）。"""
+               _backend=None, progress=None) -> list[dict]:
+    """转写 → 归一化段列表（升序、<0.2s 间隙合并、文本首尾剥离）。
+    progress(n)：每 25 段心跳回调（2026-09-05 真机：长转写无反馈）。"""
     backend = _backend or _default_backend
     try:
-        raw = backend(Path(audio_path), model_size)
+        raw = backend(Path(audio_path), model_size, progress=progress)
     except ModuleNotFoundError as e:
         # 注入后端/次级依赖缺失也归一为 TranscribeUnavailable（路由 422 指引）
         raise TranscribeUnavailable(f"{_INSTALL_HINT}（{e}）") from e

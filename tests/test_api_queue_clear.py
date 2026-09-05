@@ -31,7 +31,7 @@ def test_clear_queue_cancels_pending_and_interrupts_running(tmp_path):
             jobs.create_job(db, project_id=pid, jtype="gen_shot")
             r = c.delete(f"/api/projects/{pid}/queue")
         assert r.status_code == 200 and r.json()["cancelled"] == 4
-        assert mock.interrupts == 1  # running 的向 ComfyUI 发了 interrupt
+        assert mock.interrupts == 0  # 温和停止（用户决策 A）：不打断在跑
         left = db.connect().execute(
             "SELECT COUNT(*) c FROM jobs WHERE project_id=? AND status='pending'",
             (pid,)).fetchone()["c"]
@@ -62,3 +62,29 @@ def test_clear_queue_noop_when_empty(tmp_path):
     with c:
         r = c.delete(f"/api/projects/{pid}/queue")
     assert r.status_code == 200 and r.json()["cancelled"] == 0
+
+
+def test_clear_queue_gentle_no_interrupt(tmp_path):
+    """温和停止（用户决策 A）：清空队列同样不 interrupt——本地取消即止。"""
+    import sys
+    sys.path.insert(0, "tests")
+    from comfy_mock import comfy_server
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.settings import set_setting
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "温清剧", "16:9", "t")["id"]
+    jid = enqueue_job(db, "gen_shot", project_id=pid, payload={})
+    conn = db.connect()
+    conn.execute("UPDATE jobs SET status='running' WHERE id=?", (jid,))
+    conn.commit()
+    with comfy_server("ok") as m:
+        set_setting(db, "comfy", {"base_url": m.base_url})
+        from fastapi.testclient import TestClient
+        from comic_studio.web.app import create_app
+        with TestClient(create_app(db_path=tmp_path / "s.db", data_dir=tmp_path / "d",
+                                   start_workers=False)) as c:
+            r = c.delete(f"/api/projects/{pid}/queue")
+            assert r.status_code == 200
+        assert m.interrupts == 0

@@ -428,3 +428,126 @@ INFO:     127.0.0.1:63653 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
 INFO:     127.0.0.1:63653 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
 INFO:     127.0.0.1:63653 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
 INFO:     127.0.0.1:63653 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     Started server process [40908]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8190 (Press CTRL+C to quit)
+INFO:     127.0.0.1:61748 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61748 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61748 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61748 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61748 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61748 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61748 - "GET /vendor/vue.global.prod.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:61747 - "GET /static/app.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:61747 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61747 - "GET /api/projects/28 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61747 - "GET /api/projects/28/chapters HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61747 - "GET /api/projects/28/assets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61747 - "GET /api/projects/28/analyze/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:61747 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61747 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61747 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61747 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50899 - "PATCH /api/projects/28 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50899 - "GET /api/projects/28 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50899 - "GET /api/projects/28/chapters HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50899 - "GET /api/projects/28/assets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50899 - "GET /api/projects/28/analyze/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/shots HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52754 - "GET /api/projects/28/retry-transcribe HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:52754 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54813 - "POST /api/projects/28/retry-transcribe HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50900 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54772 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54772 - "GET /vendor/vue.global.prod.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:54785 - "GET /static/app.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:54785 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/chapters HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/assets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/analyze/status HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/logs?after=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/queue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/logs?after=227785 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54785 - "GET /api/projects/28/queue HTTP/1.1" 200 OK

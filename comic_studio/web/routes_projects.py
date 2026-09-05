@@ -75,18 +75,8 @@ def delete_project(request: Request, project_id: int):
     row = get_project(db, project_id)
     if row is None:
         raise HTTPException(404, "项目不存在")
-    running = db.connect().execute(
-        "SELECT 1 FROM jobs WHERE project_id=? AND status='running' "
-        "AND type='gen_shot' LIMIT 1", (project_id,)).fetchone()
-    if running:
-        from ..engine.settings import get_setting
-        base_url = (get_setting(db, "comfy") or {}).get("base_url")
-        if base_url:
-            from ..engine.comfy.client import ComfyClient
-            try:
-                ComfyClient(base_url).interrupt()
-            except Exception:
-                pass  # ComfyUI 不可达不阻塞删除
+    # 温和停止（2026-09-05 用户决策 A）：删除项目不再 interrupt ComfyUI
+    #（部分版本 interrupt 崩实例）——在跑任务写盘报错自然落 failed
     conn = db.connect()
     try:
         # 删除顺序按外键依赖：logs(job_id→jobs) 先于 jobs；

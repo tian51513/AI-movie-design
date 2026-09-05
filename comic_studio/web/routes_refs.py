@@ -107,22 +107,12 @@ def purge_jobs(request: Request, days: int = Query(default=7, ge=1, le=90)):
 
 @router.delete("/api/projects/{project_id}/queue")
 def clear_queue(request: Request, project_id: int):
-    """一键清空队列/取消任务：pending/running → cancelled；
-    running 的 gen_shot 先向 ComfyUI 发 /interrupt（掐断在跑的渲染）。"""
+    """一键清空队列/取消任务：pending/running → cancelled。
+    温和停止（2026-09-05 用户决策 A）：不向 ComfyUI 发 interrupt——在跑任务
+    跑完落盘（部分版本 interrupt 会崩实例）。"""
     db = request.app.state.db
     if get_project(db, project_id) is None:
         raise HTTPException(404, "项目不存在")
-    running_shots = db.connect().execute(
-        "SELECT id FROM jobs WHERE project_id=? AND status='running' "
-        "AND type='gen_shot'", (project_id,)).fetchall()
-    if running_shots:
-        base_url = (get_setting(db, "comfy") or {}).get("base_url")
-        if base_url:
-            from ..engine.comfy.client import ComfyClient
-            try:
-                ComfyClient(base_url).interrupt()
-            except Exception:
-                pass  # ComfyUI 不可达也不阻塞取消（本地行已无效）
     conn = db.connect()
     cur = conn.execute(
         "UPDATE jobs SET status='cancelled', error='手动取消', "
