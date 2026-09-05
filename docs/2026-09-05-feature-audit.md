@@ -90,7 +90,9 @@ created →[analyze]→ analyzed →[gen_refs]→ 门1 → assets_ready
 ## 4. 体检发现（分级）
 
 > 四路只读审查汇总，全部含 file:line 证据；行号以 master@1790e1f 为准。
-> **H1/H2/H3 与全部中危（M1~M20）已于当日修复**（§4 各条目随修复提交标注；低危仍开放择机）。
+> **H1/H2/H3 与全部中危（M1~M20）已于当日修复**；低危 L 系列随后清零。
+> **QC 复审（两路只读，282cb99..HEAD）**：有条件放行 → 遗留项已修——QC-A 漫画 stale 死循环（M1 引入的回归：describe 批量纳入 stale+写 ready）、QC-B 快车道 ep 编号 max+1（merge 抽 next_ep_number 共用）、QC-C 版本切换 unlink 容错、QC-D engine 级 TTS 互斥（tts.py _TTS_BUSY，手动 /tts 与 merge 任务双侧接线）、QC-E 手动 describe 路由按 routing、前端 QC N1 门1 死按钮/N2 停止自动文案去过诺。
+> **QC 遗留（记录在案）**：F——xfade 段数>120 回退硬拼时字幕仍扣 0.3s 交叠（需 merge/subtitles 共用谓词，>120 段罕见）；E 残留——extract_comic_characters 手动入口仍硬编码 gpu_llm_local（无对应路由键，本地 VLM 语义，接受）；_queue_state 为路由调用的私有方法（风格）；N3 h3_native_voice 布尔键渲染空标签行（外观）。
 
 ### 高（3）
 

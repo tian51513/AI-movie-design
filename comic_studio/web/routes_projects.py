@@ -197,14 +197,14 @@ def describe_shots_route(project_id: int, request: Request,
     proj = get_project(db, project_id)
     if proj is None:
         raise HTTPException(404, "项目不存在")
-    from ..engine.jobs import enqueue_job
+    from ..engine.pipeline_jobs import enqueue_llm_job
     payload = {"project_id": project_id}
     if shot_id:
         payload["shot_id"] = shot_id
-    jid = enqueue_job(db, "describe_shots", project_id=project_id,
-                      shot_id=shot_id if shot_id else None,
-                      resource="gpu_llm_local",
-                      payload=payload)
+    # QC-E：按 routing 定资源（此前硬编码 gpu_llm_local，配 online 时过度互斥）
+    jid = enqueue_llm_job(db, "describe_shots", project_id=project_id,
+                          shot_id=shot_id if shot_id else None,
+                          payload=payload)
     return {"job_id": jid}
 
 

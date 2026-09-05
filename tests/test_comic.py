@@ -386,3 +386,39 @@ def test_drop_character_bindings_clears_ledger_refs(tmp_path):
     leds = [_json.loads(s["ledger_json"]).get("assets", {}).get("characters")
             for s in list_shots(db, pid)]
     assert leds[0] == [aids[1]] and leds[1] == [aids[1]]  # 引用者清、无关者留
+
+
+def test_describe_batch_includes_stale_and_resets_status(tmp_path):
+    """QC-A（2026-09-05 复审回归）：批量模式跳过「已有提示词」的镜但 stale
+    镜恰有旧提示词，且写 prompt 不复位 status → autopilot 无限重入 describe。
+    修复：stale 镜纳入批量、成功写 status='ready'。"""
+    import json as _json
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.comic import describe_shots
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.paths import data_to_abs
+    from comic_studio.engine.projects import create_project, set_stage
+    from comic_studio.engine.shots import list_shots, persist_shots
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "回归剧", "16:9", "t",
+                         comic_mode="motion_comic")["id"]
+    set_stage(db, pid, "storyboard_ready")
+    sid = persist_shots(db, pid, [
+        NS(text_span="", description="旧", shot_type="", camera={}, duration=5.0,
+           workflow_type="fl2v", ledger={}, character_ids=[], scene_ids=[],
+           prop_ids=[], depends_on=None, prompt="旧提示词")])[0]
+    from comic_studio.engine.shots import update_shot
+    update_shot(db, sid, {"status": "stale"})   # persist 白名单外的状态走 update
+    d = data_to_abs(tmp_path / "data", "projects/回归剧/shots/1")
+    d.mkdir(parents=True)
+    (d / "kf_start.png").write_bytes(b"\x89PNG")
+
+    class FakeVLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.4):
+            return ("林凡踏前一步。subject_definitions:\n林凡 是来自 <Picture 1> 的人物\n"
+                    "overall_soundscape: 无对白、无哼唱\nnon_diegetic_music: N/A", {})
+    n = describe_shots(db, tmp_path / "data", pid, FakeVLM())
+    assert n == 1, "stale 镜必须纳入批量重生"
+    row = list_shots(db, pid)[0]
+    assert row["status"] == "ready" and "林凡" in row["prompt"]

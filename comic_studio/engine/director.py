@@ -248,15 +248,15 @@ def handle_gen_director(db, data_dir, job, comfy):
                  project_id=pid, job_id=job["id"])
     out_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/output")
     out_dir.mkdir(parents=True, exist_ok=True)
-    n = len(list(out_dir.glob("ep*.mp4"))) + 1
-    dest = out_dir / f"ep{n:03d}.mp4"
+    from .merge import next_ep_number
+    dest = out_dir / f"ep{next_ep_number(out_dir):03d}.mp4"  # QC-B：max+1
     if len(parts) == 1:
         import shutil
         shutil.copyfile(parts[0], dest)
     else:
         from . import merge
         merge.concat(parts, dest)
-    rel = f"projects/{proj['slug']}/output/ep{n:03d}.mp4"
+    rel = f"projects/{proj['slug']}/output/{dest.name}"  # QC-B：随 dest 编号
     # P7-J 整片混音（开关默认开，失败退化为纯画面不阻塞）：
     # TTS 逐镜生成 → 帧数轴重建音轨（有台词镜换配音/无台词镜留原声）→ 烧 SRT
     if comfy_cfg.get("director_mix", True):

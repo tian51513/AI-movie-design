@@ -167,8 +167,12 @@ def select_version(request: Request, shot_id: int, body: dict = Body(...)):
     # M12（2026-09-05 审计）：旧配音节奏属旧版本——删残留 mp3（merge handler
     # 会自动重生，删除安全），v2 不再迁就 v1 的配音时长
     mp3 = Path(request.app.state.data_dir) / f"projects/{proj['slug']}/shots/{shot['seq']}/dialogue.mp3"
-    if mp3.exists():
-        mp3.unlink()
+    try:
+        mp3.unlink(missing_ok=True)   # QC-C：Windows 占用/权限不阻断版本切换
+    except OSError as exc:
+        emit_log(db, "system", "warn",
+                 f"镜 {shot['seq']} 旧配音删除失败（{exc}）——下次合成会重生",
+                 project_id=proj["id"])
     return _shot_public(get_shot(db, shot_id), versions=versions)
 
 

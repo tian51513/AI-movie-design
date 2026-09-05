@@ -21,6 +21,22 @@ DEFAULT_VOICES = {
 }
 
 
+_TTS_BUSY: set = set()  # 同项目互斥（QC-D）：手动 /tts 与 merge 任务内 TTS
+                          # 并发会双烧 ComfyUI 并覆写同一 dialogue.mp3
+
+
+def tts_busy(project_id: int) -> bool:
+    return project_id in _TTS_BUSY
+
+
+def tts_busy_add(project_id: int) -> None:
+    _TTS_BUSY.add(project_id)
+
+
+def tts_busy_remove(project_id: int) -> None:
+    _TTS_BUSY.discard(project_id)
+
+
 def detect_gender(appearance_text: str) -> str:
     """从八行外貌模板检测性别（性别：男/女）。"""
     m = re.search(r"性别[：:]\s*(男|女)", appearance_text or "")

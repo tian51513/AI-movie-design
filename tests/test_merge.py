@@ -465,3 +465,49 @@ def test_concat_xfade_leaves_no_sil_residue(tmp_path):
     concat_xfade([a, b], out, fade=0.3)
     assert out.exists()
     assert list(out.parent.glob("*_sil*")) == []
+
+
+def test_next_ep_number_max_plus_one(tmp_path):
+    """QC-B：快车道与逐镜合成共用 max+1 编号（director.py 此前仍 len+1——
+    删部分旧片后出片覆盖现存正片）。"""
+    from comic_studio.engine.merge import next_ep_number
+    out = tmp_path / "output"; out.mkdir()
+    assert next_ep_number(out) == 1
+    (out / "ep001.mp4").write_bytes(b"x")
+    (out / "ep003.mp4").write_bytes(b"x")   # 手动删过 ep002
+    assert next_ep_number(out) == 4
+
+
+def test_merge_handler_skips_tts_when_busy(tmp_path, monkeypatch):
+    """QC-D：merge 任务内 TTS 与手动 /tts 并发仍会双烧——engine 级互斥，
+    merge 侧遇忙沿用现有音轨不炸。"""
+    import json as _json
+    from comic_studio.engine import merge as M
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.queue.worker import HANDLERS
+    from comic_studio.engine.tts import tts_busy_add, tts_busy_remove
+    M.register_merge_handler()
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "忙剧", "16:9", "t")["id"]
+    calls = {"merge": 0}
+
+    def bomb(*a, **kw):
+        raise AssertionError("忙碌期不得再跑 TTS")
+
+    monkeypatch.setattr("comic_studio.engine.tts.generate_dialogue_audio", bomb)
+    monkeypatch.setattr(M, "merge_project",
+                        lambda *a, **kw: calls.__setitem__("merge", calls["merge"] + 1)
+                        or (tmp_path / "o.mp4"))
+    job = {"id": 1, "project_id": pid,
+           "payload_json": _json.dumps({"project_id": pid})}
+    tts_busy_add(pid)
+    try:
+        HANDLERS["merge"](db, tmp_path / "data", job, None)   # 不得抛
+    finally:
+        tts_busy_remove(pid)
+    assert calls["merge"] == 1
+    n = db.connect().execute(
+        "SELECT COUNT(*) c FROM logs WHERE message LIKE '%沿用现有音轨%'"
+    ).fetchone()["c"]
+    assert n == 1

@@ -167,8 +167,10 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
     for s in list_shots(db, project_id):
         if shot_id is not None and s["id"] != shot_id:
             continue  # 逐镜模式：只跑指定镜
-        if shot_id is None and (s["prompt"] or "").strip():
-            continue  # 批量模式：跳过已有提示词的镜
+        if (shot_id is None and (s["prompt"] or "").strip()
+                and s["status"] != "stale"):
+            continue  # 批量模式：跳过已有提示词的镜（stale 除外——QC-A：
+            # autopilot 把 stale 算缺口，此处不重生则无限重入循环）
         shot_dir = data_to_abs(data_dir, f"projects/{slug}/shots/{s['seq']}")
         start_png = shot_dir / "kf_start.png"
         end_png = shot_dir / "kf_end.png"
@@ -221,7 +223,7 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
             if dialogue:
                 ledger["dialogue"] = dialogue
             update_shot(db, s["id"], {
-                "prompt": text, "description": text,
+                "prompt": text, "description": text, "status": "ready",
                 "ledger_json": json.dumps(ledger, ensure_ascii=False)})
             n += 1
             # 逐镜日志（用户需求：每个操作都要可见——批量跑 16 镜不能只看最终汇总）
