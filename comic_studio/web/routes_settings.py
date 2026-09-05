@@ -79,7 +79,10 @@ def update(request: Request, body: SettingsUpdate):
         if bad:
             raise HTTPException(422, f"未知 provider: {sorted(bad)}，只允许 {list(PROVIDER_NAMES)}")
         merged = get_setting(db, "llm_providers")
-        merged.update({k: v.model_dump() for k, v in body.llm_providers.items()})
+        # M15（2026-09-05 审计）：exclude_unset + 子字典增量合并——update(k, dump)
+        # 会整体替换嵌套 provider dict，局部 PUT 仍冲掉兄弟键（api_key→''）
+        for k, v in body.llm_providers.items():
+            merged.setdefault(k, {}).update(v.model_dump(exclude_unset=True))
         set_setting(db, "llm_providers", merged)
     if body.llm_routing is not None:
         bad_tasks = set(body.llm_routing) - set(TASK_NAMES)

@@ -108,3 +108,20 @@ def test_put_template_map_rejects_unknown_key(tmp_path):
     with _client(tmp_path) as c:
         resp = c.put("/api/settings", json={"template_map": {"bad_key": "x"}})
         assert resp.status_code == 422
+
+
+def test_providers_partial_put_preserves_unset(tmp_path):
+    """M15（2026-09-05 审计）：llm_providers PUT 全量 model_dump——部分字段
+    PUT 会把未提供键冲默认（09-01 comfy 事故同款）。exclude_unset 后局部
+    PUT 只改提供的键。"""
+    with _client(tmp_path) as c:
+        r = c.put("/api/settings", json={"llm_providers": {
+            "online": {"base_url": "http://a", "api_key": "k",
+                       "model": "m1", "extra_body": None}}})
+        assert r.status_code == 200, r.text
+        r2 = c.put("/api/settings", json={"llm_providers": {
+            "online": {"model": "m2"}}})
+        assert r2.status_code == 200, r2.text
+        prov = c.get("/api/settings").json()["llm_providers"]["online"]
+        assert prov["model"] == "m2"
+        assert prov["base_url"] == "http://a" and prov["api_key"] == "k"

@@ -753,7 +753,7 @@ const methods = {
         local2: { base_url: this.settingsForm.local.base_url || '',   // 与本地同一服务
                   api_key: this.settingsForm.local.api_key || 'ollama',
                   model: this.settingsForm.local2.model || '',
-                  extra_body: null },   // 重度模型不吃轻度的 extra_body（IQ2_M 被关思考打哑）
+                  extra_body: this.settingsForm.local2.extra_body ?? null },  // 表单默认 null（IQ2_M 被关思考打哑）；API 配置装载进表单后不再被抹（M15）
         online: { base_url: this.settingsForm.online.base_url || '',
                   api_key: this.settingsForm.online.api_key || '',
                   model: this.settingsForm.online.model || '',

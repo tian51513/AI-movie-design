@@ -62,3 +62,18 @@ def test_purge_days_clamped(tmp_path):
     with c:
         assert c.post("/api/jobs/purge?days=0").status_code == 422
         assert c.post("/api/jobs/purge?days=400").status_code == 422
+
+
+def test_cancel_writes_finished_at(tmp_path):
+    """M14（2026-09-05 审计）：cancel 的 cancelled 行不写 finished_at →
+    purge 条件永不为真，jobs 表缓慢膨胀。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.jobs import cancel_project_jobs, enqueue_job
+    from comic_studio.engine.projects import create_project
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "取消剧", "16:9", "t")["id"]
+    jid = enqueue_job(db, "gen_prompt", project_id=pid, payload={})
+    cancel_project_jobs(db, pid)
+    row = db.connect().execute(
+        "SELECT status, finished_at FROM jobs WHERE id=?", (jid,)).fetchone()
+    assert row["status"] == "cancelled" and row["finished_at"] is not None

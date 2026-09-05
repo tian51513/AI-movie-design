@@ -141,3 +141,29 @@ def test_select_version_invalidates_dialogue_mp3(tmp_path):
                    json={"file": "video_v2.mp4"})
         assert r.status_code == 200, r.text
         assert not (d / "dialogue.mp3").exists()
+
+
+def test_stop_jobs_targeted_queue_delete(tmp_path):
+    """M13（2026-09-05 审计）：stop-jobs 的 clear_queue 是全局的——清掉他项目
+    排在 ComfyUI 侧的 prompt。改为只删本项目 prompt_id + 仅本项目在跑才
+    interrupt。"""
+    import sys
+    sys.path.insert(0, "tests")
+    from comfy_mock import comfy_server
+    from comic_studio.engine import jobs as jobs_mod
+    from comic_studio.engine.settings import set_setting
+    with _client(tmp_path) as c:
+        pid = _mk(c, "定向停剧")
+        db = c.app.state.db
+        jid = jobs_mod.enqueue_job(db, "gen_shot", project_id=pid, payload={})
+        conn = db.connect()
+        conn.execute("UPDATE jobs SET status='running', comfy_prompt_id='px' WHERE id=?", (jid,))
+        conn.execute("UPDATE projects SET autopilot=1 WHERE id=?", (pid,))
+        conn.commit()
+        with comfy_server("ok", queue_running=["px"],
+                          queue_pending=["py"]) as m:  # py=他项目在 ComfyUI 排队
+            set_setting(db, "comfy", {"base_url": m.base_url})
+            r = c.post(f"/api/projects/{pid}/stop-jobs")
+            assert r.status_code == 200
+            assert m.queue_deletes == ["px"]      # 只删自己
+            assert m.interrupts == 1              # 自己在跑 → interrupt

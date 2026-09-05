@@ -174,6 +174,14 @@ class ComfyClient:
         running, pending = self._queue_state()
         return running | pending
 
+    def delete_from_queue(self, prompt_ids: list) -> None:
+        """定向移除自己提交的排队 prompt（M13 2026-09-05：clear_queue 全局
+        清队会误删他项目排在 ComfyUI 侧的任务）。"""
+        if not prompt_ids:
+            return
+        with self._client() as c:
+            c.post(f"{self.base_url}/queue", json={"delete": list(prompt_ids)})
+
     def interrupt(self) -> None:
         """中断 ComfyUI 当前执行（手动取消用）。"""
         with self._client() as c:
