@@ -1258,6 +1258,21 @@
               align-items:center;justify-content:center;z-index:99;cursor:zoom-out">
     <img :src="lightbox" style="max-width:92vw;max-height:92vh">
   </div>
+  <!-- 📄 正文查看弹窗（2026-09-05：详情页无处看正文——上传/转写通用） -->
+  <div v-if="novelOpen" class="viewer-mask" @click.self="novelOpen=false">
+    <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:10px;
+                max-width:720px;width:92vw;max-height:82vh;display:flex;flex-direction:column">
+      <div style="padding:10px 14px;border-bottom:1px solid #2c3540;display:flex;
+                  justify-content:space-between;align-items:center">
+        <b>📄 {{ project.name }} 正文
+          <span class="muted" style="font-size:12px">（{{ novelInfo.char_count }} 字{{ novelInfo.from_audio ? ' · 音频转写' : '' }}）</span></b>
+        <button @click="novelOpen=false" style="padding:2px 10px">✕</button>
+      </div>
+      <pre style="margin:0;padding:14px;overflow:auto;white-space:pre-wrap;
+           font-family:inherit;font-size:14px;line-height:1.9;color:#cbd5e1">{{ novelInfo.text }}</pre>
+    </div>
+  </div>
+
   <!-- 分镜媒体查看器：全尺寸图/视频，← → 连续翻页（2026-08-30 需求） -->
   <div v-if="viewer" class="viewer-mask" @click.self="closeViewer"
        @touchstart="viewerTouchStart" @touchend="viewerTouchEnd">
