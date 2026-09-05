@@ -161,3 +161,62 @@ def test_srt_dialogue_shot_caps_at_audio_plus_breath(tmp_path):
     # 镜2 台词起点=配音+呼吸（mp3 实际 ~2.06s → 2.56s），而非视频 6s
     assert "00:00:02,5" in content, content
     assert "00:00:06,000 -->" not in content  # 不按视频 6s 起镜
+
+
+def test_srt_ignores_mp3_for_native_voice_shots(tmp_path):
+    """M11：h3_native_voice 镜合成保 H3 原声全长——字幕轴不得按残留 mp3+0.5
+    排（此前会整体漂移）。"""
+    import json as _json
+    import subprocess
+    from comic_studio.engine.merge import ffmpeg_bin
+    from comic_studio.engine.shots import update_shot
+    db, pid = _proj(tmp_path)
+    shot1_dir = tmp_path / "data" / "projects" / "字幕剧" / "shots" / "1"
+    shot1_dir.mkdir(parents=True)
+    subprocess.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
+                    "testsrc=duration=6:size=320x240:rate=10",
+                    "-pix_fmt", "yuv420p", str(shot1_dir / "video_v1.mp4")],
+                   check=True, capture_output=True, timeout=60)
+    subprocess.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
+                    "anullsrc=r=24000:cl=mono", "-t", "8", "-q:a", "9",
+                    str(shot1_dir / "dialogue.mp3")],
+                   check=True, capture_output=True, timeout=60)
+    sid = db.connect().execute(
+        "SELECT id FROM shots WHERE project_id=? ORDER BY seq LIMIT 1",
+        (pid,)).fetchone()["id"]
+    update_shot(db, sid, {"video_path": "projects/字幕剧/shots/1/video_v1.mp4"})
+    conn = db.connect()
+    conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
+                 (_json.dumps({"dialogue": [{"speaker": "A", "line": "第一句"}],
+                               "h3_native_voice": True}), sid))
+    conn.commit()
+    from comic_studio.engine.subtitles import generate_srt
+    content = generate_srt(db, tmp_path / "data", pid).read_text(encoding="utf-8")
+    assert "00:00:06" in content        # 按视频 6s 起镜2（不是 mp3 的 8.5s）
+    assert "00:00:08" not in content
+
+
+def test_srt_deducts_xfade_overlap(tmp_path):
+    """M9a：xfade 开启时字幕轴扣 0.3s 交叠（此前累计漂 ~0.3s/镜）。"""
+    import subprocess
+    from comic_studio.engine.merge import ffmpeg_bin
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.shots import update_shot
+    db, pid = _proj(tmp_path)
+    for seq in (1, 2):
+        d = tmp_path / "data" / "projects" / "字幕剧" / "shots" / str(seq)
+        d.mkdir(parents=True)
+        subprocess.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
+                        "testsrc=duration=6:size=320x240:rate=10",
+                        "-pix_fmt", "yuv420p", str(d / "video_v1.mp4")],
+                       check=True, capture_output=True, timeout=60)
+    for seq in (1, 2):
+        sid = db.connect().execute(
+            "SELECT id FROM shots WHERE project_id=? AND seq=?",
+            (pid, seq)).fetchone()["id"]
+        update_shot(db, sid, {"video_path": f"projects/字幕剧/shots/{seq}/video_v1.mp4"})
+    set_setting(db, "comfy", {"merge_xfade": True})
+    from comic_studio.engine.subtitles import generate_srt
+    content = generate_srt(db, tmp_path / "data", pid).read_text(encoding="utf-8")
+    assert "00:00:05,7" in content      # 6-0.3 交叠扣减（旧行为 6.0 起）
+    assert "00:00:06,000 -->" not in content

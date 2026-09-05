@@ -133,6 +133,15 @@ def _voice_slots_for_shot(db, data_dir, proj, shot, audio_slots: list):
     return entries, decls
 
 
+def _clear_native_voice(db, shot) -> None:
+    """M11（2026-09-05 审计）：无音频槽模板（t2v/fl2v/i2v）渲染成功即清
+    h3_native_voice——此前只设不清，换模板重渲后该镜永远无声。"""
+    ledger = json.loads(shot["ledger_json"] or "{}")
+    if ledger.pop("h3_native_voice", None) is not None:
+        update_shot(db, shot["id"],
+                    {"ledger_json": json.dumps(ledger, ensure_ascii=False)})
+
+
 def _mark_native_voice(db, shot) -> None:
     ledger = json.loads(shot["ledger_json"] or "{}")
     ledger["h3_native_voice"] = True
@@ -497,6 +506,17 @@ def _download_video_result(db, data_dir, comfy, shot, proj, video,
                    video.get("type", "output"), dest)
 
     update_shot(db, shot["id"], {"status": "rendered", "video_path": rel_path})
+    # M11：本镜模板无音频槽（t2v/fl2v/i2v）→ 清 h3_native_voice（换模板重渲
+    # 后不再残留「保原声」标记导致该镜永远无声）
+    try:
+        from .workflows.registry import TEMPLATE_ROOT, scan_templates
+        _has_audio = any(str(i.get("slot", "")).startswith("audio")
+                         for i in (scan_templates(TEMPLATE_ROOT)
+                                   [pick_template_id(shot)].inject_images or []))
+    except Exception:
+        _has_audio = True  # 探测失败不清（保守）
+    if not _has_audio:
+        _clear_native_voice(db, shot)
     emit_log(db, "comfy", "info", f"分镜 {shot['seq']} 视频已落盘",
              project_id=proj["id"], job_id=job_id,
              data={"path": rel_path})

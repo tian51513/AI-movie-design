@@ -45,7 +45,7 @@ def generate_srt(db, data_dir, project_id, spans=None) -> Path:
             # _replace_audio 严格一致）；其余镜按真实视频时长（duration 字段
             # ≠实际渲染时长——17k+5 帧对齐 4.0→4.5/5.0→5.2，46 镜累计漂 ~9s）
             eff = None
-            if dialogue:
+            if dialogue and not ledger.get("h3_native_voice"):
                 mp3 = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}") / "dialogue.mp3"
                 if mp3.exists():
                     try:
@@ -83,7 +83,17 @@ def generate_srt(db, data_dir, project_id, spans=None) -> Path:
                     entries.append((start, end, speaker, line))
 
         if span_map is None:
-            timeline += duration
+            # M9a（2026-09-05 审计）：xfade 开启时段间交叠 0.3s——轴同步扣减
+            #（此前累计漂 ~0.3s/镜）
+            _fade = 0.0
+            try:
+                from .merge import XFADE_SEC
+                from .settings import get_setting
+                if (get_setting(db, "comfy") or {}).get("merge_xfade"):
+                    _fade = XFADE_SEC
+            except Exception:
+                pass
+            timeline += duration - _fade
 
     # 写 SRT
     out_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/output")

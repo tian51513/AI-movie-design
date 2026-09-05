@@ -40,16 +40,24 @@ def probe(path: Path) -> dict:
 
 
 def normalize(src: Path, dst: Path, w: int, h: int, fps: float) -> Path:
-    """归一化：scale+pad 到画布、统一 fps、crf18 yuv420p、补静音音轨保 concat 一致。"""
+    """归一化：scale+pad 到画布、统一 fps、crf18 yuv420p、补静音音轨保 concat 一致。
+    M9b（2026-09-05 审计）：源无音轨 → 垫 anullsrc 静音轨——此前注释声称补轨
+    实际没做，部分段无轨进 concat -c copy 会失败。"""
     dst.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        [ffmpeg_bin(), "-y", "-i", str(src),
-         "-vf", f"scale={w}:{h}:force_original_aspect_ratio=decrease,"
-               f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,fps={fps}",
-         "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p",
-         "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
-         "-f", "mp4", str(dst)],
-        check=True, capture_output=True, timeout=300)
+    common = ["-vf", f"scale={w}:{h}:force_original_aspect_ratio=decrease,"
+              f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,fps={fps}",
+              "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p",
+              "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2"]
+    if probe(src)["sample_rate"] is not None:
+        subprocess.run([ffmpeg_bin(), "-y", "-i", str(src), *common,
+                        "-f", "mp4", str(dst)],
+                       check=True, capture_output=True, timeout=300)
+    else:
+        subprocess.run([ffmpeg_bin(), "-y", "-i", str(src),
+                        "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+                        "-map", "0:v", "-map", "1:a", "-shortest", *common,
+                        "-f", "mp4", str(dst)],
+                       check=True, capture_output=True, timeout=300)
     return dst
 
 
@@ -114,17 +122,24 @@ def concat_xfade(parts: list, out: Path, fade: float = XFADE_SEC,
         import shutil
         shutil.copyfile(parts[0], out)
         return out
-    parts = [_ensure_audio(Path(p), out.parent) for p in parts]
-    durs = [probe(p)["duration"] for p in parts]
-    fc = build_xfade_filter(durs, fade, grade)
-    args = [ffmpeg_bin(), "-y"]
-    for p in parts:
-        args += ["-i", str(p)]
-    args += ["-filter_complex", fc,
-             "-map", "[vout2]" if grade else "[vout]", "-map", "[aout]",
-             "-c:v", "libx264", "-crf", "20", "-preset", "fast",
-             "-pix_fmt", "yuv420p", "-c:a", "aac", str(out)]
-    subprocess.run(args, check=True, capture_output=True, timeout=3600)
+    # M9d（2026-09-05 审计）：补轨临时文件进临时目录——此前落 output 残留
+    import tempfile as _tf
+    _sil_dir = Path(_tf.mkdtemp(prefix="xfade_sil_"))
+    try:
+        parts = [_ensure_audio(Path(p), _sil_dir) for p in parts]
+        durs = [probe(p)["duration"] for p in parts]
+        fc = build_xfade_filter(durs, fade, grade)
+        args = [ffmpeg_bin(), "-y"]
+        for p in parts:
+            args += ["-i", str(p)]
+        args += ["-filter_complex", fc,
+                 "-map", "[vout2]" if grade else "[vout]", "-map", "[aout]",
+                 "-c:v", "libx264", "-crf", "20", "-preset", "fast",
+                 "-pix_fmt", "yuv420p", "-c:a", "aac", str(out)]
+        subprocess.run(args, check=True, capture_output=True, timeout=3600)
+    finally:
+        import shutil as _sh
+        _sh.rmtree(_sil_dir, ignore_errors=True)
     return out
 
 
@@ -235,7 +250,11 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
     w, h = _canvas(proj["aspect_ratio"])
     out_dir = Path(data_dir) / "projects" / proj["slug"] / "output"
     out_dir.mkdir(parents=True, exist_ok=True)
-    n = len(list(out_dir.glob("ep*.mp4"))) + 1
+    # M10（2026-09-05 审计）：max+1 而非 len+1——手动删部分旧片后 len 法会
+    # 覆盖现存正片（数据丢失点）
+    nums = [int(m.group(1)) for f in out_dir.glob("ep*.mp4")
+            if (m := re.match(r"ep(\d+)\.mp4$", f.name))]
+    n = (max(nums) + 1) if nums else 1
     out = out_dir / f"ep{n:03d}.mp4"
     import tempfile
     from .settings import get_setting

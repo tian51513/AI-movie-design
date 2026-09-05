@@ -1,6 +1,7 @@
 # comic_studio/web/routes_shots.py
 """分镜 REST：拆解发起/状态、列表、编辑、提示词重生/批量、门2（spec §5 门2）。"""
 import json
+from pathlib import Path
 
 from fastapi import APIRouter, Body, HTTPException, Request
 
@@ -163,6 +164,11 @@ def select_version(request: Request, shot_id: int, body: dict = Body(...)):
         raise HTTPException(422, f"版本不存在: {file}，可选 {versions}")
     rel = f"projects/{proj['slug']}/shots/{shot['seq']}/{file}"
     update_shot(db, shot_id, {"video_path": rel})
+    # M12（2026-09-05 审计）：旧配音节奏属旧版本——删残留 mp3（merge handler
+    # 会自动重生，删除安全），v2 不再迁就 v1 的配音时长
+    mp3 = Path(request.app.state.data_dir) / f"projects/{proj['slug']}/shots/{shot['seq']}/dialogue.mp3"
+    if mp3.exists():
+        mp3.unlink()
     return _shot_public(get_shot(db, shot_id), versions=versions)
 
 

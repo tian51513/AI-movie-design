@@ -9,16 +9,36 @@
 import subprocess
 from pathlib import Path
 
-from .merge import ffmpeg_bin
+from .merge import ffmpeg_bin, probe
 
 _UNIFY = "aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo"
 
 
+def warn_long_tts(db, project_id, spans: list) -> None:
+    """M8（2026-09-05 审计）：快车道 spans 帧数轴未适配音频收口——TTS 长于
+    段会被 apad+atrim 硬截断；最小可见化 warn（完整收口需帧数轴重切，待决策）。"""
+    from .logbus import emit as emit_log
+    for seq, _st, dur, tts in spans:
+        if tts is None or not Path(tts).exists():
+            continue
+        try:
+            a = probe(Path(tts))["duration"]
+        except Exception:
+            continue
+        if a > dur + 0.5:
+            emit_log(db, "merge", "warn",
+                     f"快车道镜 {seq}：配音 {a:.1f}s 长于段 {dur:.1f}s，将被截断"
+                     "（快车道未适配音频收口；缩短台词或改逐镜合成）",
+                     project_id=project_id)
+
+
 def mix_director_audio(video: Path, spans: list, output: Path,
-                       mute_quiet: bool = False) -> Path:
+                       mute_quiet: bool = False, db=None, project_id=None) -> Path:
     """spans 覆盖整片时间轴且按时间顺序；tts 为 None 的镜默认保留原声切片，
     mute_quiet=True 时改为静音（2026-08-30：封死 H3 残留杂音进成片，代价是丢
     自然环境声）。全部无台词且不静音 → 原样返回 video（不折腾）。"""
+    if db is not None and project_id is not None:
+        warn_long_tts(db, project_id, spans)
     tts_input_idx = {}  # span 下标 → ffmpeg 输入序号（0=原视频，1..=TTS 文件）
     inputs = ["-i", str(video)]
     for s in spans:

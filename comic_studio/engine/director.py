@@ -274,7 +274,8 @@ def handle_gen_director(db, data_dir, job, comfy):
                           else None)
                          for seq, st, du in shot_spans]
                 mixed = mix_director_audio(dest, spans, dest.with_suffix(".mix.mp4"),
-                                           mute_quiet=bool(comfy_cfg.get("mute_quiet_shots", False)))
+                                           mute_quiet=bool(comfy_cfg.get("mute_quiet_shots", False)),
+                                           db=db, project_id=pid)
                 if mixed != dest:
                     mixed.replace(dest)
             from .subtitles import generate_srt

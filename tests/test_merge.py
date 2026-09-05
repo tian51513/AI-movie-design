@@ -245,7 +245,8 @@ def test_merge_pads_when_tts_longer_than_video(tmp_path, monkeypatch):
 
     def fake_probe(p):
         return {"duration": 6.0 if str(p).endswith(".mp3") else 4.0,
-                "width": 640, "height": 360, "fps": 25}
+                "width": 640, "height": 360, "fps": 25,
+                "sample_rate": 44100, "channels": 2}
 
     monkeypatch.setattr(M, "_replace_audio", fake_replace)
     monkeypatch.setattr(M, "probe", fake_probe)
@@ -342,7 +343,8 @@ def test_merge_trims_when_tts_shorter(tmp_path, monkeypatch):
 
     def fake_probe(p):
         return {"duration": 2.0 if str(p).endswith(".mp3") else 4.0,
-                "width": 640, "height": 360, "fps": 25}
+                "width": 640, "height": 360, "fps": 25,
+                "sample_rate": 44100, "channels": 2}
 
     monkeypatch.setattr(M, "_replace_audio", fake_replace)
     monkeypatch.setattr(M, "probe", fake_probe)
@@ -427,3 +429,39 @@ def test_merge_rejects_same_video_all_shots(tmp_path):
         update_shot(db, sid, {"video_path": rel, "status": "rendered"})
     with pytest.raises(ValueError, match="整片"):
         merge_project(db, tmp_path / "data", pid)
+
+
+# ── 2026-09-05 审计中危批次 B ──
+
+def test_normalize_adds_silent_audio_track(tmp_path):
+    """M9b：源无音轨 → normalize 补静音轨（此前部分段无轨进 concat -c copy
+    会失败——与 09-05 无声事故同族）。"""
+    v = _make(tmp_path / "v.mp4", 1)  # testsrc 无音轨
+    assert probe(v)["sample_rate"] is None
+    out = normalize(v, tmp_path / "n.mp4", 640, 360, 10)
+    p = probe(out)
+    assert p["sample_rate"] == 44100 and p["channels"] == 2
+
+
+def test_ep_numbering_uses_max_plus_one(tmp_path, monkeypatch):
+    """M10：编号=max+1 而非 len+1——删掉 ep002 后新片必须是 ep004，
+    不许覆盖现存 ep003（数据丢失点）。"""
+    db, pid = _proj_with_shots(tmp_path, "编号剧")
+    out_dir = tmp_path / "data" / "projects" / "编号剧" / "output"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "ep001.mp4").write_bytes(b"x")
+    (out_dir / "ep003.mp4").write_bytes(b"x")
+    out = merge_project(db, tmp_path / "data", pid)
+    assert out.name == "ep004.mp4", out.name
+
+
+def test_concat_xfade_leaves_no_sil_residue(tmp_path):
+    """M9d：_ensure_audio 的 *_sil.mp4 落 output 目录残留——改临时目录。"""
+    from comic_studio.engine.merge import concat_xfade
+    a = _make(tmp_path / "a.mp4", 1)   # 无音轨 → 触发补轨
+    b = _make(tmp_path / "b.mp4", 1)
+    out = tmp_path / "out" / "xf.mp4"
+    out.parent.mkdir()
+    concat_xfade([a, b], out, fade=0.3)
+    assert out.exists()
+    assert list(out.parent.glob("*_sil*")) == []

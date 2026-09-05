@@ -121,3 +121,23 @@ def test_stop_jobs_disables_autopilot(tmp_path):
         assert r.status_code == 200
         assert c.app.state.db.connect().execute(
             "SELECT autopilot FROM projects WHERE id=?", (pid,)).fetchone()[0] == 0
+
+
+def test_select_version_invalidates_dialogue_mp3(tmp_path):
+    """M12：版本切换不失效配音（v2 画面迁就 v1 配音节奏）——切换即删旧
+    dialogue.mp3（merge handler 会自动重生，删除是安全的）。"""
+    from comic_studio.engine.shots import persist_shots, update_shot
+    with _client(tmp_path) as c:
+        pid = _mk(c, "版本剧")
+        sid = persist_shots(c.app.state.db, pid, [_shot()])[0]
+        d = tmp_path / "data" / "projects" / "版本剧" / "shots" / "1"
+        d.mkdir(parents=True)
+        for f in ("video_v1.mp4", "video_v2.mp4"):
+            (d / f).write_bytes(b"v")
+        (d / "dialogue.mp3").write_bytes(b"mp3")
+        update_shot(c.app.state.db, sid,
+                    {"video_path": "projects/版本剧/shots/1/video_v1.mp4"})
+        r = c.post(f"/api/shots/{sid}/version",
+                   json={"file": "video_v2.mp4"})
+        assert r.status_code == 200, r.text
+        assert not (d / "dialogue.mp3").exists()

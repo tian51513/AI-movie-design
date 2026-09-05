@@ -523,3 +523,22 @@ def test_no_voice_binding_no_audio_slots(tmp_path, monkeypatch):
         assert wf["95"]["inputs"]["audio"] == "cs_voice_0.mp3"  # 模板默认未动
         assert "<Audio 1>" not in wf["110"]["inputs"]["prompt"]
         assert m.audio_uploads == []
+
+
+def test_render_without_audio_slots_clears_native_flag(tmp_path, monkeypatch):
+    """M11（2026-09-05 审计）：h3_native_voice 只设不清——换无音频槽模板
+    （t2v/fl2v/i2v）重渲后该镜永远无声。无槽渲染成功即清 flag。"""
+    db, pid, assets = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(
+        workflow_type="t2v", character_ids=[])])[0]
+    update_shot(db, sid, {"prompt": "雨夜街道空镜。"})
+    conn = db.connect()
+    conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
+                 (json.dumps({"h3_native_voice": True}), sid))
+    conn.commit()
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    with comfy_server("ok", video=True) as m:
+        render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+    led = json.loads(get_shot(db, sid)["ledger_json"] or "{}")
+    assert "h3_native_voice" not in led
