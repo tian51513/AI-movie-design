@@ -693,6 +693,11 @@
           <option value="3:4">3:4 竖版</option>
           <option value="4:3">4:3 横版</option>
           <option value="1:1">1:1 方形</option></select></label>
+      <label>倍速
+        <select :value="project.video_multiple" style="width:70px"
+                @change="patchVideoParam('video_multiple', Number($event.target.value))">
+          <option :value="16">16x</option><option :value="32">32x</option><option :value="64">64x</option>
+        </select></label>
       <label>兆像素
         <select :value="project.video_megapixels" @change="patchVideoParam('video_megapixels', Number($event.target.value))">
           <option v-for="m in [0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.5,1.8,2.0]" :value="m">{{ m }}MP</option>
@@ -853,7 +858,7 @@
         · ComfyUI <span :style="{color: queue.comfy_ok?'#4ade80':'#f87171'}">●</span></span>
        <button v-if="queue.pending || queue.running" @click="clearQueue"
                style="background:#dc2626;font-size:12px;padding:3px 10px"
-               title="取消本项目全部待跑/在跑任务（在跑的渲染会向 ComfyUI 发 interrupt 掐断）">🗑 清空队列</button></p>
+               title="取消本项目全部待跑/在跑任务（不清 ComfyUI 侧队列——需连 ComfyUI 排队一起清用「停止任务」）">🗑 清空队列</button></p>
     <!-- 分镜模式 -->
     <template v-if="detailMode==='shots'">
     <p v-if="project.stage==='assets_ready' || project.stage==='storyboard_ready'">
@@ -958,9 +963,9 @@
         <button v-if="s.kf_start_url" @click="describeOneShot(s)"
                 :disabled="describingShots.has(s.id)"
                 :title="describingShots.has(s.id) ? 'VLM 读图中…' : 'VLM 读首尾帧生成本镜提示词'"
-                :style="describingShots.has(s.id) ? 'background:#f59e0b' : (s._justRead ? 'background:#16a34a' : '#0e7490')"
+                :style="describingShots.has(s.id) ? 'background:#f59e0b' : '#0e7490'"
                 style="font-size:12px;padding:3px 8px">
-          {{ describingShots.has(s.id) ? '⏳' : (s._justRead ? '✓' : '👁') }}</button>
+          {{ describingShots.has(s.id) ? '⏳' : '👁' }}</button>
         <button @click="regenPrompt(s, !!s.prompt)"
                 :disabled="(s.prompt_job && s.prompt_job.status==='running') || !['assets_ready','storyboard_ready'].includes(project.stage)"
                 :title="!['assets_ready','storyboard_ready'].includes(project.stage)

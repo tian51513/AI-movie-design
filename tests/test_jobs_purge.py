@@ -77,3 +77,18 @@ def test_cancel_writes_finished_at(tmp_path):
     row = db.connect().execute(
         "SELECT status, finished_at FROM jobs WHERE id=?", (jid,)).fetchone()
     assert row["status"] == "cancelled" and row["finished_at"] is not None
+
+
+def test_finish_job_does_not_overwrite_cancelled(tmp_path):
+    """L10（2026-09-05 审计低危）：finish_job 无状态守卫——cancelled 行可被
+    worker 成功收尾覆写成 done（取消记录失真）。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.jobs import cancel_project_jobs, enqueue_job, finish_job
+    from comic_studio.engine.projects import create_project
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "守卫剧", "16:9", "t")["id"]
+    jid = enqueue_job(db, "gen_prompt", project_id=pid, payload={})
+    cancel_project_jobs(db, pid)          # pending → cancelled
+    finish_job(db, jid, None)              # worker 迟到的成功收尾
+    assert db.connect().execute(
+        "SELECT status FROM jobs WHERE id=?", (jid,)).fetchone()["status"] == "cancelled"

@@ -59,3 +59,16 @@ def test_conflict_while_running_or_done_guard(tmp_path, monkeypatch):
         # 已 analyzed 阶段再次触发 → 409（回退重跑属计划 3 的 stale 流程）
         assert c.post(f"/api/projects/{pid}/analyze").status_code == 409
         assert c.get("/api/projects/999/analyze/status").status_code == 404
+
+
+def test_manual_analyze_blocked_when_pending(tmp_path):
+    """L15（2026-09-05 审计低危）：手动分析防重只查 running——autopilot 的
+    pending analyze 拦不住，双跑双份 LLM 成本。"""
+    from comic_studio.engine import jobs as jobs_mod
+    with TestClient(create_app(tmp_path / "t.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        pid = c.post("/api/projects", data={"name": "防重剧", "aspect_ratio": "16:9"},
+                     files={"novel": ("n.txt", io.BytesIO("正文".encode()),
+                                      "text/plain")}).json()["id"]
+        jobs_mod.enqueue_job(c.app.state.db, "analyze", project_id=pid, payload={})
+        assert c.post(f"/api/projects/{pid}/analyze").status_code == 409

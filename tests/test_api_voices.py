@@ -175,3 +175,16 @@ def test_promote_voice_to_custom_library(tmp_path):
                             "new_name": "林战·全局"}).status_code == 409
         assert c.post("/api/voices/promote",
                       json={"project_id": pid, "name": "不存在"}).status_code == 404
+
+
+def test_preset_generate_requires_comfy_url(tmp_path):
+    """L12（2026-09-05 审计低危）：upload/preset 入口缺 ensure_comfy_configured
+    门禁——空地址时报错含混。对齐 /voices/design 的 422。"""
+    from comic_studio.engine.settings import set_setting
+    with TestClient(create_app(tmp_path / "t.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        set_setting(c.app.state.db, "comfy", {"base_url": ""})
+        r = c.post("/api/voices/presets/generate",
+                   json={"name": "元气少女"})
+        assert r.status_code == 422
+        assert "ComfyUI" in r.text

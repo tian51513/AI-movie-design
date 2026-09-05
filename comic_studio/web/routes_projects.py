@@ -88,6 +88,9 @@ def delete_project(request: Request, project_id: int):
     import shutil
     shutil.rmtree(Path(request.app.state.data_dir) / "projects" / row["slug"],
                   ignore_errors=True)
+    # L9（2026-09-05 审计低危）：卡死上报键顺手清（防模块级 dict 泄漏）
+    from ..engine.autopilot import _STUCK_REPORTED
+    _STUCK_REPORTED.pop(project_id, None)
     return {"deleted": project_id}
 
 

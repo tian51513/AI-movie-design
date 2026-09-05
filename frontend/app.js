@@ -65,7 +65,8 @@ function data() {
     logs: [], lastLogId: 0, logsTimer: null,
     taskLabels: { extract_assets: '资产分析', fix_appearance: '外貌固化',
       split_storyboards: '分镜拆解', gen_video_prompt: '视频提示词生成',
-      optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文' },
+      optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文',
+      describe_shot: 'VLM 读图' },  // L4：路由标签补全
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     // 日志折叠（2026-09-01 移动版）：桌面默认展开、窄屏默认折叠（详情页缩短，成片/视频优先露出）
     logsOpen: (typeof window !== 'undefined' && window.matchMedia)
@@ -151,11 +152,12 @@ const methods = {
     fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : presetStyle(this.newStyleKey));
     fd.append('style_vis', this.newStyleKey === '自定义' ? this.newStyleText : presetStyleVis(this.newStyleKey));
     fd.append('novel', this.newFile);
-    fd.append('default_shot_duration', this.newSegDur ?? 0);
+    fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0
     fd.append('target_duration', this.newTotalDur || 0);
     const resp = await fetch('/api/projects', { method: 'POST', body: fd });
-    if (!resp.ok) { alert(await resp.text()); }
-    this.creating = false; this.newName = ''; this.newFile = null;
+    this.creating = false;
+    if (!resp.ok) { alert(await resp.text()); return; }  // L19：失败保留表单可改后重试
+    this.newName = ''; this.newFile = null;
     this.createOpen = false;
     await this.refresh();
   },
@@ -954,7 +956,7 @@ const methods = {
       fd.append('name', this.newName || `漫画${this.comicFiles.length}页`);
       fd.append('aspect_ratio', this.newRatio);
       fd.append('comic_mode', this.comicMode);
-      fd.append('default_shot_duration', this.newSegDur ?? 0);   // M16：漫画 tab 时长此前是摆设
+      fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0   // M16：漫画 tab 时长此前是摆设
       fd.append('target_duration', this.newTotalDur ?? 0);
       // 自然排序 + 压缩后上传（解决大图超时）
       const sorted = [...this.comicFiles].sort((a, b) =>
@@ -982,7 +984,7 @@ const methods = {
     if (!r.ok) { alert(await r.text()); return; }
     const d = await r.json();
     await this.loadDetail();
-    this.refreshShots?.();
+    await this.loadShots();  // L7：refreshShots 从不存在（幽灵调用）
     alert(`已清理 ${d.purged} 个提取资产`);
   },
   async describeShots() {
@@ -1193,16 +1195,18 @@ const methods = {
   },
   async discardVoice() {
     if (!this.vStaged) return;
-    await fetch('/api/voices/discard', {
+    const r = await fetch('/api/voices/discard', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ staged: this.vStaged.staged }) });
+    if (!r.ok) { alert(`放弃失败：${await r.text()}`); return; }  // L18：失败不再静默
     this.vStaged = null;
     this.vUp.name = ''; this.pUp.name = '';
   },
   async delVoice(v, scope) {
     if (!confirm(`删除音色「${v.name}」？`)) return;
     const q = scope === 'project' ? `?scope=project&project_id=${this.project.id}` : '?scope=global';
-    await fetch(`/api/voices/${encodeURIComponent(v.name)}${q}`, { method: 'DELETE' });
+    const r = await fetch(`/api/voices/${encodeURIComponent(v.name)}${q}`, { method: 'DELETE' });
+    if (!r.ok) { alert(`删除失败：${await r.text()}`); return; }  // L18
     await this.loadVoices(this.project && this.project.id);
   },
   // ===== 🎭 角色配音面板（2026-09-02 音色系统：按角色各自绑定）=====

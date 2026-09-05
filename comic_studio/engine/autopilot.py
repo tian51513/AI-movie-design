@@ -330,18 +330,14 @@ def tick(db, data_dir, project_id) -> dict:
     elif action == "split":
         from .pipeline_jobs import enqueue_llm_job
         enqueue_llm_job(db, "split_storyboards", project_id=project_id, payload={"project_id": project_id})
-    elif action == "extract_comic_characters":
-        # 漫改模式：VLM 提取角色资产
-        from .jobs import enqueue_job
-        enqueue_job(db, "extract_comic_characters", project_id=project_id,
-                    resource="gpu_llm_local", payload={"project_id": project_id})
-        emit_log(db, "autopilot", "info", "autopilot 入队角色提取（漫改模式）",
-                 project_id=project_id)
     elif action == "describe_shots":
-        # P9 漫画项目：VLM 读图生成提示词（一个 job 批量跑全部缺失的镜）
-        from .jobs import enqueue_job
-        enqueue_job(db, "describe_shots", project_id=project_id,
-                    resource="gpu_llm_local", payload={"project_id": project_id})
+        # P9 漫画项目：VLM 读图生成提示词（一个 job 批量跑全部缺失的镜）。
+        # L13（2026-09-05 审计低危）：走 enqueue_llm_job 按 routing 定资源——
+        # 此前硬编码 gpu_llm_local，配 online 时仍占 gpu 组过度互斥。
+        # （extract_comic_characters 死分支已删：_comic_flow 从不返回该 action）
+        from .pipeline_jobs import enqueue_llm_job
+        enqueue_llm_job(db, "describe_shots", project_id=project_id,
+                        payload={"project_id": project_id})
         emit_log(db, "autopilot", "info", "autopilot 入队 VLM 读图（批量）",
                  project_id=project_id)
     elif action == "gen_prompts":

@@ -10,7 +10,7 @@ from ..engine.jobs import enqueue_job
 from ..engine.settings import ensure_comfy_configured
 from ..engine.pipeline_gates import GATE_STAGES, GateStageError, gate_pass
 from ..engine.pipeline_jobs import enqueue_llm_job
-from ..engine.projects import get_project, set_stage
+from ..engine.projects import get_project
 from ..engine.shots import (delete_shots_batch, get_shot, list_shots,
                             set_disabled_batch, update_shot)
 from ..engine.logbus import emit as emit_log

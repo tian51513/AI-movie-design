@@ -15,9 +15,12 @@ def create_job(db: Database, project_id: int, jtype: str) -> int:
 
 
 def finish_job(db: Database, job_id: int, error: str | None) -> None:
+    """L10（2026-09-05 审计低危）：状态守卫——已 cancelled 的行不被迟到的
+    worker 收尾覆写成 done/failed（取消记录失真）。"""
     conn = db.connect()
     conn.execute(
-        "UPDATE jobs SET status=?, error=?, finished_at=datetime('now') WHERE id=?",
+        "UPDATE jobs SET status=?, error=?, finished_at=datetime('now') "
+        "WHERE id=? AND status IN ('pending','running')",
         ("failed" if error else "done", error, job_id))
     conn.commit()
 

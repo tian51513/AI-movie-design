@@ -8,7 +8,8 @@ from .queue.worker import register
 from .settings import get_setting
 
 
-_ROUTE_KEY = {"gen_prompt": "gen_video_prompt", "analyze": "extract_assets"}  # job 类型 → llm_routing 键
+_ROUTE_KEY = {"gen_prompt": "gen_video_prompt", "analyze": "extract_assets",
+              "describe_shots": "describe_shot"}  # job 类型 → llm_routing 键
 
 
 def enqueue_llm_job(db, jtype, project_id, shot_id=None, payload=None):

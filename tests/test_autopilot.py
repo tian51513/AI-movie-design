@@ -345,3 +345,34 @@ def test_all_disabled_shots_wait_not_loop(tmp_path):
     set_stage(db, pid, "assets_ready")
     act2 = next_action(db, tmp_path / "data", pid)
     assert act2["action"] == "wait" and "无效" in act2["detail"]
+
+
+def test_describe_shots_resource_follows_routing(tmp_path, monkeypatch):
+    """L13（2026-09-05 审计低危）：describe/extract 硬编码 gpu_llm_local——
+    routing 配 online 时仍占 gpu 组过度互斥。改走 enqueue_llm_job 按 routing。"""
+    from comic_studio.engine.settings import set_setting
+    db = Database(tmp_path / "c.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "路由剧", "16:9", "正文",
+                         comic_mode="motion_comic")["id"]
+    set_stage(db, pid, "storyboard_ready")
+    persist_shots(db, pid, [_shot()])
+    set_setting(db, "llm_routing", {"describe_shot": "online"})
+    act = tick(db, tmp_path / "data", pid)
+    assert act["action"] == "describe_shots"
+    row = db.connect().execute(
+        "SELECT resource FROM jobs WHERE type='describe_shots' "
+        "ORDER BY id DESC LIMIT 1").fetchone()
+    assert row["resource"] is None  # online 路由不再占 gpu 组
+
+
+def test_stuck_reported_cleared_on_project_delete(tmp_path):
+    """L9：_STUCK_REPORTED 对已删项目永不清（轻微泄漏）——删项目顺手清键。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.engine import autopilot as AP
+    from comic_studio.web.app import create_app
+    db, pid = _proj(tmp_path)
+    AP._STUCK_REPORTED[pid] = "上次分镜拆解失败，重试请手动发起"
+    with TestClient(create_app(db_path=tmp_path / "s.db", data_dir=tmp_path / "data",
+                               start_workers=False)) as c:
+        assert c.delete(f"/api/projects/{pid}").status_code == 200
+    assert pid not in AP._STUCK_REPORTED

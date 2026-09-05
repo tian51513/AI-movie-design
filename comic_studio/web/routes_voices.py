@@ -48,6 +48,11 @@ def upload_voice(request: Request, file: UploadFile, name: str = Form(...),
                  start: float = Form(0), dur: float = Form(60)):
     """上传音色处理：走 qwen_tts_clone 模板（裁剪起止 + 默认句克隆）→
     **staging 暂存**，前端试听后 confirm 入库 / discard 放弃（2026-08-31）。"""
+    try:  # L12（2026-09-05 审计低危）：对齐 /voices/design 的配置门禁
+        from ..engine.settings import ensure_comfy_configured
+        ensure_comfy_configured(request.app.state.db)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
     if scope not in ("global", "project"):
         raise HTTPException(422, "scope 只能是 global 或 project")
     if scope == "project" and not project_id:
@@ -113,6 +118,11 @@ def discard_voice(request: Request, body: dict = Body(...)):
 @router.post("/api/voices/presets/generate")
 def generate_preset(request: Request, body: dict = Body(...)):
     """单个预设生成（前端循环调用实现批量+进度）。"""
+    try:  # L12（2026-09-05 审计低危）：对齐 /voices/design 的配置门禁
+        from ..engine.settings import ensure_comfy_configured
+        ensure_comfy_configured(request.app.state.db)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
     name = body.get("name")
     if name not in {p["name"] for p in VOICE_PRESETS}:
         raise HTTPException(422, f"未知预设: {name}")

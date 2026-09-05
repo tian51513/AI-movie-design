@@ -27,7 +27,9 @@ def start(request: Request, project_id: int, background: BackgroundTasks):
     if proj is None:
         raise HTTPException(404, "项目不存在")
     running = jobs.latest_job(db, project_id, "analyze")
-    if running and running["status"] == "running":
+    if running and running["status"] in ("pending", "running"):
+        # L15（2026-09-05 审计低危）：pending 也拦——autopilot 入队的待跑分析
+        # 此前拦不住手动双跑（双份 LLM 成本）
         raise HTTPException(409, "分析正在进行中")
     if proj["stage"] != "created":
         raise HTTPException(409, f"阶段 {proj['stage']} 不允许重新分析（回退流程见后续计划）")
