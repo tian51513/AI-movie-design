@@ -41,30 +41,30 @@ def generate_srt(db, data_dir, project_id, spans=None) -> Path:
         if span_map is not None and shot["seq"] in span_map:
             start_base, duration = span_map[shot["seq"]]
         else:
-            start_base, duration = timeline, float(shot["duration"] or 5.0)
-            # 2026-09-05 真机（ep007 配音/分镜错位）：轴长改真实媒体时长——
-            # duration 字段≠实际渲染时长（17k+5 帧对齐 4.0→4.5/5.0→5.2，累计
-            # 每 46 镜漂 ~9s）；无视频时退回字段值
-            vp = shot["video_path"]
-            if vp:
-                vf = Path(data_dir) / vp
-                if vf.exists():
-                    try:
-                        from .merge import probe
-                        duration = probe(vf)["duration"] or duration
-                    except Exception:
-                        pass
-            # B3：有配音且更长的镜按 音频+0.1（与 merge 末帧补长的段长一致）
+            # 音频收口镜像（2026-09-05）：对白镜段长=配音+0.5 呼吸（与 merge
+            # _replace_audio 严格一致）；其余镜按真实视频时长（duration 字段
+            # ≠实际渲染时长——17k+5 帧对齐 4.0→4.5/5.0→5.2，46 镜累计漂 ~9s）
+            eff = None
             if dialogue:
                 mp3 = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}") / "dialogue.mp3"
                 if mp3.exists():
                     try:
-                        from .merge import probe
-                        a_dur = probe(mp3)["duration"]
-                        if a_dur + 0.1 > duration:
-                            duration = a_dur + 0.1
+                        from .merge import BREATH_SEC, probe
+                        eff = probe(mp3)["duration"] + BREATH_SEC
                     except Exception:
-                        pass  # 探测失败退回视频时长，不阻断字幕
+                        eff = None
+            if eff is None:
+                eff = float(shot["duration"] or 5.0)
+                vp = shot["video_path"]
+                if vp:
+                    vf = Path(data_dir) / vp
+                    if vf.exists():
+                        try:
+                            from .merge import probe
+                            eff = probe(vf)["duration"] or eff
+                        except Exception:
+                            pass
+            start_base, duration = timeline, eff
 
         if dialogue:
             # C7 按字数比例分时长（2026-09-01 台词组拆镜配套）：一镜 3~8 句后

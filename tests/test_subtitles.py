@@ -133,3 +133,31 @@ def test_srt_timeline_follows_real_media_durations(tmp_path):
     # 镜1 真实 6s（duration 字段 5.0）→ 镜2 台词起点 6s，不是 5s
     assert "00:00:06" in content, content
     assert "00:00:05 -->" not in content
+
+
+def test_srt_dialogue_shot_caps_at_audio_plus_breath(tmp_path):
+    """音频收口镜像：对白镜段长=配音+0.5s（视频再长也截到收口长）——
+    字幕轴与合成段长严格一致，镜 2 起点=2.5s 而非视频 6s。"""
+    import subprocess
+    from comic_studio.engine.merge import ffmpeg_bin
+    db, pid = _proj(tmp_path)
+    shot1_dir = tmp_path / "data" / "projects" / "字幕剧" / "shots" / "1"
+    shot1_dir.mkdir(parents=True)
+    subprocess.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
+                    "testsrc=duration=6:size=320x240:rate=10",
+                    "-pix_fmt", "yuv420p", str(shot1_dir / "video_v1.mp4")],
+                   check=True, capture_output=True, timeout=60)
+    subprocess.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
+                    "anullsrc=r=24000:cl=mono", "-t", "2", "-q:a", "9",
+                    str(shot1_dir / "dialogue.mp3")],
+                   check=True, capture_output=True, timeout=60)
+    from comic_studio.engine.shots import update_shot
+    sid = db.connect().execute(
+        "SELECT id FROM shots WHERE project_id=? ORDER BY seq LIMIT 1",
+        (pid,)).fetchone()["id"]
+    update_shot(db, sid, {"video_path": "projects/字幕剧/shots/1/video_v1.mp4"})
+    from comic_studio.engine.subtitles import generate_srt
+    content = generate_srt(db, tmp_path / "data", pid).read_text(encoding="utf-8")
+    # 镜2 台词起点=配音+呼吸（mp3 实际 ~2.06s → 2.56s），而非视频 6s
+    assert "00:00:02,5" in content, content
+    assert "00:00:06,000 -->" not in content  # 不按视频 6s 起镜

@@ -155,30 +155,31 @@ def _canvas(aspect_ratio: str) -> tuple:
     return (int(1920 * w / h) // 2 * 2, 1920)
 
 
-def _replace_audio(video: Path, audio: Path, output: Path, pad: float = 0.0) -> Path:
-    """P6：TTS 音轨替换——视频画面保留，音频换为 TTS 配音。
-    2026-09-05 真机无声事故：TTS mp3 是 24k 单声道，不带 -ar/-ac 时替换段与
-    normalize 段（44.1k stereo）参数不一致 → concat -c copy 把两种流硬缝一个
-    容器、时间戳全废（ep006 全无声+播放卡死）——两路一律统一 44100 立体声。
-    pad>0 → 末帧定格补长（设计B3：音频长于视频时 -shortest 会把对白截半——
-    tpad clone 让末帧画面续到音频说完，需重编码）。"""
-    audio_args = ["-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2"]
-    if pad > 0:
+BREATH_SEC = 0.5  # 对白镜配音后的呼吸秒数（音频收口常量，2026-09-05）
+
+
+def _replace_audio(video: Path, audio: Path, output: Path, target: float) -> Path:
+    """对白镜音轨替换＋段长收口（2026-09-05 音频收口）：段长恒=target（配音+呼吸）。
+    target>视频 → tpad 末帧定格补齐（需重编码，对白说得完）；
+    target<视频 → 截尾收口（H3 口型表演常撑满整镜，配音说完即切——
+    消灭「嘴动无声尾巴」）。音频 apad 静音补齐到 target，一律 44100 立体声
+    （2026-09-05 真机无声事故：24k mono 与 44.1k stereo 混拼时间戳全废）。"""
+    video = Path(video).resolve()
+    audio = Path(audio).resolve()
+    output = Path(output).resolve()
+    v_dur = probe(video)["duration"] or target
+    tail = ["-map", "0:v", "-map", "1:a", "-af", "apad",
+            "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
+            "-t", f"{target:.3f}", str(output)]
+    if target > v_dur + 0.05:
         subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-i", str(audio),
-                        "-vf", f"tpad=stop_mode=clone:stop_duration={pad:.2f}",
-                        "-map", "0:v", "-map", "1:a",
+                        "-vf", f"tpad=stop_mode=clone:stop_duration={target - v_dur:.2f}",
                         "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
-                        *audio_args, "-shortest", str(output)],
+                        *tail],
                        check=True, capture_output=True, timeout=600)
         return output
-    # apad 静音补齐到视频全长——绝不截视频（2026-09-05 真机：-shortest 裸用把
-    # 17 个短对白镜截掉 ~40s，片长塌缩+轴全面错位）。注意 copy 视频 + apad
-    # 无限音频 + -shortest 会熄火（muxer 等不到 copy 流 EOF）→ 显式 -t 视频时长
-    v_dur = probe(video)["duration"] or 0.0
     subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-i", str(audio),
-                    "-map", "0:v", "-map", "1:a",
-                    "-af", "apad", "-c:v", "copy", *audio_args,
-                    "-t", f"{v_dur:.3f}", str(output)],
+                    "-c:v", "copy", *tail],
                    check=True, capture_output=True, timeout=300)
     return output
 
@@ -249,21 +250,26 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
             native_voice = json.loads(s["ledger_json"] or "{}").get("h3_native_voice")
             if tts_audio.exists() and not native_voice:
                 tts_part = td / f"{s['seq']:04d}_tts.mp4"
-                # B3 兜底（2026-09-05）：配音长于视频 → 末帧定格补齐差值再拼，
-                # 对白永远说得完；warn 供下次修时长
-                pad = 0.0
+                # 音频收口（2026-09-05）：对白镜段长=配音+0.5s 呼吸——长者末帧
+                # 定格补齐、短者截尾（口型表演尾巴消灭）；两向都日志透明
                 try:
                     a_dur = probe(tts_audio)["duration"]
                     v_dur = probe(part)["duration"]
-                    if a_dur > v_dur + 0.05:
-                        pad = a_dur - v_dur + 0.1
+                except Exception:
+                    a_dur = None
+                target = (a_dur + BREATH_SEC) if a_dur else probe(part)["duration"]
+                if a_dur:
+                    if target > v_dur + 1:
                         emit_log(db, "merge", "warn",
                                  f"镜 {s['seq']} 配音 {a_dur:.1f}s 长于视频 {v_dur:.1f}s，"
-                                 f"末帧定格补长 {pad:.1f}s 保对白完整",
+                                 f"末帧定格补长 {target - v_dur:.1f}s 保对白完整",
                                  project_id=project_id)
-                except Exception:
-                    pass  # 探测失败按原样替换，不阻断合成
-                _replace_audio(part, tts_audio, tts_part, pad=pad)
+                    elif v_dur - target > 1:
+                        emit_log(db, "merge", "info",
+                                 f"镜 {s['seq']} 口型表演 {v_dur:.1f}s 长于配音 {a_dur:.1f}s，"
+                                 f"收口至 {target:.1f}s",
+                                 project_id=project_id)
+                _replace_audio(part, tts_audio, tts_part, target=target)
                 part = tts_part
             elif mute_quiet:  # 无台词镜静音开关（2026-08-30）：杂音不进成片
                 mute_part = td / f"{s['seq']:04d}_mute.mp4"

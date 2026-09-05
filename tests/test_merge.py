@@ -229,18 +229,6 @@ def test_burn_subtitles_filter_ascii_and_cwd(tmp_path, monkeypatch):
 
 # ── B3 末帧定格补长（2026-09-05 设计B：对白说一半就截的合成端兜底）──
 
-def test_replace_audio_pads_short_video(tmp_path):
-    """2s 视频配 3.5s 音频：pad 后成片 ≈3.5s——末帧定格续到对白说完。"""
-    from comic_studio.engine.merge import _replace_audio, probe
-    v = _make(tmp_path / "v.mp4", 2)
-    subprocess.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
-                    "sine=frequency=440:duration=3.5", str(tmp_path / "a.mp3")],
-                   check=True, capture_output=True, timeout=60)
-    out = _replace_audio(v, tmp_path / "a.mp3", tmp_path / "out.mp4", pad=1.6)
-    d = probe(out)["duration"]
-    assert abs(d - 3.5) < 0.5, d
-
-
 def test_merge_pads_when_tts_longer_than_video(tmp_path, monkeypatch):
     """merge_project：配音长于视频 → _replace_audio 收到 pad≈差值+0.1 + warn 日志。"""
     import shutil as _sh
@@ -250,8 +238,8 @@ def test_merge_pads_when_tts_longer_than_video(tmp_path, monkeypatch):
     from comic_studio.engine.shots import persist_shots, update_shot
     grabbed = {}
 
-    def fake_replace(video, audio, output, pad=0.0):
-        grabbed["pad"] = pad
+    def fake_replace(video, audio, output, target=0.0):
+        grabbed["target"] = target
         _sh.copy(video, output)
         return output
 
@@ -271,7 +259,7 @@ def test_merge_pads_when_tts_longer_than_video(tmp_path, monkeypatch):
            character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
     update_shot(db, sid, {"video_path": str(v), "status": "rendered"})
     M.merge_project(db, tmp_path / "data", pid)
-    assert grabbed["pad"] > 2.0 and grabbed["pad"] < 2.2, grabbed
+    assert 6.4 < grabbed["target"] < 6.6, grabbed  # 配音 6s + 0.5 呼吸
     n = db.connect().execute(
         "SELECT COUNT(*) c FROM logs WHERE message LIKE '%补长%'").fetchone()["c"]
     assert n == 1
@@ -311,23 +299,6 @@ def _make_mp3_24k_mono(dest, seconds):
     return dest
 
 
-def test_replace_audio_unifies_audio_params(tmp_path):
-    """2026-09-05 真机成片无声/卡死根因：TTS mp3 是 24k 单声道，替换段未统一
-    采样率/声道 → concat -c copy 把 24k mono 与 44.1k stereo 硬缝一个容器，
-    时间戳全废（ep005 前段无声后段配音错位、ep006 全无声+拖不动）。
-    替换段必须与 normalize 同参：44100 Hz 立体声（pad 路径同理）。"""
-    from comic_studio.engine.merge import _replace_audio, probe
-    v = _make(tmp_path / "v.mp4", 2)
-    out = _replace_audio(v, _make_mp3_24k_mono(tmp_path / "a.mp3", 1.5),
-                         tmp_path / "o.mp4")
-    p = probe(out)
-    assert p["sample_rate"] == 44100 and p["channels"] == 2, p
-    out2 = _replace_audio(v, _make_mp3_24k_mono(tmp_path / "a2.mp3", 3.5),
-                          tmp_path / "o2.mp4", pad=1.6)
-    p2 = probe(out2)
-    assert p2["sample_rate"] == 44100 and p2["channels"] == 2, p2
-
-
 def test_probe_reports_audio_params_and_absence(tmp_path):
     """probe 暴露 sample_rate/channels；无音轨文件返回 None（拼接体检依据）。"""
     from comic_studio.engine.merge import probe
@@ -337,13 +308,55 @@ def test_probe_reports_audio_params_and_absence(tmp_path):
     assert v["sample_rate"] is None and v["channels"] is None
 
 
-def test_replace_audio_never_truncates_video(tmp_path):
-    """2026-09-05 真机（ep006/007 片长 197s 应为 237s）：非补长路 -shortest 把
-    「配音短于视频」的镜整段截到配音长度（镜19 4.5→1.0s，17 镜共截 ~40s），
-    片长塌缩+字幕轴全面错位。改为 apad 静音补齐到视频全长，段长=视频长。"""
+# ── 音频收口（2026-09-05）：对白镜段长恒=配音+0.5s 呼吸 ──
+
+def test_replace_audio_fits_target_length(tmp_path):
+    """长者末帧定格补齐、短者截尾收口（H3 口型表演撑满整镜，配音说完即切，
+    消灭「嘴动无声尾巴」）；音频参数统一 44100 立体声不回退。"""
     from comic_studio.engine.merge import _replace_audio, probe
-    v = _make(tmp_path / "v.mp4", 2)
-    out = _replace_audio(v, _make_mp3_24k_mono(tmp_path / "a.mp3", 1.2),
-                         tmp_path / "o.mp4")
-    d = probe(out)["duration"]
-    assert d > 1.9, d  # 视频全长保留（旧行为 1.2s）
+    v5 = _make(tmp_path / "v5.mp4", 5)
+    out1 = _replace_audio(v5, _make_mp3_24k_mono(tmp_path / "a12.mp3", 1.2),
+                          tmp_path / "o1.mp4", target=1.7)
+    assert abs(probe(out1)["duration"] - 1.7) < 0.4, probe(out1)["duration"]
+    out2 = _replace_audio(_make(tmp_path / "v2.mp4", 2),
+                          _make_mp3_24k_mono(tmp_path / "a35.mp3", 3.5),
+                          tmp_path / "o2.mp4", target=4.0)
+    p2 = probe(out2)
+    assert abs(p2["duration"] - 4.0) < 0.4, p2["duration"]
+    assert p2["sample_rate"] == 44100 and p2["channels"] == 2
+
+
+def test_merge_trims_when_tts_shorter(tmp_path, monkeypatch):
+    """merge_project：配音短于视频 → target=配音+0.5 收口 + 日志透明。"""
+    import shutil as _sh
+    from comic_studio.engine import merge as M
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.shots import persist_shots, update_shot
+    grabbed = {}
+
+    def fake_replace(video, audio, output, target=0.0):
+        grabbed["target"] = target
+        _sh.copy(video, output)
+        return output
+
+    def fake_probe(p):
+        return {"duration": 2.0 if str(p).endswith(".mp3") else 4.0,
+                "width": 640, "height": 360, "fps": 25}
+
+    monkeypatch.setattr(M, "_replace_audio", fake_replace)
+    monkeypatch.setattr(M, "probe", fake_probe)
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "收口剧", "16:9", "正文")["id"]
+    v = _make(tmp_path / "v.mp4", 1)
+    (v.parent / "dialogue.mp3").write_bytes(b"fake-mp3")
+    sid = persist_shots(db, pid, [
+        NS(text_span="", description="镜1", shot_type="", camera={},
+           duration=5.0, workflow_type="t2v", ledger={},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
+    update_shot(db, sid, {"video_path": str(v), "status": "rendered"})
+    M.merge_project(db, tmp_path / "data", pid)
+    assert 2.4 < grabbed["target"] < 2.6, grabbed
+    n = db.connect().execute(
+        "SELECT COUNT(*) c FROM logs WHERE message LIKE '%收口%'").fetchone()["c"]
+    assert n == 1
