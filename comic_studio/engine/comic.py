@@ -57,10 +57,16 @@ def import_comic(db, data_dir, name: str, aspect: str,
         end = page_files[i - 1].parent / "kf_end.png"
         end.write_bytes(page_files[i].read_bytes())
 
+    # P11-⑤：逐页时长读项目字段（此前硬编码 5.0——段时长/总时长形同虚设）；
+    # 总时长>0 按页数均摊（下限 4s，与小说拆解均摊语义对齐），否则段时长>0
+    # 用段时长、0 兜底 5.0
+    per = default_shot_duration if default_shot_duration > 0 else 5.0
+    if target_duration > 0:
+        per = max(4, round(target_duration / max(1, n)))
     drafts = [NS(text_span="", description=f"漫画第{i}页",
                  shot_type="", camera={"景别": "中景", "机位": "平视",
                                        "运镜": "固定", "转场": "切"},
-                 duration=5.0, workflow_type=workflow, ledger={},
+                 duration=float(per), workflow_type=workflow, ledger={},
                  character_ids=[], scene_ids=[], prop_ids=[],
                  depends_on=None, prompt="")
               for i in range(1, n + 1)]
@@ -128,7 +134,8 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
             "overall_soundscape:\n"
             "只写与画面一致的对白声/环境声/动作音，音量轻微；无对白时写明无对白无哼唱\n"
             "non_diegetic_music: N/A\n"
-            "关键：描述「正在发生的动画」，不是静态画面；画风转换要求（若有）写进 detailed_description。")
+            "关键：描述「正在发生的动画」，不是静态画面；画风转换要求（若有）写进 detailed_description。"
+            + _voices_tail(db, data_dir, project_id))
     else:
         # 动态漫模式：翻页过渡（现有行为）
         system = (
@@ -156,12 +163,7 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
             "non_diegetic_music: N/A\n"
             "必须描述「从第一格到第二格的具体过渡过程」，不能只描述单帧静态画面。\n"
             "对白必须按漫画中的实际顺序排列，不能乱序。\n\n"
-            "对白说话人音色标注（角色音色系统）：本镜有对白时，最后一行严格按此格式输出"
-            "（不要代码块；无对白的镜不要输出此行）：\n"
-            'VOICES:{"voices":[{"name":"说话人","gender":"女","age":8,"voice":"库内音色名"}]}\n'
-            "只列真实人物（旁白/画外音/内心独白不要）；gender 男/女，age 数字；\n"
-            "voice 从下方可用音色库中按角色年龄/性别/气质选最贴切的。\n\n"
-            "可用音色库（voice 只能从中选）：\n" + _voice_lib(db, data_dir, project_id))
+            + _voices_tail(db, data_dir, project_id))
     n = 0
     voices_meta: dict = {}   # 说话人 → {gender, age, voice}（VOICES 尾行聚合）
     for s in list_shots(db, project_id):
@@ -248,13 +250,15 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
         # 读图顺手提取角色——仅漫改（2026-08-29 真机教训：动态漫 fl2v 用漫画原页
         # 渲染，角色资产毫无用处，还提取出 83 个旁白/叙述垃圾资产 + 1195 处绑定）
         if comic_mode == "film_adaptation":
-            _extract_characters_from_prompts(db, data_dir, project_id)
+            _extract_characters_from_prompts(db, data_dir, project_id, voices_meta)
             # 自动绑定角色到分镜
             from .llm.storyboard import auto_bind_characters
             bound = auto_bind_characters(db, project_id)
             if bound:
                 emit_log(db, "llm", "info", f"角色自动绑定：{bound} 处",
                          project_id=project_id)
+            # P11-③：绑定后把 subject_definitions 锚到 <Picture N> 参考槽
+            _anchor_subject_definitions(db, project_id)
     return n
 
 
@@ -267,6 +271,23 @@ def _voice_lib(db, data_dir, project_id) -> str:
     from .projects import get_project
     proj = get_project(db, project_id)
     return voice_library_prompt(data_dir, proj["slug"] if proj else None) or "（空）"
+
+
+def _voices_tail(db, data_dir, project_id) -> str:
+    """VOICES 尾行指令 + 名册提示 + 音色库清单（P11-①②：漫改/动态漫同权——
+    漫改此前缺此段 → 性别恒待确认、音色无法自动匹配；名册注入让 VLM 沿用
+    已有命名，不再每镜另起变体）。"""
+    from .assets import list_project_assets
+    names = [a["name"] for a in list_project_assets(db, project_id)
+             if a["kind"] == "character"]
+    roster = ("\n已有角色名册（命名必须沿用名单原名，禁止另起同义变体新名）："
+              + "、".join(names) + "\n") if names else ""
+    return ("\n\n对白说话人音色标注（角色音色系统）：本镜有对白时，最后一行严格按此格式输出"
+            "（不要代码块；无对白的镜不要输出此行）：\n"
+            'VOICES:{"voices":[{"name":"说话人","gender":"女","age":8,"voice":"库内音色名"}]}\n'
+            "只列真实人物（旁白/画外音/内心独白不要）；gender 男/女，age 数字；\n"
+            "voice 从下方可用音色库中按角色年龄/性别/气质选最贴切的。" + roster +
+            "\n\n可用音色库（voice 只能从中选）：\n" + _voice_lib(db, data_dir, project_id))
 
 
 def _parse_voices_line(text: str) -> dict:
@@ -359,22 +380,27 @@ def _build_speaker_assets(db, data_dir, project_id, voices_meta: dict) -> int:
     return len(drafts) or bound
 
 
-def _extract_characters_from_prompts(db, data_dir, project_id) -> int:
+def _extract_characters_from_prompts(db, data_dir, project_id,
+                                     voices_meta: dict | None = None) -> int:
     """从已生成的提示词对白中提取角色名 → 建资产（仅漫改调用）。
     过滤规则（2026-08-29 真机教训：旧正则把旁白/对白标签、「随后前夫问道」类
     叙述短语全当人名，83 个资产里只有 1 个真名）：
-    说话人须全篇出现 ≥2 次 + 长度 ≤4 + 叙述词黑名单 + 动词后缀排除。"""
+    说话人须全篇出现 ≥2 次 + 长度 ≤4 + 叙述词黑名单 + 动词后缀排除。
+    P11（2026-09-05 用户三连报）：①包含式归一——「新婚妻子」并入已有「妻子」，
+    变体不再各自建资产，提示词内名字同步替换；②性别/年龄从 VOICES 尾行落
+    外貌（此前恒「待确认」）；③音色按 match_voice 自动绑（仅空绑）。"""
     from collections import Counter
-    from .shots import list_shots
+    from .shots import list_shots, update_shot
     from .assets import list_project_assets, persist_assets
+    from .voices import match_voice
+    from .voicelib import voice_library_names
+    from .projects import get_project
     from types import SimpleNamespace as NS
+    voices_meta = voices_meta or {}
 
-    # 已有角色名集合（不重复创建）
     existing = {a["name"] for a in list_project_assets(db, project_id)
                 if a["kind"] == "character"}
 
-    # 从对白提取说话人（_extract_dialogue 要求 名字+引号台词 严格格式，
-    # 比裸正则可靠：不再匹配「随后前夫问道：「」前的叙述前缀以外的噪音）
     counts = Counter()
     contexts = {}
     for s in list_shots(db, project_id):
@@ -388,20 +414,132 @@ def _extract_characters_from_prompts(db, data_dir, project_id) -> int:
                 contexts[name] = prompt[:80]
 
     found = {n: c for n, c in counts.items() if _is_real_character_name(n, c)}
-    if not found:
-        return 0
+    # P11-② 包含式归一：新名与旧名/已收新名互为包含（双方 ≥2 字）→ 并入
+    canonical = sorted(existing, key=len, reverse=True)
+    merge_map: dict = {}
+    accepted: list = []
+    for n in sorted(found, key=lambda x: (-found[x], -len(x))):
+        target = next((c for c in canonical
+                       if len(c) >= 2 and len(n) >= 2 and (c in n or n in c)), None)
+        if target:
+            merge_map[n] = target
+        else:
+            canonical.append(n)
+            accepted.append(n)
 
-    # 建资产（外貌从上下文推断）
-    char_ns = [NS(name=n,
-                  appearance=f"性别：待确认\n来源：VLM 读图提取\n上下文：{contexts[n][:60]}",
-                  tags=["comic"])
-               for n in found]
-    persist_assets(db, data_dir, project_id,
-                   NS(characters=char_ns, scenes=[], props=[]))
-    emit_log(db, "llm", "info",
-             f"读图顺手提取角色：{len(char_ns)} 个（{', '.join(found)}）",
-             project_id=project_id)
+    # 提示词内变体名归一替换（长名先替换防半截；description/对白说话人同步）
+    if merge_map:
+        order = sorted(merge_map, key=len, reverse=True)
+        for s in list_shots(db, project_id):
+            prompt = s["prompt"] or ""
+            desc = s["description"] or ""
+            led = json.loads(s["ledger_json"] or "{}")
+            new_p = new_d = prompt, desc
+            new_p, new_d = prompt, desc
+            for k in order:
+                new_p = new_p.replace(k, merge_map[k])
+                new_d = new_d.replace(k, merge_map[k])
+                for d in led.get("dialogue") or []:
+                    if (d.get("speaker") or "") == k:
+                        d["speaker"] = merge_map[k]
+            if (new_p, new_d) != (prompt, desc):
+                update_shot(db, s["id"], {
+                    "prompt": new_p, "description": new_d,
+                    "ledger_json": json.dumps(led, ensure_ascii=False)})
+        emit_log(db, "llm", "info",
+                 f"角色名归一：{len(merge_map)} 个变体并入"
+                 f"（{', '.join(f'{k}→{v}' for k, v in merge_map.items())}）",
+                 project_id=project_id)
+
+    # 建资产：性别/年龄从 VOICES meta 落外貌（变体 meta 并入正名）
+    meta = {}
+    for k, v in merge_map.items():
+        meta.setdefault(v, voices_meta.get(k))
+    for n in accepted:
+        meta.setdefault(n, voices_meta.get(n))
+    char_ns = []
+    for n in accepted:
+        v = meta.get(n) or {}
+        app = (f"性别：{v.get('gender') or '待确认'}\n"
+               f"年龄：{v.get('age') or '未知'}岁\n来源：VLM 读图提取\n"
+               f"上下文：{contexts[n][:60]}")
+        char_ns.append(NS(name=n, appearance=app, tags=["comic"]))
+    if char_ns:
+        persist_assets(db, data_dir, project_id,
+                       NS(characters=char_ns, scenes=[], props=[]))
+        emit_log(db, "llm", "info",
+                 f"读图顺手提取角色：{len(char_ns)} 个（{', '.join(accepted)}）",
+                 project_id=project_id)
+
+    # P11-④ 音色自动绑（已有角色同样补绑——镜像 _build_speaker_assets 遍历
+    # 全部说话人；仅空绑不覆盖手选）
+    slug = get_project(db, project_id)["slug"]
+    lib = voice_library_names(data_dir, slug)
+    known = existing | set(accepted)
+    bind_names = {merge_map.get(v, v) for v in voices_meta} & known
+    bind_names |= {t for t in merge_map.values() if t in known} | set(accepted)
+    bound = 0
+    for n in bind_names:
+        v = meta.get(n) or voices_meta.get(n) or {}
+        app = f"性别：{v.get('gender') or ''}\n年龄：{v.get('age') or ''}岁"
+        voice = match_voice(app, v.get("voice", ""), library=lib)
+        if voice:
+            conn = db.connect()
+            cur = conn.execute(
+                "UPDATE assets SET voice=? WHERE id=("
+                " SELECT a.id FROM assets a JOIN project_assets pa ON pa.asset_id=a.id"
+                " WHERE pa.project_id=? AND a.name=? AND a.kind='character'"
+                " AND a.voice='')", (voice, project_id, n))
+            conn.commit()
+            bound += cur.rowcount
+    if bound:
+        emit_log(db, "llm", "info", f"音色自动匹配：{bound} 个角色",
+                 project_id=project_id)
     return len(char_ns)
+
+
+def _anchor_subject_definitions(db, project_id) -> int:
+    """P11-③：按 ledger 绑定顺序把每镜 subject_definitions 整块重写为
+    「<角色名> 是来自 <Picture N> 的人物」——ref2va 多参考身份锚真实生效
+    （此前 VLM 写「是来自 第 2 格」=漫画原页序号，渲染端无法消费）。
+    未绑定角色的镜不动；角色上限 4（多参考槽位余量）。"""
+    from .assets import list_project_assets
+    from .shots import list_shots, update_shot
+    names = {a["id"]: a["name"] for a in list_project_assets(db, project_id)
+             if a["kind"] == "character"}
+    HEADS = ("summary:", "retention_analysis:", "detailed_description:",
+             "overall_soundscape:", "non_diegetic_music:")
+    n = 0
+    for s in list_shots(db, project_id):
+        ids = (json.loads(s["ledger_json"] or "{}")
+               .get("assets") or {}).get("characters") or []
+        if not ids:
+            continue
+        defs = [f"{names[i]} 是来自 <Picture {k}> 的人物，其外观由该图提供"
+                for k, i in enumerate(ids[:4], 1) if i in names]
+        if not defs:
+            continue
+        out, in_block, replaced = [], False, False
+        for ln in (s["prompt"] or "").splitlines():
+            if ln.strip() == "subject_definitions:":
+                in_block, replaced = True, True
+                out.append(ln)
+                continue
+            if in_block:
+                # 节头带内容（summary:一句话…）→ 前缀匹配判块结束
+                if any(ln.strip().startswith(h) for h in HEADS):
+                    in_block = False
+                    out.extend(defs)      # 旧块丢弃，注入锚定块
+                    out.append(ln)
+                continue                  # 旧定义行一律丢弃
+            out.append(ln)
+        if replaced:
+            update_shot(db, s["id"], {"prompt": "\n".join(out)})
+            n += 1
+    if n:
+        emit_log(db, "llm", "info",
+                 f"subject_definitions 已锚定参考图槽位：{n} 镜", project_id=project_id)
+    return n
 
 
 # 叙述词黑名单：VLM 提示词里的高频非人名说话人/标签（子串匹配）。

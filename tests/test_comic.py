@@ -11,6 +11,7 @@ PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64  # 假 PNG 字节（导入不解码，
 
 
 def test_import_comic_creates_fl2v_shots(tmp_path):
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic
     db = Database(tmp_path / "s.db"); db.migrate()
     images = [f"page{i:02d}.png" for i in range(3)]
@@ -39,6 +40,7 @@ def test_import_comic_creates_fl2v_shots(tmp_path):
 
 def test_describe_shots_vision_calls(tmp_path, monkeypatch):
     """VLM 读图：多模态消息（image_url base64）→ 每镜提示词落库。"""
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic, describe_shots
     from comic_studio.engine.llm.provider import LLMClient, Usage
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -69,6 +71,7 @@ def test_describe_shots_motion_skips_character_assets(tmp_path):
     """动态漫不提取角色（2026-08-29 真机：83 个旁白/叙述垃圾资产 + 1195 处绑定）。
     fl2v 用漫画原页渲染，角色资产毫无用处。"""
     import json
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic, describe_shots
     from comic_studio.engine.llm.provider import LLMClient, Usage
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -93,6 +96,7 @@ def test_describe_shots_motion_skips_character_assets(tmp_path):
 def test_describe_shots_film_extracts_only_recurring_real_names(tmp_path):
     """漫改提取过滤（2026-08-29 真机：旁白/对白/叙述短语全被当人名）：
     说话人须全篇出现 ≥2 次 + 长度 ≤4 + 叙述词黑名单。"""
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic, describe_shots
     from comic_studio.engine.llm.provider import LLMClient, Usage
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -142,6 +146,7 @@ def test_purge_comic_assets_cleans_rows_dirs_and_bindings(tmp_path):
     import json
     from types import SimpleNamespace as NS
     from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import purge_comic_assets
     from comic_studio.engine.projects import create_project
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -184,6 +189,7 @@ def test_from_comic_api(tmp_path):
 def test_describe_shots_motion_uses_integrated_format_and_heals(tmp_path):
     """动态漫读图提示词（2026-08-31 定稿：H3 六模块骨架中文输出）：
     system 要求六模块 + VOICES；落库前过 heal（缺音频节机械补）。"""
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic, describe_shots
     from comic_studio.engine.llm.provider import LLMClient, Usage
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -215,6 +221,7 @@ def test_describe_shots_motion_uses_integrated_format_and_heals(tmp_path):
 
 def test_describe_shots_film_uses_skeleton_and_heals(tmp_path):
     """漫改读图提示词升级：subject_definitions 骨架（用户实测全能参考格式）+ heal。"""
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic, describe_shots
     from comic_studio.engine.llm.provider import LLMClient, Usage
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -242,6 +249,7 @@ def test_describe_shots_film_uses_skeleton_and_heals(tmp_path):
 
 def test_describe_motion_builds_speaker_assets_with_voices(tmp_path):
     """动态漫角色音色（2026-08-31）：VOICES 尾行标注 → 对白聚合建角色（旁白过滤）→ 绑音色。"""
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic, describe_shots
     from comic_studio.engine.llm.provider import LLMClient, Usage
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -279,6 +287,7 @@ def test_describe_motion_builds_speaker_assets_with_voices(tmp_path):
 def test_extract_comic_matches_voices(tmp_path):
     """漫改资产音色（2026-08-31）：VLM 提取含 suggested_voice + 音色库注入系统词；
     建资产后自动绑定（非法建议走性别×年龄基线）。"""
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic, extract_comic_characters
     from comic_studio.engine.llm.provider import LLMClient, Usage
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -310,6 +319,7 @@ def test_extract_comic_matches_voices(tmp_path):
 
 def test_motion_group_speakers_not_built_as_assets(tmp_path):
     """R6：动态漫对白聚合——群体称谓（众人/…们/观众）不建角色不绑音色。"""
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic, describe_shots
     from comic_studio.engine.llm.provider import LLMClient, Usage
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -330,6 +340,7 @@ def test_motion_group_speakers_not_built_as_assets(tmp_path):
 
 def test_film_group_nouns_not_extracted(tmp_path):
     """R6：漫改提取——群体称谓即使出现 ≥2 次也不得建角色。"""
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic, describe_shots
     from comic_studio.engine.llm.provider import LLMClient, Usage
     db = Database(tmp_path / "s.db"); db.migrate()
@@ -356,6 +367,7 @@ def test_drop_character_bindings_clears_ledger_refs(tmp_path):
     旧 id 绑定（此前悬空 → 渲染参考解析落空）。共用助手单测。"""
     from types import SimpleNamespace as NS
     import json as _json
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import _drop_character_bindings
     from comic_studio.engine.db import Database
     from comic_studio.engine.projects import create_project
@@ -394,6 +406,7 @@ def test_describe_batch_includes_stale_and_resets_status(tmp_path):
     修复：stale 镜纳入批量、成功写 status='ready'。"""
     import json as _json
     from types import SimpleNamespace as NS
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import describe_shots
     from comic_studio.engine.db import Database
     from comic_studio.engine.paths import data_to_abs
@@ -422,3 +435,138 @@ def test_describe_batch_includes_stale_and_resets_status(tmp_path):
     assert n == 1, "stale 镜必须纳入批量重生"
     row = list_shots(db, pid)[0]
     assert row["status"] == "ready" and "林凡" in row["prompt"]
+
+
+# ===== P11 漫改质量批（2026-09-05 用户四连报 + 时长硬编码）=====
+
+def _png_bytes():
+    return b"\x89PNG\r\n\x1a\n" + b"0" * 32
+
+
+def test_import_comic_respects_durations(tmp_path):
+    """P11-⑤：import_comic 此前硬编码 duration=5.0——段时长/总时长字段形同虚设。"""
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.comic import import_comic
+    from comic_studio.engine.shots import list_shots
+    db = Database(tmp_path / "s.db"); db.migrate()
+    p1 = import_comic(db, tmp_path / "d", "段剧", "16:9", [("p.png", _png_bytes())],
+                      default_shot_duration=7)
+    assert [s["duration"] for s in list_shots(db, p1["id"])] == [7.0]
+    p2 = import_comic(db, tmp_path / "d", "总剧", "16:9",
+                      [("p.png", _png_bytes())] * 3, target_duration=12)
+    assert [s["duration"] for s in list_shots(db, p2["id"])] == [4.0, 4.0, 4.0]
+    p3 = import_comic(db, tmp_path / "d", "默剧", "16:9", [("p.png", _png_bytes())])
+    assert [s["duration"] for s in list_shots(db, p3["id"])] == [5.0]
+
+
+def test_film_describe_voices_gender_and_bind(tmp_path):
+    """P11-①④：漫改 system 注入 VOICES 尾行 → 性别年龄落资产外貌 + 音色自动绑。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project, set_stage
+    from comic_studio.engine.comic import describe_shots
+    from comic_studio.engine.assets import list_project_assets
+    from comic_studio.engine.paths import data_to_abs
+    from comic_studio.engine.projects import create_project, set_stage
+    from comic_studio.engine.shots import persist_shots
+    captured = {}
+
+    class FakeVLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.4):
+            captured["system"] = messages[0]["content"]
+            return ("subject_definitions:\n妻子 是来自 第 1 格 的人物，其外观由该图提供\n"
+                    "summary:一句话：本镜核心内容与运镜\n"
+                    "overall_soundscape:无对白、无哼唱，仅环境声\n"
+                    "non_diegetic_music: N/A\n"
+                    'VOICES:{"voices":[{"name":"妻子","gender":"女","age":28,"voice":"元气少女"}]}', {})
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "音剧", "16:9", "t",
+                         comic_mode="film_adaptation")["id"]
+    from comic_studio.engine.assets import persist_assets
+    persist_assets(db, tmp_path / "d", pid,   # 名册注入前提：已有角色
+                   NS(characters=[NS(name="妻子", appearance="性别：女", tags=[])],
+                      scenes=[], props=[]))
+    set_stage(db, pid, "storyboard_ready")
+    persist_shots(db, pid, [NS(text_span="", description="d", shot_type="",
+        camera={}, duration=5.0, workflow_type="ref2va", ledger={},
+        character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])
+    d = data_to_abs(tmp_path / "d", "projects/音剧/shots/1")
+    d.mkdir(parents=True)
+    (d / "kf_start.png").write_bytes(_png_bytes())
+    describe_shots(db, tmp_path / "d", pid, FakeVLM())
+    assert "VOICES:" in captured["system"] and "音色库" in captured["system"]  # ①
+    assert "已有角色名册" in captured["system"]                                # ②名册注入
+    chars = [a for a in list_project_assets(db, pid) if a["kind"] == "character"]
+    assert chars and "女" in chars[0]["appearance_json"]                      # 性别落库
+    assert chars[0]["voice"]                                                   # ④音色自动匹配
+
+
+def test_extract_merges_name_variants(tmp_path):
+    """P11-②：包含式归一——「新婚妻子」并入已有「妻子」，提示词同步替换。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.comic import _extract_characters_from_prompts
+    from comic_studio.engine.shots import list_shots, persist_shots, update_shot
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "归剧", "16:9", "t",
+                         comic_mode="film_adaptation")["id"]
+    persist_assets(db, tmp_path / "d", pid,
+                   NS(characters=[NS(name="妻子", appearance="性别：女", tags=[])],
+                      scenes=[], props=[]))
+    sids = persist_shots(db, pid, [
+        NS(text_span="", description="d", shot_type="", camera={}, duration=5.0,
+           workflow_type="ref2va", ledger={}, character_ids=[], scene_ids=[],
+           prop_ids=[], depends_on=None) for _ in range(2)])
+    for i, sid in enumerate(sids):
+        update_shot(db, sid, {"prompt": f"正文{i}。新婚妻子：「你来看看吧」"})
+    n = _extract_characters_from_prompts(db, tmp_path / "d", pid, {})
+    names = {a["name"] for a in list_project_assets(db, pid)
+             if a["kind"] == "character"}
+    assert "新婚妻子" not in names and n == 0            # 变体不建新资产
+    prompts = [s["prompt"] for s in list_shots(db, pid)]
+    assert all("妻子：「" in p and "新婚妻子" not in p for p in prompts)  # 归一替换
+
+
+def test_anchor_subject_definitions_by_binding(tmp_path):
+    """P11-③：按绑定顺序把 subject_definitions 重写为 <Picture N> 锚定——
+    ref2va 多参考身份生效；未绑定镜不动。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.comic import _anchor_subject_definitions
+    from comic_studio.engine.shots import list_shots, persist_shots, update_shot
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "锚剧", "16:9", "t",
+                         comic_mode="film_adaptation")["id"]
+    persist_assets(db, tmp_path / "d", pid,
+                   NS(characters=[NS(name="妻子", appearance="x", tags=[]),
+                                  NS(name="丈夫", appearance="y", tags=[])],
+                      scenes=[], props=[]))
+    aids = [a["id"] for a in list_project_assets(db, pid)
+            if a["kind"] == "character"]
+    PROMPT = ("subject_definitions:\n妻子 是来自 第 2 格 的人物，其外观由该图提供\n"
+              "岳母 是来自 第 2 格 右上角小图的背景人物\n"
+              "summary:一句话：本镜核心内容\n"
+              "overall_soundscape:无对白、无哼唱\nnon_diegetic_music: N/A")
+    sids = persist_shots(db, pid, [
+        NS(text_span="", description="d", shot_type="", camera={}, duration=5.0,
+           workflow_type="ref2va", ledger={},
+           character_ids=aids, scene_ids=[], prop_ids=[], depends_on=None),
+        NS(text_span="", description="d2", shot_type="", camera={}, duration=5.0,
+           workflow_type="ref2va", ledger={}, character_ids=[], scene_ids=[],
+           prop_ids=[], depends_on=None)])
+    update_shot(db, sids[0], {"prompt": PROMPT})
+    update_shot(db, sids[1], {"prompt": PROMPT})
+    n = _anchor_subject_definitions(db, pid)
+    shots = list_shots(db, pid)
+    p0 = shots[0]["prompt"]
+    assert "妻子 是来自 <Picture 1> 的人物" in p0
+    assert "丈夫 是来自 <Picture 2> 的人物" in p0
+    assert "第 2 格" not in p0 and "岳母 是来自" not in p0   # 旧格引用清除
+    assert "summary:一句话：本镜核心内容" in p0               # 其余节保留
+    assert n == 1
+    assert shots[1]["prompt"] == PROMPT                        # 未绑定镜不动
