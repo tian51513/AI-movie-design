@@ -278,3 +278,11 @@ def test_analyze_drops_ghost_character_names(tmp_path):
                     client_factory=lambda t: FakeClient([chunk]))
     names = {a["name"] for a in list_project_assets(db, proj["id"])}
     assert names == {"林战"}  # 幽泉老祖=幻觉名，丢弃
+
+
+def test_extract_system_covers_dialogue_only_text():
+    """P10 真机（2026-09-05 有声1）：ASR 文本无第三人称叙述层，第一人称
+    说话人（自称 妈妈/老师）被「仅被提及不出场」规则误杀——规则补对白体。"""
+    from comic_studio.engine.llm.analyze import EXTRACT_SYSTEM
+    assert "对白体" in EXTRACT_SYSTEM
+    assert "第一人称说话人" in EXTRACT_SYSTEM
