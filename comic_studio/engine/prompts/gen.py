@@ -305,8 +305,20 @@ def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = No
     except (json.JSONDecodeError, TypeError, KeyError):
         ledger = {}
     if ledger.get("dialogue") and "<d>" not in t:
-        t = t.rstrip() + "\n<d>Chinese</d>"
-        fixes.append("补 <d>Chinese</d>")
+        # ④升级（2026-09-06 有声2 真机）：上下文带台词+系统词有格式，本地
+        # 模型仍不写对白段——旧兜底只补空壳 <d>Chinese</d>（无用）。逐句机械
+        # 织入（E 模式句式，speaker 具名保口型归属）；已含 <d> 不重复
+        dl = ledger["dialogue"]
+        weaves = "\n".join(
+            f"{d.get('speaker', '?')} looks at the camera and says in natural "
+            f"Mandarin: <d>[Mandarin Chinese]{d.get('line', '')}</d>"
+            for d in dl if str(d.get("line", "")).strip())
+        if weaves:
+            t = t.rstrip() + "\n" + weaves
+            fixes.append(f"织入对白 {len(dl)} 句（模型未写 <d> 段）")
+        else:
+            t = t.rstrip() + "\n<d>Chinese</d>"
+            fixes.append("补 <d>Chinese</d>")
     # ⑦音频协议兜底（2026-08-30）：缺节机械补；已写的配乐内容不覆盖
     #（用户决策：non_diegetic_music 按分镜具体情况，多数 N/A）。
     # E 模式（英文控制式）不用字段——音频走 Preserve/Add 句式，跳过

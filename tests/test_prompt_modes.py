@@ -137,3 +137,26 @@ def test_heal_strips_ad_fields_from_e_prompt():
     assert any("清除混入字段" in f for f in fixes)
     out_d, _ = heal_h3_prompt(mixed, shot, mode="D")
     assert "subject_definitions" in out_d               # A-D 模式不动
+
+
+def test_heal_weaves_dialogue_into_prompt():
+    """2026-09-06 有声2 真机：上下文带台词+系统词有格式，本地模型仍不写
+    <d> 对白段；heal 旧兜底只补空壳 <d>Chinese</d>（无用）。机械逐句织入。"""
+    from types import SimpleNamespace as NS
+    import json as _json
+    from comic_studio.engine.prompts.gen import heal_h3_prompt
+    shot = NS(ledger_json=_json.dumps({
+        "dialogue": [{"speaker": "少芬妈妈", "line": "来，把这碗汤喝了。"},
+                      {"speaker": "女婿", "line": "好的。"}]}, ensure_ascii=False))
+    text = ("subject_definitions:\n少芬妈妈 是来自 <Picture 1> 的人物\n"
+            "summary:一句话：本镜核心\n"
+            "overall_soundscape:无对白、无哼唱\nnon_diegetic_music: N/A")
+    out, fixes = heal_h3_prompt(text, shot, max_pics=2)
+    assert "<d>[Mandarin Chinese]来，把这碗汤喝了。</d>" in out
+    assert "<d>[Mandarin Chinese]好的。</d>" in out
+    assert any("织入" in f for f in fixes)
+    # 已含 <d> 的提示词不重复织
+    out2, _ = heal_h3_prompt(
+        "已有 <d>[Mandarin Chinese]台词</d> 的提示词 overall_soundscape:无",
+        shot, max_pics=2)
+    assert out2.count("<d>") == 1
