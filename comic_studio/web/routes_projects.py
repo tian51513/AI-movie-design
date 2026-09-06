@@ -319,9 +319,10 @@ def extract_comic_characters_route(project_id: int, request: Request):
 
 @router.post("/{project_id}/describe-shots", status_code=202)
 def describe_shots_route(project_id: int, request: Request,
-                         shot_id: int = 0):
+                         shot_id: int = 0, force: bool = False):
     """P8 VLM 读图生成提示词（队列任务化，2026-08-29 用户需求：
-    队列状态可见）。shot_id>0 单镜；否则批量跑全部空提示词镜。"""
+    队列状态可见）。shot_id>0 单镜；否则批量跑全部空提示词镜；
+    force=true 批量也覆盖已有提示词（2026-09-06 改画风后整批重读）。"""
     db = request.app.state.db
     from ..engine.projects import get_project
     proj = get_project(db, project_id)
@@ -331,6 +332,8 @@ def describe_shots_route(project_id: int, request: Request,
     payload = {"project_id": project_id}
     if shot_id:
         payload["shot_id"] = shot_id
+    if force:
+        payload["force"] = True
     # QC-E：按 routing 定资源（此前硬编码 gpu_llm_local，配 online 时过度互斥）
     jid = enqueue_llm_job(db, "describe_shots", project_id=project_id,
                           shot_id=shot_id if shot_id else None,

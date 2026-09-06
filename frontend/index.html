@@ -105,7 +105,7 @@
 <div id="app">
   <header><b class="home-link" @click="back" title="返回项目列表首页">漫剧工坊</b> <span class="muted">comic_studio</span>
     <span class="hdr-actions">
-      <button @click="openCreate">➕ 创建小说</button>
+      <button @click="openCreate">➕ 创建项目</button>
       <button @click="view='guide'">📖 导引</button>
       <button @click="openSettings">设置</button></span></header>
   <!-- ═══════════ 📖 操作导引 ═══════════ -->
@@ -631,7 +631,7 @@
       <button @click="setProjectsView('list')" :style="projectsView==='list'?'background:#16a34a':''"
               style="font-size:12px;padding:3px 10px" title="紧凑列表视图">☰ 列表</button>
     </span></h2>
-    <p v-if="!projects.length" class="muted" style="padding:16px 0">还没有项目——点右上角「➕ 创建小说」开始</p>
+    <p v-if="!projects.length" class="muted" style="padding:16px 0">还没有项目——点右上角「➕ 创建项目」开始</p>
     <div v-if="projectsView==='grid'" class="masonry">
       <div class="card" v-for="p in projects" :key="p.id" @click="open(p)" style="cursor:pointer">
         <b>{{ p.name }}</b>
@@ -937,6 +937,9 @@
               title="P8 漫画项目：VLM 读首/尾帧自动生成缺失的视频提示词"
               style="font-size:12px;padding:3px 8px;background:#0e7490">
         {{ batchVlmBusy ? '⏳ 读图中…' : '👁 读图生成提示词' }}</button>
+      <button @click="describeShots(true)" :disabled="batchVlmBusy"
+              title="覆盖全部镜的已有提示词（对白、时长同步重估）——改画风/换模型后整批重生成"
+              style="font-size:12px;padding:3px 8px;background:#155e75">🔄 强制重读</button>
       <button v-if="project.comic_mode==='film_adaptation'" @click="extractCharacters"
               :disabled="extractCharsBusy" style="font-size:12px;padding:3px 8px;background:#7c3aed"
               :title="'漫改模式：VLM 读前3页提取角色 → 建资产 → 可生成参考图'">
@@ -1121,11 +1124,11 @@
     </div>
   </main>
 
-  <!-- 创建小说弹窗（2026-08-27：入口移顶部，与设置并列） -->
+  <!-- 创建项目弹窗（2026-08-27：入口移顶部，与设置并列） -->
   <div v-if="createOpen" @click.self="createOpen=false"
        style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:105;display:flex;align-items:flex-start;justify-content:center;overflow:auto">
     <div class="card" style="width:min(760px,94vw);margin:36px 0">
-      <h3 style="margin:0 0 10px">➕ 创建小说
+      <h3 style="margin:0 0 10px">➕ 创建项目
         <button @click="createOpen=false" style="float:right;font-size:12px;padding:2px 8px">✕ 关闭</button></h3>
         <p style="margin:0 0 8px">
           <button type="button" @click="newMode='upload'"

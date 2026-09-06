@@ -1092,9 +1092,14 @@ const methods = {
     await this.loadShots();  // L7：refreshShots 从不存在（幽灵调用）
     alert(`已清理 ${d.purged} 个提取资产`);
   },
-  async describeShots() {
-    if (!confirm('VLM 读图生成全部缺失提示词？（本地视觉模型逐镜调用，页多较慢）')) return;
-    const r = await fetch(`/api/projects/${this.project.id}/describe-shots`, {method: 'POST'});
+  async describeShots(force) {
+    if (force) {
+      if (!confirm('强制重读：覆盖全部镜的已有提示词（对白、时长同步重估）。\n改画风/换模型后用它整批重生成。继续？')) return;
+    } else {
+      if (!confirm('VLM 读图生成全部缺失提示词？（本地视觉模型逐镜调用，页多较慢）')) return;
+    }
+    const r = await fetch(`/api/projects/${this.project.id}/describe-shots`
+                          + (force ? '?force=true' : ''), {method: 'POST'});
     if (!r.ok) { alert(await r.text()); return; }
     // 202 入队成功，状态由 queue 轮询驱动（batchVlmBusy computed）
   },

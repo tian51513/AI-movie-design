@@ -86,9 +86,12 @@ def import_comic(db, data_dir, name: str, aspect: str,
     return proj
 
 
-def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
+def describe_shots(db, data_dir, project_id, client, shot_id=None,
+                   force: bool = False) -> int:
     """VLM 读图生成每镜视频提示词（多模态 raw_chat：首帧必带、尾帧可选）。
-    shot_id 指定时只跑该镜（已有提示词也覆盖）；否则跑全部缺失的镜。返回生成数。"""
+    shot_id 指定时只跑该镜（已有提示词也覆盖）；否则跑全部缺失的镜；
+    force=True 批量也全覆盖（2026-09-06 改画风/换模型后整批重生成，
+    时长随对白同步重估）。返回生成数。"""
     from .paths import data_to_abs
     from .projects import get_project
     from .shots import list_shots, update_shot
@@ -173,9 +176,9 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
     for s in list_shots(db, project_id):
         if shot_id is not None and s["id"] != shot_id:
             continue  # 逐镜模式：只跑指定镜
-        if (shot_id is None and (s["prompt"] or "").strip()
+        if (shot_id is None and not force and (s["prompt"] or "").strip()
                 and s["status"] != "stale"):
-            continue  # 批量模式：跳过已有提示词的镜（stale 除外——QC-A：
+            continue  # 批量模式：跳过已有提示词的镜（stale/QC-A 与 force 除外——
             # autopilot 把 stale 算缺口，此处不重生则无限重入循环）
         shot_dir = data_to_abs(data_dir, f"projects/{slug}/shots/{s['seq']}")
         start_png = shot_dir / "kf_start.png"

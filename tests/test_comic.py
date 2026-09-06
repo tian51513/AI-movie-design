@@ -476,6 +476,80 @@ def test_import_comic_respects_durations(tmp_path):
     assert [s["duration"] for s in list_shots(db, p3["id"])] == [5.0]
 
 
+def test_describe_shots_force_overrides_existing(tmp_path):
+    """强制重读（2026-09-06）：批量模式默认跳过已有提示词的镜（stale 除外），
+    force=True 不跳——改画风/换模型后整批覆盖重生成，时长同步重估。"""
+    import math
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    from comic_studio.engine.shots import list_shots
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "强制重读剧", "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG)])["id"]
+
+    class FakeA(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return "少年推开门走进房间。", Usage(10, 20)
+
+    line = "你休想从这里逃出去，今天就是你的死期，认命吧。"
+    class FakeB(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return f"林晨：「{line}」", Usage(10, 20)
+
+    assert describe_shots(db, tmp_path / "data", pid, FakeA()) == 2
+    # 默认批量：已有提示词的镜全跳过（增量语义不变）
+    assert describe_shots(db, tmp_path / "data", pid, FakeB()) == 0
+    assert all("少年推开门" in s["prompt"] for s in list_shots(db, pid))
+    # force=True：全覆盖 + 对白时长重估
+    assert describe_shots(db, tmp_path / "data", pid, FakeB(), force=True) == 2
+    rows = list_shots(db, pid)
+    assert all("休想从这里逃出去" in s["prompt"] for s in rows)
+    exp = min(15.0, max(4.0, math.ceil(len(line) / 4.0)))
+    assert [s["duration"] for s in rows] == [exp, exp]
+
+
+def test_describe_force_api_payload_and_handler(tmp_path, monkeypatch):
+    """force 全链路：路由 ?force=true → job payload → handler 透传引擎
+    （handler 直接调用，client_for_task 换 Fake——不触网）。"""
+    import json as _json
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    from comic_studio.engine.shots import list_shots, update_shot
+    with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data",
+                               start_workers=False)) as c:
+        r = c.post("/api/projects/from-comic",
+                   data={"name": "force链路剧", "aspect_ratio": "16:9"},
+                   files=[("images", ("a.png", io.BytesIO(PNG), "image/png"))])
+        pid = r.json()["id"]
+        db = Database(tmp_path / "t.db")  # 第二连接（WAL 并存）
+        sid = list_shots(db, pid)[0]["id"]
+        update_shot(db, sid, {"prompt": "旧提示词", "description": "旧", "status": "ready"})
+
+        r2 = c.post(f"/api/projects/{pid}/describe-shots?force=true")
+        assert r2.status_code == 202, r2.text
+        job = db.connect().execute(
+            "SELECT * FROM jobs ORDER BY id DESC LIMIT 1").fetchone()
+        assert _json.loads(job["payload_json"]).get("force") is True
+
+        class FakeB(LLMClient):
+            def __init__(self):
+                super().__init__("http://x", "k", "v")
+            def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+                return "林晨：「站住，你哪里跑！」", Usage(10, 20)
+
+        monkeypatch.setattr("comic_studio.engine.llm.provider.client_for_task",
+                            lambda db, task: FakeB())
+        from comic_studio.engine import pipeline_jobs
+        pipeline_jobs.handle_describe_shots(db, tmp_path / "data", job, None)
+        s = list_shots(db, pid)[0]
+        assert "旧提示词" not in (s["prompt"] or "")
+        assert "站住" in s["prompt"]
+
+
 def test_describe_shots_reestimates_durations(tmp_path):
     """漫画链智能估时（2026-09-06）：段时长/总时长都为 0 时，读图产出对白后
     按字数基准重估（⌈字数/4⌉+0.6×(句数-1) 钳 4~15，与小说链 B1 同式）——

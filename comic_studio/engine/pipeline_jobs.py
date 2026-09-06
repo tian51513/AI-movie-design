@@ -77,7 +77,8 @@ def handle_describe_shots(db, data_dir, job, comfy):
     except Exception:
         client = client_for_task(db, "gen_video_prompt")
     n = describe_shots(db, data_dir, payload.get("project_id", job["project_id"]),
-                       client, shot_id=payload.get("shot_id"))
+                       client, shot_id=payload.get("shot_id"),
+                       force=bool(payload.get("force")))
     emit_log(db, "llm", "info", f"VLM 读图任务完成：{n} 镜",
              project_id=job["project_id"], job_id=job["id"])
 
