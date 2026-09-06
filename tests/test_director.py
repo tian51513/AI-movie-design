@@ -331,3 +331,54 @@ def test_canvas_five_ratios_and_fallback():
     assert w == h and w % 32 == 0
     assert _canvas("4:3") == tuple(reversed(_canvas("3:4")))  # 对称
     assert _canvas("21:9") == _canvas("16:9")  # 回落默认
+
+
+def test_timeline_fills_ref_audios_from_voices(tmp_path):
+    """2026-09-06 用户需求：Director 段级 refAudios——说话人绑音色 → 该段
+    填音频参考（H3 原生配音口型），样本进上传清单；无对白/未绑保持空。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.director import build_timeline
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project, set_stage
+    from comic_studio.engine.shots import persist_shots
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.paths import data_to_abs
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "音导剧", "16:9", "t")["id"]
+    set_stage(db, pid, "storyboard_ready")
+    persist_assets(db, tmp_path / "d", pid,
+                   NS(characters=[NS(name="林晨", appearance="黑发", tags=[])],
+                      scenes=[], props=[]))
+    aid = list_project_assets(db, pid)[0]["id"]
+    conn = db.connect()
+    conn.execute("UPDATE assets SET voice='元气少女' WHERE id=?", (aid,))
+    conn.commit()
+    main = data_to_abs(tmp_path / "d",
+                       list_project_assets(db, pid)[0]["library_dir"]) / "main.png"
+    main.parent.mkdir(parents=True, exist_ok=True)
+    main.write_bytes(b"\x89PNG")
+    # 采样本文件（模拟预设样本）
+    preset = tmp_path / "d" / "voices" / "presets" / "元气少女.flac"
+    preset.parent.mkdir(parents=True, exist_ok=True)
+    preset.write_bytes(b"f")
+    ids = persist_shots(db, pid, [
+        NS(text_span="", description="说话镜", shot_type="", camera={}, duration=5.0,
+           workflow_type="ref2va",
+           ledger={"assets": {"characters": [aid]},
+                   "dialogue": [{"speaker": "林晨", "line": "你好"}]},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None,
+           prompt="p1"),
+        NS(text_span="", description="无声镜", shot_type="", camera={}, duration=5.0,
+           workflow_type="ref2va",
+           ledger={"assets": {"characters": [aid]}},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None,
+           prompt="p2")])
+    tl, uploads = build_timeline(db, tmp_path / "d", pid)
+    segs = tl["segments"]
+    assert segs[0]["refAudios"], "说话镜应填音频参考"
+    assert segs[0]["refAudios"][0]["audioFile"]     # 指向上传名
+    assert not segs[1]["refAudios"], "无声镜保持空（Director 合法）"
+    upload_names = {u["name"] for u in uploads}
+    assert segs[0]["refAudios"][0]["audioFile"] in upload_names  # 样本在上传清单
+    # 提示词带 <Audio N> 声明（同逐镜链协议）
+    assert "<Audio 1>" in segs[0]["prompt"]

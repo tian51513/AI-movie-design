@@ -60,19 +60,48 @@ def _segments_for_shots(db, data_dir, proj, shots, upload_by_path, fps=24):
         return {"index": index, "imageFile": upload_by_path[str(main)],
                 "fileName": "", "type": "input", "subfolder": ""}
 
+    # 音频参考（2026-09-06 用户需求）：说话人绑音色 → 段级 refAudios
+    # （H3 原生配音口型，同逐镜链 _voice_slots_for_shot 协议）
+    from .rendershot import _voice_slots_for_shot
+
+    def _audio_entry(path, idx):
+        if str(path) not in upload_by_path:
+            from pathlib import PurePosixPath as _PP
+            suf = _PP(path).suffix.lower() or ".flac"
+            upload_by_path[str(path)] = f"cs__{proj['slug']}__voice{idx}{suf}"
+        return {"index": idx, "audioFile": upload_by_path[str(path)],
+                "fileName": "", "type": "input", "subfolder": ""}
+
     segments, start = [], 0
+    voice_slot_seq = 0
     for shot in shots:
         ledger = json.loads(shot["ledger_json"] or "{}")
         char_ids = list(((ledger.get("assets") or {}).get("characters")) or [])
         frames = _align_frames(max(5, round(float(shot["duration"]) * fps)))
         refs = [_ref_entry(i, cid) for i, cid in enumerate(dict.fromkeys(char_ids))]
+        prompt = (shot["prompt"] or "").strip() or (shot["description"] or "")
+        ref_audios, audio_decls = [], []
+        v_entries, v_decls = _voice_slots_for_shot(db, data_dir, proj, shot,
+                                                   ["audio0", "audio1"])
+        for ve in v_entries:
+            ref_audios.append(_audio_entry(ve["path"], voice_slot_seq))
+            voice_slot_seq += 1
+        for d in v_decls:
+            audio_decls.append(d)
+        if audio_decls:
+            prompt = "\n".join(audio_decls) + "\n\n" + prompt
+            # 注入过音频参考 = H3 原生配音 → 标记（director_mix 混音跳过 TTS 替换）
+            from .shots import update_shot as _us
+            _led = json.loads(shot["ledger_json"] or "{}")
+            _led["h3_native_voice"] = True
+            _us(db, shot["id"], {"ledger_json": json.dumps(_led, ensure_ascii=False)})
         segments.append({
             "id": f"cs-shot-{shot['seq']}",
             "start": start, "length": frames, "frameCount": frames,
             "durationSec": float(shot["duration"]),
-            "prompt": (shot["prompt"] or "").strip() or (shot["description"] or ""),
+            "prompt": prompt,
             "negativePrompt": "", "taskType": "",
-            "refs": refs, "refAudios": [], "refVideos": [],
+            "refs": refs, "refAudios": ref_audios, "refVideos": [],
             "genImage": {"imageFile": ""},
             "continuityFromPrev": shot["depends_on"] is not None,
         })
