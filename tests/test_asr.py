@@ -1,5 +1,6 @@
 # tests/test_asr.py
 import io
+import json
 import sys
 import types
 
@@ -674,3 +675,56 @@ def test_asr_cleanup_is_queue_job(tmp_path, monkeypatch):
     assert row["type"] == "asr_cleanup"
     assert row["resource"] == "gpu_llm_local"     # 与渲染互斥
     assert "asr_cleanup" in HANDLERS               # handler 已注册
+
+
+def test_asr_cleanup_handler_stores_result_snapshot(tmp_path, monkeypatch):
+    """2026-09-06 真机：队列化后前端弹「保留 undefined 段」——202 响应只剩
+    job_id，旧同步字段全没了。handler 把 {mode, segments, removed} 结果存
+    jobs.snapshot_json，GET /api/jobs/{id}/snapshot 可查 → 前端轮询后取真数。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.asr import save_segments
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.queue.worker import HANDLERS
+    import comic_studio.engine.pipeline_jobs  # noqa: F401 注册
+    import comic_studio.engine.llm.provider as provider_mod
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "果剧", "16:9", "占位")["id"]
+    save_segments(tmp_path / "d", "果剧", [
+        {"start": 0.0, "end": 1.0, "text": "嗯"},
+        {"start": 1.2, "end": 3.0, "text": "儿子 你这是怎么了"}])
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=None, **kw):
+            return ('{"1": "", "2": "儿子 你这是怎么了"}', {})
+    monkeypatch.setattr(provider_mod, "client_for_task",
+                        lambda db, task, **kw: FakeLLM())
+    jid = enqueue_job(db, "asr_cleanup", project_id=pid,
+                      payload={"project_id": pid, "theme": "", "mode": "conservative"})
+    job = db.connect().execute("SELECT * FROM jobs WHERE id=?", (jid,)).fetchone()
+    HANDLERS["asr_cleanup"](db, tmp_path / "d", job, None)
+    snap = json.loads(db.connect().execute(
+        "SELECT snapshot_json FROM jobs WHERE id=?", (jid,)).fetchone()["snapshot_json"])
+    assert snap["result"] == {"mode": "conservative", "segments": 1, "removed": 1}
+
+
+def test_job_snapshot_returns_status_while_running(tmp_path):
+    """GET /api/jobs/{id}/snapshot 旧语义：无快照 404——队列化校对的前端轮询
+    依赖它当「单任务状态源」（pending/running 也 200），改 200+snapshot:null。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.jobs import enqueue_job
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "轮剧", "16:9", "占位")["id"]
+    jid = enqueue_job(db, "asr_cleanup", project_id=pid,
+                      payload={"project_id": pid, "mode": "conservative"})
+    with TestClient(create_app(db_path=tmp_path / "s.db", data_dir=tmp_path / "d",
+                               start_workers=False)) as c:
+        r = c.get(f"/api/jobs/{jid}/snapshot")
+        assert r.status_code == 200, r.text
+        b = r.json()
+        assert b["status"] == "pending" and b["snapshot"] is None and "error" in b
+        assert c.get("/api/jobs/999999/snapshot").status_code == 404  # 不存在的任务仍 404

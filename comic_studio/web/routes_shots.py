@@ -401,12 +401,14 @@ def chapters_listing(request: Request, project_id: int):
 
 @router.get("/api/jobs/{job_id}/snapshot")
 def job_snapshot(request: Request, job_id: int):
-    """P7-A 审计快照查看：任务实际提交的提示词与完整工作流 JSON。"""
+    """P7-A 审计快照查看：任务实际提交的提示词与完整工作流 JSON。
+    2026-09-06 起兼作单任务状态源（校对队列化的前端轮询）：无快照也 200
+    （snapshot=null），只有任务不存在才 404。"""
     row = request.app.state.db.connect().execute(
-        "SELECT id, type, status, snapshot_json FROM jobs WHERE id=?", (job_id,)).fetchone()
+        "SELECT id, type, status, error, snapshot_json FROM jobs WHERE id=?",
+        (job_id,)).fetchone()
     if row is None:
         raise HTTPException(404, "任务不存在")
-    if not row["snapshot_json"]:
-        raise HTTPException(404, "该任务无快照（旧任务或非 ComfyUI 任务）")
     return {"id": row["id"], "type": row["type"], "status": row["status"],
-            "snapshot": json.loads(row["snapshot_json"])}
+            "error": row["error"],
+            "snapshot": json.loads(row["snapshot_json"]) if row["snapshot_json"] else None}

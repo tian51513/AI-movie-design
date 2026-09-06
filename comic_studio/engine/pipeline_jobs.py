@@ -122,6 +122,14 @@ def handle_asr_cleanup(db, data_dir, job, comfy):
     res = asr_mod.cleanup_transcription(
         db, data_dir, pid, client_for_task(db, "asr_cleanup"),
         theme=theme, mode=str(payload.get("mode") or "conservative"))
+    # 结果摘要落 snapshot_json（2026-09-06 真机：202 化后前端读不到旧同步字段，
+    # 弹「保留 undefined 段」）——GET /api/jobs/{id}/snapshot 轮询取真数
+    conn = db.connect()
+    conn.execute(
+        "UPDATE jobs SET snapshot_json=? WHERE id=?",
+        (json.dumps({"result": {k: res.get(k) for k in ("mode", "segments", "removed")}},
+                    ensure_ascii=False), job["id"]))
+    conn.commit()
     emit_log(db, "asr", "info",
              f"转写校对完成：{res['segments']} 段 / 丢弃 {res['removed']}"
              f"（{res['mode']}）", project_id=pid, job_id=job["id"])

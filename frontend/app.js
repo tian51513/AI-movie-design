@@ -541,11 +541,28 @@ const methods = {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({theme: this.cleanupTheme, mode: this.cleanupMode})});
       if (!r.ok) { alert(await r.text()); return; }
-      const b = await r.json();
-      await this.openNovel();   // 重开=刷新正文
-      alert((b.mode === 'enrich' || b.mode === 'free')
-        ? `扩写完成：${b.segments} 段（音频锚点未动）`
-        : `校对完成：保留 ${b.segments} 段 / 丢弃语气词 ${b.removed} 段`);
+      const {job_id} = await r.json();
+      // 队列化（2026-09-06）：202 只给 job_id——轮询单任务快照接口到终态，
+      // 结果计数从 snapshot.result 取（旧代码读同步响应字段 → 「保留 undefined 段」）
+      for (let i = 0; i < 600; i++) {          // 3s × 600 = 30 分钟上限
+        await new Promise(ok => setTimeout(ok, 3000));
+        const s = await fetch(`/api/jobs/${job_id}/snapshot`);
+        if (!s.ok) continue;                    // 404=任务异常消失，继续等超时兜底
+        const j = await s.json();
+        if (j.status === 'pending' || j.status === 'running') continue;
+        if (j.status !== 'done') {
+          alert(`校对任务未完成（${j.status}）：${j.error || '详见执行日志'}`);
+          return;
+        }
+        const res = (j.snapshot || {}).result || {};
+        await this.openNovel();                 // 完成后刷新正文
+        alert((res.mode === 'enrich' || res.mode === 'free')
+          ? `扩写完成：${res.segments} 段（音频锚点未动）`
+          : (res.mode ? `校对完成：保留 ${res.segments} 段 / 丢弃语气词 ${res.removed} 段`
+                      : '校对完成（段数详见执行日志）'));
+        return;
+      }
+      alert('校对仍在进行（超 30 分钟未返回），请稍后查看执行日志');
     } finally { this.cleanupBusy = false; }
   },
   async openNovel() {
