@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 from typing import Callable
 
-from ..assets import persist_assets
+from ..assets import list_project_assets, persist_assets
 from ..db import Database
 from ..logbus import emit as emit_log
 from ..paths import data_to_abs
@@ -325,6 +325,31 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
     emit_log(db, "analyze", "info",
              f"入库 {len(final.characters)} 角色 / {len(final.scenes)} 场景 / {len(final.props)} 道具",
              project_id=project_id)
+    # 孤儿清理（2026-09-06 有声2：persist 合并式入库不删旧角色——重析后
+    # 上轮的少芬阿姨永远残留）。本次输出中不存在的 character → 删资产+清
+    # 分镜绑定（同 comic._drop_character_bindings 模式，本地实现避免跨模块耦合）
+    _keep = {c.name.strip() for c in final.characters}
+    _orphans = [a for a in list_project_assets(db, project_id)
+                if a["kind"] == "character" and a["name"] not in _keep]
+    if _orphans:
+        conn = db.connect()
+        _oids = [a["id"] for a in _orphans]
+        ph = ",".join("?" * len(_oids))
+        conn.execute(f"DELETE FROM project_assets WHERE asset_id IN ({ph})", _oids)
+        conn.execute(f"DELETE FROM assets WHERE id IN ({ph})", _oids)
+        from .shots import list_shots as _ls
+        for sh in _ls(db, project_id):
+            led = json.loads(sh["ledger_json"] or "{}")
+            _ch = (led.get("assets") or {}).get("characters") or []
+            if set(_ch) & set(_oids):
+                (led["assets"])["characters"] = [c for c in _ch if c not in _oids]
+                conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
+                             (json.dumps(led, ensure_ascii=False), sh["id"]))
+        conn.commit()
+        emit_log(db, "analyze", "info",
+                 f"清理 {len(_orphans)} 个上轮孤儿角色（"
+                 + "、".join(a["name"] for a in _orphans) + "，含分镜绑定）",
+                 project_id=project_id)
     # 音色决策链（2026-09-02 用户需求：预设优先，不匹配才生成）：
     # ① suggested_voice 库内有效 → 绑（零成本）
     # ② LLM 给了 voice_description → ComfyUI 可用时生成项目级音色（角色名命名）

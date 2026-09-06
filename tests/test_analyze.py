@@ -336,3 +336,53 @@ def test_alias_suffix_strip():
     assert _strip_appellation("王刚叔叔") == "王刚"
     assert _strip_appellation("李婷") == "李婷"        # 无称谓原样
     assert _strip_appellation("妈妈") == ""           # 纯称谓→空（不参与归一）
+
+
+def test_reanalyze_prunes_orphan_characters(tmp_path, monkeypatch):
+    """2026-09-06 有声2：重析后旧「少芬阿姨」残留——persist 合并式入库从不删
+    旧角色。重析应清理本次输出中不存在的 character（资产+分镜绑定）。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.llm.analyze import analyze_project
+    from comic_studio.engine.projects import create_project, set_stage
+    from comic_studio.engine.assets import list_project_assets, persist_assets
+    from comic_studio.engine.shots import list_shots, persist_shots
+    import json as _json
+
+    class FakeLLM:
+        model = "fake"
+        def __init__(self, names):
+            self.names = names
+        def raw_chat(self, messages, temperature=None, **kw):
+            from comic_studio.engine.llm.provider import Usage
+            chars = ",".join(f'{{"name":"{n}","role":"主角","appearance":"性别：女","tags":[]}}'
+                             for n in self.names)
+            return ('{"characters":[' + chars + '],'
+                    '"scenes":[{"name":"卧室","description":"d","tags":[]}],'
+                    '"props":[]}', Usage(100, 50))
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "孤剧", "16:9",
+                         "少芬妈妈说话 少芬阿姨也说话 女儿看着")["id"]
+    # 第一轮：建出 少芬妈妈+少芬阿姨+女儿
+    monkeypatch.setattr("comic_studio.engine.llm.analyze.client_for_task",
+                        lambda db, task: FakeLLM(["少芬妈妈", "少芬阿姨", "女儿"]))
+    analyze_project(db, tmp_path / "d", pid)
+    names1 = sorted(a["name"] for a in list_project_assets(db, pid)
+                    if a["kind"] == "character")
+    # 第一轮即被称谓归一合并（阿姨→妈妈，机械护栏）
+    assert names1 == ["女儿", "少芬妈妈"]
+    # 分镜绑定到女儿（第二轮将不再输出女儿→孤儿）
+    aids = {a["name"]: a["id"] for a in list_project_assets(db, pid)}
+    sid = persist_shots(db, pid, [NS(text_span="", description="d", shot_type="",
+        camera={}, duration=5.0, workflow_type="t2v",
+        ledger={"assets": {"characters": [aids["女儿"]]}},
+        character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
+    # 第二轮重析：LLM 只输出 少芬妈妈（女儿退场）
+    monkeypatch.setattr("comic_studio.engine.llm.analyze.client_for_task",
+                        lambda db, task: FakeLLM(["少芬妈妈"]))
+    analyze_project(db, tmp_path / "d", pid)
+    names2 = sorted(a["name"] for a in list_project_assets(db, pid)
+                    if a["kind"] == "character")
+    assert names2 == ["少芬妈妈"]                    # 孤儿女儿被清
+    led = _json.loads(list_shots(db, pid)[0]["ledger_json"])
+    assert led["assets"]["characters"] == []        # 绑定同步清（无悬空 id）
