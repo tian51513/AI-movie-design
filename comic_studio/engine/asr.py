@@ -255,6 +255,11 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "",
     # 完成——分批+逐段扩写指令是错误假设，输出体量才是慢因；整文=用户验证
     # 形态）。超长文本（>3000 字）退回分批防输出不全。
     if mode == "free" and sum(len(x["text"]) for x in segs) <= 3000:
+        from .logbus import emit as _el0
+        _el0(db, "asr", "info",
+             f"转写扩写开始（free 整文单调：{len(segs)} 段 / "
+             f"{sum(len(x['text']) for x in segs)} 字一次调用）——"
+             "模型思考+输出 1~3 分钟，完成才打下一条", project_id=project_id)
         full_in = "\n".join(f"{i+1}: {x['text']}" for i, x in enumerate(segs))
         _sys = _FREE_WHOLE_SYSTEM + theme_line
         text, _u = client.raw_chat(
