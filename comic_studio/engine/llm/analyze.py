@@ -288,7 +288,8 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
                  f"{usage.prompt_tokens}+{usage.completion_tokens} tok · {time.monotonic()-t0:.1f}s",
                  project_id=project_id)
         results.append(result)
-        log_llm_call(db, "extract_assets", provider_name, extract_client.model, usage)
+        log_llm_call(db, "extract_assets", provider_name, extract_client.model, usage,
+                     prompt=chunk[:2000], reply=getattr(usage, "last_reply", ""))
     if not results:
         final = AssetsAnalysis(characters=[], scenes=[], props=[])
     elif len(results) == 1:
@@ -299,7 +300,8 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
             on_progress=lambda msg: emit_log(db, "analyze", "info", msg,
                                              project_id=project_id))
         emit_log(db, "analyze", "info", f"合并 {len(results)} 块分析结果", project_id=project_id)
-        log_llm_call(db, "extract_assets", provider_name, extract_client.model, merge_usage)
+        log_llm_call(db, "extract_assets", provider_name, extract_client.model, merge_usage,
+                     reply=getattr(merge_usage, "last_reply", ""))
     # R6 机械防污染（2026-09-02 用户需求）：幻觉名（原文中不存在的角色名）落库
     # 前丢弃——真角色的名字（含别名）必然在原文出现过；不存在=模型编造。
     # P10 别名兜底（2026-09-05 真机）：LLM 常把口语称谓规范化成书面语

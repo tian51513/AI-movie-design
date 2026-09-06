@@ -18,6 +18,7 @@ class LLMError(Exception):
 class Usage:
     prompt_tokens: int
     completion_tokens: int
+    last_reply: str = ""   # 留痕（2026-09-06）：ask_validated 成功路径附原始回复摘要
 
 
 # Qwen3 系思考模型可能把 <think>…</think> 内联在 content 里
@@ -142,7 +143,9 @@ def ask_validated(client: LLMClient, system: str, user: str,
                          {"role": "user", "content": f"输出不是合法 JSON（{e}），请只输出一个合法 JSON 对象。"}]
             continue
         try:
-            return schema_cls.model_validate(data), usage
+            validated = schema_cls.model_validate(data)
+            usage.last_reply = text[:4000]
+            return validated, usage
         except ValidationError as e:
             last = str(e)
             if on_retry: on_retry(f"{schema_cls.__name__} 校验失败")

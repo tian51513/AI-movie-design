@@ -386,3 +386,33 @@ def test_reanalyze_prunes_orphan_characters(tmp_path, monkeypatch):
     assert names2 == ["少芬妈妈"]                    # 孤儿女儿被清
     led = _json.loads(list_shots(db, pid)[0]["ledger_json"])
     assert led["assets"]["characters"] == []        # 绑定同步清（无悬空 id）
+
+
+def test_extract_logs_prompt_and_reply_text():
+    """llm_calls 留痕补齐（2026-09-06：排障时发现 prompt_text/reply_text 全空
+    ——log_llm_call 支持传参但 extract_assets 调用点没传）。"""
+    import json as _json
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.llm.analyze import analyze_project
+    from comic_studio.engine.llm.provider import Usage
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=None, **kw):
+            return '{"characters":[],"scenes":[],"props":[]}', Usage(10, 5)
+    import tempfile as _tf
+    from pathlib import Path as _P
+    tmp_path = _P(_tf.mkdtemp())
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "痕剧", "16:9", "正文内容若干")["id"]
+    import unittest.mock as _mock
+    with _mock.patch("comic_studio.engine.llm.analyze.client_for_task",
+                     lambda db, task: FakeLLM()):
+        analyze_project(db, tmp_path / "d", pid)
+    rows = db.connect().execute(
+        "SELECT length(prompt_text), length(reply_text) FROM llm_calls "
+        "WHERE task='extract_assets' ORDER BY id DESC LIMIT 1").fetchone()
+    assert rows[0] > 0, "prompt_text 应有内容（系统词+用户词摘要）"
+    assert rows[1] > 0, "reply_text 应有内容（模型输出摘要）"
