@@ -168,6 +168,11 @@ def span_duration_for(segments: list, text: str):
     return max(s["end"] for s in hits) - min(s["start"] for s in hits)
 
 
+_ASR_ORIGIN_NOTE = """【文本来源】以下内容由有声小说语音转写（ASR）生成，存在个别词汇识别错误
+（尤其同音/近音字、人名与专有名词）。校正时必须结合【内容主题】与上下文语境
+判断本义后再修正，拿不准的词按语境择优，不得因拿不准而删改剧情原意。"""
+
+
 _ENRICH_SYSTEM = """你在把 ASR 对白转写扩写成小说正文。给你带序号的转写段与
 【内容主题】，逐段扩写：
 1. **原句逐字保留**——可加引号变对白、可调语序外的标点，但字不得增删改
@@ -261,7 +266,7 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "",
              f"{sum(len(x['text']) for x in segs)} 字一次调用）——"
              "模型思考+输出 1~3 分钟，完成才打下一条", project_id=project_id)
         full_in = "\n".join(f"{i+1}: {x['text']}" for i, x in enumerate(segs))
-        _sys = _FREE_WHOLE_SYSTEM + theme_line
+        _sys = _ASR_ORIGIN_NOTE + "\n\n" + _FREE_WHOLE_SYSTEM + theme_line
         text, _u = client.raw_chat(
             [{"role": "system", "content": _sys},
              {"role": "user", "content": full_in}], temperature=0.4)
@@ -294,8 +299,9 @@ def cleanup_transcription(db, data_dir, project_id, client, theme: str = "",
         lines = "\n".join(f"{j + 1}: {s['text']}" for j, s in enumerate(chunk))
         _el(db, "asr", "info", f"校对批 {bi}/{n_batches} 调用中（{len(chunk)} 段）…",
             project_id=project_id)
-        sys_prompt = ({ "free": _FREE_SYSTEM,
-                        "enrich": _ENRICH_SYSTEM }.get(mode) or _CLEANUP_SYSTEM) + theme_line
+        sys_prompt = _ASR_ORIGIN_NOTE + "\n\n" + (
+            { "free": _FREE_SYSTEM,
+              "enrich": _ENRICH_SYSTEM }.get(mode) or _CLEANUP_SYSTEM) + theme_line
         text, _u = client.raw_chat(
             [{"role": "system", "content": sys_prompt},
              {"role": "user", "content": lines}],

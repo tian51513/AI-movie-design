@@ -728,3 +728,35 @@ def test_job_snapshot_returns_status_while_running(tmp_path):
         b = r.json()
         assert b["status"] == "pending" and b["snapshot"] is None and "error" in b
         assert c.get("/api/jobs/999999/snapshot").status_code == 404  # 不存在的任务仍 404
+
+
+def test_cleanup_prompts_state_asr_origin(tmp_path):
+    """2026-09-06 用户需求：校正提示词必须交代文本来源——有声小说语音转写、
+    存在个别词汇识别错误、结合主题与语境校正。四模式（含整文/分批两路径）统一。"""
+    from comic_studio.engine.asr import cleanup_transcription, save_segments
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    captured = {}
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=None, **kw):
+            captured["sys"] = messages[0]["content"]
+            return ('{"1": "儿子 你这是怎么了"}', {})
+    # free 整文路径（≤3000 字走整文单调）
+    db = Database(tmp_path / "s1.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "源剧", "16:9", "占位")["id"]
+    save_segments(tmp_path / "d", "源剧", [{"start": 0.0, "end": 2.0, "text": "嗯"}])
+    class FakeFree(FakeLLM):
+        def raw_chat(self, messages, temperature=None, **kw):
+            captured["sys"] = messages[0]["content"]
+            return "改写后的正文。", {}
+    cleanup_transcription(db, tmp_path / "d", pid, FakeFree(), theme="t", mode="free")
+    assert "有声小说" in captured["sys"] and "识别错误" in captured["sys"]
+    # conservative 分批路径
+    db2 = Database(tmp_path / "s2.db"); db2.migrate()
+    pid2 = create_project(db2, tmp_path / "d", "源剧2", "16:9", "占位")["id"]
+    save_segments(tmp_path / "d", "源剧2", [{"start": 0.0, "end": 2.0, "text": "嗯"}])
+    cleanup_transcription(db2, tmp_path / "d", pid2, FakeLLM(), theme="t",
+                          mode="conservative")
+    assert "有声小说" in captured["sys"] and "语境" in captured["sys"]
