@@ -300,7 +300,7 @@ def test_generate_prompt_uses_healed_version(tmp_path):
 
     out = generate_video_prompt(db, sid, FakeLLM(), backend="h3", mode="A")
     assert len(calls) == 1  # 自愈生效，没有第二次 LLM 调用
-    assert "<d>Chinese</d>" in out and "<Picture 9>" not in out
+    assert "<d>[Mandarin Chinese]你好</d>" in out and "<Picture 9>" not in out
     assert "可自行补充" not in out
     """自愈成功 → 不再消耗 LLM 重试次数。"""
 
