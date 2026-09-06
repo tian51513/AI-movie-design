@@ -542,3 +542,36 @@ def test_render_without_audio_slots_clears_native_flag(tmp_path, monkeypatch):
         render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
     led = json.loads(get_shot(db, sid)["ledger_json"] or "{}")
     assert "h3_native_voice" not in led
+
+
+def test_render_fills_silent_placeholder_for_unfilled_audio_slots(tmp_path, monkeypatch):
+    """2026-09-06 有声2：dialogue 全空 → 音色槽不注入 → 模板默认
+    cs_voice_0.mp3 不在 input → ComfyUI 400 全灭。未注入的音频槽补静音
+    占位（上传一次缓存），无对白镜可渲染。"""
+    db, pid, assets = _setup(tmp_path)
+    sid = persist_shots(db, pid, [_shot_draft(
+        workflow_type="ref2va", character_ids=[assets["林晨"]["id"]])])[0]
+    update_shot(db, sid, {"prompt": "林晨在庭院。"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    uploaded = {}
+    class FakeComfy:
+        base_url = "http://x"
+        def upload_media(self, path, name):
+            uploaded[name] = Path(path).stat().st_size
+        def submit(self, wf, client_id):
+            # 未注入槽的默认名必须已被上传
+            for nid, n in wf.items():
+                ct = str(n.get("class_type", ""))
+                if ct == "LoadAudio":
+                    assert n["inputs"]["audio"] in uploaded, n["inputs"]["audio"]
+            return "p1"
+        def wait_and_collect(self, pid_, **kw):
+            return [{"filename": "out.mp4", "subfolder": "", "type": "output",
+                     "_kind": "video"}]
+        def download(self, fn, sub, type_, dest):
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(b"v")
+    with comfy_server("ok", video=True) as m:
+        render_shot(db, tmp_path / "data", sid, FakeComfy())
+    assert any(k.startswith("cs_voice") for k in uploaded)   # 静音占位确实上传

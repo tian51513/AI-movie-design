@@ -452,6 +452,18 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     wf, uploads = fill_workflow(template, prompt=prompt, params=params,
                                 images=images, output_ctx=output_ctx,
                                 model_overrides=model_overrides)
+    # 2026-09-06 有声2 真机：dialogue 空 → 音色槽不注入 → 模板默认
+    # cs_voice_0.mp3 不在 ComfyUI input → 400 全灭。未注入的音频槽补静音
+    # 占位（data 缓存生成一次），模板校验必过；有对白时正常注入覆盖
+    _injected_names = {u["name"] for u in uploads}
+    for spec in (template.inject_images or []):
+        if not str(spec.get("slot", "")).startswith("audio"):
+            continue
+        _node = str(spec["node"])
+        _cur = wf.get(_node, {}).get("inputs", {}).get(spec["field"])
+        if _cur and _cur not in _injected_names:
+            _sil = _silent_placeholder(data_dir)
+            uploads.append({"path": str(_sil), "name": _cur})
     if job_id:
         from .jobs import attach_snapshot
         attach_snapshot(db, job_id, prompt=prompt, workflow=wf, template_id=template.id)
@@ -638,3 +650,19 @@ def handle_gen_shot(db, data_dir, job, comfy):
              project_id=proj["id"], job_id=job["id"],
              data={"video_path": str(dest)})
     return dest
+
+
+def _silent_placeholder(data_dir) -> Path:
+    """音频槽静音占位（0.5s 无声 mp3，data/_cache 缓存生成一次）——
+    只喂模板校验：无对白镜的 ref2va 音色槽不注入时，模板默认文件名
+    必须存在于 input 否则 ComfyUI 400（2026-09-06 有声2 全灭事故）。"""
+    import subprocess as _sp
+    from .merge import ffmpeg_bin
+    f = Path(data_dir) / "_cache" / "silence_500ms.mp3"
+    if f.exists():
+        return f
+    f.parent.mkdir(parents=True, exist_ok=True)
+    _sp.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
+             "anullsrc=r=24000:cl=mono", "-t", "0.5", "-b:a", "32k", str(f)],
+            check=True, capture_output=True, timeout=60)
+    return f
