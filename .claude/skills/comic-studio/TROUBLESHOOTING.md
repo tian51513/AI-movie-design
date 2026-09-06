@@ -45,7 +45,8 @@
 
 ### 本地 LLM job 长跑 15 分钟不归（Ollama 5 分钟请求硬上限）
 - **症状**（2026-09-06 有声2 校对 free 整文）：27B qwen3.8 跑 1506 字扩写，job running 15+ 分钟；同模型同文本手动测 1~2 分钟
-- **真相**：Ollama（0.32.13）服务端对单请求有 **5m0s 硬上限**，超时直接 500（`server.log` GIN 行 `500 | 5m0s` 铁证）；openai 客户端对 5xx **静默重试 2 次** → 单 job 最长烧 15 分钟三连死；本例第 3 次思考收敛短才成功（纯随机）
-- **判定手法**：`/mnt/c/Users/<u>/AppData/Local/Ollama/server.log` grep `GIN.*v1/chat`；`/api/ps` 的 `expires_at` 是否持续滑动（活跃生成）；GPU util >0
-- **边界**：docs 无官方 env 可调请求超时（GitHub issue #7526 关闭无解；`OLLAMA_LOAD_TIMEOUT` 管加载不管生成）。规避=单次调用 token 预算控制在 ~4500 内（15 t/s × 300s），重活换轻模型/线上，或任务拆批
+- **真相**：Ollama（0.32.13）服务端对单请求有 **~5 分钟总时长硬上限，流式/非流式通杀**（实验矩阵：非流式 >300s 三次死于 `500|5m0s`/504；流式 >300s 在 294s 被服务器断连 RemoteProtocolError；<300s 流式 276s 成功）；openai 客户端对 5xx **静默重试 2 次** → 单 job 最长烧 15 分钟三连死
+- **判定手法**：`/mnt/c/Users/<u>/AppData/Local/Ollama/server.log` grep `GIN.*chat`；`/api/ps` 的 `expires_at` 是否持续滑动（活跃生成）；GPU util >0
+- **无效药**（勿再试）：`reasoning_effort:none` 对 qwen3.8（qwen35 家族）不生效——思考照跑 4500+ token；改流式聚合也躲不过总时长墙
+- **边界**：docs 无官方 env 可调请求超时（GitHub issue #7526 关闭无解；`OLLAMA_LOAD_TIMEOUT` 管加载不管生成）。**规避=单次调用生成量控制在 ~4200 token 内（14.5 t/s × 290s）**：提示词控时长（free 校对的「整体校正、禁止逐句」实测把 6 分钟压回 2 分钟级）、重活换轻模型/线上、或任务拆批
 - **附带**：改前端后必须硬刷新浏览器（SPA 不自刷新）——服务已新、页面仍旧会弹旧版错信息（本例「保留 undefined 段」）
