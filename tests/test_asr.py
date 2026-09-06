@@ -655,5 +655,5 @@ def test_cleanup_free_mode_whole_text_single_call(tmp_path):
     novel = data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).read_text(
         encoding="utf-8")
     assert "探了探额头" in novel               # 整文输出直接作正文
-    assert load_segments(tmp_path / "d", "整剧") and len(load_segments(tmp_path / "d", "整剧")) == 2  # 锚点不动
+    assert len(load_segments(tmp_path / "d", "整剧")) == 16   # 锚点 16 段全在
     assert res["mode"] == "free"
