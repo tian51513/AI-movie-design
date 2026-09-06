@@ -753,6 +753,7 @@ def test_cleanup_prompts_state_asr_origin(tmp_path):
             return "改写后的正文。", {}
     cleanup_transcription(db, tmp_path / "d", pid, FakeFree(), theme="t", mode="free")
     assert "有声小说" in captured["sys"] and "识别错误" in captured["sys"]
+    assert "不要逐句" in captured["sys"]   # 用户实测：来源说明让模型逐句校验，6 分钟——需明令整体校正
     # conservative 分批路径
     db2 = Database(tmp_path / "s2.db"); db2.migrate()
     pid2 = create_project(db2, tmp_path / "d", "源剧2", "16:9", "占位")["id"]
