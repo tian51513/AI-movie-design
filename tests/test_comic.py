@@ -702,3 +702,70 @@ def test_anchor_subject_definitions_by_binding(tmp_path):
     assert "summary:一句话：本镜核心内容" in p0               # 其余节保留
     assert n == 1
     assert shots[1]["prompt"] == PROMPT                        # 未绑定镜不动
+
+
+def test_extract_dialogue_rejects_scaffold_speakers():
+    """2026-09-06 manga7 真机：28 个"角色"过半是脚手架短语——对白顺序/
+    undscape（soundscape 被正则截断）/画面中出现对白气泡/王叔叔轻声说。
+    说话人净化：剥说话动词后缀、叙述/脚手架短语拒收、纯 ASCII 拒收。"""
+    from comic_studio.engine.comic import _extract_dialogue
+    text = ("王叔叔轻声说：「小点声，别让人听见。」\n"
+            "对白顺序：「无关脚手架文本」\n"
+            "undscape:「garbage」\n"
+            "画面中出现对白气泡：「废句」\n"
+            "同时对他说：「你过来」\n"
+            "静静轻哼回应：「嗯。」")
+    d = _extract_dialogue(text)
+    assert [x["speaker"] for x in d] == ["王叔叔", "静静"]
+    assert d[0]["line"] == "小点声，别让人听见。"
+
+
+def test_build_speaker_assets_merges_variants(tmp_path):
+    """动态漫包含式归一（2026-09-06 manga7：妈妈/妈妈红 各建一个）——
+    新说话人与已有名互为包含（双方 ≥2 字）→ 并入，不再另起变体资产。"""
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    from comic_studio.engine.shots import list_shots
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "归一剧", "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG)])["id"]
+
+    class FakeV(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            # 逐镜变体：第一镜 妈妈，第二镜 妈妈红（互为包含）
+            shot_txt = {1: "妈妈：「回来啦。」", 2: "妈妈红：「快去洗手。」"}
+            seq = 1 if "第 1 格" in str(messages[-1]["content"]) else 2
+            return shot_txt[seq], Usage(10, 20)
+
+    describe_shots(db, tmp_path / "data", pid, FakeV())
+    from comic_studio.engine.assets import list_project_assets
+    names = [a["name"] for a in list_project_assets(db, pid)
+             if a["kind"] == "character"]
+    assert names == ["妈妈"], names
+
+
+def test_purge_covers_motion_speaker_assets(tmp_path):
+    """🗑 清理提取资产覆盖动态漫 speaker 资产（2026-09-06 manga7 真机：
+    tags=[] 无 comic 标记 → 清理按钮扫不到，垃圾角色清不掉）——
+    motion_comic 项目的 character 资产全部可清（fl2v 用原页，资产只为配音）。"""
+    from comic_studio.engine.comic import (import_comic, describe_shots,
+                                           purge_comic_assets)
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    from comic_studio.engine.assets import list_project_assets
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "清理剧", "9:16",
+                       [("p1.png", PNG)])["id"]
+
+    class FakeV(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return "林晨：「今天天气不错。」", Usage(10, 20)
+
+    describe_shots(db, tmp_path / "data", pid, FakeV())
+    assert len(list_project_assets(db, pid)) == 1  # 建了 speaker 资产
+    n = purge_comic_assets(db, tmp_path / "data", pid)
+    assert n == 1
+    assert list_project_assets(db, pid) == []

@@ -374,10 +374,20 @@ def _build_speaker_assets(db, data_dir, project_id, voices_meta: dict) -> int:
         return 0
     existing = {a["name"] for a in list_project_assets(db, project_id)
                 if a["kind"] == "character"}
+    # 包含式归一（2026-09-06 manga7：妈妈/妈妈红 各建一个）——新说话人与
+    # 已有名互为包含（双方 ≥2 字）→ 并入，不再另起变体资产（P11-② 同款）
+    canonical = sorted(existing, key=len, reverse=True)
+    name_map: dict = {}   # 变体名 → 正名（音色绑定循正名）
     drafts, metas = [], {}
     for sp in speakers:
         if sp in existing:
             continue
+        target = next((c for c in canonical
+                       if len(c) >= 2 and len(sp) >= 2 and (c in sp or sp in c)), None)
+        if target:
+            name_map[sp] = target
+            continue
+        canonical.append(sp)
         v = voices_meta.get(sp) or {}
         app = (f"性别：{v.get('gender') or '未知'}\n年龄：{v.get('age') or '未知'}岁"
                if (v.get("gender") or v.get("age")) else f"（{sp}：动态漫对白角色）")
@@ -390,7 +400,7 @@ def _build_speaker_assets(db, data_dir, project_id, voices_meta: dict) -> int:
     lib = voice_library_names(data_dir, slug)
     bound = 0
     for sp in speakers:   # 已存在的同名角色也补绑（仅当 voice 为空）
-        v = voices_meta.get(sp) or {}
+        v = voices_meta.get(name_map.get(sp, sp)) or voices_meta.get(sp) or {}
         app = f"性别：{v.get('gender') or ''}\n年龄：{v.get('age') or ''}岁"
         voice = match_voice(app, v.get("voice", ""), library=lib)
         if voice:
@@ -399,7 +409,7 @@ def _build_speaker_assets(db, data_dir, project_id, voices_meta: dict) -> int:
                 "UPDATE assets SET voice=? WHERE id=("
                 " SELECT a.id FROM assets a JOIN project_assets pa ON pa.asset_id=a.id"
                 " WHERE pa.project_id=? AND a.name=? AND a.kind='character'"
-                " AND a.voice='')", (voice, project_id, sp))
+                " AND a.voice='')", (voice, project_id, name_map.get(sp, sp)))
             conn.commit()
             bound += cur.rowcount
     return len(drafts) or bound
@@ -615,18 +625,25 @@ def _drop_character_bindings(db, project_id, ids) -> None:
 def purge_comic_assets(db, data_dir, project_id) -> int:
     """清理读图提取的资产（2026-08-29 动态漫误提取善后）：
     删资产行 + project_assets 引用 + library 目录 + 分镜 ledger 角色绑定。
-    只清 tags 含 comic 的——LLM 分析来的资产不动。返回清理数。"""
+    清理范围：tags 含 comic 的，或 motion_comic 项目的全部 character 资产
+    （2026-09-06 manga7 真机：动态漫 speaker 资产 tags=[] 无 comic 标记，
+    清理按钮扫不到——fl2v 用原页，character 资产只为配音，全清无副作用）。
+    LLM 分析来的资产（小说项目）不动。返回清理数。"""
     import shutil
     from .assets import list_project_assets
+    from .projects import get_project
     from .paths import data_to_abs
     from .shots import list_shots
+    proj = get_project(db, project_id)
+    motion = (proj is not None and "comic_mode" in proj.keys()
+              and proj["comic_mode"] == "motion_comic")
     rows = []
     for a in list_project_assets(db, project_id):
         try:
             tags = json.loads(a["tags_json"] or "[]")
         except Exception:
             tags = []
-        if "comic" in tags:
+        if "comic" in tags or (motion and a["kind"] == "character"):
             rows.append(a)
     if not rows:
         return 0
@@ -794,13 +811,54 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> i
 
 _DIALOGUE_RE = None
 
+# 2026-09-06 manga7 真机：28 个"角色"过半是脚手架短语（对白顺序/undscape=
+# soundscape 截断/画面中出现对白气泡/王叔叔轻声说）——提取时净化说话人
+_SHRINK_SUFFIXES = ("轻声说", "开口说", "大声说", "说道", "问道", "喊道", "喊出",
+                    "回答", "回应", "低语", "轻哼", "心想", "感叹", "自语",
+                    "开口", "大喊", "轻声", "说", "问", "喊", "叫", "道")
+_SCAFFOLD_RE = None
+
+
+def _clean_speaker(name: str) -> str | None:
+    """说话人净化：剥说话动词与连词尾缀（王叔叔轻声说→王叔叔、
+    同时对他说→同→过短拒收）；脚手架/叙述短语与纯 ASCII 拒收。
+    返回净化名或 None（拒收——不进 ledger.dialogue，资产/TTS/字幕同步干净）。"""
+    global _SCAFFOLD_RE
+    import re as _re
+    if _SCAFFOLD_RE is None:
+        _SCAFFOLD_RE = _re.compile(
+            r"对白|气泡|画面|顺序|切换|出现|随后|同时|叙述|字幕|音效|提示|标签"
+            r"|声音|scape|subject|summary|retention|voice|scales?", _re.I)
+    s = (name or "").strip()
+    if not s or s.isascii():
+        return None
+    changed = True
+    while changed and len(s) > 2:
+        changed = False
+        for suf in _SHRINK_SUFFIXES:
+            if s.endswith(suf) and len(s) > len(suf):
+                s = s[:-len(suf)].rstrip("的对在的了和与跟并")
+                changed = True
+                break
+    if s.startswith("对") and len(s) > 2:
+        s = s[1:]
+    if len(s) < 2 or _SCAFFOLD_RE.search(s):
+        return None
+    return s
+
 
 def _extract_dialogue(text: str) -> list:
-    """从 VLM 输出中提取「角色名：「台词」」格式的对白，按出现顺序返回。"""
+    """从 VLM 输出中提取「角色名：「台词」」格式的对白，按出现顺序返回。
+    说话人过 _clean_speaker 净化（脚手架/叙述短语拒收）——manga7 真机
+    垃圾说话人曾同时污染资产表、TTS 与字幕。"""
     global _DIALOGUE_RE
     if _DIALOGUE_RE is None:
         import re
         _DIALOGUE_RE = re.compile(
             r"([一-龥A-Za-z·]{1,8})[：:]\s*[「“]([^」”]{1,80})[」”]")
-    return [{"speaker": m.group(1), "line": m.group(2)}
-            for m in _DIALOGUE_RE.finditer(text)]
+    out = []
+    for m in _DIALOGUE_RE.finditer(text):
+        sp = _clean_speaker(m.group(1))
+        if sp:
+            out.append({"speaker": sp, "line": m.group(2)})
+    return out
