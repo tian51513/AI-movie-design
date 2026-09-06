@@ -265,7 +265,7 @@ def test_heal_h3_prompt_common_fixes():
            "<Picture 9> 的画面主体身份明确。林晨说：你好。\n"
            "禁止出现：多余手指。禁止出现：多余手指。\n（可自行补充细节）")
     healed, fixes = heal_h3_prompt(bad, shot, max_pics=2)
-    assert "<d>Chinese</d>" in healed
+    assert "<d>[Mandarin Chinese]你好</d>" in healed   # 2026-09-06 升级：逐句织入
     assert "<Picture 9>" not in healed
     assert healed.count("禁止出现：多余手指。") == 1
     assert "可自行补充" not in healed
