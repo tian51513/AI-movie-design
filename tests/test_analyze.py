@@ -297,3 +297,42 @@ def test_kinship_alias_survives_ghost_filter():
     assert _is_ghost_name("妈妈", text) is False
     assert _is_ghost_name("林凡", text) is True    # 真幻觉仍拦
     assert _is_ghost_name("路人甲", text) is True
+
+
+def test_extract_system_alias_merge_rule():
+    """2026-09-06 用户需求（有声2：少芬妈妈/少芬阿姨重复资产）：提取词明示
+    同一人不同称谓合并为一个角色，name 取高频称呼。"""
+    from comic_studio.engine.llm.analyze import EXTRACT_SYSTEM
+    assert "不同称谓" in EXTRACT_SYSTEM
+    assert "合并为一个角色" in EXTRACT_SYSTEM
+
+
+def test_alias_suffix_dedup_mechanical():
+    """机械兜底：共享专名+称谓后缀（少芬妈妈/少芬阿姨→少芬）判同一人；
+    高频名胜出，绑定/外貌保留。纯专名不同（少芬/李婷）不合并。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.llm.analyze import merge_alias_characters
+    chars = [
+        NS(name="少芬妈妈", appearance="性别：女\n年龄：35岁", tags=["主角"],
+           role="主角", suggested_voice="", voice_description=""),
+        NS(name="少芬阿姨", appearance="性别：女", tags=[], role="配角",
+           suggested_voice="", voice_description=""),
+        NS(name="儿子", appearance="性别：男", tags=[], role="主角",
+           suggested_voice="", voice_description=""),
+        NS(name="李婷", appearance="性别：女", tags=[], role="配角",
+           suggested_voice="", voice_description=""),
+    ]
+    out, merged = merge_alias_characters(chars, text="少芬妈妈"*15 + "少芬阿姨"*4 + "儿子李婷")
+    names = [c.name for c in out]
+    assert names == ["少芬妈妈", "儿子", "李婷"]      # 阿姨并入妈妈（高频胜出）
+    assert merged == [("少芬阿姨", "少芬妈妈")]
+    assert "35岁" in out[0].appearance                # 外貌保留（妈妈的信息丰富）
+
+
+def test_alias_suffix_strip():
+    from comic_studio.engine.llm.analyze import _strip_appellation
+    assert _strip_appellation("少芬妈妈") == "少芬"
+    assert _strip_appellation("少芬阿姨") == "少芬"
+    assert _strip_appellation("王刚叔叔") == "王刚"
+    assert _strip_appellation("李婷") == "李婷"        # 无称谓原样
+    assert _strip_appellation("妈妈") == ""           # 纯称谓→空（不参与归一）

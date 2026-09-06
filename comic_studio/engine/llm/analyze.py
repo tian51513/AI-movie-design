@@ -52,6 +52,9 @@ EXTRACT_SYSTEM = """你是小说改编漫剧的资产分析师。从给定的小
 自称（妈妈/老师/朕/老夫）与他人称呼（儿子/宝贝）在文中反复出现即可
 作为 name 提取，不要求书面姓名；判据=该说话人有台词或有叙述动作，
 而不是「有第三人称出场描写」。
+同一人的不同称谓（2026-09-06 真机：少芬妈妈/少芬阿姨/少芬姐 实为一人被建成
+重复资产）必须**合并为一个角色**：name 取原文中出现次数最多的称呼，
+appearance 取信息最丰富的描述；判据=共享同一专名（少芬）+ 不同身份称谓后缀。
 每个角色另给 suggested_voice：按年龄/性别/气质/着装从随提示附上的「可用音色库」
 清单中选最贴切的一个（含用户自定义音色；清单外值会被忽略，走性别×年龄基线：
 女童→萝莉 男童→正太 青年女→温柔少女 青年男→深沉男声 中年女→温柔淑女
@@ -164,6 +167,54 @@ _KINSHIP_GROUPS = [
 ]
 
 
+_APPELLATION_SUFFIXES = (
+    "妈妈", "阿姨", "叔叔", "伯伯", "舅舅", "姑姑", "爷爷", "奶奶", "外婆", "姥姥",
+    "哥哥", "姐姐", "弟弟", "妹妹", "大哥", "大姐", "先生", "女士", "老师",
+    "医生", "护士", "警官", "师傅", "老板", "经理", "校长", "邻居",
+)
+
+
+def _strip_appellation(name: str) -> str:
+    """剥离身份称谓后缀（少芬妈妈→少芬）；纯称谓（妈妈）返回空串——
+    空串不参与归一（无专名锚点）。"""
+    for suf in _APPELLATION_SUFFIXES:
+        if name.endswith(suf):
+            return name[: -len(suf)] if len(name) > len(suf) else ""
+    return name
+
+
+def merge_alias_characters(chars: list, text: str) -> tuple:
+    """机械称谓归一（2026-09-06 真机：LLM 仍可能输出 少芬妈妈+少芬阿姨 两条）：
+    剥离称谓后共享专名 → 同一人，高频名胜出、appearance 取最长（信息最丰富）。
+    返回 (去重后列表, [(被并名, 保留名)])。"""
+    from collections import Counter
+    counts = Counter()
+    for name in set(c.name for c in chars):
+        counts[name] = text.count(name)
+    by_core: dict = {}
+    for c in chars:
+        core = _strip_appellation(c.name)
+        by_core.setdefault(core or c.name, []).append(c)
+    out, merged = [], []
+    for core, group in by_core.items():
+        if len(group) == 1:
+            out.append(group[0])
+            continue
+        keep = max(group, key=lambda c: (counts[c.name], len(c.appearance or "")))
+        for c in group:
+            if c is keep:
+                continue
+            if len(c.appearance or "") > len(keep.appearance or ""):
+                keep.appearance = c.appearance  # 外貌取信息最丰富者
+            if c.suggested_voice and not keep.suggested_voice:
+                keep.suggested_voice = c.suggested_voice
+            if c.voice_description and not keep.voice_description:
+                keep.voice_description = c.voice_description
+            merged.append((c.name, keep.name))
+        out.append(keep)
+    return out, merged
+
+
 def _is_ghost_name(name: str, text: str) -> bool:
     """幻觉名判定：名字（或亲属称谓组内任一别名）不在原文 → 幻觉。
     P10 真机（2026-09-05 有声1）：LLM 把「妈妈」规范化成「母亲」被误杀——
@@ -258,6 +309,15 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
     if _ghost:
         final = final.model_copy(update={"characters": [
             c for c in final.characters if c.name.strip() not in _ghost]})
+    # 称谓归一（2026-09-06 少芬妈妈/少芬阿姨）：机械兜底 LLM 未合并的别名
+    _dedup_chars, _merged_aliases = merge_alias_characters(
+        list(final.characters), text)
+    if _merged_aliases:
+        final = final.model_copy(update={"characters": _dedup_chars})
+        emit_log(db, "analyze", "info",
+                 f"称谓归一合并 {len(_merged_aliases)} 个重复角色（"
+                 + "、".join(f"{a}→{b}" for a, b in _merged_aliases) + "）",
+                 project_id=project_id)
         emit_log(db, "analyze", "warn",
                  f"丢弃 {len(_ghost)} 个原文不存在的角色（幻觉名）："
                  f"{'、'.join(sorted(_ghost))}", project_id=project_id)
