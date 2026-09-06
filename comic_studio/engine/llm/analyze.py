@@ -337,7 +337,7 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
         ph = ",".join("?" * len(_oids))
         conn.execute(f"DELETE FROM project_assets WHERE asset_id IN ({ph})", _oids)
         conn.execute(f"DELETE FROM assets WHERE id IN ({ph})", _oids)
-        from .shots import list_shots as _ls
+        from ..shots import list_shots as _ls
         for sh in _ls(db, project_id):
             led = json.loads(sh["ledger_json"] or "{}")
             _ch = (led.get("assets") or {}).get("characters") or []
