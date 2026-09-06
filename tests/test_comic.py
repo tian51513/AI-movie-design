@@ -186,6 +186,23 @@ def test_from_comic_api(tmp_path):
         assert len(r2.json()) == 2
 
 
+def test_from_comic_api_with_style(tmp_path):
+    """漫画 tab 画风随创建提交（2026-09-06）：漫改模式创建即带画风——
+    describe_shots 漫改分支的画风转换指令与参考图 genref 都消费它。"""
+    with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data",
+                               start_workers=False)) as c:
+        r = c.post("/api/projects/from-comic",
+                   data={"name": "漫改画风剧", "aspect_ratio": "16:9",
+                         "comic_mode": "film_adaptation",
+                         "style": "写实风格，电影质感，真实皮肤与材质细节",
+                         "style_vis": "写实风格，电影质感"},
+                   files=[("images", ("a.png", io.BytesIO(PNG), "image/png"))])
+        assert r.status_code == 201, r.text
+        body = r.json()
+        assert body["style"] == "写实风格，电影质感，真实皮肤与材质细节"
+        assert body["style_vis"] == "写实风格，电影质感"
+
+
 def test_describe_shots_motion_uses_integrated_format_and_heals(tmp_path):
     """动态漫读图提示词（2026-08-31 定稿：H3 六模块骨架中文输出）：
     system 要求六模块 + VOICES；落库前过 heal（缺音频节机械补）。"""

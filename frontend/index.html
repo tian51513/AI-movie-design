@@ -1143,6 +1143,27 @@
            段时长<input type="number" min="0" max="15" v-model.number="newSegDur" style="width:44px">s
            总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s
            <span class="muted" style="font-size:12px">（总时长>0 时拆分镜后按镜数均摊）</span></p>
+        <!-- 画风（2026-09-06）：上传/漫改随创建提交；动态漫不消费——画风跟随原页，
+             此前漫画 tab 无画风字段，用户设了画风被静默忽略（黑白→真人误用动态漫事故） -->
+        <template v-if="newMode==='upload' || (newMode==='comic' && comicMode==='film_adaptation')">
+          <p>画风<select v-model="newStyleKey">
+             <option value="">不指定（默认）</option>
+             <optgroup label="通用">
+               <option>动漫</option><option>写实</option>
+               <option>国风仙侠</option><option>3D</option></optgroup>
+             <optgroup label="常规剧情向">
+               <option>剧情PV</option><option>宣传PV</option><option>动画</option>
+               <option>情感PV</option><option>风景PV</option><option>时尚写真</option>
+               <option>短剧PV</option><option>文艺</option><option>科幻</option>
+               <option>古风</option><option>未来科技</option><option>悬疑</option>
+               <option>喜剧</option><option>舞台剧</option></optgroup>
+             <option value="自定义">自定义…</option></select>
+             <span v-if="newMode==='comic'" class="muted" style="font-size:12px">（画风转换目标：
+               与漫画原画不一致时自动加转换描述，参考图同画风生成）</span></p>
+          <p v-if="newStyleKey==='自定义'"><input v-model="newStyleText" placeholder="自定义画风描述" style="width:90%"></p>
+        </template>
+        <p v-else-if="newMode==='comic'" class="muted" style="font-size:12px">
+          📖 动态漫画风跟随漫画原页；要转换画风（如黑白→真人）请选「🎬 漫改电影」并指定画风</p>
 
         <form v-if="newMode==='comic'" @submit.prevent="createFromComic">
           <p>模式
@@ -1203,19 +1224,6 @@
         </template>
 
         <form v-if="newMode==='upload'" @submit.prevent="createProject">
-          <p><select v-model="newStyleKey">
-             <option value="">不指定（默认）</option>
-             <optgroup label="通用">
-               <option>动漫</option><option>写实</option>
-               <option>国风仙侠</option><option>3D</option></optgroup>
-             <optgroup label="常规剧情向">
-               <option>剧情PV</option><option>宣传PV</option><option>动画</option>
-               <option>情感PV</option><option>风景PV</option><option>时尚写真</option>
-               <option>短剧PV</option><option>文艺</option><option>科幻</option>
-               <option>古风</option><option>未来科技</option><option>悬疑</option>
-               <option>喜剧</option><option>舞台剧</option></optgroup>
-             <option value="自定义">自定义…</option></select></p>
-          <p v-if="newStyleKey==='自定义'"><input v-model="newStyleText" placeholder="自定义画风描述" style="width:90%"></p>
           <p><input type="file" accept=".txt" @change="f => newFile = f.target.files[0]" required></p>
           <p><button :disabled="creating">{{ creating ? '创建中…' : '创建项目' }}</button></p>
         </form>

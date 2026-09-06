@@ -18,9 +18,11 @@ _VLM_LOCK = threading.Lock()
 def import_comic(db, data_dir, name: str, aspect: str,
                  image_blobs: list, comic_mode: str = "motion_comic",
                  default_shot_duration: float = 0.0,
-                 target_duration: float = 0.0) -> dict:
+                 target_duration: float = 0.0,
+                 style: str = "", style_vis: str = "") -> dict:
     """image_blobs：[(filename, bytes)]，顺序即页序。comic_mode：
-    motion_comic（动态漫/fl2v 翻页）| film_adaptation（漫改/ref2va 动画）。"""
+    motion_comic（动态漫/fl2v 翻页）| film_adaptation（漫改/ref2va 动画）。
+    style/style_vis：漫改模式的画风转换目标（动态漫不消费——画风跟随原页）。"""
     if not image_blobs:
         raise ValueError("至少需要一张漫画页")
     from .projects import ASPECT_RATIOS
@@ -36,7 +38,8 @@ def import_comic(db, data_dir, name: str, aspect: str,
     proj = create_project(db, data_dir, name, aspect, placeholder,
                           comic_mode=comic_mode,
                           default_shot_duration=default_shot_duration,
-                          target_duration=target_duration)
+                          target_duration=target_duration,
+                          style=style, style_vis=style_vis)
     pid = proj["id"]
     slug = proj["slug"]
 

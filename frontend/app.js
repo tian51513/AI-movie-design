@@ -1040,6 +1040,10 @@ const methods = {
       fd.append('name', this.newName || `漫画${this.comicFiles.length}页`);
       fd.append('aspect_ratio', this.newRatio);
       fd.append('comic_mode', this.comicMode);
+      // 画风（2026-09-06）：漫改模式的画风转换目标随创建提交（与上传 tab 同款映射）；
+      // 动态漫不消费（画风跟随原页），提交了也只作项目元信息留存
+      fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : presetStyle(this.newStyleKey));
+      fd.append('style_vis', this.newStyleKey === '自定义' ? this.newStyleText : presetStyleVis(this.newStyleKey));
       fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0   // M16：漫画 tab 时长此前是摆设
       fd.append('target_duration', this.newTotalDur ?? 0);
       // 自然排序 + 压缩后上传（解决大图超时）

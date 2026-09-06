@@ -170,9 +170,11 @@ def create_from_comic(request: Request,
                       comic_mode: str = Form("motion_comic"),
                       default_shot_duration: float = Form(0.0),
                       target_duration: float = Form(0.0),
+                      style: str = Form(""), style_vis: str = Form(""),
                       images: list[UploadFile] = File(...)):
     """P8 漫画导入：每图一镜，直达分镜就绪。comic_mode：
-    motion_comic（动态漫/fl2v）| film_adaptation（漫改/ref2va）。"""
+    motion_comic（动态漫/fl2v）| film_adaptation（漫改/ref2va）。
+    style/style_vis（2026-09-06）：漫改模式的画风转换目标，随创建提交。"""
     if comic_mode not in ("motion_comic", "film_adaptation"):
         comic_mode = "motion_comic"
     blobs = []
@@ -186,7 +188,8 @@ def create_from_comic(request: Request,
         proj = import_comic(request.app.state.db, request.app.state.data_dir,
                             name, aspect_ratio, blobs, comic_mode=comic_mode,
                             default_shot_duration=default_shot_duration,
-                            target_duration=target_duration)
+                            target_duration=target_duration,
+                            style=style, style_vis=style_vis)
     except ValueError as exc:
         raise HTTPException(422, str(exc))
     return _public(proj)
