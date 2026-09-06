@@ -72,7 +72,7 @@ function data() {
       asr_cleanup: '🎧 转写校对' },  // P10-D：路由表可见（本地思考模型截断时可切线上）
     novelOpen: false, novelInfo: {text: '', char_count: 0, from_audio: false},
     novelEditing: false, novelDraft: '', novelSaving: false,   // 人工校正（2026-09-06）
-    cleanupBusy: false, cleanupTheme: '', cleanupMode: 'conservative',
+    cleanupBusy: false, cleanupTheme: '', cleanupMode: 'conservative', cleanupStatus: '',
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     // 日志折叠（2026-09-01 移动版）：桌面默认展开、窄屏默认折叠（详情页缩短，成片/视频优先露出）
     logsOpen: (typeof window !== 'undefined' && window.matchMedia)
@@ -86,6 +86,13 @@ function data() {
 
 /* ===== computed ===== */
 const computed = {
+  cleanupModeHint() {   // 转写校正面板常显模式说明（2026-09-06 UI 优化，替代 tooltip）
+    return {
+      conservative: '保守=只修同音错字+删语气词，最快',
+      enrich: '丰富=原句逐字保留，围绕主题扩旁白（对白镜仍锚原声时长）',
+      free: '自由=整体重写成小说正文，篇幅相当或略丰',
+    }[this.cleanupMode] || '';
+  },
   allHaveViews() { return this.assets.length && this.assets.every(a => (this.views[a.id]||[]).length); },
   allShotsReady() { return this.shots.length > 0 && this.shots.every(s => s.status === 'ready'); },
   allShotsRendered() { return this.shots.length > 0 && this.shots.every(s => !!s.video_url); },
@@ -538,6 +545,7 @@ const methods = {
   },
   async cleanupTranscription() {
     this.cleanupBusy = true;
+    this.cleanupStatus = '已入队，等待执行…';
     try {
       const r = await fetch(`/api/projects/${this.project.id}/asr-cleanup`, {
         method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -551,6 +559,8 @@ const methods = {
         const s = await fetch(`/api/jobs/${job_id}/snapshot`);
         if (!s.ok) continue;                    // 404=任务异常消失，继续等超时兜底
         const j = await s.json();
+        if (j.status === 'running') this.cleanupStatus = '校对中（模型思考+输出需数分钟，完成自动刷新）…';
+        else if (j.status === 'pending') this.cleanupStatus = `排队中（第 ${Math.min(600, i + 1)} 次探测）…`;
         if (j.status === 'pending' || j.status === 'running') continue;
         if (j.status !== 'done') {
           alert(`校对任务未完成（${j.status}）：${j.error || '详见执行日志'}`);
