@@ -522,7 +522,9 @@ def test_no_voice_binding_no_audio_slots(tmp_path, monkeypatch):
         wf = m.prompts[0]["prompt"]
         assert wf["95"]["inputs"]["audio"] == "cs_voice_0.mp3"  # 模板默认未动
         assert "<Audio 1>" not in wf["110"]["inputs"]["prompt"]
-        assert m.audio_uploads == []
+        # 2026-09-06 语义变更：未注入槽补静音占位上传（防 ComfyUI 400）——
+        # 真正要断言的是「没有角色音色样本被上传」，占位（cs_voice_*.mp3）除外
+        assert all(u.startswith("cs_voice") for u in m.audio_uploads)
 
 
 def test_render_without_audio_slots_clears_native_flag(tmp_path, monkeypatch):

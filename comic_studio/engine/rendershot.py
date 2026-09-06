@@ -468,8 +468,13 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         from .jobs import attach_snapshot
         attach_snapshot(db, job_id, prompt=prompt, workflow=wf, template_id=template.id)
 
-    # I1: 若模板声明图片槽但上传清单为空，快失败
-    if template.inject_images and not uploads:
+    # I1: 若模板声明图片槽但上传清单为空，快失败（只看图片类条目——
+    # 2026-09-06 静音占位会补音频条目，不能因此绕过空图检查）
+    _img_names = {u["name"] for u in uploads} - {
+        wf.get(str(sp["node"]), {}).get("inputs", {}).get(sp["field"])
+        for sp in (template.inject_images or [])
+        if str(sp.get("slot", "")).startswith("audio")}
+    if template.inject_images and not _img_names:
         raise ValueError(
             f"模板 {template.id} 需要图片输入但未提供"
             f"（镜头 {shot['seq']} 的资产无参考图或衔接首帧缺失）")
