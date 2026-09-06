@@ -11,6 +11,12 @@
 
 ## 判例集
 
+### gen_shot 全灭 TypeError: emit() got an unexpected keyword argument 'shot_id'（2026-09-06）
+- 漫改项目**未提取角色直接渲染**即触发：`rendershot` 原页兜底分支 `emit_log(..., shot_id=...)` 传了 `logbus.emit` 不存在的 kwarg（合法仅 project_id/job_id/data）——12e1d46 引入，该分支零测试
+- 修 kwarg 后还有第二坑：通用 else 分支把漫改原页 images 覆盖成空 → I1 空图快失败（已收窄 `elif images is None`，优先级 ①角色资产 ②上镜接力 ③漫画原页）
+- 教训：**emit 只认 project_id/job_id/data**；新分支必须有测试真实踩过一次（当次提交只测了有资产路径）
+- start-prod 无热重载——修完必须重启服务，失败镜手动重发渲染（autopilot 失败守卫见新 job 自然解除）
+
 ### 成片无声 / 播放卡死 / 配音错位（三连根因，均已修）
 1. **滤镜串路径**：libavfilter 里 `\` 是转义符 + 非 ASCII 项目名滤镜内打开不可靠 → 滤镜只给裸 `subtitles.srt`、srt 目录用 `cwd=`；**进 subprocess 前所有路径 resolve() 绝对化**（相对路径会跟着新 cwd 解析凭空消失）
 2. **音频参数混拼**：TTS mp3=24k 单声道 vs normalize 段=44.1k 立体声，concat `-c copy` 缝一个容器 → 时间戳全废。一切出段统一 `-ar 44100 -ac 2 -b:a 128k`

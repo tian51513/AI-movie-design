@@ -6,7 +6,7 @@
 
 - stage：`created → analyzed → assets_ready → storyboard_ready → rendered → merged`（`rendering` 是死枚举，从未写入）
 - 🎧 有声书（P10A）：created 起 transcribe job 回填正文后才放行分析（源音频在+segments 缺 → wait/409）；analyzed 零资产 → wait 不空转；约定路径 `projects/<slug>/audio/{source.*,segments.json}`；拆解时长=音频段实测（音频项目禁 target 均摊）
-- 漫画导入（motion_comic 动态漫 / film_adaptation 漫改）直达 storyboard_ready
+- 漫画导入（motion_comic 动态漫 / film_adaptation 漫改）直达 storyboard_ready；**画风选择**（2026-09-06）随创建提交 style/style_vis——漫改可见可选（转换目标），动态漫不消费（画风跟随原页，前端明示）
 - 唯一写入口 `engine/projects.set_stage`；门禁 `engine/pipeline_gates.gate_pass`（GateStageError=409）
   - 门1：全部角色资产有 views 图 → assets_ready
   - 门2：全部生效镜有提示词 → storyboard_ready（检查型）
@@ -44,7 +44,7 @@
 |---|---|
 | 拆解估时 | 对白镜 ⌈字数/4⌉+0.6×(句数-1)；无对白镜按动作复杂度（打斗 8~12s/全景 6~8s）或统一段时长；钳 [4,15] |
 | 打包预算 | 台词组 3~8 句、总字数 ≤48 字（≈12s 封口）超了开新镜；duration=句数×2.5 已废（无视句长截对白） |
-| 段时长 0 | =LLM 动态估（默认）；>0=统一段时长；总时长 >0=按镜数均摊（下限 4s） |
+| 段时长 0 | =智能估（小说链 LLM 动态估 / 漫画链读图后对白字数基准重估，2026-09-06 起）；>0=统一段时长；总时长 >0=按镜数均摊（下限 4s，漫画导入时） |
 | 成片收口 | 对白镜段长恒=配音+0.5s（`merge._replace_audio(target=)`：长者 tpad 末帧定格、短者 -t 截尾；音频 apad+44100 立体声统一） |
 | 字幕轴 | 对白镜=配音+0.5 镜像；其余=probe(video) 真实时长（DB 字段≠实际渲染时长：17k+5 帧对齐 4.0→4.5） |
 

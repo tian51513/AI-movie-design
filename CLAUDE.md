@@ -196,3 +196,9 @@
 - asr extra 装法：`faster-whisper` 不进基础依赖——WSL `.venv/bin/pip install -e ".[asr]"` / Windows `.venv-win/Scripts/pip.exe install -e ".[asr]"`；缺包时入口路由显式 422 给安装指引（探测用 `except ImportError`，破损安装抛普通 ImportError 同待遇，终审顺手修）；转写函数惰性导入，无 asr 环境不影响服务
 - audio_rel 语义：segments.json 存在 = 音频项目 → **分镜时长以音频实测为最终权威**（`span_duration_for` 规范化对齐 text_span 覆盖估时；终审 I-2：设了预设总时长也不得均摊覆盖，否则逐镜实测被全表 UPDATE 抹平）
 - 注意：**转写期间全队列串行（单 worker，resource=None）——长书先切分或临时调 workers>1；running 转写不可中断**
+
+## 模块地图（漫画链画风+智能估时 2026-09-06）
+
+- **漫画 tab 画风随创建提交**——前端画风下拉从上传 form 挪公共字段区（上传/漫改可见；动态漫显示「画风跟随原页，转换请选漫改」提示——黑白+真人误走动态漫事故：漫画 tab 此前无画风字段，创建后改画风被静默忽略）；`from-comic` 路由 + `import_comic(style, style_vis)` 透传 create_project，漫改 describe_shots 画风转换指令与参考图 genref 即刻可消费
+- **漫画链智能估时**——describe_shots 生成提示词后，项目段时长/总时长均 0（导入落的是 5.0 占位）→ 本次生成对白的镜按字数基准重估；公式抽 `llm/storyboard.dialogue_duration_seconds`（⌈字数/4⌉+0.6×(句数-1) 钳 4~15）与小说 staging 共用——「段时长留 0」从此两条链同为智能语义；显式段时长/总时长均摊（P11-⑤）、无对白镜、非本次生成的镜均不覆盖（手改存量不被冲掉）
+- **漫改原页兜底双坑修复（2026-09-06 真机 gen_shot 全灭）**——`rendershot` 漫改无角色资产分支：①emit_log 误传 `shot_id` kwarg（logbus.emit 只收 project_id/job_id/data，12e1d46 引入且零测试）TypeError；②通用 else 分支把原页 images 覆盖成空 → I1 空图快失败——else 收窄 `elif images is None`（参考图优先级 ①角色资产 ②上镜接力 ③漫画原页）
