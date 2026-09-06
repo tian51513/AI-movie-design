@@ -813,22 +813,26 @@ _DIALOGUE_RE = None
 
 # 2026-09-06 manga7 真机：28 个"角色"过半是脚手架短语（对白顺序/undscape=
 # soundscape 截断/画面中出现对白气泡/王叔叔轻声说）——提取时净化说话人
-_SHRINK_SUFFIXES = ("轻声说", "开口说", "大声说", "说道", "问道", "喊道", "喊出",
-                    "回答", "回应", "低语", "轻哼", "心想", "感叹", "自语",
-                    "开口", "大喊", "轻声", "说", "问", "喊", "叫", "道")
+_SHRINK_SUFFIXES = ("轻声说", "开口说话", "开口说", "大声说", "说话", "说道",
+                    "问道", "喊道", "喊出", "回答", "回应", "低语", "轻哼",
+                    "心想", "感叹", "自语", "开口", "大喊", "轻声",
+                    "说", "问", "喊", "叫", "道")
+_PARTICLES = "的对在的了和与跟并则就又便而"   # 连词/助词尾缀（王叔叔则→王叔叔）
 _SCAFFOLD_RE = None
 
 
 def _clean_speaker(name: str) -> str | None:
-    """说话人净化：剥说话动词与连词尾缀（王叔叔轻声说→王叔叔、
-    同时对他说→同→过短拒收）；脚手架/叙述短语与纯 ASCII 拒收。
-    返回净化名或 None（拒收——不进 ledger.dialogue，资产/TTS/字幕同步干净）。"""
+    """说话人净化：剥说话动词与连词尾缀（王叔叔轻声说/开口说话→王叔叔、
+    同时对他说→同→过短拒收）；脚手架/叙述短语与纯 ASCII 拒收
+    （「旁白」本身白名单保留——正片旁白要配音）。返回净化名或 None
+    （拒收——不进 ledger.dialogue，资产/TTS/字幕同步干净）。"""
     global _SCAFFOLD_RE
     import re as _re
     if _SCAFFOLD_RE is None:
         _SCAFFOLD_RE = _re.compile(
             r"对白|气泡|画面|顺序|切换|出现|随后|同时|叙述|字幕|音效|提示|标签"
-            r"|声音|scape|subject|summary|retention|voice|scales?", _re.I)
+            r"|声音|独白|旁白|回忆|浮现|的"
+            r"|scape|subject|summary|retention|voice|scales?", _re.I)
     s = (name or "").strip()
     if not s or s.isascii():
         return None
@@ -837,12 +841,17 @@ def _clean_speaker(name: str) -> str | None:
         changed = False
         for suf in _SHRINK_SUFFIXES:
             if s.endswith(suf) and len(s) > len(suf):
-                s = s[:-len(suf)].rstrip("的对在的了和与跟并")
+                s = s[:-len(suf)].rstrip(_PARTICLES)
                 changed = True
                 break
+        if not changed:   # 无动词后缀也剥连词尾缀（王叔叔则→王叔叔）
+            t = s.rstrip(_PARTICLES)
+            if len(t) >= 2 and t != s:
+                s = t
+                changed = True
     if s.startswith("对") and len(s) > 2:
         s = s[1:]
-    if len(s) < 2 or _SCAFFOLD_RE.search(s):
+    if len(s) < 2 or (_SCAFFOLD_RE.search(s) and s != "旁白"):
         return None
     return s
 

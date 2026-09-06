@@ -707,16 +707,24 @@ def test_anchor_subject_definitions_by_binding(tmp_path):
 def test_extract_dialogue_rejects_scaffold_speakers():
     """2026-09-06 manga7 真机：28 个"角色"过半是脚手架短语——对白顺序/
     undscape（soundscape 被正则截断）/画面中出现对白气泡/王叔叔轻声说。
-    说话人净化：剥说话动词后缀、叙述/脚手架短语拒收、纯 ASCII 拒收。"""
+    说话人净化：剥说话动词后缀、叙述/脚手架短语拒收、纯 ASCII 拒收；
+    二轮加固（当晚实测新变体）：王叔叔开口说话/王叔叔则/上方浮现内心
+    独白/白为回忆旁白/男性的手臂并开口；「旁白」本身保留（正片旁白配音）。"""
     from comic_studio.engine.comic import _extract_dialogue
     text = ("王叔叔轻声说：「小点声，别让人听见。」\n"
             "对白顺序：「无关脚手架文本」\n"
             "undscape:「garbage」\n"
             "画面中出现对白气泡：「废句」\n"
             "同时对他说：「你过来」\n"
-            "静静轻哼回应：「嗯。」")
+            "静静轻哼回应：「嗯。」\n"
+            "王叔叔开口说话：「第二句台词。」\n"
+            "王叔叔则：「第三句。」\n"
+            "上方浮现内心独白：「内心戏」\n"
+            "白为回忆旁白：「回忆」\n"
+            "男性的手臂并开口：「描述句」\n"
+            "旁白：「旁白要保留。」")
     d = _extract_dialogue(text)
-    assert [x["speaker"] for x in d] == ["王叔叔", "静静"]
+    assert [x["speaker"] for x in d] == ["王叔叔", "静静", "王叔叔", "王叔叔", "旁白"]
     assert d[0]["line"] == "小点声，别让人听见。"
 
 
