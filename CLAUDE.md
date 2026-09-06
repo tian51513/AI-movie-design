@@ -202,3 +202,4 @@
 - **漫画 tab 画风随创建提交**——前端画风下拉从上传 form 挪公共字段区（上传/漫改可见；动态漫显示「画风跟随原页，转换请选漫改」提示——黑白+真人误走动态漫事故：漫画 tab 此前无画风字段，创建后改画风被静默忽略）；`from-comic` 路由 + `import_comic(style, style_vis)` 透传 create_project，漫改 describe_shots 画风转换指令与参考图 genref 即刻可消费
 - **漫画链智能估时**——describe_shots 生成提示词后，项目段时长/总时长均 0（导入落的是 5.0 占位）→ 本次生成对白的镜按字数基准重估；公式抽 `llm/storyboard.dialogue_duration_seconds`（⌈字数/4⌉+0.6×(句数-1) 钳 4~15）与小说 staging 共用——「段时长留 0」从此两条链同为智能语义；显式段时长/总时长均摊（P11-⑤）、无对白镜、非本次生成的镜均不覆盖（手改存量不被冲掉）
 - **漫改原页兜底双坑修复（2026-09-06 真机 gen_shot 全灭）**——`rendershot` 漫改无角色资产分支：①emit_log 误传 `shot_id` kwarg（logbus.emit 只收 project_id/job_id/data，12e1d46 引入且零测试）TypeError；②通用 else 分支把原页 images 覆盖成空 → I1 空图快失败——else 收窄 `elif images is None`（参考图优先级 ①角色资产 ②上镜接力 ③漫画原页）
+- **强制重读（describe-shots force=true）**——批量读图默认增量（跳过已有提示词的镜），`?force=true` 整批覆盖：改画风/换模型后一键重生提示词+重估时长；前端「🔄 强制重读」按钮带确认框；创建弹窗改名「创建项目」（四类入口）。注意：估时在读图 job **全部页读完后**一次性落库，跑完前占位 5.0；describe_shots 不在重启重排白名单——重启杀在跑的读图 job 后需手动重触发
