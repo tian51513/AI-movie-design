@@ -42,3 +42,10 @@
 
 ### Windows bat 脚本
 - 纯 ASCII + CRLF（UTF-8 中文注释被 cmd 按 GBK 误读执行）；杀进程只按端口 8190 精确杀（`taskkill /im python.exe` 会连带杀 ComfyUI）；for /f 内 PowerShell 管道不要写 `^|`
+
+### 本地 LLM job 长跑 15 分钟不归（Ollama 5 分钟请求硬上限）
+- **症状**（2026-09-06 有声2 校对 free 整文）：27B qwen3.8 跑 1506 字扩写，job running 15+ 分钟；同模型同文本手动测 1~2 分钟
+- **真相**：Ollama（0.32.13）服务端对单请求有 **5m0s 硬上限**，超时直接 500（`server.log` GIN 行 `500 | 5m0s` 铁证）；openai 客户端对 5xx **静默重试 2 次** → 单 job 最长烧 15 分钟三连死；本例第 3 次思考收敛短才成功（纯随机）
+- **判定手法**：`/mnt/c/Users/<u>/AppData/Local/Ollama/server.log` grep `GIN.*v1/chat`；`/api/ps` 的 `expires_at` 是否持续滑动（活跃生成）；GPU util >0
+- **边界**：docs 无官方 env 可调请求超时（GitHub issue #7526 关闭无解；`OLLAMA_LOAD_TIMEOUT` 管加载不管生成）。规避=单次调用 token 预算控制在 ~4500 内（15 t/s × 300s），重活换轻模型/线上，或任务拆批
+- **附带**：改前端后必须硬刷新浏览器（SPA 不自刷新）——服务已新、页面仍旧会弹旧版错信息（本例「保留 undefined 段」）
