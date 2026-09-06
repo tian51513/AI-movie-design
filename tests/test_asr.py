@@ -390,35 +390,23 @@ def test_cleanup_transcription_by_llm(tmp_path):
     assert "承不住了" in novel and "陈薄了" not in novel and "嗯" not in novel
 
 
-def test_asr_cleanup_endpoint(tmp_path, monkeypatch):
-    """POST /{id}/asr-cleanup：路由走 asr_cleanup 任务键（默认 local），
-    同步返回清洗统计；无转写 409；在飞 409。"""
+def test_asr_cleanup_endpoint(tmp_path):
+    """POST /{id}/asr-cleanup（2026-09-06 队列化）：202+job_id；无转写 409。"""
     from comic_studio.engine.db import Database
-    from comic_studio.engine.projects import create_project, get_project
+    from comic_studio.engine.projects import create_project
     from comic_studio.engine.asr import save_segments
-    from comic_studio.engine.paths import data_to_abs
-
-    class FakeLLM:
-        model = "fake"
-        def raw_chat(self, messages, temperature=0.2):
-            return '{"1": ""}', {}   # 桩：语气词段返回空串=丢弃
-    monkeypatch.setattr("comic_studio.engine.llm.provider.client_for_task",
-                        lambda db, task: FakeLLM())
     db = Database(tmp_path / "s.db"); db.migrate()
-    pid = create_project(db, tmp_path / "d", "清剧", "16:9", "占位")["id"]
-    save_segments(tmp_path / "d", "清剧", [{"start": 0.0, "end": 1.0, "text": "嗯"}])
-    data_to_abs(tmp_path / "d", get_project(db, pid)["novel_path"]).write_text(
-        "嗯", encoding="utf-8")
+    pid = create_project(db, tmp_path / "d", "重发剧", "16:9", "占位")["id"]
+    save_segments(tmp_path / "d", "重发剧", [{"start": 0.0, "end": 1.0, "text": "嗯"}])
     from fastapi.testclient import TestClient
     from comic_studio.web.app import create_app
     with TestClient(create_app(db_path=tmp_path / "s.db", data_dir=tmp_path / "d",
                                start_workers=False)) as c:
         r = c.post(f"/api/projects/{pid}/asr-cleanup")
-        assert r.status_code == 200, r.text
-        assert r.json() == {"removed": 1, "segments": 0, "mode": "conservative"}
-        # 无转写项目 → 409
+        assert r.status_code == 202 and "job_id" in r.json()
         pid2 = create_project(db, tmp_path / "d", "无段剧", "16:9", "t")["id"]
         assert c.post(f"/api/projects/{pid2}/asr-cleanup").status_code == 409
+
 
 
 def test_cleanup_with_theme_anchor(tmp_path):
@@ -657,3 +645,32 @@ def test_cleanup_free_mode_whole_text_single_call(tmp_path):
     assert "探了探额头" in novel               # 整文输出直接作正文
     assert len(load_segments(tmp_path / "d", "整剧")) == 16   # 锚点 16 段全在
     assert res["mode"] == "free"
+
+
+def test_asr_cleanup_is_queue_job(tmp_path, monkeypatch):
+    """2026-09-06 用户需求：校对从同步 HTTP 改队列 job——占 gpu_llm_local
+    槽位与渲染互斥（防显存争抢），失败走守卫，不占 web 线程。
+    POST /asr-cleanup → 202 job（非同步结果）；handler 注册 asr_cleanup。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.asr import save_segments
+    from comic_studio.engine.jobs import enqueue_job
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.queue.worker import HANDLERS
+    import comic_studio.engine.pipeline_jobs  # noqa: F401 注册
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "队剧", "16:9", "占位")["id"]
+    save_segments(tmp_path / "d", "队剧", [{"start": 0.0, "end": 1.0, "text": "嗯"}])
+    with TestClient(create_app(db_path=tmp_path / "s.db", data_dir=tmp_path / "d",
+                               start_workers=False)) as c:
+        r = c.post(f"/api/projects/{pid}/asr-cleanup",
+                   json={"theme": "测试", "mode": "free"})
+        assert r.status_code == 202, r.text
+        assert "job_id" in r.json()
+    row = db.connect().execute(
+        "SELECT type, resource FROM jobs WHERE project_id=? ORDER BY id DESC LIMIT 1",
+        (pid,)).fetchone()
+    assert row["type"] == "asr_cleanup"
+    assert row["resource"] == "gpu_llm_local"     # 与渲染互斥
+    assert "asr_cleanup" in HANDLERS               # handler 已注册

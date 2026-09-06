@@ -99,6 +99,34 @@ def handle_extract_comic_characters(db, data_dir, job, comfy):
              project_id=job["project_id"], job_id=job["id"])
 
 
+@register("asr_cleanup")
+def handle_asr_cleanup(db, data_dir, job, comfy):
+    """P10 转写校对（2026-09-06 队列化）：占 gpu_llm_local 槽与渲染互斥
+    （同步 HTTP 时代绕过资源组，与 ComfyUI 抢显存）。payload 带 theme/mode。"""
+    from . import asr as asr_mod
+    from .llm.provider import client_for_task
+    from .paths import data_to_abs
+    from .projects import get_project
+    payload = json.loads(job["payload_json"] or "{}")
+    pid = payload.get("project_id", job["project_id"])
+    proj = get_project(db, pid)
+    if proj is None:
+        raise ValueError(f"项目不存在: {pid}")
+    theme = str(payload.get("theme") or "")
+    if not theme.strip():
+        tf = data_to_abs(data_dir, f"{asr_mod.audio_rel(proj['slug'])}/theme.txt")
+        if tf.exists():
+            theme = tf.read_text(encoding="utf-8").strip()
+    emit_log(db, "asr", "info", "转写校对任务开始（队列模式，与渲染互斥）",
+             project_id=pid, job_id=job["id"])
+    res = asr_mod.cleanup_transcription(
+        db, data_dir, pid, client_for_task(db, "asr_cleanup"),
+        theme=theme, mode=str(payload.get("mode") or "conservative"))
+    emit_log(db, "asr", "info",
+             f"转写校对完成：{res['segments']} 段 / 丢弃 {res['removed']}"
+             f"（{res['mode']}）", project_id=pid, job_id=job["id"])
+
+
 @register("transcribe")
 def handle_transcribe(db, data_dir, job, comfy):
     """P10 有声书转写（2026-09-05 计划）：源音频 → 段落盘 + novel.txt 回填

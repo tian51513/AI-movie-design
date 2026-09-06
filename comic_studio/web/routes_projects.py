@@ -191,13 +191,10 @@ def create_from_comic(request: Request,
     return _public(proj)
 
 
-_CLEANUP_BUSY: set = set()   # 同项目并发校对互斥（/tts 先例）
-
-
-@router.post("/{project_id}/asr-cleanup")
+@router.post("/{project_id}/asr-cleanup", status_code=202)
 def asr_cleanup_route(request: Request, project_id: int, body: dict | None = None):
-    """P10C 转写校对遍（2026-09-05 用户需求：语气词+同音错字）：转写文本发
-    LLM 按段清洗（纯文本任务，本地模型可做），重写正文/段落盘/章节。"""
+    """P10C 转写校对（2026-09-06 队列化）：入队 gpu_llm_local 与渲染互斥
+    （同步 HTTP 时代绕过资源组抢显存）。theme 留空自动读项目持久化主题。"""
     db = request.app.state.db
     proj = get_project(db, project_id)
     if proj is None:
@@ -206,21 +203,19 @@ def asr_cleanup_route(request: Request, project_id: int, body: dict | None = Non
     from ..engine.paths import data_to_abs as _dta
     if not load_segments(request.app.state.data_dir, proj["slug"]):
         raise HTTPException(409, "无转写段落（非音频项目或转写未完成）")
-    if project_id in _CLEANUP_BUSY:
-        raise HTTPException(409, "校对进行中，请勿重复触发")
-    _CLEANUP_BUSY.add(project_id)
-    try:
-        from ..engine.llm.provider import client_for_task
-        from ..engine.asr import cleanup_transcription
-        return cleanup_transcription(
-            db, request.app.state.data_dir, project_id,
-            client_for_task(db, "asr_cleanup"),
-            theme=str((body or {}).get("theme") or ""),
-            mode=str((body or {}).get("mode") or "conservative"))
-    except Exception as exc:
-        raise HTTPException(502, f"转写校对失败：{exc}")
-    finally:
-        _CLEANUP_BUSY.discard(project_id)
+    body = body or {}
+    theme = str(body.get("theme") or "").strip()
+    if not theme:
+        tf = _dta(request.app.state.data_dir,
+                  f"projects/{proj['slug']}/audio/theme.txt")
+        if tf.exists():
+            theme = tf.read_text(encoding="utf-8").strip()
+    from ..engine.jobs import enqueue_job
+    jid = enqueue_job(db, "asr_cleanup", project_id=project_id,
+                      resource="gpu_llm_local",
+                      payload={"project_id": project_id, "theme": theme,
+                               "mode": str(body.get("mode") or "conservative")})
+    return {"job_id": jid}
 
 
 @router.get("/{project_id}/novel-text")
