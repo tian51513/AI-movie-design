@@ -741,7 +741,17 @@ const methods = {
     this.comfyStatus = null;
     // 传表单值：手输地址立即可测，不依赖先保存（2026-08-29 用户需求）
     const bu = encodeURIComponent((this.settingsForm?.comfy?.base_url) || '');
-    try { this.comfyStatus = (await (await fetch(`/api/comfy/status?base_url=${bu}`)).json()).ok; }
+    try {
+      const _cs = await (await fetch(`/api/comfy/status?base_url=${bu}`)).json();
+      this.comfyStatus = _cs.ok;
+      // 2026-09-06 端口漂移自愈：离线但扫到别的端口的活 ComfyUI → 一键切换
+      if (!_cs.ok && _cs.suggest) {
+        if (confirm(`配置的 ComfyUI 地址连不上，但探测到 ${_cs.suggest} 有服务。\n切换到该地址？`)) {
+          this.settingsForm.comfy.base_url = _cs.suggest;
+          this.comfyStatus = true;
+        }
+      }
+    }
     catch (e) { this.comfyStatus = false; }
   },
   async freeComfy() {

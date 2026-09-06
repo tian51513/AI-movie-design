@@ -18,9 +18,22 @@ def status(request: Request, base_url: str = ""):
         ComfyClient(url, timeout=2).health()
         return {"ok": True}
     except ComfyError:
-        return {"ok": False}
+        pass
     except Exception:
-        return {"ok": False}
+        pass
+    # 离线（2026-09-06 两次端口漂移事故）→ 自动扫 8188-8199 给一键切换建议
+    from ..engine.comfy_probe import DEFAULT_CANDIDATES, probe_ports
+    # 端口建议只对本地地址扫（远程主机扫 127.0.0.1 无意义且误连）
+    try:
+        host = url.split("//")[-1].split("/")[0]
+    except Exception:
+        host = "127.0.0.1:8188"
+    if host.split(":")[0] in ("127.0.0.1", "localhost"):
+        candidates = [h for h in DEFAULT_CANDIDATES if h != host]
+        found = probe_ports(candidates, timeout=0.8)
+        if found:
+            return {"ok": False, "suggest": f"http://{found}"}
+    return {"ok": False}
 
 
 @router.post("/free")
