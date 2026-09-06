@@ -1,5 +1,6 @@
 # comic_studio/web/routes_projects.py
 """项目 REST：创建（上传小说）、列表、详情。"""
+import json
 import re
 from pathlib import Path
 
@@ -235,6 +236,32 @@ def novel_text(request: Request, project_id: int):
                        f"projects/{proj['slug']}/audio")
     from_audio = adir.is_dir() and next(adir.glob("source.*"), None) is not None
     return {"text": text, "char_count": len(text), "from_audio": from_audio}
+
+
+@router.put("/{project_id}/novel-text")
+def novel_text_edit(request: Request, project_id: int, body: dict):
+    """2026-09-06 用户需求：正文人工校正——LLM 校正外的第二条路，LLM 校正后
+    也可继续手改。写回 novel.txt + 重算章节；segments（音频时长锚）不动——
+    正文大改后拆镜对不齐的段落回落估时（与 free 模式同语义）。"""
+    db = request.app.state.db
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    text = str(body.get("text") or "").strip()
+    if not text:
+        raise HTTPException(422, "正文不能为空")
+    from ..engine.chapters import parse_chapters
+    from ..engine.paths import data_to_abs
+    f = data_to_abs(request.app.state.data_dir, proj["novel_path"])
+    if not f.exists():
+        raise HTTPException(404, "正文文件缺失（转写未完成或已删除）")
+    f.write_text(text, encoding="utf-8")
+    conn = db.connect()
+    conn.execute("UPDATE projects SET chapters_json=? WHERE id=?",
+                 (json.dumps(parse_chapters(text), ensure_ascii=False), project_id))
+    conn.commit()
+    emit_log(db, "asr", "info", f"人工校正正文：{len(text)} 字", project_id=project_id)
+    return {"char_count": len(text)}
 
 
 @router.post("/from-audio", status_code=201)

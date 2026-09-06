@@ -70,7 +70,9 @@ function data() {
       optimize_prompt: '提示词优化（✨按钮）', gen_story: '主题生成项目正文',
       describe_shot: 'VLM 读图',
       asr_cleanup: '🎧 转写校对' },  // P10-D：路由表可见（本地思考模型截断时可切线上）
-    novelOpen: false, novelInfo: {text: '', char_count: 0, from_audio: false}, cleanupBusy: false, cleanupTheme: '', cleanupMode: 'conservative',
+    novelOpen: false, novelInfo: {text: '', char_count: 0, from_audio: false},
+    novelEditing: false, novelDraft: '', novelSaving: false,   // 人工校正（2026-09-06）
+    cleanupBusy: false, cleanupTheme: '', cleanupMode: 'conservative',
     detailMode: 'assets', shots: [], splitRunning: false, expandedShot: null, editingShot: false,
     // 日志折叠（2026-09-01 移动版）：桌面默认展开、窄屏默认折叠（详情页缩短，成片/视频优先露出）
     logsOpen: (typeof window !== 'undefined' && window.matchMedia)
@@ -569,7 +571,25 @@ const methods = {
     const r = await fetch(`/api/projects/${this.project.id}/novel-text`);
     if (!r.ok) { alert(await r.text()); return; }
     this.novelInfo = await r.json();
+    this.novelEditing = false;   // 重开回到查看态（LLM 校正后刷新亦走此路）
     this.novelOpen = true;
+  },
+  startNovelEdit() {
+    this.novelDraft = this.novelInfo.text;
+    this.novelEditing = true;    // 人工校正（2026-09-06）：LLM 校正外第二条路
+  },
+  async saveNovelEdit() {
+    if (!this.novelDraft.trim()) { alert('正文不能为空'); return; }
+    this.novelSaving = true;
+    try {
+      const r = await fetch(`/api/projects/${this.project.id}/novel-text`, {
+        method: 'PUT', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text: this.novelDraft})});
+      if (!r.ok) { alert(await r.text()); return; }
+      this.novelInfo.char_count = (await r.json()).char_count;
+      this.novelInfo.text = this.novelDraft;
+      this.novelEditing = false;
+    } finally { this.novelSaving = false; }
   },
   async startMerge() {
     const r = await fetch(`/api/projects/${this.project.id}/merge`, {method: 'POST'});

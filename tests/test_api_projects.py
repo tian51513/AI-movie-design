@@ -219,3 +219,43 @@ def test_novel_text_endpoint(tmp_path, monkeypatch):
         # 删除正文文件 → 404
         (tmp_path / "data" / "projects" / "测试剧" / "novel.txt").unlink()
         assert c.get(f"/api/projects/{pid}/novel-text").status_code == 404
+
+
+def test_novel_text_manual_edit(tmp_path, monkeypatch):
+    """2026-09-06 用户需求：正文人工校正——LLM 校正外的第二条路，且 LLM 校正后
+    可继续手改。PUT novel-text 写回 novel.txt + 重算章节；segments（音频时长锚）
+    不动；空文本 422。"""
+    with _client(tmp_path) as c:
+        pid = _upload(c, text="第一章\n\n林凡推门而入。").json()["id"]
+        # 音频项目：segments 在盘（音频时长锚）——编辑不得动它
+        import sys as _sys
+        import types as _types
+        _stub = _types.ModuleType("faster_whisper")
+        _stub.WhisperModel = object
+        monkeypatch.setitem(_sys.modules, "faster_whisper", _stub)
+        pid2 = c.post("/api/projects/from-audio",
+                      data={"name": "音剧", "aspect_ratio": "16:9"},
+                      files={"audio": ("a.mp3", io.BytesIO(b"f"), "audio/mpeg")}).json()["id"]
+        from comic_studio.engine.asr import save_segments
+        save_segments(tmp_path / "data", "音剧",
+                      [{"start": 0.0, "end": 3.0, "text": "林凡推门而入"}])
+        new_text = "第一章\n\n林凡推门而入，雨水顺着发梢滴落。他攥紧了拳。"
+        r = c.put(f"/api/projects/{pid2}/novel-text", json={"text": new_text})
+        assert r.status_code == 200, r.text
+        assert r.json()["char_count"] == len(new_text)
+        # 回读一致 + 章节重算
+        got = c.get(f"/api/projects/{pid2}/novel-text").json()
+        assert got["text"] == new_text and got["from_audio"] is True
+        import json as _json
+        row = c.get(f"/api/projects/{pid2}").json()
+        assert row["stage"]  # 详情可用
+        conn_chapters = c.app.state.db.connect().execute(
+            "SELECT chapters_json FROM projects WHERE id=?", (pid2,)).fetchone()[0]
+        assert _json.loads(conn_chapters)[0]["idx"] == 1   # 章节重算生效
+        # segments 原样（音频锚未破坏）
+        from comic_studio.engine.asr import load_segments
+        assert load_segments(tmp_path / "data", "音剧") == [
+            {"start": 0.0, "end": 3.0, "text": "林凡推门而入"}]
+        # 空文本 422
+        assert c.put(f"/api/projects/{pid2}/novel-text",
+                     json={"text": "   "}).status_code == 422
