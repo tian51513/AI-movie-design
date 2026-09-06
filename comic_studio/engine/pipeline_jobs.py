@@ -134,6 +134,15 @@ def handle_asr_cleanup(db, data_dir, job, comfy):
     emit_log(db, "asr", "info",
              f"转写校对完成：{res['segments']} 段 / 丢弃 {res['removed']}"
              f"（{res['mode']}）", project_id=pid, job_id=job["id"])
+    # 2026-09-06 有声2 真机：校正写回正文后分镜没重拆，后半段拆的是旧文本
+    # （引号形态变化 → 对白提取全空）——已有分镜必须明示重拆，不再静默脱节
+    n_shots = db.connect().execute(
+        "SELECT COUNT(*) FROM shots WHERE project_id=?", (pid,)).fetchone()[0]
+    if n_shots:
+        emit_log(db, "asr", "warn",
+                 f"正文已校正写回，但已有 {n_shots} 镜分镜基于旧文本——"
+                 "对白/时长可能与新正文失配，请重拆分镜后重生成提示词",
+                 project_id=pid)
 
 
 @register("transcribe")

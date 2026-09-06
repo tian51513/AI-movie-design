@@ -761,3 +761,54 @@ def test_cleanup_prompts_state_asr_origin(tmp_path):
     cleanup_transcription(db2, tmp_path / "d", pid2, FakeLLM(), theme="t",
                           mode="conservative")
     assert "有声小说" in captured["sys"] and "语境" in captured["sys"]
+
+
+def test_asr_cleanup_handler_warns_stale_shots(tmp_path, monkeypatch):
+    """2026-09-06 有声2 真机：校正写回正文后分镜没重拆，后 10 镜拆的是旧文本
+    （引号形态 ‘’/缺失）→ 对白提取全空。写回后若已有分镜，必须明示重拆。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.comic import import_comic
+    from comic_studio.engine.asr import save_segments
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.queue.worker import HANDLERS
+    import comic_studio.engine.pipeline_jobs  # noqa: F401 注册
+    import comic_studio.engine.llm.provider as provider_mod
+    db = Database(tmp_path / "s.db"); db.migrate()
+    png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+    pid = import_comic(db, tmp_path / "d", "校对提示剧", "16:9",
+                       [("p.png", png)])["id"]  # 有分镜
+    save_segments(tmp_path / "d", "校对提示剧", [{"start": 0.0, "end": 1.0, "text": "嗯"}])
+
+    class FakeLLM:
+        model = "fake"
+        def raw_chat(self, messages, temperature=None, **kw):
+            return ('{"1": "嗯"}', {})
+    monkeypatch.setattr(provider_mod, "client_for_task",
+                        lambda db, task, **kw: FakeLLM())
+    jid = enqueue_job(db, "asr_cleanup", project_id=pid,
+                      payload={"project_id": pid, "theme": "", "mode": "conservative"})
+    job = db.connect().execute("SELECT * FROM jobs WHERE id=?", (jid,)).fetchone()
+    HANDLERS["asr_cleanup"](db, tmp_path / "d", job, None)
+    msgs = [r["message"] for r in db.connect().execute(
+        "SELECT message FROM logs WHERE project_id=? ORDER BY id", (pid,))]
+    assert any("分镜基于旧文本" in m and "重拆" in m for m in msgs), msgs
+
+
+def test_novel_text_edit_warns_stale_shots(tmp_path):
+    """PUT novel-text 人工写回同待遇：已有分镜 → warn 提示重拆（有声2 教训
+    的第二入口）。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.comic import import_comic
+    from comic_studio.web.app import create_app
+    with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data",
+                               start_workers=False)) as c:
+        png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+        db = Database(tmp_path / "t.db")
+        pid = import_comic(db, tmp_path / "data", "手改提示剧", "16:9",
+                           [("p.png", png)])["id"]
+        r = c.put(f"/api/projects/{pid}/novel-text", json={"text": "新正文内容。" * 30})
+        assert r.status_code == 200, r.text
+        msgs = [row["message"] for row in db.connect().execute(
+            "SELECT message FROM logs WHERE project_id=? ORDER BY id", (pid,))]
+        assert any("分镜基于旧文本" in m for m in msgs), msgs

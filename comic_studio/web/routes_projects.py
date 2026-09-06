@@ -264,6 +264,13 @@ def novel_text_edit(request: Request, project_id: int, body: dict):
                  (json.dumps(parse_chapters(text), ensure_ascii=False), project_id))
     conn.commit()
     emit_log(db, "asr", "info", f"人工校正正文：{len(text)} 字", project_id=project_id)
+    # 2026-09-06 有声2 教训第二入口：写回后分镜若已存在即脱节——明示重拆
+    n_shots = conn.execute(
+        "SELECT COUNT(*) FROM shots WHERE project_id=?", (project_id,)).fetchone()[0]
+    if n_shots:
+        emit_log(db, "asr", "warn",
+                 f"正文已更新，但已有 {n_shots} 镜分镜基于旧文本——"
+                 "请重拆分镜后重生成提示词", project_id=project_id)
     return {"char_count": len(text)}
 
 
