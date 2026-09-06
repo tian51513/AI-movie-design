@@ -225,6 +225,15 @@ def backfill_dialogue(staged: list, character_names: list[str]) -> int:
     return n_filled
 
 
+def dialogue_duration_seconds(dlg: list) -> float:
+    """对白→时长字数基准（B1）：⌈总字数/4⌉ + 0.6×(句数-1)，钳 [4,15]
+    （中文 TTS 语速约 4 字/s + 句间停顿）。小说拆解 staging 与漫画读图
+    （describe_shots 智能估时 2026-09-06）共用同一基准。"""
+    import math
+    chars = sum(len((d.get("line") or "").strip()) for d in dlg)
+    return min(15.0, max(4.0, math.ceil(chars / 4.0) + 0.6 * (len(dlg) - 1)))
+
+
 def reestimate_durations(staged: list) -> int:
     """对白镜时长机械重估（2026-09-03 武侠风云真机：42 镜对白 24 句仍全 5s——
     句数×2.5 的估时交给 LLM，而本地模型填不出对白、一律写 5；对白是 backfill
@@ -232,16 +241,13 @@ def reestimate_durations(staged: list) -> int:
     句长（20 字长句与 5 字短句同估 2.5s，真机对白被截半）——按
     ⌈总字数/4⌉ + 0.6×(句数-1)（中文 TTS 语速约 4 字/s + 句间停顿）确定性重算，
     钳 [4,15]；无对白镜不动（维持项目统一段时长）。返回重估镜数。"""
-    import math
     n = 0
     for s in staged:
         if not getattr(s, "dialogue_backfilled", False):
             continue  # LLM 自填对白的镜保留其估时（staging 已钳），只重算补录镜
         dlg = (getattr(s, "ledger", None) or {}).get("dialogue") or []
         if dlg:
-            chars = sum(len((d.get("line") or "").strip()) for d in dlg)
-            est = math.ceil(chars / 4.0) + 0.6 * (len(dlg) - 1)
-            s.duration = min(15.0, max(4.0, est))
+            s.duration = dialogue_duration_seconds(dlg)
             n += 1
     return n
 

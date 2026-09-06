@@ -476,6 +476,47 @@ def test_import_comic_respects_durations(tmp_path):
     assert [s["duration"] for s in list_shots(db, p3["id"])] == [5.0]
 
 
+def test_describe_shots_reestimates_durations(tmp_path):
+    """漫画链智能估时（2026-09-06）：段时长/总时长都为 0 时，读图产出对白后
+    按字数基准重估（⌈字数/4⌉+0.6×(句数-1) 钳 4~15，与小说链 B1 同式）——
+    「段时长留 0」在小说链=LLM 估时、漫画链此前却落死值 5.0，语义不一致。
+    显式段时长与无对白镜不覆盖。"""
+    import math
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    from comic_studio.engine.shots import list_shots
+    db = Database(tmp_path / "s.db"); db.migrate()
+
+    class FakeDlg(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return "林晨：「站住！」林晨：「你休想从这里逃出去，今天就是你的死期。」", Usage(10, 20)
+
+    class FakeSilent(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return "少年推开门走进房间，环顾四周。", Usage(10, 20)
+
+    # ① 0/0 + 有对白：2 句共 22 字 → ⌈22/4⌉+0.6（不再是占位 5.0）
+    expected = min(15.0, max(4.0, math.ceil(22 / 4.0) + 0.6))
+    pid1 = import_comic(db, tmp_path / "data", "估时剧", "9:16",
+                        [("p1.png", PNG), ("p2.png", PNG)])["id"]
+    describe_shots(db, tmp_path / "data", pid1, FakeDlg())
+    assert [s["duration"] for s in list_shots(db, pid1)] == [expected, expected]
+    # ② 显式段时长 6：读图后不覆盖（P11-⑤ 语义保留）
+    pid2 = import_comic(db, tmp_path / "data", "段时剧", "9:16",
+                        [("p1.png", PNG)], default_shot_duration=6)["id"]
+    describe_shots(db, tmp_path / "data", pid2, FakeDlg())
+    assert [s["duration"] for s in list_shots(db, pid2)] == [6.0]
+    # ③ 0/0 无对白：维持占位 5.0
+    pid3 = import_comic(db, tmp_path / "data", "无对白剧", "9:16",
+                        [("p1.png", PNG)])["id"]
+    describe_shots(db, tmp_path / "data", pid3, FakeSilent())
+    assert [s["duration"] for s in list_shots(db, pid3)] == [5.0]
+
+
 def test_film_describe_voices_gender_and_bind(tmp_path):
     """P11-①④：漫改 system 注入 VOICES 尾行 → 性别年龄落资产外貌 + 音色自动绑。"""
     from types import SimpleNamespace as NS

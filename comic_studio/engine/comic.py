@@ -169,6 +169,7 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
             + _voices_tail(db, data_dir, project_id))
     n = 0
     voices_meta: dict = {}   # 说话人 → {gender, age, voice}（VOICES 尾行聚合）
+    touched: list = []       # (shot_id, dialogue) 本次生成提示词的镜（智能估时用）
     for s in list_shots(db, project_id):
         if shot_id is not None and s["id"] != shot_id:
             continue  # 逐镜模式：只跑指定镜
@@ -231,6 +232,7 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                 "prompt": text, "description": text, "status": "ready",
                 "ledger_json": json.dumps(ledger, ensure_ascii=False)})
             n += 1
+            touched.append((s["id"], dialogue))
             # 逐镜日志（用户需求：每个操作都要可见——批量跑 16 镜不能只看最终汇总）
             emit_log(db, "llm", "info",
                      f"镜 {s['seq']} 提示词就绪（{len(text)} 字"
@@ -242,6 +244,23 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None) -> int:
                      project_id=project_id)
     if n:
         emit_log(db, "llm", "info", f"VLM 读图生成提示词 {n} 镜", project_id=project_id)
+        # 智能估时（2026-09-06）：段时长/总时长都为 0（导入落的是 5.0 占位）→
+        # 本次生成对白的镜按字数基准重估（与小说链 B1 同式）——「段时长留 0」
+        # 从此两条链同为智能语义。显式段时长/总时长均摊（P11-⑤）与无对白镜不覆盖；
+        # 只动本次生成的镜，手改过的存量时长不被回头冲掉
+        seg = proj["default_shot_duration"] if "default_shot_duration" in proj.keys() else 0
+        tot = proj["target_duration"] if "target_duration" in proj.keys() else 0
+        if seg <= 0 and tot <= 0:
+            from .llm.storyboard import dialogue_duration_seconds
+            re_n = 0
+            for sid, dlg in touched:
+                if dlg:
+                    update_shot(db, sid, {"duration": dialogue_duration_seconds(dlg)})
+                    re_n += 1
+            if re_n:
+                emit_log(db, "llm", "info",
+                         f"对白镜时长按字数基准重估：{re_n} 镜（4~15s）",
+                         project_id=project_id)
         # 动态漫角色音色（2026-08-31 用户需求）：对白聚合建角色（旁白过滤，
         # 不生参考图——fl2v 用原页）+ 音色绑定；幂等（同名不重建）
         if comic_mode != "film_adaptation":
