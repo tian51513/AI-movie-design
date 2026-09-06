@@ -359,6 +359,29 @@ def test_ref2va_prev_tail_frame_takes_ref0(tmp_path, monkeypatch):
         assert wf["97"]["inputs"]["image"].endswith("__ref1.png")   # 角色三视图占 ref1
 
 
+def test_film_no_assets_falls_back_to_manga_pages(tmp_path, monkeypatch):
+    """漫改+无绑定角色（12e1d46）：漫画原页作参考图兜底。2026-09-06 真机双坑：
+    ① emit_log 误传 shot_id kwarg（logbus.emit 无此参）gen_shot 全灭 TypeError；
+    ② 通用 else 分支把原页 images 覆盖成空 → I1 空图快失败。"""
+    db, pid, assets = _setup(tmp_path, comic_mode="film_adaptation")
+    sid = persist_shots(db, pid, [_shot_draft()])[0]  # 无角色/场景绑定
+    update_shot(db, sid, {"prompt": "原页参考。"})
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from comic_studio.engine.paths import data_to_abs
+    shot_dir = data_to_abs(tmp_path / "data", "projects/渲染剧/shots/1")
+    shot_dir.mkdir(parents=True, exist_ok=True)
+    (shot_dir / "kf_start.png").write_bytes(b"\x89PNG-page1")
+    (shot_dir / "kf_end.png").write_bytes(b"\x89PNG-page2")
+    from comic_studio.engine.comfy.client import ComfyClient
+    with comfy_server("ok", video=True) as m:
+        out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        assert out.exists()
+        ups = m.uploads
+        assert any(u.endswith("__ref0.png") for u in ups), ups   # 原页首页占 ref0
+        assert any(u.endswith("__ref1.png") for u in ups), ups   # 次页占 ref1
+
+
 def test_keyframes_anchor_character_main(tmp_path, monkeypatch):
     """连贯性②（2026-08-26）：关键帧生成锚定角色主图——文+图模板传 main.png
     作参考（锁脸/锁服装）；无主图引导纯文生图。"""

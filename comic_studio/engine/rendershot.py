@@ -398,6 +398,7 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     # ① 有绑定角色资产+参考图 → 用角色参考图（用户确认过，优先）
     # ② 无角色资产 → 漫画原页直接作参考（兜底，画风+角色=原作）
     comic_mode = proj["comic_mode"] if "comic_mode" in proj.keys() else ""
+    images: list | None = None  # 漫改原页兜底可先行赋值——通用链末端不再覆盖
     if comic_mode == "film_adaptation":
         asset_refs = collect_ref_images(db, shot)
         if asset_refs:
@@ -409,7 +410,7 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
                 images.append({"slot": "ref1", "path": str(kf_end)})
             emit_log(db, "comfy", "info",
                      f"分镜 {shot['seq']} 漫改模式：无角色资产，漫画原页作参考",
-                     shot_id=shot["id"])
+                     project_id=proj["id"], job_id=job_id)
     if first_frame_png is None and tmpl_id in ("h3_fl2v", "h3_i2v") and kf_start.exists():
         first_frame_png = kf_start  # 无上镜衔接时，本镜关键帧首图兜底
     if first_frame_png and tmpl_id in ("h3_fl2v", "h3_i2v"):
@@ -418,13 +419,13 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         images = []  # i2v/fl2v 无首帧——交由 I1 快失败给出明确报错
     elif first_frame_png is not None:
         # 接力（连贯性①配套）：上镜尾帧优先占 ref0（画面/姿态延续），
-        # 角色参考占 ref1（锁人设）——全链后 ref2va 的默认形态
+        # 角色参考占 ref1（锁人设）——全链后 ref2va 的默认形态（优先于原页兜底）
         raw_refs = collect_ref_images(db, shot)
         ref1_path = (data_to_abs(data_dir, raw_refs[0]["path"])
                      if raw_refs else first_frame_png)
         images = [{"slot": "ref0", "path": str(first_frame_png)},
                   {"slot": "ref1", "path": str(ref1_path)}]
-    else:
+    elif images is None:
         raw_refs = collect_ref_images(db, shot)
         if not raw_refs:
             emit_log(db, "comfy", "warn",
