@@ -31,10 +31,14 @@ def _proj_with_dialogue(tmp_path):
     return db, pid
 
 
-def test_generate_dialogue_audio(tmp_path):
+def test_generate_dialogue_audio(tmp_path, monkeypatch):
     """逐镜逐句生成 TTS，角色按性别分配声音。"""
     db, pid = _proj_with_dialogue(tmp_path)
     from comic_studio.engine.tts import generate_dialogue_audio
+    import comic_studio.engine.tts as _T
+    # ffmpeg 边界 mock（2026-09-07 check=True 后假 mp3 字节过不了真 concat）
+    monkeypatch.setattr(_T, "_concat_audio_parts",
+                        lambda parts, out: out.write_bytes(b"joined"))
 
     # Mock edge_tts：模拟写文件
     saved = []
@@ -144,3 +148,76 @@ def test_voiced_tts_paths(tmp_path, monkeypatch):
     assert not stale3.exists()
     seqs = {r["seq"] for r in out}
     assert 3 not in seqs
+
+
+def test_concat_audio_parts_posix_and_raises(tmp_path, monkeypatch):
+    """2026-09-07 manga7 双对白根因：Windows 服务上 part 路径含反斜杠写进
+    ffmpeg concat 清单（\\ 是转义符）→ 多句镜 dialogue.mp3 静默全缺。
+    修：清单路径一律 as_posix；失败必须抛（check=True）不再吞。"""
+    import subprocess as real_subprocess
+    import comic_studio.engine.tts as T
+    parts = [tmp_path / " shots" / "1" / "dialogue_part_0.mp3",
+             tmp_path / " shots" / "1" / "dialogue_part_1.mp3"]
+    for p in parts:
+        p.parent.mkdir(parents=True, exist_ok=True); p.write_bytes(b"x")
+    captured = {}
+
+    def fake_run(cmd, **kw):
+        captured["check"] = kw.get("check")
+        lf = next(a for a in cmd if str(a).endswith(".txt"))
+        captured["lines"] = Path(lf).read_text().splitlines()
+        return real_subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+    T._concat_audio_parts(parts, tmp_path / "out.mp3")
+    assert captured["check"] is True, "失败必须抛错，不能静默吞"
+    assert captured["lines"] == [f"file '{p.as_posix()}'" for p in parts]
+
+    def failing_run(cmd, **kw):
+        if kw.get("check"):
+            raise real_subprocess.CalledProcessError(1, cmd)
+        return real_subprocess.CompletedProcess(cmd, 1)
+
+    monkeypatch.setattr("subprocess.run", failing_run)
+    with pytest.raises(Exception):
+        T._concat_audio_parts(parts, tmp_path / "out2.mp3")
+
+
+def test_multi_line_concat_failure_warns_and_continues(tmp_path, monkeypatch):
+    """整镜合并失败：warn（提示将保留原声）且不殃及后续镜——manga7 真机
+    29 镜静默落 H3 原声与 TTS 镜混成一片（原生+合成对白并存）。"""
+    import comic_studio.engine.tts as T
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "合并失败剧", "16:9", "正文")["id"]
+    persist_shots(db, pid, [
+        NS(text_span="", description="a", shot_type="", camera={}, duration=5.0,
+           workflow_type="t2v",
+           ledger={"dialogue": [{"speaker": "甲", "line": "一二三。"},
+                                 {"speaker": "乙", "line": "四五六。"}]},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None),
+        NS(text_span="", description="b", shot_type="", camera={}, duration=5.0,
+           workflow_type="t2v",
+           ledger={"dialogue": [{"speaker": "甲", "line": "七八九。"},
+                                 {"speaker": "乙", "line": "十。"}]},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])
+
+    def fake_sync(text, voice, out):
+        out.write_bytes(b"mp3")
+    monkeypatch.setattr(T, "_tts_sync", fake_sync)
+
+    real_concat = T._concat_audio_parts
+    def flaky_concat(parts, output):
+        if "shots/1/" in str(output).replace("\\", "/"):
+            raise RuntimeError("模拟 ffmpeg concat 失败")
+        output.write_bytes(b"joined-mp3")   # 成功路径直写——ffmpeg 边界已由上测覆盖
+    monkeypatch.setattr(T, "_concat_audio_parts", flaky_concat)
+    monkeypatch.setattr(T, "_comfy_client", lambda db: (_ for _ in ()).throw(RuntimeError("无 comfy")))
+
+    T.generate_dialogue_audio(db, tmp_path / "data", pid)
+    d1 = tmp_path / "data" / "projects" / "合并失败剧" / "shots" / "1" / "dialogue.mp3"
+    d2 = tmp_path / "data" / "projects" / "合并失败剧" / "shots" / "2" / "dialogue.mp3"
+    assert not d1.exists()   # 失败镜：无 mp3
+    assert d2.exists()       # 后续镜不受影响
+    msgs = [r["message"] for r in db.connect().execute(
+        "SELECT message FROM logs WHERE project_id=? ORDER BY id", (pid,))]
+    assert any("保留 H3 原声" in m for m in msgs), msgs

@@ -135,8 +135,16 @@ def generate_dialogue_audio(db, data_dir, project_id) -> list:
                 import shutil
                 shutil.copy2(audio_parts[0], final_audio)
             else:
-                # 多段用 ffmpeg concat
-                _concat_audio_parts(audio_parts, final_audio)
+                # 多段用 ffmpeg concat——失败只废本镜（warn 后继续，
+                # 不再让 29 镜静默落 H3 原声与 TTS 混音）
+                try:
+                    _concat_audio_parts(audio_parts, final_audio)
+                except Exception as exc:
+                    emit_log(db, "tts", "warn",
+                             f"分镜 {shot['seq']} 配音合并失败（{len(audio_parts)} 句"
+                             f"已生成），成片将保留 H3 原声：{str(exc)[:80]}",
+                             project_id=project_id)
+                    continue
                 # 清理临时 part 文件
                 for p in audio_parts:
                     p.unlink(missing_ok=True)
@@ -218,14 +226,20 @@ def _tts_sync(text: str, voice: str, output: Path):
 
 
 def _concat_audio_parts(parts: list, output: Path):
-    """FFmpeg 合并多段 MP3 为一个文件。"""
+    """FFmpeg 合并多段 MP3 为一个文件。
+    2026-09-07 manga7 双对白事故：清单路径必须 as_posix——Windows 反斜杠在
+    concat demuxer 里是转义符（同字幕滤镜判例），多句镜 mp3 曾全静默缺失；
+    check=True 失败必抛（此前吞错还照删 parts，29 镜无声落 H3 原声）。"""
     from .merge import ffmpeg_bin
     import subprocess, tempfile
-    list_file = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False)
+    list_file = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False,
+                                            encoding="utf-8")
     for p in parts:
-        list_file.write(f"file '{p}'\n")
+        list_file.write(f"file '{Path(p).as_posix()}'\n")
     list_file.close()
-    subprocess.run([ffmpeg_bin(), "-y", "-f", "concat", "-safe", "0",
-                    "-i", list_file.name, "-c", "copy", str(output)],
-                   capture_output=True, timeout=60)
-    Path(list_file.name).unlink(missing_ok=True)
+    try:
+        subprocess.run([ffmpeg_bin(), "-y", "-f", "concat", "-safe", "0",
+                        "-i", list_file.name, "-c", "copy", str(output)],
+                       check=True, capture_output=True, timeout=60)
+    finally:
+        Path(list_file.name).unlink(missing_ok=True)
