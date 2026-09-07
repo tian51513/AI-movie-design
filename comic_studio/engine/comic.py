@@ -19,7 +19,11 @@ def import_comic(db, data_dir, name: str, aspect: str,
                  image_blobs: list, comic_mode: str = "motion_comic",
                  default_shot_duration: float = 0.0,
                  target_duration: float = 0.0,
-                 style: str = "", style_vis: str = "") -> dict:
+                 style: str = "", style_vis: str = "",
+                 subtitles: int | None = None,
+                 video_megapixels: float | None = None,
+                 video_multiple: int | None = None,
+                 video_speed: str = "") -> dict:
     """image_blobs：[(filename, bytes)]，顺序即页序。comic_mode：
     motion_comic（动态漫/fl2v 翻页）| film_adaptation（漫改/ref2va 动画）。
     style/style_vis：漫改模式的画风转换目标（动态漫不消费——画风跟随原页）。"""
@@ -35,17 +39,23 @@ def import_comic(db, data_dir, name: str, aspect: str,
 
     n = len(image_blobs)
     placeholder = f"（漫画导入：{n} 页，画面见各镜关键帧）"
+    extra = {}
+    if video_megapixels is not None:
+        extra["video_megapixels"] = video_megapixels
+    if video_multiple is not None:
+        extra["video_multiple"] = video_multiple
+    if video_speed:
+        extra["video_speed"] = video_speed
     proj = create_project(db, data_dir, name, aspect, placeholder,
                           comic_mode=comic_mode,
                           default_shot_duration=default_shot_duration,
                           target_duration=target_duration,
-                          style=style, style_vis=style_vis)
+                          style=style, style_vis=style_vis,
+                          # 字幕（迁移 33）：漫画原页自带台词文字——默认不烧
+                          subtitles=0 if subtitles is None else int(subtitles),
+                          **extra)
     pid = proj["id"]
     slug = proj["slug"]
-    # 字幕开关（迁移 33）：漫画原页自带台词文字——两类漫画模式默认不烧字幕
-    conn0 = db.connect()
-    conn0.execute("UPDATE projects SET subtitles=0 WHERE id=?", (pid,))
-    conn0.commit()
 
     # 渲染方式按模式：动态漫=fl2v（翻页插值），漫改=ref2va（参考图动画）
     workflow = "fl2v" if comic_mode != "film_adaptation" else "ref2va"

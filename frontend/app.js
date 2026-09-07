@@ -39,6 +39,8 @@ function data() {
     createOpen: false, projPage: 1, projPageSize: 12, comicFiles: [],
     audioFile: null,  // P10A 有声书 tab（单文件）
     comicMode: 'motion_comic',
+    advOpen: false, newSubtitles: true, newMegapixels: 0.4,
+    newMultiple: 32, newSpeed: '标准',   // 创建时高级参数（2026-09-07）
     describingShots: new Set(),  // 正在读图的镜 id 集合（支持多镜并发提交）
     projectsView: (() => { try { return localStorage.getItem('cs.projectsView') || 'grid'; } catch (e) { return 'grid'; } })(),
     newSegDur: 0, newTotalDur: 0,  // 0=系统自动（2026-09-05 默认）
@@ -164,6 +166,8 @@ const methods = {
     fd.append('name', this.newName); fd.append('aspect_ratio', this.newRatio);
     fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : presetStyle(this.newStyleKey));
     fd.append('style_vis', this.newStyleKey === '自定义' ? this.newStyleText : presetStyleVis(this.newStyleKey));
+    fd.append('subtitles', this.newSubtitles); fd.append('video_megapixels', this.newMegapixels);
+    fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
     fd.append('novel', this.newFile);
     fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0
     fd.append('target_duration', this.newTotalDur || 0);
@@ -468,7 +472,9 @@ const methods = {
           extra_prompt: this.newExtraPrompt || undefined,
           text: this.themePreview || undefined,  // 两步流：确认/编辑后的正文直建，不再调 LLM
           default_shot_duration: this.newSegDur ?? 0,
-          target_duration: this.newTotalDur || 0 }) });
+          target_duration: this.newTotalDur || 0,
+          subtitles: this.newSubtitles, video_megapixels: this.newMegapixels,
+          video_multiple: this.newMultiple, video_speed: this.newSpeed }) });
       if (!resp.ok) { alert(await resp.text()); }
       else { this.newName = ''; this.newProtagonist = ''; this.newThemeId = '';
              this.newWordCount = ''; this.newExtraPrompt = ''; this.themePreview = '';
@@ -1044,6 +1050,8 @@ const methods = {
       // 动态漫不消费（画风跟随原页），提交了也只作项目元信息留存
       fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : presetStyle(this.newStyleKey));
       fd.append('style_vis', this.newStyleKey === '自定义' ? this.newStyleText : presetStyleVis(this.newStyleKey));
+      fd.append('subtitles', this.newSubtitles); fd.append('video_megapixels', this.newMegapixels);
+      fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
       fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0   // M16：漫画 tab 时长此前是摆设
       fd.append('target_duration', this.newTotalDur ?? 0);
       // 自然排序 + 压缩后上传（解决大图超时）
@@ -1069,6 +1077,8 @@ const methods = {
       fd.append('aspect_ratio', this.newRatio);
       fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0
       fd.append('target_duration', Number(this.newTotalDur) || 0);
+      fd.append('subtitles', this.newSubtitles); fd.append('video_megapixels', this.newMegapixels);
+      fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
       fd.append('audio', this.audioFile);
       const resp = await fetch('/api/projects/from-audio', { method: 'POST', body: fd });
       if (!resp.ok) { alert(await resp.text()); return; }  // L19：失败保留表单可改后重试

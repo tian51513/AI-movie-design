@@ -171,6 +171,9 @@ def create_from_comic(request: Request,
                       default_shot_duration: float = Form(0.0),
                       target_duration: float = Form(0.0),
                       style: str = Form(""), style_vis: str = Form(""),
+                      subtitles: bool = Form(False),  # 漫画默认不烧（原页自带台词）
+                      video_megapixels: float = Form(0.4),
+                      video_multiple: int = Form(32), video_speed: str = Form("标准"),
                       images: list[UploadFile] = File(...)):
     """P8 漫画导入：每图一镜，直达分镜就绪。comic_mode：
     motion_comic（动态漫/fl2v）| film_adaptation（漫改/ref2va）。
@@ -189,7 +192,10 @@ def create_from_comic(request: Request,
                             name, aspect_ratio, blobs, comic_mode=comic_mode,
                             default_shot_duration=default_shot_duration,
                             target_duration=target_duration,
-                            style=style, style_vis=style_vis)
+                            style=style, style_vis=style_vis,
+                            subtitles=1 if subtitles else 0,
+                            video_megapixels=video_megapixels,
+                            video_multiple=video_multiple, video_speed=video_speed)
     except ValueError as exc:
         raise HTTPException(422, str(exc))
     return _public(proj)
@@ -279,6 +285,9 @@ def create_from_audio(request: Request, name: str = Form(...),
                       aspect_ratio: str = Form("9:16"),
                       default_shot_duration: float = Form(0.0),
                       target_duration: float = Form(0.0),
+                      subtitles: bool = Form(True),
+                      video_megapixels: float = Form(0.4),
+                      video_multiple: int = Form(32), video_speed: str = Form("标准"),
                       audio: UploadFile = File(...)):
     """P10 有声书导入（2026-09-05 计划）：存源音频 → 建项目（占位正文）→
     入队 transcribe；转写完成后回填 novel.txt，之后走现有小说链。"""
@@ -301,7 +310,10 @@ def create_from_audio(request: Request, name: str = Form(...),
     proj = create_project(request.app.state.db, request.app.state.data_dir,
                           name, aspect_ratio, "（有声书转写中，转写完成后自动回填正文）",
                           default_shot_duration=default_shot_duration,
-                          target_duration=target_duration)
+                          target_duration=target_duration,
+                          subtitles=1 if subtitles else 0,
+                          video_megapixels=video_megapixels,
+                          video_multiple=video_multiple, video_speed=video_speed)
     adir = Path(request.app.state.data_dir) / f"projects/{proj['slug']}/audio"
     adir.mkdir(parents=True, exist_ok=True)
     (adir / f"source.{ext}").write_bytes(data)
@@ -373,7 +385,11 @@ def create_from_theme(request: Request, body: dict):
                          text, style=(body.get("style") or ""),
                          style_vis=(body.get("style_vis") or ""),
                          default_shot_duration=float(body.get("default_shot_duration") or 0.0),
-                         target_duration=float(body.get("target_duration") or 0.0))
+                         target_duration=float(body.get("target_duration") or 0.0),
+                         video_megapixels=float(body.get("video_megapixels") or 0.4),
+                         video_multiple=int(body.get("video_multiple") or 32),
+                         video_speed=str(body.get("video_speed") or "标准"),
+                         subtitles=1 if body.get("subtitles", True) else 0)
     return _public(row)
 
 
@@ -389,7 +405,8 @@ def create(request: Request, name: str = Form(...),
            video_multiple: int = Form(32), video_speed: str = Form("标准"),
            default_shot_duration: float = Form(0.0),  # 0=LLM 动态估时（2026-09-05 默认）
            prompt_mode: str = Form("D"), lora_realism: float = Form(0.75),
-           target_duration: float = Form(0.0)):
+           target_duration: float = Form(0.0),
+           subtitles: bool = Form(True)):
     from ..engine.projects import ASPECT_RATIOS
     if aspect_ratio not in ASPECT_RATIOS:
         raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
@@ -402,7 +419,8 @@ def create(request: Request, name: str = Form(...),
                          video_megapixels=video_megapixels, video_multiple=video_multiple,
                          video_speed=video_speed, default_shot_duration=default_shot_duration,
                          prompt_mode=prompt_mode, lora_realism=lora_realism,
-                         target_duration=target_duration)
+                         target_duration=target_duration,
+                         subtitles=1 if subtitles else 0)
     return _public(row)
 
 

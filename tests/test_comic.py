@@ -809,3 +809,31 @@ def test_subtitles_patch_api(tmp_path):
         row = db.connect().execute(
             "SELECT subtitles FROM projects WHERE id=?", (pid,)).fetchone()
         assert row["subtitles"] == 1
+
+
+def test_create_routes_accept_advanced_params(tmp_path):
+    """创建时高级参数（2026-09-07 用户需求：全套建时就定）——上传小说
+    与漫画导入两入口接受 字幕/兆像素/倍速/质量档（from-audio/from-theme 同款透传）。"""
+    with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data",
+                               start_workers=False)) as c:
+        r = c.post("/api/projects", data={"name": "上传参数剧", "aspect_ratio": "16:9",
+                                          "subtitles": "false", "video_megapixels": "0.8",
+                                          "video_multiple": "64", "video_speed": "高质量"},
+                   files={"novel": ("n.txt", io.BytesIO(("正文内容。" * 30).encode()), "text/plain")})
+        assert r.status_code == 201, r.text
+        from comic_studio.engine.db import Database
+        db = Database(tmp_path / "t.db")
+        p1 = db.connect().execute(
+            "SELECT subtitles, video_megapixels, video_multiple, video_speed FROM projects WHERE id=?",
+            (r.json()["id"],)).fetchone()
+        assert (p1["subtitles"], p1["video_megapixels"], p1["video_multiple"], p1["video_speed"]) \
+            == (0, 0.8, 64, "高质量")
+        r2 = c.post("/api/projects/from-comic",
+                    data={"name": "漫画参数剧", "aspect_ratio": "16:9", "subtitles": "true",
+                          "video_megapixels": "0.6", "video_multiple": "16"},
+                    files=[("images", ("a.png", io.BytesIO(PNG), "image/png"))])
+        assert r2.status_code == 201, r2.text
+        p2 = db.connect().execute(
+            "SELECT subtitles, video_megapixels, video_multiple FROM projects WHERE id=?",
+            (r2.json()["id"],)).fetchone()
+        assert (p2["subtitles"], p2["video_megapixels"], p2["video_multiple"]) == (1, 0.6, 16)

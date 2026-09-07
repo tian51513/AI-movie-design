@@ -1135,17 +1135,33 @@
       <h3 style="margin:0 0 10px">➕ 创建项目
         <button @click="createOpen=false" style="float:right;font-size:12px;padding:2px 8px">✕ 关闭</button></h3>
         <p style="margin:0 0 8px">
-          <button type="button" @click="newMode='upload'"
+          <button type="button" @click="newMode='upload'; newSubtitles=true"
                   :style="newMode==='upload'?'background:#16a34a':''">📎 上传小说</button>
-          <button type="button" style="margin-left:4px" @click="newMode='theme'; loadThemes()"
+          <button type="button" style="margin-left:4px" @click="newMode='theme'; newSubtitles=true; loadThemes()"
                   :style="newMode==='theme'?'background:#16a34a':''">🎨 主题生成</button>
-          <button type="button" style="margin-left:4px" @click="newMode='comic'"
+          <button type="button" style="margin-left:4px" @click="newMode='comic'; newSubtitles=false"
                   :style="newMode==='comic'?'background:#16a34a':''">🖼 漫画导入</button>
-          <button type="button" style="margin-left:4px" @click="newMode='audio'"
+          <button type="button" style="margin-left:4px" @click="newMode='audio'; newSubtitles=true"
                   :style="newMode==='audio'?'background:#16a34a':''">🎧 有声书</button>
         </p>
         <!-- 三 tab 公共字段（名称/画幅/段时长/总时长）——原来每个表单各一份 -->
         <p><input v-model="newName" :placeholder="newMode==='theme' ? '漫剧名称（留空用主题名）' : '漫剧名称'"></p>
+        <!-- 高级参数折叠区（2026-09-07）：建时就定，免建完再翻参数面板 -->
+        <p style="margin:2px 0"><button type="button" @click="advOpen=!advOpen"
+           style="font-size:12px;padding:2px 10px">{{ advOpen ? '▾ 高级参数' : '▸ 高级参数' }}</button></p>
+        <div v-if="advOpen" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;
+             font-size:13px;padding:2px 0 6px;border-bottom:1px dashed #2c3540">
+          <label title="成片是否烧录字幕——漫画项目默认关（原页自带台词文字）">字幕
+            <input type="checkbox" v-model="newSubtitles"></label>
+          <label>兆像素<select v-model.number="newMegapixels">
+            <option v-for="m in [0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.5,1.8,2.0]" :value="m">{{ m }}MP</option>
+          </select></label>
+          <label>倍速<select v-model.number="newMultiple">
+            <option :value="16">16x</option><option :value="32">32x</option><option :value="64">64x</option>
+          </select></label>
+          <label>质量档<select v-model="newSpeed">
+            <option>快速</option><option>标准</option><option>高质量</option></select></label>
+        </div>
         <p>画幅<select v-model="newRatio"><option>9:16</option><option>16:9</option><option>3:4</option><option>4:3</option><option>1:1</option></select>
            段时长<input type="number" min="0" max="15" v-model.number="newSegDur" style="width:44px">s
            总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s
@@ -1174,7 +1190,7 @@
 
         <form v-if="newMode==='comic'" @submit.prevent="createFromComic">
           <p>模式
-             <select v-model="comicMode" style="font-size:13px;padding:4px 8px">
+             <select v-model="comicMode" @change="newSubtitles=false" style="font-size:13px;padding:4px 8px">
                <option value="motion_comic">📖 动态漫（快，翻页过渡）</option>
                <option value="film_adaptation">🎬 漫改电影（慢，角色动画）</option>
              </select></p>
