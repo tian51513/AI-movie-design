@@ -108,24 +108,39 @@ def generate_dialogue_audio(db, data_dir, project_id) -> list:
             continue
 
         lines_info = []
-        # 逐句生成（多句合并为一个文件——ffmpeg 对齐阶段处理）
-        audio_parts = []
-        for i, d in enumerate(dialogue):
-            speaker = d.get("speaker", "?")
-            line = d.get("line", "").strip()
-            if not line:
-                continue
-            voice = voice_map.get(speaker, DEFAULT_VOICES["male"])
+        # 逐句生成（多句合并为一个文件——ffmpeg 对齐阶段处理）；
+        # 2026-09-07 优化#1：镜内并发 + 每句重试 2 次（Edge-TTS 网络抖动
+        # 「No audio was received」重试可救；配音阶段从串行 15 分钟级缩到分钟级）
+        from concurrent.futures import ThreadPoolExecutor
+
+        def _gen(i, speaker, line, voice):
             part_path = shot_dir / f"dialogue_part_{i}.mp3"
-            try:
-                _tts_sync(line, voice, part_path)
-                audio_parts.append(part_path)
-                lines_info.append({"speaker": speaker, "line": line,
-                                   "voice": voice, "part": str(part_path)})
-            except Exception as exc:
+            last = None
+            for _attempt in range(3):
+                try:
+                    _tts_sync(line, voice, part_path)
+                    return i, speaker, line, voice, part_path, None
+                except Exception as exc:
+                    last = exc
+            return i, speaker, line, voice, part_path, last
+
+        jobs = [(i, d.get("speaker", "?"), (d.get("line") or "").strip())
+                for i, d in enumerate(dialogue)]
+        jobs = [j for j in jobs if j[2]]
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            gen_out = list(ex.map(
+                lambda j: _gen(j[0], j[1], j[2],
+                               voice_map.get(j[1], DEFAULT_VOICES["male"])), jobs))
+        audio_parts = []
+        for i, speaker, line, voice, part_path, err in sorted(gen_out):
+            if err is not None:
                 emit_log(db, "tts", "warn",
-                         f"分镜 {shot['seq']} 台词 {i+1} TTS 失败：{exc}",
+                         f"分镜 {shot['seq']} 台词 {i+1} TTS 失败（重试 3 次）：{err}",
                          project_id=project_id)
+                continue
+            audio_parts.append(part_path)
+            lines_info.append({"speaker": speaker, "line": line,
+                               "voice": voice, "part": str(part_path)})
 
         # 合并多段音频为一个文件（如果有多个 part）
         if audio_parts:

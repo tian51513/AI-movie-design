@@ -221,3 +221,32 @@ def test_multi_line_concat_failure_warns_and_continues(tmp_path, monkeypatch):
     msgs = [r["message"] for r in db.connect().execute(
         "SELECT message FROM logs WHERE project_id=? ORDER BY id", (pid,))]
     assert any("保留 H3 原声" in m for m in msgs), msgs
+
+
+def test_tts_line_retry_and_concurrent(tmp_path, monkeypatch):
+    """2026-09-07 优化#1：Edge-TTS 逐句重试（网络抖动「No audio was received」
+    重试可救）+ 镜内并发（15 分钟配音缩到分钟级）。"""
+    import comic_studio.engine.tts as T
+    calls = []
+    def flaky_sync(text, voice, out):
+        calls.append(text)
+        if calls.count(text) == 1:
+            raise RuntimeError("No audio was received")   # 每句首试必挂
+        out.write_bytes(b"mp3")
+    monkeypatch.setattr(T, "_tts_sync", flaky_sync)
+    monkeypatch.setattr(T, "_concat_audio_parts",
+                        lambda parts, out: out.write_bytes(b"joined"))
+    monkeypatch.setattr(T, "_comfy_client", lambda db: None)
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "重试剧", "16:9", "文")["id"]
+    persist_shots(db, pid, [
+        NS(text_span="", description="a", shot_type="", camera={}, duration=5.0,
+           workflow_type="t2v",
+           ledger={"dialogue": [{"speaker": "甲", "line": "一一。"},
+                                {"speaker": "乙", "line": "二二。"},
+                                {"speaker": "甲", "line": "三三。"}]},
+           character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])
+    T.generate_dialogue_audio(db, tmp_path / "data", pid)
+    d = tmp_path / "data" / "projects" / "重试剧" / "shots" / "1" / "dialogue.mp3"
+    assert d.exists()                      # 首试全挂仍成功=重试生效
+    assert len(calls) == 6                 # 3 句 × 2 次（首败+重试）
