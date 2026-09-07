@@ -523,3 +523,24 @@ def test_burn_subtitles_skips_empty_srt(tmp_path):
     empty.write_text("", encoding="utf-8")
     _burn_subtitles(v, empty)          # 不得抛
     assert v.read_bytes() == b"v"      # 原片未动（跳过即成功）
+
+
+def test_merge_part_cache_reuses_unchanged(tmp_path, monkeypatch):
+    """优化#5（2026-09-07）：合成段缓存——未变镜（视频/配音/画布同键）
+    重合成零重编码（normalize 调用数=0），段产物落 output/merge_cache。"""
+    import comic_studio.engine.merge as M
+    db, pid = _proj_with_shots(tmp_path, "缓存剧")
+    out1 = M.merge_project(db, tmp_path / "data", pid)
+    assert out1.exists()
+    from pathlib import Path as _P
+    cache_dir = _P(out1).parent / "merge_cache"
+    assert cache_dir.is_dir() and list(cache_dir.glob("*.mp4"))
+    calls = {"n": 0}
+    real_norm = M.normalize
+    def counting_norm(*a, **kw):
+        calls["n"] += 1
+        return real_norm(*a, **kw)
+    monkeypatch.setattr(M, "normalize", counting_norm)
+    out2 = M.merge_project(db, tmp_path / "data", pid)
+    assert out2.exists() and "ep002" in str(out2)
+    assert calls["n"] == 0, "未变镜应走缓存零重编码"

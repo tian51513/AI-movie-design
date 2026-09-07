@@ -269,10 +269,28 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
     with tempfile.TemporaryDirectory() as td:
         td = Path(td)
         parts = []
+        # 段级缓存（2026-09-07 优化#5）：键=源视频 mtime+配音 mtime+画布+静音——
+        # 未变镜重合成零重编码（normalize/收口全跳），段产物持久 merge_cache
+        import hashlib as _hl
+        import shutil as _sh
+        cache_dir = out_dir / "merge_cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
         for s in shots:
             src = Path(data_dir) / s["video_path"]
             if not src.exists():
                 raise ValueError(f"镜头 {s['seq']} 视频文件缺失: {src}")
+            tts_audio0 = src.parent / "dialogue.mp3"
+            native0 = json.loads(s["ledger_json"] or "{}").get("h3_native_voice")
+            _tk = f"{src.name}|{src.stat().st_mtime_ns}|{w}x{h}"
+            if tts_audio0.exists() and not native0:
+                _tk += f"|tts{tts_audio0.stat().st_mtime_ns}"
+            elif mute_quiet:
+                _tk += "|mute"
+            cached = cache_dir / (f"{s['seq']:04d}_"
+                                  + _hl.sha1(_tk.encode()).hexdigest()[:10] + ".mp4")
+            if cached.exists():
+                parts.append(cached)
+                continue
             part = normalize(src, td / f"{s['seq']:04d}.mp4", w, h, 25)
             # P6：TTS 音轨替换（dialogue.mp3 存在时替换 H3 原生音频）；
             # Phase 2 音色（2026-08-30）：渲染时注入过音色样本（H3 原生配音口型
@@ -306,7 +324,8 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
                 mute_part = td / f"{s['seq']:04d}_mute.mp4"
                 _mute_audio(part, mute_part)
                 part = mute_part
-            parts.append(part)
+            _sh.copy2(part, cached)   # 写穿缓存：下次未变直接复用
+            parts.append(cached)
         # C6 交叉淡化（2026-09-01）：开关 comfy.merge_xfade（默认关）→ 段间 0.3s
         # 交叉溶解 + 可选统一调色 comfy.merge_grade；段数超上限回退硬拼
         cfg = get_setting(db, "comfy") or {}
