@@ -205,3 +205,5 @@
 - **强制重读（describe-shots force=true）**——批量读图默认增量（跳过已有提示词的镜），`?force=true` 整批覆盖：改画风/换模型后一键重生提示词+重估时长；前端「🔄 强制重读」按钮带确认框；创建弹窗改名「创建项目」（四类入口）。注意：估时在读图 job **全部页读完后**一次性落库，跑完前占位 5.0；describe_shots 不在重启重排白名单——重启杀在跑的读图 job 后需手动重触发
 - **校正写回脱节提示（2026-09-06 有声2 真机）**——asr_cleanup handler + PUT novel-text 两处写回后，项目已有分镜 → warn「分镜基于旧文本，请重拆」（此前静默脱节：后半段拆的旧文本引号是 ‘’/缺失，backfill 按设计不取单引号 → 后 10 镜零对白）
 - **动态漫说话人防垃圾（2026-09-06 manga7 真机：28 个"角色"过半脚手架短语）**——`comic._clean_speaker`：剥说话动词/连词尾缀（王叔叔轻声说→王叔叔）+ 脚手架叙述短语拒收（对白顺序/画面中出现对白气泡/undscape）+ 纯 ASCII 拒收，作用于 `_extract_dialogue`（ledger/TTS/字幕同步干净）；`_build_speaker_assets` 包含式归一（妈妈红→妈妈）；`purge_comic_assets` 扩到 motion 项目全部 character 资产（speaker 资产 tags=[] 无 comic 标记，清理按钮此前扫不到）
+- **TTS 多句合并 Windows 静默全灭（2026-09-07 manga7 双对白事故）**——`tts._concat_audio_parts` 清单路径必须 `as_posix`（concat demuxer 里 `\` 是转义符，同字幕滤镜判例）+ `check=True` 失败必抛（此前吞错还照删 parts）；整镜失败 warn「保留 H3 原声」不殃及后续镜。教训：**假字节过不了真 ffmpeg 的测试要 mock ffmpeg 边界**；`subprocess.run` 不带 check 的静默失败=事故温床
+- **项目级字幕开关（迁移 33，2026-09-07 用户需求）**——`projects.subtitles` 默认 1，动态漫/漫改编入即 0（存量迁移归零；原页自带台词文字）；PATCH 可翻 + 参数面板复选框；`merge.py`/`director.py` 烧录点统一过 `projects.subtitles_enabled` 门控；改完「重新合成」即生效
