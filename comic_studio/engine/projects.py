@@ -51,6 +51,14 @@ def get_project(db: Database, project_id: int) -> sqlite3.Row | None:
         "SELECT * FROM projects WHERE id=?", (project_id,)).fetchone()
 
 
+def subtitles_enabled(proj) -> bool:
+    """项目是否烧录字幕（迁移 33）：漫画项目默认 0（原页自带台词文字），
+    其余默认 1；列缺失（旧库未迁移）按 True 不改变行为。"""
+    if proj is None or "subtitles" not in proj.keys():
+        return True
+    return bool(proj["subtitles"])
+
+
 def list_projects(db: Database) -> list[sqlite3.Row]:
     return db.connect().execute("SELECT * FROM projects ORDER BY id DESC").fetchall()
 

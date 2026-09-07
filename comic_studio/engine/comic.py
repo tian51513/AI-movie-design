@@ -42,6 +42,10 @@ def import_comic(db, data_dir, name: str, aspect: str,
                           style=style, style_vis=style_vis)
     pid = proj["id"]
     slug = proj["slug"]
+    # 字幕开关（迁移 33）：漫画原页自带台词文字——两类漫画模式默认不烧字幕
+    conn0 = db.connect()
+    conn0.execute("UPDATE projects SET subtitles=0 WHERE id=?", (pid,))
+    conn0.commit()
 
     # 渲染方式按模式：动态漫=fl2v（翻页插值），漫改=ref2va（参考图动画）
     workflow = "fl2v" if comic_mode != "film_adaptation" else "ref2va"

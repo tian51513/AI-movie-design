@@ -194,6 +194,11 @@ MIGRATIONS: list[str] = [
     ALTER TABLE shots ADD COLUMN continuity TEXT NOT NULL DEFAULT '';""",
     # 32 B 级组 seed（2026-09-01）：延续组内视频 seed 继承 +3/镜防画风漂移
     """ALTER TABLE shots ADD COLUMN seed INTEGER;""",
+    # 33 字幕开关（2026-09-07）：项目级是否烧录字幕——漫画原页自带台词文字，
+    # 动态漫/漫改默认不烧（存量项目同步归零）；小说/有声书默认烧（1）
+    """ALTER TABLE projects ADD COLUMN subtitles INTEGER NOT NULL DEFAULT 1;
+    UPDATE projects SET subtitles=0
+    WHERE comic_mode IN ('motion_comic', 'film_adaptation');""",
 ]
 
 

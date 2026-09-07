@@ -740,6 +740,10 @@
         <input type="number" min="0" max="15" :value="project.default_shot_duration"
                @focus="editingProject=true" @blur="editingProject=false"
                @change="patchVideoParam('default_shot_duration', Number($event.target.value))" style="width:52px">s</label>
+      <label title="是否在成片烧录字幕——漫画项目默认关（原页自带台词文字）；改完「重新合成」即生效"
+             style="cursor:pointer">字幕
+        <input type="checkbox" :checked="!!project.subtitles"
+               @change="patchVideoParam('subtitles', $event.target.checked)"></label>
       <label>渲染模式
         <select :value="currentRenderMode()" @change="patchRenderMode($event.target.value)"
                 title="项目级批量切换全部镜的视频渲染类型；具体工作流在设置页映射">

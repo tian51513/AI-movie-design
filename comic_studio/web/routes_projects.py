@@ -36,7 +36,7 @@ GEN_STORY_SYSTEM = """你是漫剧改编用的小说作者。按给定主题写�
 DEFAULT_STORY_WORDS = "8000~12000 字"
 WORD_COUNT_RANGE = (300, 20000)
 
-_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "style_vis", "era", "comic_mode",
+_PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "style_vis", "era", "comic_mode", "subtitles",
                     "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
                     "prompt_mode", "lora_realism", "target_duration", "autopilot")
 
@@ -469,6 +469,13 @@ def patch_style(request: Request, project_id: int, body: dict):
         if "style_vis" in body:
             conn.execute("UPDATE projects SET style_vis=? WHERE id=?",
                          (patch.style_vis.strip(), project_id))
+        conn.commit()
+
+    # 字幕开关（迁移 33）：改完「重新合成」即生效，无需重渲染
+    if "subtitles" in body:
+        conn = db.connect()
+        conn.execute("UPDATE projects SET subtitles=? WHERE id=?",
+                     (1 if body["subtitles"] else 0, project_id))
         conn.commit()
 
     # Handle autopilot switch (一键出片)

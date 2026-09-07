@@ -320,9 +320,11 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
                          project_id=project_id)
             concat(parts, out)
 
-    # P6：字幕烧录（subtitles.srt 存在时烧入成片）
+    # P6：字幕烧录（subtitles.srt 存在 + 项目开关开时烧入成片；漫画项目
+    # 默认不烧——原页自带台词文字，迁移 33）
+    from .projects import subtitles_enabled
     srt = out_dir / "subtitles.srt"
-    if srt.exists():
+    if srt.exists() and subtitles_enabled(proj):
         _burn_subtitles(out, srt)
     set_stage(db, project_id, "merged")
     emit_log(db, "merge", "info", f"成片合成完成 → {out.name}（{len(shots)} 镜）",

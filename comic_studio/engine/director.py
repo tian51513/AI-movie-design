@@ -309,7 +309,9 @@ def handle_gen_director(db, data_dir, job, comfy):
                     mixed.replace(dest)
             from .subtitles import generate_srt
             srt = generate_srt(db, data_dir, pid, spans=shot_spans)
-            if srt.exists() and srt.stat().st_size > 20:
+            from .projects import subtitles_enabled
+            if (srt.exists() and srt.stat().st_size > 20
+                    and subtitles_enabled(get_project(db, pid))):
                 from .merge import _burn_subtitles
                 _burn_subtitles(dest, srt)
             emit_log(db, "comfy", "info",

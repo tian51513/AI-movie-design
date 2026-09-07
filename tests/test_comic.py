@@ -777,3 +777,35 @@ def test_purge_covers_motion_speaker_assets(tmp_path):
     n = purge_comic_assets(db, tmp_path / "data", pid)
     assert n == 1
     assert list_project_assets(db, pid) == []
+
+
+def test_subtitles_flag_comic_default_off(tmp_path):
+    """项目级字幕开关（2026-09-07 用户需求：漫画原页自带台词文字——
+    动态漫/漫改默认不烧字幕；小说/有声书默认烧；PATCH 可翻）。"""
+    from comic_studio.engine.projects import (create_project, get_project,
+                                              subtitles_enabled)
+    from comic_studio.engine.comic import import_comic
+    db = Database(tmp_path / "s.db"); db.migrate()
+    p1 = create_project(db, tmp_path / "data", "小说字幕剧", "16:9", "正文")["id"]
+    assert get_project(db, p1)["subtitles"] == 1
+    assert subtitles_enabled(get_project(db, p1)) is True
+    p2 = import_comic(db, tmp_path / "data", "漫画字幕剧", "16:9",
+                      [("p.png", PNG)])["id"]
+    assert get_project(db, p2)["subtitles"] == 0
+    assert subtitles_enabled(get_project(db, p2)) is False
+
+
+def test_subtitles_patch_api(tmp_path):
+    with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data",
+                               start_workers=False)) as c:
+        r = c.post("/api/projects/from-comic",
+                   data={"name": "字幕开关剧", "aspect_ratio": "16:9"},
+                   files=[("images", ("a.png", io.BytesIO(PNG), "image/png"))])
+        pid = r.json()["id"]
+        r2 = c.patch(f"/api/projects/{pid}", json={"subtitles": True})
+        assert r2.status_code == 200, r2.text
+        from comic_studio.engine.db import Database
+        db = Database(tmp_path / "t.db")
+        row = db.connect().execute(
+            "SELECT subtitles FROM projects WHERE id=?", (pid,)).fetchone()
+        assert row["subtitles"] == 1
