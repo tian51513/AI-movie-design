@@ -109,6 +109,14 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None,
     from .paths import data_to_abs
     from .projects import get_project
     from .shots import list_shots, update_shot
+    # 设置页追加黑名单（优化#6）：speaker_blacklist 逗号分隔词并入净化
+    global _EXTRA_BLACKLIST
+    try:
+        from .settings import get_setting
+        _EXTRA_BLACKLIST = [w.strip() for w in str(
+            get_setting(db, "speaker_blacklist") or "").split(",") if w.strip()]
+    except Exception:
+        _EXTRA_BLACKLIST = []
 
     proj = get_project(db, project_id)
     if proj is None:
@@ -852,6 +860,7 @@ _SHRINK_SUFFIXES = ("轻声说", "开口说话", "开口说", "大声说", "说�
                     "说", "问", "喊", "叫", "道")
 _PARTICLES = "的对在的了和与跟并则就又便而"   # 连词/助词尾缀（王叔叔则→王叔叔）
 _SCAFFOLD_RE = None
+_EXTRA_BLACKLIST: list = []   # 设置页 llm.speaker_blacklist 追加词（describe_shots 入口加载）
 
 
 def _clean_speaker(name: str) -> str | None:
@@ -886,6 +895,8 @@ def _clean_speaker(name: str) -> str | None:
         s = s[1:]
     if len(s) < 2 or (_SCAFFOLD_RE.search(s) and s != "旁白"):
         return None
+    if any(w in s for w in _EXTRA_BLACKLIST):
+        return None   # 设置页追加黑名单（2026-09-07 优化#6，免发版加词）
     return s
 
 

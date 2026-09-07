@@ -7,6 +7,9 @@ from .db import Database
 
 DEFAULT_SETTINGS = {
     "workers": 1,
+    # 说话人净化追加黑名单（2026-09-07 优化#6）：逗号分隔词，VLM 又造新
+    # 脚手架短语时设置页自添免发版
+    "speaker_blacklist": "",
     # 类型→模板映射（spec §6.3）；t2v 可选，默认 None
     "template_map": {
         "character_views": "character_views",

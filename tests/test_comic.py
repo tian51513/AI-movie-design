@@ -864,3 +864,27 @@ def test_reestimate_project_durations_direct(tmp_path):
     line = "你休想从这里逃出去。"
     exp = min(15.0, max(4.0, math.ceil(len(line) / 4.0)))
     assert [s["duration"] for s in list_shots(db, pid)] == [exp]
+
+
+def test_speaker_blacklist_from_settings(tmp_path):
+    """优化#6（2026-09-07）：净化词表外置——settings llm.speaker_blacklist
+    追加黑名单（逗号分隔），免发版加词。"""
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.shots import list_shots
+    import json
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "speaker_blacklist", "新废词")
+    pid = import_comic(db, tmp_path / "data", "黑名单剧", "9:16",
+                       [("p1.png", PNG)])["id"]
+
+    class FakeV(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return "新废词：「这句不该被收。」王叔叔：「正常台词。」", Usage(10, 20)
+
+    describe_shots(db, tmp_path / "data", pid, FakeV())
+    led = json.loads(list_shots(db, pid)[0]["ledger_json"] or "{}")
+    assert [d["speaker"] for d in led["dialogue"]] == ["王叔叔"]

@@ -51,6 +51,7 @@ class SettingsUpdate(BaseModel):
     template_map: dict[str, str | None] | None = None
     model_overrides: dict[str, dict[str, str]] | None = None
     asr: dict | None = None  # P10-D：{engine, chunk_seconds}
+    speaker_blacklist: str | None = None  # 2026-09-07 优化#6：净化追加词（逗号分隔）
 
 
 @router.get("")
@@ -67,6 +68,7 @@ def read(request: Request):
         "llm_routing": get_setting(request.app.state.db, "llm_routing"),
         "comfy": get_setting(request.app.state.db, "comfy"),
         "asr": get_setting(request.app.state.db, "asr"),
+        "speaker_blacklist": get_setting(request.app.state.db, "speaker_blacklist"),
         "template_map": get_setting(request.app.state.db, "template_map"),
         "model_overrides": get_setting(request.app.state.db, "model_overrides") or {},
         "model_templates": templates,
@@ -99,6 +101,8 @@ def update(request: Request, body: SettingsUpdate):
         merged = get_setting(db, "llm_routing")
         merged.update(body.llm_routing)
         set_setting(db, "llm_routing", merged)
+    if body.speaker_blacklist is not None:
+        set_setting(db, "speaker_blacklist", str(body.speaker_blacklist))
     if body.comfy is not None:
         merged = get_setting(db, "comfy")
         # exclude_unset（2026-09-01 事故复盘）：未提供的键不覆盖——全量

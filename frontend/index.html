@@ -470,6 +470,9 @@
         <p><input v-model="settingsForm.online.model" placeholder="模型名" style="width:90%"></p>
         <p><input v-model="settingsForm.online.extra_body_json"
                   placeholder="附加参数 JSON（可选）" style="width:90%"></p>
+          <p><span class="muted" style="font-size:12px">说话人黑名单（VLM 又造脚手架短语时自添，逗号分隔，读图时生效）</span><br>
+             <input v-model="settingsForm.speakerBlacklist" placeholder="如：画外提示,气泡序号"
+                    style="width:90%"></p>
         <p><button @click="llmTest('online')" :disabled="llmTesting==='online'">
              {{ llmTesting==='online' ? '测试中…' : '测试连接' }}</button>
            <span v-if="llmTestManual.online && llmTestResult.online !== null"
