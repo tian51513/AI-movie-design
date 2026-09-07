@@ -337,6 +337,17 @@ def extract_comic_characters_route(project_id: int, request: Request):
     return {"job_id": jid}
 
 
+@router.post("/{project_id}/reestimate-durations")
+def reestimate_durations_route(project_id: int, request: Request):
+    """优化#4（2026-09-07）：只重估对白镜时长（字数基准），不重读图不烧 VLM——
+    修正时长/换 TTS 后重算片长用。即时同步（无 LLM 调用）。"""
+    db = request.app.state.db
+    if get_project(db, project_id) is None:
+        raise HTTPException(404, "项目不存在")
+    from ..engine.comic import reestimate_project_durations
+    return {"reestimated": reestimate_project_durations(db, project_id)}
+
+
 @router.post("/{project_id}/describe-shots", status_code=202)
 def describe_shots_route(project_id: int, request: Request,
                          shot_id: int = 0, force: bool = False):

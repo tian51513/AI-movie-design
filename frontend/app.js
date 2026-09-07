@@ -1116,6 +1116,12 @@ const methods = {
     if (!r.ok) { alert(await r.text()); return; }
     // 202 入队成功，状态由 queue 轮询驱动（batchVlmBusy computed）
   },
+  async reestimateDurations() {
+    if (!confirm('对白镜时长按字数基准重估（不重读图、不烧 VLM）？\n无对白镜不动；改完直接「重新合成」即可。')) return;
+    const r = await fetch(`/api/projects/${this.project.id}/reestimate-durations`, {method: 'POST'});
+    if (r.ok) { const b = await r.json(); alert(`已重估 ${b.reestimated} 镜`); await this.loadShots(); }
+    else alert(await r.text());
+  },
   async describeOneShot(s) {
     if (this.describingShots.has(s.id)) return;
     this.describingShots.add(s.id);

@@ -837,3 +837,30 @@ def test_create_routes_accept_advanced_params(tmp_path):
             "SELECT subtitles, video_megapixels, video_multiple FROM projects WHERE id=?",
             (r2.json()["id"],)).fetchone()
         assert (p2["subtitles"], p2["video_megapixels"], p2["video_multiple"]) == (1, 0.6, 16)
+
+
+def test_reestimate_project_durations_direct(tmp_path):
+    """优化#4（2026-09-07）：只重估时长不重读图（免烧 VLM）——用户主动触发
+    即覆写（不受段时长 0/0 门槛限制）；无对白镜不动。"""
+    import math
+    from comic_studio.engine.comic import (import_comic, describe_shots,
+                                           reestimate_project_durations)
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    from comic_studio.engine.shots import list_shots
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "直估剧", "9:16",
+                       [("p1.png", PNG)], default_shot_duration=6)["id"]
+
+    class FakeDlg(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return "林晨：「你休想从这里逃出去。」", Usage(10, 20)
+
+    describe_shots(db, tmp_path / "data", pid, FakeDlg())  # 段时长 6：估时未动
+    assert [s["duration"] for s in list_shots(db, pid)] == [6.0]
+    n = reestimate_project_durations(db, pid)
+    assert n == 1  # 主动重估：不受 0/0 门槛
+    line = "你休想从这里逃出去。"
+    exp = min(15.0, max(4.0, math.ceil(len(line) / 4.0)))
+    assert [s["duration"] for s in list_shots(db, pid)] == [exp]

@@ -944,6 +944,9 @@
       <button @click="describeShots(true)" :disabled="batchVlmBusy"
               title="覆盖全部镜的已有提示词（对白、时长同步重估）——改画风/换模型后整批重生成"
               style="font-size:12px;padding:3px 8px;background:#155e75">🔄 强制重读</button>
+      <button @click="reestimateDurations" :disabled="batchVlmBusy"
+              title="对白镜时长按字数基准重估（4~15s）——只刷时长不重读图不烧 VLM；修完时长直接重新合成即可"
+              style="font-size:12px;padding:3px 8px;background:#0f766e">⏱ 只重估时长</button>
       <button v-if="project.comic_mode==='film_adaptation'" @click="extractCharacters"
               :disabled="extractCharsBusy" style="font-size:12px;padding:3px 8px;background:#7c3aed"
               :title="'漫改模式：VLM 读前3页提取角色 → 建资产 → 可生成参考图'">

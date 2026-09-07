@@ -304,6 +304,25 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None,
 _NON_SPEAKER_RE = None
 
 
+def reestimate_project_durations(db, project_id) -> int:
+    """只重估时长不重读图（2026-09-07 优化#4，免烧 VLM）：全项目对白镜按
+    字数基准覆写（用户主动触发，不受段时长 0/0 门槛）；无对白镜不动。
+    返回重估镜数。"""
+    from .llm.storyboard import dialogue_duration_seconds
+    from .shots import list_shots, update_shot
+    n = 0
+    for s in list_shots(db, project_id):
+        dlg = json.loads(s["ledger_json"] or "{}").get("dialogue") or []
+        if dlg:
+            update_shot(db, s["id"], {"duration": dialogue_duration_seconds(dlg)})
+            n += 1
+    if n:
+        emit_log(db, "llm", "info",
+                 f"对白镜时长按字数基准重估：{n} 镜（4~15s，未重读图）",
+                 project_id=project_id)
+    return n
+
+
 def _voice_lib(db, data_dir, project_id) -> str:
     """音色库清单（注入 VLM 系统词；项目视角含项目级自定义）。"""
     from .voicelib import voice_library_prompt
