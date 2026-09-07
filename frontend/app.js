@@ -40,7 +40,7 @@ function data() {
     audioFile: null,  // P10A 有声书 tab（单文件）
     comicMode: 'motion_comic',
     advOpen: false, newSubtitles: true, newMegapixels: 0.4,
-    newMultiple: 32, newSpeed: '标准',   // 创建时高级参数（2026-09-07）
+    newMultiple: 32, newSpeed: '标准', newRenderMode: '',   // 创建时高级参数（2026-09-07）
     describingShots: new Set(),  // 正在读图的镜 id 集合（支持多镜并发提交）
     projectsView: (() => { try { return localStorage.getItem('cs.projectsView') || 'grid'; } catch (e) { return 'grid'; } })(),
     newSegDur: 0, newTotalDur: 0,  // 0=系统自动（2026-09-05 默认）
@@ -168,6 +168,7 @@ const methods = {
     fd.append('style_vis', this.newStyleKey === '自定义' ? this.newStyleText : presetStyleVis(this.newStyleKey));
     fd.append('subtitles', this.newSubtitles); fd.append('video_megapixels', this.newMegapixels);
     fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
+    fd.append('render_mode', this.newRenderMode);
     fd.append('novel', this.newFile);
     fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0
     fd.append('target_duration', this.newTotalDur || 0);
@@ -474,7 +475,8 @@ const methods = {
           default_shot_duration: this.newSegDur ?? 0,
           target_duration: this.newTotalDur || 0,
           subtitles: this.newSubtitles, video_megapixels: this.newMegapixels,
-          video_multiple: this.newMultiple, video_speed: this.newSpeed }) });
+          video_multiple: this.newMultiple, video_speed: this.newSpeed,
+          render_mode: this.newRenderMode }) });
       if (!resp.ok) { alert(await resp.text()); }
       else { this.newName = ''; this.newProtagonist = ''; this.newThemeId = '';
              this.newWordCount = ''; this.newExtraPrompt = ''; this.themePreview = '';
@@ -1079,6 +1081,7 @@ const methods = {
       fd.append('target_duration', Number(this.newTotalDur) || 0);
       fd.append('subtitles', this.newSubtitles); fd.append('video_megapixels', this.newMegapixels);
       fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
+      fd.append('render_mode', this.newRenderMode);
       fd.append('audio', this.audioFile);
       const resp = await fetch('/api/projects/from-audio', { method: 'POST', body: fd });
       if (!resp.ok) { alert(await resp.text()); return; }  // L19：失败保留表单可改后重试

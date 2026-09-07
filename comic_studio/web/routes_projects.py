@@ -288,6 +288,7 @@ def create_from_audio(request: Request, name: str = Form(...),
                       subtitles: bool = Form(True),
                       video_megapixels: float = Form(0.4),
                       video_multiple: int = Form(32), video_speed: str = Form("标准"),
+                      render_mode: str = Form(""),
                       audio: UploadFile = File(...)):
     """P10 有声书导入（2026-09-05 计划）：存源音频 → 建项目（占位正文）→
     入队 transcribe；转写完成后回填 novel.txt，之后走现有小说链。"""
@@ -389,7 +390,8 @@ def create_from_theme(request: Request, body: dict):
                          video_megapixels=float(body.get("video_megapixels") or 0.4),
                          video_multiple=int(body.get("video_multiple") or 32),
                          video_speed=str(body.get("video_speed") or "标准"),
-                         subtitles=1 if body.get("subtitles", True) else 0)
+                         subtitles=1 if body.get("subtitles", True) else 0,
+                         render_mode=str(body.get("render_mode") or ""))
     return _public(row)
 
 
@@ -406,7 +408,8 @@ def create(request: Request, name: str = Form(...),
            default_shot_duration: float = Form(0.0),  # 0=LLM 动态估时（2026-09-05 默认）
            prompt_mode: str = Form("D"), lora_realism: float = Form(0.75),
            target_duration: float = Form(0.0),
-           subtitles: bool = Form(True)):
+           subtitles: bool = Form(True),
+           render_mode: str = Form("")):
     from ..engine.projects import ASPECT_RATIOS
     if aspect_ratio not in ASPECT_RATIOS:
         raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
@@ -420,7 +423,8 @@ def create(request: Request, name: str = Form(...),
                          video_speed=video_speed, default_shot_duration=default_shot_duration,
                          prompt_mode=prompt_mode, lora_realism=lora_realism,
                          target_duration=target_duration,
-                         subtitles=1 if subtitles else 0)
+                         subtitles=1 if subtitles else 0,
+                         render_mode=render_mode)
     return _public(row)
 
 
@@ -514,12 +518,16 @@ def patch_style(request: Request, project_id: int, body: dict):
 
     # Handle render_mode (视频渲染模式项目级切换 → 批量改全部镜 workflow_type；
     # 类型→具体模板由 settings 页 template_map 决定，两层协同 2026-08-26)
+    # 2026-09-07 优化#2：同时落 projects.render_mode（迁移 34）——此后重拆分镜
+    # 也按此覆写，不再只在当次批量生效
     if "render_mode" in body:
         mode = body["render_mode"]
         if mode not in ("ref2va", "fl2v", "t2v"):
             raise HTTPException(422, "render_mode 只能是 ref2va/fl2v/t2v")
         conn = db.connect()
         conn.execute("UPDATE shots SET workflow_type=? WHERE project_id=?",
+                     (mode, project_id))
+        conn.execute("UPDATE projects SET render_mode=? WHERE id=?",
                      (mode, project_id))
         conn.commit()
 

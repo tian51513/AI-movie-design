@@ -199,6 +199,9 @@ MIGRATIONS: list[str] = [
     """ALTER TABLE projects ADD COLUMN subtitles INTEGER NOT NULL DEFAULT 1;
     UPDATE projects SET subtitles=0
     WHERE comic_mode IN ('motion_comic', 'film_adaptation');""",
+    # 34 渲染模式（2026-09-07 优化#2）：''=LLM 逐镜智能选；ref2va/fl2v/t2v=
+    # 拆分镜后机械覆写全部镜（漫画项目由 comic_mode 决定，不消费此列）
+    """ALTER TABLE projects ADD COLUMN render_mode TEXT NOT NULL DEFAULT '';""",
 ]
 
 

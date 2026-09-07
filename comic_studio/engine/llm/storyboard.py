@@ -404,6 +404,15 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     # 时长机械重估（2026-09-03 真机教训：LLM 没见过对白就把时长写死 5，
     # 补录后必须按文档公式句数×2.5 钳 4~15 回算，对白镜时长不再均分）
     n_dur = reestimate_durations(staged)
+    # 优化#2（2026-09-07）：项目级渲染模式指定（非空）→ 机械覆写全部镜；
+    # 留空=LLM 逐镜智能选（衔接 fl2v/常规 ref2va/无参考 t2v）保持不动
+    from ..projects import get_project as _gp
+    _proj = _gp(db, project_id)
+    _rm = _proj["render_mode"] if (_proj is not None
+                                   and "render_mode" in _proj.keys()) else ""
+    if _rm:
+        for s in staged:
+            s.workflow_type = _rm
     if n_dur:
         emit_log(db, "storyboard", "info",
                  f"对白镜时长重估：{n_dur} 镜（句数×2.5s，钳 4~15）", project_id=project_id)

@@ -1161,6 +1161,13 @@
           </select></label>
           <label>质量档<select v-model="newSpeed">
             <option>快速</option><option>标准</option><option>高质量</option></select></label>
+          <label v-if="newMode!=='comic'" title="留空=AI 按镜间衔接逐镜智能选；指定=拆分镜后全部镜用该模式（漫画项目由导入模式决定，不适用）">渲染模式
+            <select v-model="newRenderMode">
+              <option value="">自动（AI 逐镜选）</option>
+              <option value="ref2va">多参生视频</option>
+              <option value="fl2v">首尾帧生视频</option>
+              <option value="t2v">文生视频（最快）</option>
+            </select></label>
         </div>
         <p>画幅<select v-model="newRatio"><option>9:16</option><option>16:9</option><option>3:4</option><option>4:3</option><option>1:1</option></select>
            段时长<input type="number" min="0" max="15" v-model.number="newSegDur" style="width:44px">s

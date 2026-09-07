@@ -228,3 +228,16 @@ def test_split_whitelist_discipline_in_prompt():
     assert "背景人物" in SPLIT_SYSTEM and "must_appear" in SPLIT_SYSTEM
     u = build_split_user_prompt("正文", [])
     assert "白名单" in u
+
+
+def test_split_project_render_mode_overrides(tmp_path):
+    """优化#2（2026-09-07）：项目 render_mode 指定（非空）→ staging 后机械
+    覆写全部镜 workflow_type；留空=LLM 逐镜智能选（衔接/常规/无参考）不动。"""
+    db, pid = _setup(tmp_path)
+    conn = db.connect()
+    conn.execute("UPDATE projects SET render_mode='fl2v' WHERE id=?", (pid,))
+    conn.commit()
+    fake = FakeLLM([CHUNK.format(desc="推门镜头", cid=1)])
+    split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
+    rows = list_shots(db, pid)
+    assert rows and all(r["workflow_type"] == "fl2v" for r in rows)
