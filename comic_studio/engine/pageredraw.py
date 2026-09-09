@@ -120,3 +120,125 @@ def activate_kf_version(db, data_dir, shot_id: int, role: str, version: str) -> 
     return {"start": active_kf_version(get_shot(db, shot_id), "start"),
             "end": active_kf_version(get_shot(db, shot_id), "end"),
             "video_cleared": ids}
+
+
+# 页级质量尾缀：借 character 尾缀肢体纠错 + 无乱码文字（决策 9），
+# 严禁用 genref.ZIMAGE_TAIL["scene"]——它带「画面中无人物」禁令
+PAGE_TAIL = ("，cinematic color grading，sharp focus，ultra-detailed，8k，"
+             "避免畸形肢体，避免多余手指，避免五官扭曲，无蜡像塑料感，"
+             "无乱码文字，无文字水印，画面完整")
+
+CLEAN_TEXT_LINE = ("。重绘要求：清除对白气泡内的全部文字（保留气泡形状与位置，"
+                   "文字区域留白），保留画面构图、人物位置、表情与分格布局不变")
+
+
+def _ensure_source_page(data_dir, proj, shot) -> Path:
+    """重绘底图=原页（决策 2/16）：pages/ 单一事实源；旧项目（PATCH 后开重绘）
+    无 pages → 从活动 kf_start 拷贝建源页（bootstrap）。"""
+    canonical = Path(data_dir) / "projects" / proj["slug"] / "pages" / \
+        f"page_{shot['seq']:03d}.png"
+    if not canonical.exists():
+        kf = Path(data_dir) / "projects" / proj["slug"] / "shots" / \
+            str(shot["seq"]) / "kf_start.png"
+        if not kf.exists():
+            raise ValueError(f"镜 {shot['seq']} 无原页可作重绘底图")
+        canonical.parent.mkdir(parents=True, exist_ok=True)
+        canonical.write_bytes(kf.read_bytes())
+    return canonical
+
+
+def build_page_redraw_prompt(db, proj, shot) -> str:
+    """整页重绘提示词：本镜内容概述（description 截断）+ 清文字 + 画风段 + 尾缀。
+    画风空=按原画风高清化（决策 8）。"""
+    from .genref import PHOTO_BOOST, condense_appearance, is_photo_style
+    from .assets import get_asset
+    detail = (shot["description"] or "").strip().rstrip("。；;，,")
+    prompt = f"漫画页重绘（保持原构图与人物位置）：{detail[:160] or '按原页画面'}"
+    # 角色外貌锚（首个绑定角色——供 CLIP 文字锚；图像锚看第二槽位注入）
+    led = json.loads(shot["ledger_json"] or "{}")
+    for aid in (led.get("assets", {}) or {}).get("characters", []):
+        a = get_asset(db, aid)
+        if a:
+            app = condense_appearance(json.loads(a["appearance_json"]).get("detail", ""))
+            if app:
+                prompt += f"。角色「{a['name']}」：{app[:150]}"
+            break
+    prompt += CLEAN_TEXT_LINE
+    style = ((proj["style_vis"] or proj["style"]) or "").strip().rstrip("。；;，,")
+    if style:
+        prompt += f"。画风：{style}（全页统一转为该画风）"
+    else:
+        prompt += "。按原页画风高清化重绘（不改变画风，提升清晰度与质感统一）"
+    if is_photo_style(style):
+        prompt += "。" + PHOTO_BOOST
+    return prompt + PAGE_TAIL
+
+
+def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
+    """整页重绘一镜首帧：base=原页 → 新版本 → 激活 → 前镜尾帧联动 → 视频置空。
+    模板=template_map.page_redraw（决策：默认 zimage_i2i base 槽；模板若声明
+    第二图槽则注入该镜首个绑定角色 main.png——条件双槽）。"""
+    from .projects import get_project
+    from .rendershot import _video_seed
+    from .settings import get_setting
+    from .workflows.filler import fill_workflow
+    from .workflows.registry import resolve_template
+    from .jobs import attach_snapshot
+
+    shot = get_shot(db, shot_id)
+    if shot is None:
+        raise ValueError(f"分镜不存在: {shot_id}")
+    proj = get_project(db, shot["project_id"])
+    base = _ensure_source_page(data_dir, proj, shot)
+    tmpl = resolve_template(db, "page_redraw")
+    images = [{"slot": tmpl.inject_images[0]["slot"], "path": str(base)}]
+    anchor_line = ("。人物与背景的布局、构图与原页保持一致，仅画风与质感按提示词转换")
+    if len(tmpl.inject_images or []) >= 2:   # 条件双槽：角色主图身份锚
+        led = json.loads(shot["ledger_json"] or "{}")
+        from .assets import get_asset
+        from .paths import data_to_abs
+        for aid in (led.get("assets", {}) or {}).get("characters", []):
+            a = get_asset(db, aid)
+            if a and a["library_dir"]:
+                main = data_to_abs(data_dir, a["library_dir"]) / "main.png"
+                if main.exists():
+                    images.append({"slot": tmpl.inject_images[1]["slot"],
+                                   "path": str(main)})
+            break
+    seed = seed if seed is not None else _video_seed(shot)
+    prompt = build_page_redraw_prompt(db, proj, shot) + anchor_line
+    wf, uploads = fill_workflow(
+        tmpl, prompt=prompt,
+        params={"seed": seed,
+                "denoise": (get_setting(db, "comfy") or {}).get("page_redraw_denoise", 0.75)},
+        images=images,
+        output_ctx={"project": proj["slug"], "asset": f"shot-{shot['seq']}-redraw"},
+        model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))
+    for up in uploads:
+        comfy.upload_image(Path(up["path"]), up["name"])
+    if job is not None:
+        attach_snapshot(db, job["id"], prompt=prompt, workflow=wf, template_id=tmpl.id)
+    emit_log(db, "comfy", "info",
+             f"分镜 {shot['seq']} 整页重绘提交（模板 {tmpl.id}）",
+             project_id=proj["id"], job_id=job["id"] if job else None)
+    results = comfy.wait_and_collect(
+        comfy.submit(wf, client_id=f"cs-redraw-{shot_id}"), stall_seconds=600)
+    img = next((r for r in results if r.get("_kind") == "image"), None)
+    if img is None:
+        raise RuntimeError(f"分镜 {shot['seq']} 整页重绘未返回图片")
+    shot_dir = Path(data_dir) / "projects" / proj["slug"] / "shots" / str(shot["seq"])
+    tmp = shot_dir / f"_redraw_tmp_{shot_id}.png"
+    comfy.download(img["filename"], img.get("subfolder", ""), img.get("type", "output"),
+                   tmp)
+    try:
+        version = save_kf_version(shot_dir, "start", tmp)
+    finally:
+        tmp.unlink(missing_ok=True)
+    _set_active(db, shot, "start", version)
+    data = (shot_dir / "kf_start.png").read_bytes()
+    cleared = [shot_id]
+    prev_id = _sync_prev_end(db, data_dir, shot, data, version)
+    if prev_id is not None:
+        cleared.append(prev_id)
+    _clear_video(db, cleared)
+    return shot_dir / f"kf_start_{version}.png"

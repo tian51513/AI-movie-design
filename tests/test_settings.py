@@ -54,6 +54,7 @@ def test_comfy_setting_default(tmp_path):
     db = _db(tmp_path)
     # min_free_vram_gb：LLM 让位后的显存门槛（2026-08-28，12GB 共享决策）
     # merge_xfade/merge_grade：C6 段间交叉淡化/统一调色（2026-09-01，默认关）
+    # page_redraw_denoise：动态漫整页重绘重绘幅度（2026-09-09，决策 8）
     assert get_setting(db, "comfy") == {"base_url": "http://127.0.0.1:8188",
                                         "min_free_vram_gb": 8,
                                         "merge_xfade": False,
@@ -63,4 +64,12 @@ def test_comfy_setting_default(tmp_path):
                                         "director_export_source": False,
                                         "director_batch_relay": True,
                                         "director_mix": True,
-                                        "mute_quiet_shots": False}
+                                        "mute_quiet_shots": False,
+                                        "page_redraw_denoise": 0.75}
+
+
+def test_page_redraw_defaults(tmp_path):
+    """动态漫整页重绘（2026-09-09）：page_redraw 模板键 + 重绘幅度默认。"""
+    db = _db(tmp_path)
+    assert get_setting(db, "template_map")["page_redraw"] == "zimage_i2i"
+    assert get_setting(db, "comfy")["page_redraw_denoise"] == 0.75

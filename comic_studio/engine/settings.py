@@ -20,6 +20,7 @@ DEFAULT_SETTINGS = {
         "t2v": "h3_t2v",
         "director": "h3_director",  # P7-D 整段快车道（从视频展示工作流抽离的专属模板）
         "asr": "asr_qwen3",  # P10-D ComfyUI Qwen3-ASR（audio_to_text）
+        "page_redraw": "zimage_i2i",  # 动态漫整页重绘（base=原页，2026-09-09）
     },
     "llm_providers": {
         "local": {"base_url": "http://localhost:11434/v1", "api_key": "ollama",
@@ -52,7 +53,10 @@ DEFAULT_SETTINGS = {
               # P7-J 整片混音：TTS 配音（有台词镜）+ SRT 烧录；失败退化纯画面
               "director_mix": True,
               # 无台词镜静音（2026-08-30 杂音封堵）：H3 原声不进成片，代价是丢自然环境声
-              "mute_quiet_shots": False},
+              "mute_quiet_shots": False,
+              # 整页重绘幅度（2026-09-09 决策 8）：画风空=原画风高清化也用同值，
+              # 0.75 兼顾保构图与转风力度
+              "page_redraw_denoise": 0.75},
     # 工作流模型槽位覆盖（计划5B 任务6）：{模板 id: {label: 文件名}}
     "model_overrides": {},
 }
