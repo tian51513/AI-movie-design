@@ -56,7 +56,18 @@
 **目录结构**：`data/library?`→assets 表 library_dir 相对 POSIX；views/（三视图）+ main.png 为「有图」判据（**目录存在≠有图**——persist 恒建空目录，判断用 has_views 按文件）。
 **漫改提取两入口**：describe_shots 顺手提取（对白说话人聚合，幂等）vs 手动 extract_comic_characters（采样读页，清空重建——注意不清 ledger 旧 id，审计中危）；两路按 (kind,name,source_project) 去重。
 
-## 6. 渲染链（engine/rendershot.py、workflows/）
+## 6. 动态漫角色重绘操作序（2026-09-09）
+
+**适用**：motion_comic 项目勾「是否重绘角色」（漫改忽略——画风本就要转换）。目的：VLM 提取主要角色→按画风重绘角色主图→整页重绘分镜首尾帧出新版本；原页构图不动，只换画风/清气泡文字。设计决策表 docs/superpowers/plans/2026-09-09-motion-comic-character-redraw.md §0。
+
+1. **创建**：漫画 tab 勾「是否重绘角色」（联动字幕默认开——重绘清掉原页文字，成片须烧字幕）；存量项目参数面板可补开（无 pages/ 时重绘底图用当前活动 kf bootstrap——重绘过的镜再重绘会逐代漂移）
+2. **🚀 一键出片**：describe_shots 读原页（pages/ 单一事实源；重绘模式跳过 speaker 资产——提取 job 是唯一建资产入口）→ autopilot 入队 VLM 提取（characters_only 主要角色+bind_shots 补绑）→ gen_refs stage=main 只烧角色主图（不建三视图、不标 stale）→ **停等**「请检查/重试角色图后点『🖌 批量重绘分镜』」（停等 detail 不含「失败」，不算卡死）
+3. **检查/重试**：资产卡重生单角色主图（gen_ref stage=main）；提取/生成失败 autopilot 报一次卡死等手动重发（_latest_failed 项目级——资产 A 失败挡整批，重发即解除）
+4. **🖌 批量重绘分镜**：逐镜 redraw_kf job（底图=原页、清文字保气泡形状、模板 template_map.page_redraw 默认 zimage_i2i、denoise 默认 0.75、绑定角色 main.png 条件第二槽）→ 新版本 kf_start_v{N}+前镜尾帧同版联动+双镜 video_path 置空待重渲；已完成镜重发不重绘（pending_redraw 标记判据）、无效镜跳过
+5. **续跑**：全部重绘完 autopilot 自动落回 渲染→门3→合成（video 置空的镜重渲）
+6. **不满意**：单镜「重生关键帧」= 新 seed 出新版本（重绘项目分流 redraw_kf 入队，决策 13 单镜重生=批量单镜版）；分镜卡首帧版本 chips 切活动版（联动前镜尾帧+视频自动置空）；尾帧独立切版仅末镜
+
+## 7. 渲染链（engine/rendershot.py、workflows/）
 
 **模板选型**（workflow_type → template_map 可配）：
 | workflow_type | 模板 | 何时用 |
@@ -71,7 +82,7 @@
 **模型切换**：manifest `models:` 槽位 → settings model_overrides（键=模板 id）→ filler 注入；choices 从 /object_info 枚举。
 **🚄 快车道开关**（settings comfy.*）：director_batch_frames（默认 512）、批间首帧接力 director_batch_relay、整片混音 director_mix、清显存/导出源帧；画布按项目兆像素 ×32 ceil 对齐。
 
-## 7. 音频/音色决策链
+## 8. 音频/音色决策链
 
 ```
 ref2va 渲染注入音色样本 → H3 原声口型（ledger.h3_native_voice → 合成跳过 TTS）
@@ -83,7 +94,7 @@ fl2v/i2v/t2v（无音频槽）→ 单说话人+绑音色 → qwen_tts_clone 整�
 - 御姐系样本（高冷御姐/色气御姐）= 气声慢板基调，克隆继承 → 表现力需求高的角色避开
 - TTS 生成先于 SRT（音长可知）；merge handler 自动前置 TTS+SRT
 
-## 8. 合成链（engine/merge.py）
+## 9. 合成链（engine/merge.py）
 
 ```
 无效镜剔除 → normalize（画布统一/44.1k 立体声）→ 对白镜收口（§4）
@@ -92,14 +103,14 @@ fl2v/i2v/t2v（无音频槽）→ 单说话人+绑音色 → qwen_tts_clone 整�
 ```
 已修（2026-09-05 审计批次）：epNNN=max+1（merge.next_ep_number，快车道共用）；xfade 时 SRT 扣 0.3s 交叠；normalize 无轨补 anullsrc；xfade _sil 进临时目录。**仍开放**：快车道 director_mix 未适配音频收口（TTS 超 span 截断仅 warn）；>120 段 xfade 回退硬拼时 SRT 仍扣交叠（罕见）。全清单 docs/2026-09-05-feature-audit.md §4。
 
-## 9. 队列与资源
+## 10. 队列与资源
 
 - `jobs`：enqueue/claim（BEGIN IMMEDIATE 互斥）/retry_or_fail（attempts≥3 落 failed）/cancel_project_jobs（pending→cancelled、running→attempts=99）
 - 资源组：gpu_comfy 与 gpu_llm_local 同属 "gpu" 组互斥（渲染与本地 LLM/VLM 串行）
 - ComfyUI 等待：排队不计失速、排队超 1h 只 DELETE 自己、interrupt 仅当 /queue 确认在跑（防误杀他任务）
 - 断点对账：重启先 reattach（history 已完成直接落盘）后 requeue
 
-## 10. 开发细则补充
+## 11. 开发细则补充
 
 - LLM provider：路由值支持 `provider:model` 点对点钉选；local2=重度模型（extra_body 恒 null 物理隔离）；思考模型烧窗用 extra_body `{"reasoning_effort":"none"}`（Ollama /v1 实测有效）
 - Ollama num_ctx=16384：拆分块 1300 字上限的推导依据；截断先查 finish_reason
@@ -108,14 +119,15 @@ fl2v/i2v/t2v（无音频槽）→ 单说话人+绑音色 → qwen_tts_clone 整�
 - 画幅五档 ASPECT_RATIOS 统一校验；工作流不支持的画幅回落 16:9
 - 模板：templates/workflows/*.yaml manifest（inject slots: prompt/params/images/audio）+ filler 注入
 
-## 11. API 速查（常用）
+## 12. API 速查（常用）
 
 ```
 POST /api/projects（上传）· /from-theme[/preview] · /from-comic · /from-audio（🎧，P10A）
 POST transcribe 经 from-audio 自动入队（无手动重发入口——失败重传项目）
 POST /api/projects/{id}/analyze | /split-storyboards | /describe-shots | /merge | /tts | /stop-jobs | /asr-cleanup（✨转写校对）/retry-transcribe
 GET  /api/projects/{id}/novel-text（📄正文查看）
-POST /api/shots/{id}/render | /regen-prompt   · POST /api/projects/{id}/generate-prompts | /render-batch
+POST /api/shots/{id}/render | /regen-prompt | /regen-keyframes | /use-kf · GET /api/shots/{id}/kf-versions
+POST /api/projects/{id}/generate-prompts | /render-batch | /batch-redraw（🖌 动态漫整页重绘，§6）
 PATCH /api/projects/{id}（autopilot/style/画幅/段时长/render_mode…）
 GET  /api/projects/{id}/merges · /api/jobs/{id}/snapshot
 POST /api/voices/design|promote · DELETE /api/voices?scope=…
