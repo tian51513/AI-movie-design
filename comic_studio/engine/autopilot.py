@@ -289,6 +289,9 @@ def _comic_flow(db, data_dir, project_id, proj) -> dict:
                 if _has_active_job(db, project_id, "gen_ref"):
                     return {"action": "wait",
                             "detail": f"角色重绘参考图生成中（缺 {len(missing_mains)} 个）"}
+                if _latest_failed(db, project_id, "gen_ref"):
+                    return {"action": "wait",
+                            "detail": "上次角色重绘参考图失败，重试请手动发起"}
                 return {"action": "gen_refs",
                         "detail": f"重绘模式：角色重绘缺 {len(missing_mains)} 张主图"}
             if not (proj["redraw_done"] if "redraw_done" in proj.keys() else 0):

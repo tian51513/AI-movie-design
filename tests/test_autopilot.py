@@ -473,3 +473,22 @@ def test_comic_flow_redraw_pending_wait(tmp_path):
     conn.commit()
     act = next_action(db, tmp_path / "data", pid)
     assert act["action"] == "wait" and "重绘" in act["detail"], act
+
+
+def test_comic_flow_redraw_genref_failed_waits(tmp_path):
+    """重绘第 2 层失败守卫：角色缺 main.png 且最新 gen_ref 已 failed → wait
+    不自动重烧（否则 tick 每 3s 重入队刷屏环——同批次型 A2 守卫；
+    第 1/4 层本有守卫，此为补漏）。"""
+    db, pid = _mk_redraw_comic(tmp_path, "重绘守卫")
+    for s in list_shots(db, pid):
+        update_shot(db, s["id"], {"prompt": "x", "status": "ready"})
+    # 1 个角色资产且 main.png 缺 → 命中第 2 层（无资产会先落第 1 层提取）
+    aid = persist_assets(db, tmp_path / "data", pid,
+                         NS(characters=[NS(name="小明", appearance="性别：男", tags=["comic"])],
+                            scenes=[], props=[]))[0]
+    conn = db.connect()
+    conn.execute("INSERT INTO jobs (type, project_id, asset_id, status) "
+                 "VALUES ('gen_ref', ?, ?, 'failed')", (pid, aid))
+    conn.commit()
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "上次角色重绘参考图失败" in act["detail"], act
