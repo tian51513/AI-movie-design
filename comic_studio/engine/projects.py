@@ -28,7 +28,8 @@ def create_project(db: Database, data_dir: Path, name: str,
                    prompt_mode: str = "D", lora_realism: float = 0.75,
                    target_duration: float = 0.0,
                    subtitles: int = 1,  # 迁移 33；漫画入口自行传 0
-                   render_mode: str = "") -> sqlite3.Row:  # 迁移 34；''=LLM 逐镜选
+                   render_mode: str = "",  # 迁移 34；''=LLM 逐镜选
+                   redraw_characters: int = 0) -> sqlite3.Row:  # 迁移 35；动态漫角色重绘
     assert aspect_ratio in ASPECT_RATIOS, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}"
     conn = db.connect()
     base = slugify(name) or "project"
@@ -42,8 +43,8 @@ def create_project(db: Database, data_dir: Path, name: str,
     from .chapters import parse_chapters
     chapters_json = json.dumps(parse_chapters(novel_text), ensure_ascii=False)
     conn.execute(
-        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, style_vis, chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration, subtitles, render_mode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), style_vis.strip(), chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration, subtitles, render_mode))
+        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, style_vis, chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration, subtitles, render_mode, redraw_characters) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), style_vis.strip(), chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration, subtitles, render_mode, int(redraw_characters)))
     conn.commit()
     return get_project(db, conn.execute("SELECT last_insert_rowid() id").fetchone()["id"])
 

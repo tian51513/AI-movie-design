@@ -259,3 +259,33 @@ def test_novel_text_manual_edit(tmp_path, monkeypatch):
         # 空文本 422
         assert c.put(f"/api/projects/{pid2}/novel-text",
                      json={"text": "   "}).status_code == 422
+
+
+PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32  # 假 PNG 字节（from-comic 导入不解码，原样落盘）
+
+
+def test_from_comic_redraw_flag(tmp_path):
+    """from-comic 带 redraw=on → projects.redraw_characters=1（漫改忽略恒 0）。"""
+    with _client(tmp_path) as c:
+        files = [("images", ("p1.png", io.BytesIO(PNG), "image/png")),
+                 ("images", ("p2.png", io.BytesIO(PNG), "image/png"))]
+        r = c.post("/api/projects/from-comic", data={
+            "name": "重绘漫", "aspect_ratio": "9:16", "comic_mode": "motion_comic",
+            "redraw": "true"}, files=files)
+        assert r.status_code == 201, r.text
+        assert r.json()["redraw_characters"] == 1
+        pid = r.json()["id"]
+        r2 = c.patch(f"/api/projects/{pid}", json={"redraw_characters": False})
+        assert r2.status_code == 200
+        r3 = c.get(f"/api/projects/{pid}")
+        assert r3.json()["redraw_characters"] == 0
+
+
+def test_patch_redraw_toggle(tmp_path):
+    with _client(tmp_path) as c:
+        r = c.post("/api/projects/from-comic", data={
+            "name": "t", "aspect_ratio": "9:16"}, files=[
+            ("images", ("p.png", io.BytesIO(PNG), "image/png"))])
+        assert r.status_code == 201, r.text
+        pid = r.json()["id"]
+        assert c.patch(f"/api/projects/{pid}", json={"redraw_characters": True}).json()["redraw_characters"] == 1

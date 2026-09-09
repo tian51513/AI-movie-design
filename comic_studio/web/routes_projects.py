@@ -38,7 +38,8 @@ WORD_COUNT_RANGE = (300, 20000)
 
 _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "style_vis", "era", "comic_mode", "subtitles",
                     "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
-                    "prompt_mode", "lora_realism", "target_duration", "autopilot")
+                    "prompt_mode", "lora_realism", "target_duration", "autopilot",
+                    "redraw_characters", "redraw_done")
 
 
 @router.post("/{project_id}/retry-transcribe", status_code=202)
@@ -172,6 +173,7 @@ def create_from_comic(request: Request,
                       target_duration: float = Form(0.0),
                       style: str = Form(""), style_vis: str = Form(""),
                       subtitles: bool = Form(False),  # 漫画默认不烧（原页自带台词）
+                      redraw: bool = Form(False),  # 动态漫角色重绘（迁移 35）——漫改忽略
                       video_megapixels: float = Form(0.4),
                       video_multiple: int = Form(32), video_speed: str = Form("标准"),
                       images: list[UploadFile] = File(...)):
@@ -194,6 +196,8 @@ def create_from_comic(request: Request,
                             target_duration=target_duration,
                             style=style, style_vis=style_vis,
                             subtitles=1 if subtitles else 0,
+                            # 重绘仅动态漫语义（漫改画风本就要转换，恒 0）
+                            redraw_characters=1 if (redraw and comic_mode == "motion_comic") else 0,
                             video_megapixels=video_megapixels,
                             video_multiple=video_multiple, video_speed=video_speed)
     except ValueError as exc:
@@ -509,6 +513,13 @@ def patch_style(request: Request, project_id: int, body: dict):
         conn = db.connect()
         conn.execute("UPDATE projects SET subtitles=? WHERE id=?",
                      (1 if body["subtitles"] else 0, project_id))
+        conn.commit()
+
+    # 动态漫角色重绘（迁移 35）：可后开（autopilot 从提取步幂等接入）可后关（不回滚）
+    if "redraw_characters" in body:
+        conn = db.connect()
+        conn.execute("UPDATE projects SET redraw_characters=? WHERE id=?",
+                     (1 if body["redraw_characters"] else 0, project_id))
         conn.commit()
 
     # Handle autopilot switch (一键出片)

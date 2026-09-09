@@ -23,7 +23,8 @@ def import_comic(db, data_dir, name: str, aspect: str,
                  subtitles: int | None = None,
                  video_megapixels: float | None = None,
                  video_multiple: int | None = None,
-                 video_speed: str = "") -> dict:
+                 video_speed: str = "",
+                 redraw_characters: int = 0) -> dict:
     """image_blobs：[(filename, bytes)]，顺序即页序。comic_mode：
     motion_comic（动态漫/fl2v 翻页）| film_adaptation（漫改/ref2va 动画）。
     style/style_vis：漫改模式的画风转换目标（动态漫不消费——画风跟随原页）。"""
@@ -53,6 +54,7 @@ def import_comic(db, data_dir, name: str, aspect: str,
                           style=style, style_vis=style_vis,
                           # 字幕（迁移 33）：漫画原页自带台词文字——默认不烧
                           subtitles=0 if subtitles is None else int(subtitles),
+                          redraw_characters=int(redraw_characters),  # 迁移 35：仅动态漫消费
                           **extra)
     pid = proj["id"]
     slug = proj["slug"]

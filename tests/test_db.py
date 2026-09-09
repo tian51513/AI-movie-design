@@ -46,6 +46,17 @@ def test_connect_is_thread_local(tmp_path):
 
 
 
+def test_migration_35_redraw_columns(tmp_path):
+    """迁移 35（2026-09-09）：动态漫角色重绘双列——redraw_characters 开关 +
+    redraw_done 已批量重绘标记（autopilot 停等）。"""
+    db = Database(tmp_path / "s.db")
+    db.migrate()
+    conn = db.connect()
+    row = conn.execute("SELECT redraw_characters, redraw_done FROM projects").description
+    names = {c[0] for c in row}
+    assert {"redraw_characters", "redraw_done"} <= names
+
+
 def test_migrate_from_any_partial_version(tmp_path, monkeypatch):
     """回归：迁移列表只能末尾追加——从任意历史版本升级到最新都必须成功。
 
