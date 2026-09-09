@@ -265,10 +265,51 @@ def _comic_flow(db, data_dir, project_id, proj) -> dict:
         if _has_active_job(db, project_id, "describe_shots"):
             return {"action": "wait", "detail": "VLM 读图收尾中"}
 
+        # ①½ 动态漫角色重绘（2026-09-09 决策 10）：提取→角色重绘→停等用户批量重绘
+        # →整页重绘收尾，再落回 ③ 渲染缺口（停等 detail 刻意不含「失败」——
+        # tick 失败守卫按该子串上报卡死，停等是正常等待不是卡死）
+        _rw = (not is_film and "redraw_characters" in proj.keys()
+               and bool(proj["redraw_characters"]))
+        if _rw:
+            from .shots import list_shots
+            chars = [a for a in list_project_assets(db, project_id)
+                     if a["kind"] == "character"]
+            if not chars:
+                if _has_active_job(db, project_id, "extract_comic_characters"):
+                    return {"action": "wait", "detail": "VLM 角色提取中"}
+                if _latest_failed(db, project_id, "extract_comic_characters"):
+                    return {"action": "wait",
+                            "detail": "上次角色提取失败，重试请手动发起"}
+                return {"action": "extract_comic",
+                        "detail": "重绘模式：VLM 采样提取主要角色"}
+            missing_mains = [a["id"] for a in chars
+                             if not (data_to_abs(data_dir, a["library_dir"])
+                                     / "main.png").exists()]
+            if missing_mains:
+                if _has_active_job(db, project_id, "gen_ref"):
+                    return {"action": "wait",
+                            "detail": f"角色重绘参考图生成中（缺 {len(missing_mains)} 个）"}
+                return {"action": "gen_refs",
+                        "detail": f"重绘模式：角色重绘缺 {len(missing_mains)} 张主图"}
+            if not (proj["redraw_done"] if "redraw_done" in proj.keys() else 0):
+                return {"action": "wait",
+                        "detail": "角色重绘资产就绪——请检查/重试角色图后点『批量重绘分镜』"}
+            pending = [s["id"] for s in list_shots(db, project_id)
+                       if json.loads(s["ledger_json"] or "{}").get("pending_redraw")]
+            if pending:
+                if _has_active_job(db, project_id, "redraw_kf"):
+                    return {"action": "wait",
+                            "detail": f"整页重绘中（余 {len(pending)} 镜）"}
+                if _latest_failed(db, project_id, "redraw_kf"):
+                    return {"action": "wait",
+                            "detail": "部分镜整页重绘失败——重发批量重绘补漏或单镜重生"}
+                return {"action": "wait", "detail": f"整页重绘收尾中（余 {len(pending)} 镜）"}
+
         # ② 漫改模式：角色参考图（读图提取的角色可能还没有图）
         if is_film:
-            from .assets import list_project_assets
-            from .paths import data_to_abs
+            # （list_project_assets/data_to_abs 走模块顶部 import——此处曾局部
+            # import，Python 函数级作用域会把同名提升为局部变量，①½ 重绘分支
+            # 先引用即 UnboundLocalError）
             from .pipeline_gates import has_views
             missing_refs = []
             for a in list_project_assets(db, project_id):
@@ -336,8 +377,23 @@ def tick(db, data_dir, project_id) -> dict:
                      project_id=project_id)
             return act
         n = 0
+        # 重绘模式只烧 main.png（2026-09-09 决策 6）；漫改/小说链保持 has_views 全套
+        _p = get_project(db, project_id)
+        _rw = (_p is not None and "comic_mode" in _p.keys()
+               and _p["comic_mode"] == "motion_comic"
+               and "redraw_characters" in _p.keys()
+               and bool(_p["redraw_characters"]))
         from .pipeline_gates import has_views
         for a in list_project_assets(db, project_id):
+            if _rw:
+                if a["kind"] != "character" or (
+                        data_to_abs(data_dir, a["library_dir"]) / "main.png").exists():
+                    continue
+                enqueue_job(db, "gen_ref", project_id=project_id, asset_id=a["id"],
+                            resource="gpu_comfy",
+                            payload={"asset_id": a["id"], "stage": "main"})
+                n += 1
+                continue
             views = data_to_abs(data_dir, a["library_dir"]) / "views"
             if has_views(views):
                 continue
@@ -352,11 +408,21 @@ def tick(db, data_dir, project_id) -> dict:
         # P9 漫画项目：VLM 读图生成提示词（一个 job 批量跑全部缺失的镜）。
         # L13（2026-09-05 审计低危）：走 enqueue_llm_job 按 routing 定资源——
         # 此前硬编码 gpu_llm_local，配 online 时仍占 gpu 组过度互斥。
-        # （extract_comic_characters 死分支已删：_comic_flow 从不返回该 action）
+        # （extract_comic_characters 另经下方 extract_comic 分支按需入队）
         from .pipeline_jobs import enqueue_llm_job
         enqueue_llm_job(db, "describe_shots", project_id=project_id,
                         payload={"project_id": project_id})
         emit_log(db, "autopilot", "info", "autopilot 入队 VLM 读图（批量）",
+                 project_id=project_id)
+    elif action == "extract_comic":
+        # 动态漫角色重绘（2026-09-09 决策 10）：VLM 采样提取主要角色 +
+        # 绑定上镜（Task 7 payload 键，handler 端 bool() 消费）
+        from .jobs import enqueue_job
+        enqueue_job(db, "extract_comic_characters", project_id=project_id,
+                    resource="gpu_llm_local",
+                    payload={"project_id": project_id,
+                             "characters_only": True, "bind_shots": True})
+        emit_log(db, "autopilot", "info", "autopilot 入队 VLM 角色提取（主要角色）",
                  project_id=project_id)
     elif action == "gen_prompts":
         from .pipeline_jobs import enqueue_llm_job

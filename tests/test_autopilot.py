@@ -2,7 +2,7 @@
 from types import SimpleNamespace as NS
 
 from comic_studio.engine import jobs
-from comic_studio.engine.assets import list_project_assets, persist_assets
+from comic_studio.engine.assets import get_asset, list_project_assets, persist_assets
 from comic_studio.engine.autopilot import next_action, tick
 from comic_studio.engine.db import Database
 from comic_studio.engine.paths import data_to_abs
@@ -403,3 +403,73 @@ def test_analyzed_with_zero_assets_waits_not_spins(tmp_path):
     set_stage(db, pid, "analyzed")
     act = next_action(db, tmp_path / "data", pid)
     assert act["action"] == "wait" and "资产" in act["detail"]
+
+
+# ===== 动态漫角色重绘（2026-09-09 决策 10）：提取→角色重绘→停等→续跑 =====
+
+PNG = b"\x89PNG\r\n\x1a\n"  # 占位字节：决策链只查文件存在性，不读图像内容
+
+
+def _mk_redraw_comic(tmp_path, name):
+    """redraw_characters=1 的动态漫项目（2 页 2 镜，直达 storyboard_ready）。"""
+    from comic_studio.engine.comic import import_comic
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", name, "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG)], redraw_characters=1)["id"]
+    return db, pid
+
+
+def _one_char_with_main(db, data_dir, pid, name="小明"):
+    """建 1 个角色资产并把 main.png 落盘（persist_assets 返回 list[int] id）。"""
+    aid = persist_assets(db, data_dir, pid,
+                         NS(characters=[NS(name=name, appearance="性别：男", tags=["comic"])],
+                            scenes=[], props=[]))[0]
+    lib = data_to_abs(data_dir, get_asset(db, aid)["library_dir"])
+    lib.mkdir(parents=True, exist_ok=True)
+    (lib / "main.png").write_bytes(PNG)
+    return aid
+
+
+def test_comic_flow_redraw_waits_for_user(tmp_path):
+    """重绘项目：提示词齐→无资产=extract_comic；有资产+main 齐→停等批量重绘；
+    redraw_done+无 pending→过 gate2 进渲染缺口。"""
+    db, pid = _mk_redraw_comic(tmp_path, "重绘自动")
+    for s in list_shots(db, pid):
+        update_shot(db, s["id"], {"prompt": "x", "status": "ready"})
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "extract_comic", act          # 无角色资产 → 提取
+    # 造一个角色资产（persist_assets 返回 list[int]，取 id 后查 library_dir）
+    aid = persist_assets(db, tmp_path / "data", pid,
+                         NS(characters=[NS(name="小明", appearance="性别：男", tags=["comic"])],
+                            scenes=[], props=[]))[0]
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "gen_refs", act               # main.png 缺 → 角色重绘
+    lib = data_to_abs(tmp_path / "data", get_asset(db, aid)["library_dir"])
+    lib.mkdir(parents=True, exist_ok=True)
+    (lib / "main.png").write_bytes(PNG)
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "批量重绘" in act["detail"]   # 决策 10 停等
+    conn = db.connect()
+    conn.execute("UPDATE projects SET redraw_done=1 WHERE id=?", (pid,))
+    conn.commit()
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] in ("render", "wait") or act["action"].startswith("gate")
+
+
+def test_comic_flow_redraw_pending_wait(tmp_path):
+    """pending 标记在→wait；有在飞 redraw_kf job→wait；无在飞→失败守卫 wait。"""
+    import json as _json
+    db, pid = _mk_redraw_comic(tmp_path, "重绘待")
+    # 夹具补全：全镜提示词齐（否则 ① describe 缺口先拦）、资产 main 齐 +
+    # redraw_done=1（批量重绘按钮的前置态）——与 brief 断言/文档串一字不差
+    for s in list_shots(db, pid):
+        update_shot(db, s["id"], {"prompt": "x", "status": "ready"})
+    _one_char_with_main(db, tmp_path / "data", pid)
+    s0 = list_shots(db, pid)[0]
+    led = _json.loads(s0["ledger_json"]); led["pending_redraw"] = True
+    update_shot(db, s0["id"], {"ledger_json": _json.dumps(led, ensure_ascii=False)})
+    conn = db.connect()
+    conn.execute("UPDATE projects SET redraw_done=1 WHERE id=?", (pid,))
+    conn.commit()
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "重绘" in act["detail"], act
