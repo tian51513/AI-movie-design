@@ -66,6 +66,16 @@ def test_activate_end_only_last_shot(tmp_path):
                             "end", "v1")
 
 
+def test_page_redraw_template_declares_denoise(tmp_path):
+    """page_redraw_denoise 真生效的前置：zimage_i2i manifest 必须声明 denoise
+    注入槽——filler 只注 manifest 声明过的参数，漏声明则 settings 覆盖被静默
+    忽略成死旋钮（2026-09-09 评审修复的回归钉）。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    from comic_studio.engine.workflows.registry import resolve_template
+    point = resolve_template(db, "page_redraw").inject_params["denoise"]
+    assert (point.node, point.field) == ("4", "denoise")
+
+
 def test_build_page_redraw_prompt_style_and_clean_text(tmp_path):
     db, pid = _motion_project(tmp_path)
     from comic_studio.engine.projects import update_video_params
