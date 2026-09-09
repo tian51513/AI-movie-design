@@ -93,6 +93,11 @@
   .vbadge.project { background: #0e7490; }
   .vbadge.preset { background: #475569; }
   .vbadge.none { background: #450a0a; color: #fca5a5; }
+  /* 🔖 首帧版本 chips（2026-09-09 动态漫角色重绘）：叠在首帧图左上角，.on=当前活动版 */
+  .kf-vers { position: absolute; top: 4px; left: 4px; display: flex; gap: 3px; flex-wrap: wrap; z-index: 2; }
+  .kf-vers button { background: rgba(13,17,23,.88); border: 1px solid #2c3540;
+                    font-size: 10px; padding: 1px 6px; border-radius: 4px; }
+  .kf-vers button.on { background: #16a34a; border-color: #16a34a; }
   @media (max-width: 768px) {
     .voice-row { font-size: 12px; }
     .voice-row audio { max-width: 128px; height: 24px; }
@@ -522,6 +527,12 @@
        <span class="muted">fl2v 首尾帧生成用（img2img，需有图片输入槽）</span>
        <button @click="testWorkflow(settingsForm.t2i_tm)" style="font-size:12px;padding:3px 8px;margin-left:4px"
                title="下载当前主图模板 JSON → 打开 ComfyUI 拖入测试">🧪</button></p>
+    <p><label class="muted">整页重绘模板：</label>
+       <select v-model="settingsForm.prTm" style="width:300px">
+         <option v-for="t in templatesOfType('i2i').concat(templatesOfType('t2i'))" :key="t.id" :value="t.id"
+                 :title="t.id">{{ t.name }}</option>
+       </select>
+       <span class="muted">动态漫角色重绘整页重绘用（base=漫画原页图；重绘幅度在 ComfyUI 区「page_redraw_denoise」）</span></p>
     <p><label class="muted">多参生视频模板：</label>
        <select v-model="settingsForm.r2vaTm" style="width:280px">
          <option v-for="t in templatesOfType('ref2va')" :key="t.id" :value="t.id">{{ t.name }}</option>
@@ -747,6 +758,10 @@
              style="cursor:pointer">字幕
         <input type="checkbox" :checked="!!project.subtitles"
                @change="patchVideoParam('subtitles', $event.target.checked)"></label>
+      <label v-if="project.comic_mode==='motion_comic'" style="cursor:pointer"
+             title="角色重绘（2026-09-09）：读图提取主要角色→按画风重绘角色资产→整页重绘首尾帧出新版本（分镜卡可切版本）。开启后需重新提取角色并跑「🖌 批量重绘分镜」">重绘角色
+        <input type="checkbox" :checked="!!project.redraw_characters"
+               @change="patchVideoParam('redraw_characters', $event.target.checked)"></label>
       <label>渲染模式
         <select :value="currentRenderMode()" @change="patchRenderMode($event.target.value)"
                 title="项目级批量切换全部镜的视频渲染类型；具体工作流在设置页映射">
@@ -950,9 +965,16 @@
       <button @click="reestimateDurations" :disabled="batchVlmBusy"
               title="对白镜时长按字数基准重估（4~15s）——只刷时长不重读图不烧 VLM；修完时长直接重新合成即可"
               style="font-size:12px;padding:3px 8px;background:#0f766e">⏱ 只重估时长</button>
-      <button v-if="project.comic_mode==='film_adaptation'" @click="extractCharacters"
+      <button v-if="project.comic_mode==='motion_comic' && project.redraw_characters"
+              @click="batchRedraw" :disabled="redrawBusy"
+              title="全部镜整页重绘出新首帧版本（已重绘完成的镜跳过，失败的补）——角色参考图建议先检查满意再跑"
+              style="font-size:12px;padding:3px 8px;background:#7c3aed">🖌 批量重绘分镜</button>
+      <button v-if="project.comic_mode==='film_adaptation' || (project.comic_mode==='motion_comic' && project.redraw_characters)"
+              @click="extractCharacters"
               :disabled="extractCharsBusy" style="font-size:12px;padding:3px 8px;background:#7c3aed"
-              :title="'漫改模式：VLM 读前3页提取角色 → 建资产 → 可生成参考图'">
+              :title="project.comic_mode==='film_adaptation'
+                        ? '漫改模式：VLM 读前3页提取角色 → 建资产 → 可生成参考图'
+                        : '重绘模式：VLM 读前3页提取角色 → 建资产后按画风重绘角色资产'">
         {{ extractCharsBusy ? '⏳ 提取中…' : '🎭 提取角色' }}</button>
       <template v-if="shotSel.length">
         <span class="pill" style="border:1px solid #f59e0b;color:#f59e0b">已选 {{ shotSel.length }}</span>
@@ -1062,9 +1084,18 @@
               <input type="file" accept=".png,.jpg,.jpeg,.webp" style="display:none"
                      @change="e => uploadKf(s, phase, e.target.files[0])"></label>
           </div>
-          <img v-if="kfUrl(s, phase)" :src="kfUrl(s, phase)" class="media-box" :style="arCSS"
-               :title="`${phase==='start' ? '首' : '尾'}帧：点击全尺寸查看（← → 连续翻页）`"
-               @click="openViewer('image', s, phase)">
+          <div v-if="kfUrl(s, phase)" style="position:relative">
+            <img :src="kfUrl(s, phase)" class="media-box" :style="arCSS"
+                 :title="`${phase==='start' ? '首' : '尾'}帧：点击全尺寸查看（← → 连续翻页）`"
+                 @click="openViewer('image', s, phase)">
+            <!-- 🔖 首帧版本 chips（2026-09-09 角色重绘）：多版本时叠图左上角，点击切换活动版 -->
+            <div v-if="phase==='start' && s.kfVers && s.kfVers.start && s.kfVers.start.length > 1" class="kf-vers">
+              <button v-for="v in s.kfVers.start" :key="v"
+                      :class="{ on: v === (s.kfVers.active && s.kfVers.active.start) }"
+                      :title="'切换到 ' + v + '（切换后本镜视频需重渲）'"
+                      @click="useKf(s, 'start', v)">{{ v }}</button>
+            </div>
+          </div>
           <div v-else class="muted" style="font-size:11px;padding:20px 0;text-align:center">
             未生成
           </div>
@@ -1145,7 +1176,7 @@
                   :style="newMode==='upload'?'background:#16a34a':''">📎 上传小说</button>
           <button type="button" style="margin-left:4px" @click="newMode='theme'; newSubtitles=true; loadThemes()"
                   :style="newMode==='theme'?'background:#16a34a':''">🎨 主题生成</button>
-          <button type="button" style="margin-left:4px" @click="newMode='comic'; newSubtitles=false"
+          <button type="button" style="margin-left:4px" @click="newMode='comic'; newSubtitles=false; comicRedraw=false"
                   :style="newMode==='comic'?'background:#16a34a':''">🖼 漫画导入</button>
           <button type="button" style="margin-left:4px" @click="newMode='audio'; newSubtitles=true"
                   :style="newMode==='audio'?'background:#16a34a':''">🎧 有声书</button>
@@ -1181,7 +1212,7 @@
            <span class="muted" style="font-size:12px">（总时长>0 时拆分镜后按镜数均摊）</span></p>
         <!-- 画风（2026-09-06）：上传/漫改随创建提交；动态漫不消费——画风跟随原页，
              此前漫画 tab 无画风字段，用户设了画风被静默忽略（黑白→真人误用动态漫事故） -->
-        <template v-if="newMode==='upload' || (newMode==='comic' && comicMode==='film_adaptation')">
+        <template v-if="newMode==='upload' || (newMode==='comic' && (comicMode==='film_adaptation' || comicRedraw))">
           <p>画风<select v-model="newStyleKey">
              <option value="">不指定（默认）</option>
              <optgroup label="通用">
@@ -1203,7 +1234,7 @@
 
         <form v-if="newMode==='comic'" @submit.prevent="createFromComic">
           <p>模式
-             <select v-model="comicMode" @change="newSubtitles=false" style="font-size:13px;padding:4px 8px">
+             <select v-model="comicMode" @change="comicModeChanged" style="font-size:13px;padding:4px 8px">
                <option value="motion_comic">📖 动态漫（快，翻页过渡）</option>
                <option value="film_adaptation">🎬 漫改电影（慢，角色动画）</option>
              </select></p>
@@ -1211,6 +1242,10 @@
              fl2v 首尾帧插值 · ~100s/镜 · 翻页/动态漫效果</p>
           <p class="muted" style="font-size:12px" v-if="comicMode==='film_adaptation'">
              ref2va 参考图动画 · ~3-5min/镜 · 角色动起来、镜头运动（需先提取角色）</p>
+          <label v-if="comicMode === 'motion_comic'" style="display:block;margin:6px 0">
+            <input type="checkbox" v-model="comicRedraw"> 是否重绘角色（读图后提取主要角色，
+            按画风重绘角色资产并整页重绘首尾帧，可筛选版本）
+          </label>
           <p><input type="file" accept="image/*" multiple required @change="f => comicFiles = [...f.target.files]"
                     style="width:90%"
                     title="按页序多选（每图一镜）"></p>

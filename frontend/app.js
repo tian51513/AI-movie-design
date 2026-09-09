@@ -39,6 +39,8 @@ function data() {
     createOpen: false, projPage: 1, projPageSize: 12, comicFiles: [],
     audioFile: null,  // P10A 有声书 tab（单文件）
     comicMode: 'motion_comic',
+    comicRedraw: false,  // 动态漫角色重绘复选（2026-09-09）：勾选联动字幕默认开（watch），切走模式复位
+    redrawBusy: false,  // 🖌 批量重绘分镜在途（防重复提交）
     advOpen: false, newSubtitles: true, newMegapixels: 0.4,
     newMultiple: 32, newSpeed: '标准', newRenderMode: '',   // 创建时高级参数（2026-09-07）
     describingShots: new Set(),  // 正在读图的镜 id 集合（支持多镜并发提交）
@@ -393,8 +395,18 @@ const methods = {
     else alert(await r.text());
   },
   async regenKf(s, phase = 'all') {
-    const label = phase === 'start' ? '首帧' : phase === 'end' ? '尾帧' : '双帧';
-    if (!confirm(`重新生成分镜 ${s.seq} 的${label}？`)) return;
+    // 重绘项目（2026-09-09 决策 13）：单镜重生=整页重绘出新版本（后端忽略 phase，
+    // 202 异步）；尾帧=下镜首帧，非末镜单独重生尾帧会断连贯链——引导重生下一镜首帧
+    const redraw = !!(this.project && this.project.comic_mode === 'motion_comic'
+                      && this.project.redraw_characters);
+    if (redraw) {
+      const isLast = this.shots.length > 0 && this.shots[this.shots.length - 1].id === s.id;
+      if (phase === 'end' && !isLast) { alert('尾帧=下镜首帧，请重生下一镜首帧'); return; }
+      if (!confirm(`重新整页重绘（出新版本）：分镜 ${s.seq} 将按当前画风整页重绘出新首尾帧版本，旧版本保留可切回。继续？`)) return;
+    } else {
+      const label = phase === 'start' ? '首帧' : phase === 'end' ? '尾帧' : '双帧';
+      if (!confirm(`重新生成分镜 ${s.seq} 的${label}？`)) return;
+    }
     const r = await fetch(`/api/shots/${s.id}/regen-keyframes?phase=${phase}`,
                           { method: 'POST' });
     if (!r.ok) { alert(await r.text()); return; }
@@ -719,6 +731,7 @@ const methods = {
       t2i_tm: s.template_map?.t2i || '',
       cvTm: s.template_map?.character_views || '',
       kfTm: s.template_map?.keyframe || 'xf_zimage_ti2i',
+      prTm: s.template_map?.page_redraw || 'zimage_i2i',
       r2vaTm: s.template_map?.ref2va || 'h3_ref2va',
       fl2vTm: s.template_map?.fl2v || 'h3_fl2v',
       t2vTm: s.template_map?.t2v || 'h3_t2v',
@@ -863,6 +876,7 @@ const methods = {
       template_map: { t2i: this.settingsForm.t2i_tm || null,
                       character_views: this.settingsForm.cvTm || null,
                       keyframe: this.settingsForm.kfTm || null,
+                      page_redraw: this.settingsForm.prTm || null,
                       ref2va: this.settingsForm.r2vaTm || null,
                       fl2v: this.settingsForm.fl2vTm || null,
                       t2v: this.settingsForm.t2vTm || null,
@@ -982,6 +996,38 @@ const methods = {
     // 别的项目，丢弃——否则 A 项目的分镜会盖进 B 项目的页面
     if (this.project?.id !== pid) return;
     this.shots = data;
+    await this.loadKfVersions();
+  },
+  // 首帧版本 chips（2026-09-09 角色重绘）：只在重绘项目逐镜拉（其余项目恒单版本，
+  // 多拉是纯开销）；loadShots 每次整体替换 shots，kfVers 需重挂
+  async loadKfVersions() {
+    const pid = this.project && this.project.id;
+    if (!pid || !this.project.redraw_characters) return;
+    await Promise.all(this.shots.map(async s => {
+      try {
+        const r = await fetch(`/api/shots/${s.id}/kf-versions`);
+        if (r.ok && this.project && this.project.id === pid) s.kfVers = await r.json();
+      } catch (e) { /* 单镜失败不拖垮列表 */ }
+    }));
+  },
+  async batchRedraw() {
+    if (!confirm('批量重绘分镜：全部镜整页重绘出新首帧版本（已重绘完成的镜跳过，失败的补）。\n角色参考图建议先检查满意再跑。继续？')) return;
+    this.redrawBusy = true;
+    try {
+      const r = await fetch(`/api/projects/${this.project.id}/batch-redraw`, { method: 'POST' });
+      const b = await r.json().catch(() => ({}));  // 只读一次——body 消费后二次 json() 必抛
+      if (!r.ok) throw new Error(b.detail || r.status);
+      alert(`已入队 ${b.enqueued} 镜整页重绘`);
+    } catch (e) { alert('批量重绘失败：' + e.message); }
+    finally { this.redrawBusy = false; }
+  },
+  async useKf(s, role, ver) {
+    const r = await fetch(`/api/shots/${s.id}/use-kf`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({role, version: ver})});
+    if (!r.ok) { alert(await r.text()); return; }
+    alert(`已切 ${ver}（视频待重渲）`);
+    await this.loadShots();
   },
   async startSplit() {
     if (this.shots.length && !confirm('已存在分镜，重新拆解将覆盖（提示词会丢失）。继续？')) return;
@@ -1042,6 +1088,10 @@ const methods = {
     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
     return new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
   },
+  comicModeChanged() {  // 漫画 tab 模式切换：非动态漫不显示重绘复选——状态复位；字幕回漫画默认关
+    this.newSubtitles = false;
+    if (this.comicMode !== 'motion_comic') this.comicRedraw = false;
+  },
   async createFromComic() {
     if (!this.comicFiles.length) return;
     this.creating = true;
@@ -1050,6 +1100,7 @@ const methods = {
       fd.append('name', this.newName || `漫画${this.comicFiles.length}页`);
       fd.append('aspect_ratio', this.newRatio);
       fd.append('comic_mode', this.comicMode);
+      fd.append('redraw', this.comicRedraw ? 'true' : 'false');  // 动态漫角色重绘（漫改忽略）
       // 画风（2026-09-06）：漫改模式的画风转换目标随创建提交（与上传 tab 同款映射）；
       // 动态漫不消费（画风跟随原页），提交了也只作项目元信息留存
       fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : presetStyle(this.newStyleKey));
@@ -1099,7 +1150,10 @@ const methods = {
     // 202 入队，状态由队列轮询驱动
   },
   async purgeComicAssets() {
-    if (!confirm(`清理全部读图提取的资产（${this.assets.length} 个，含参考图与分镜绑定）？LLM 分析的资产不受影响。`)) return;
+    // 重绘项目警示（2026-09-09）：重绘角色资产也是"读图提取"资产——清理会连它一起删
+    const redrawWarn = (this.project && this.project.redraw_characters)
+      ? '\n⚠ 本项目开启了角色重绘：清理会连重绘角色资产一起删（音色回落 Edge-TTS），需重新提取' : '';
+    if (!confirm(`清理全部读图提取的资产（${this.assets.length} 个，含参考图与分镜绑定）？LLM 分析的资产不受影响。${redrawWarn}`)) return;
     const r = await fetch(`/api/projects/${this.project.id}/assets/purge-comic`, {method: 'POST'});
     if (!r.ok) { alert(await r.text()); return; }
     const d = await r.json();
@@ -1510,7 +1564,12 @@ const PromptBox = {
   },
 };
 
-createApp({ components: { PromptBox }, data, computed, methods, async mounted() {
+createApp({ components: { PromptBox }, data, computed, methods,
+  watch: {
+    // 决策 9：勾重绘=要按新画风重绘出新画面 → 漫画字幕默认开（漫画 tab 的字幕复选就是 newSubtitles）
+    comicRedraw(v) { if (v && this.comicMode === 'motion_comic') this.newSubtitles = true; },
+  },
+  async mounted() {
     await this.refresh();
     setInterval(async () => {  // 项目列表轮询：autopilot 角标/成片状态实时化
       if (this.view === 'projects' && !this.creating) {
