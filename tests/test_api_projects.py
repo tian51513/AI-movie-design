@@ -281,6 +281,43 @@ def test_from_comic_redraw_flag(tmp_path):
         assert r3.json()["redraw_characters"] == 0
 
 
+def test_extract_comic_characters_redraw_payload(tmp_path):
+    """终审：手动「🎭 提取角色」在动态漫+开重绘项目必须携带重绘链键
+    （characters_only/bind_shots——与 autopilot extract_comic 分支同语义，
+    缺键=按钮入队走漫改全量提取，重绘项目凭空建场景/道具且不绑镜）；
+    普通项目（非重绘链）不带。"""
+    import json as _json
+    with _client(tmp_path) as c:
+        files = [("images", (f"p{i}.png", io.BytesIO(PNG), "image/png"))
+                 for i in (1, 2)]
+        r = c.post("/api/projects/from-comic", data={
+            "name": "手动提取重绘剧", "aspect_ratio": "9:16",
+            "comic_mode": "motion_comic", "redraw": "true"}, files=files)
+        assert r.status_code == 201, r.text
+        pid = r.json()["id"]
+        assert c.post(
+            f"/api/projects/{pid}/extract-comic-characters").status_code == 202
+        row = c.app.state.db.connect().execute(
+            "SELECT payload_json FROM jobs WHERE project_id=? "
+            "AND type='extract_comic_characters'", (pid,)).fetchone()
+        payload = _json.loads(row["payload_json"])
+        assert payload["characters_only"] is True
+        assert payload["bind_shots"] is True
+        # 对照：普通项目（小说链）payload 不带这两个键
+        r2 = c.post("/api/projects", data={"name": "普通剧", "aspect_ratio": "9:16"},
+                    files={"novel": ("n.txt", io.BytesIO("正文".encode()),
+                                     "text/plain")})
+        pid2 = r2.json()["id"]
+        assert c.post(
+            f"/api/projects/{pid2}/extract-comic-characters").status_code == 202
+        row2 = c.app.state.db.connect().execute(
+            "SELECT payload_json FROM jobs WHERE project_id=? "
+            "AND type='extract_comic_characters'", (pid2,)).fetchone()
+        payload2 = _json.loads(row2["payload_json"])
+        assert "characters_only" not in payload2
+        assert "bind_shots" not in payload2
+
+
 def test_patch_redraw_toggle(tmp_path):
     with _client(tmp_path) as c:
         r = c.post("/api/projects/from-comic", data={

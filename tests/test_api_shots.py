@@ -288,6 +288,26 @@ def test_regen_keyframes_non_redraw_no_branch(tmp_path):
             (pid,)).fetchone()["c"] == 0
 
 
+def test_regen_keyframes_409_keeps_kf_files(tmp_path):
+    """终审：门禁先于删帧——comfy 未配置 409 时活动关键帧必须原样留存
+    （旧项目无 pages/，kf_start.png 是原图唯一副本，先删后检=不可逆丢数据）。"""
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.paths import data_to_abs
+    from comic_studio.engine.projects import get_project
+    with _client(tmp_path) as c:
+        pid = _comic(c, "保帧剧", redraw=False)
+        sid = c.get(f"/api/projects/{pid}/shots").json()[0]["id"]
+        set_setting(c.app.state.db, "comfy", {"base_url": ""})
+        slug = get_project(c.app.state.db, pid)["slug"]
+        kd = data_to_abs(tmp_path / "data", f"projects/{slug}/shots/1")
+        (kd / "kf_start.png").write_bytes(b"ORIGINAL-KF-BYTES")
+        (kd / "kf_end.png").write_bytes(b"ORIGINAL-END-BYTES")
+        r = c.post(f"/api/shots/{sid}/regen-keyframes")
+        assert r.status_code == 409, r.text
+        assert (kd / "kf_start.png").read_bytes() == b"ORIGINAL-KF-BYTES"
+        assert (kd / "kf_end.png").read_bytes() == b"ORIGINAL-END-BYTES"
+
+
 def test_stop_jobs_gentle_no_comfy_touch(tmp_path, monkeypatch):
     """温和停止（2026-09-05 用户决策 A）：stop-jobs 不再 interrupt/删队——
     ComfyUI 在跑任务跑完落盘（部分版本 interrupt 会崩实例）。"""

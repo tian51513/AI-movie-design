@@ -928,6 +928,15 @@ const methods = {
           this.describingShots.clear();
           await this.loadShots();
         }
+        // kfVers 批次结束检测（终审收敛）：redraw_kf 从「有在飞」→「无」一次性
+        // 强制重拉（版本 chips 出现）。复用本拍已拉的 queue.jobs，零新增轮询
+        const hasRedrawJob = (this.queue.jobs || []).some(j =>
+          j.type === 'redraw_kf' && (j.status === 'pending' || j.status === 'running'));
+        if (this._kfHadActive && !hasRedrawJob && this.project
+            && this.project.redraw_characters) {
+          await this.loadKfVersions(true);
+        }
+        this._kfHadActive = hasRedrawJob;
         const dj = (this.queue.jobs || []).find(j => j.type === 'gen_director');
         if (dj) {
           // 只在「页面打开期间发生的新失败」弹窗——首次观测到的旧失败（如刷新前
@@ -941,7 +950,13 @@ const methods = {
         const done = this.queue.jobs.filter(j => j.status === 'done').length;
         const busy = this.queue.running > 0 || this.queue.pending > 0;
         this._tickBusy = busy || (this.project && this.project.autopilot);
-        if ((wasBusy && !busy) || done > this._doneSeen) { await this.loadDetail(); }
+        const idleEdge = wasBusy && !busy;
+        if (idleEdge || done > this._doneSeen) { await this.loadDetail(); }
+        // kfVers 兜底（终审收敛）：队列排空=批次可能已滑出 /queue 的 20 条
+        // 窗口（redraw_kf 结束检测盲区）——排空沿一次性补拉，不随轮询每拍发
+        if (idleEdge && this.project && this.project.redraw_characters) {
+          await this.loadKfVersions(true);
+        }
         this._doneSeen = done; wasBusy = busy;
       } catch (e) { /* 队列瞬时失败不影响日志流 */ }
       // 分镜模式轮询
@@ -970,6 +985,8 @@ const methods = {
       }
     };
     this._doneSeen = 0;
+    this._kfProjId = null;    // kfVers 已拉过的项目 id（终审收敛：不随轮询重拉）
+    this._kfHadActive = false; // 上一拍是否有 redraw_kf 在飞（批次结束检测）
     const loop = async () => {          // 自适应轮询：忙 1s / 闲 4s（减少空转请求）
       try { await tick(); } catch (e) { /* tick 内部已兜底，双保险 */ }
       this.logsTimer = setTimeout(loop, this._tickBusy ? 1000 : 4000);
@@ -995,14 +1012,22 @@ const methods = {
     // 慢响应乱序防串台（2026-09-01 分镜错乱根因配套）：等响应回来时若已切到
     // 别的项目，丢弃——否则 A 项目的分镜会盖进 B 项目的页面
     if (this.project?.id !== pid) return;
-    this.shots = data;
-    await this.loadKfVersions();
+    // kfVers 终审收敛（2026-09-09）：shots 每拍整体替换，先按镜 id 继承旧版本
+    // 数据（否则 chips 在两次受控拉取之间被抹掉），再按需重拉（非每拍 N 发）
+    const prevKf = {};
+    for (const s of this.shots) if (s.kfVers) prevKf[s.id] = s.kfVers;
+    this.shots = data.map(s => (prevKf[s.id] ? { ...s, kfVers: prevKf[s.id] } : s));
+    await this.loadKfVersions(this._kfProjId !== pid);
   },
   // 首帧版本 chips（2026-09-09 角色重绘）：只在重绘项目逐镜拉（其余项目恒单版本，
-  // 多拉是纯开销）；loadShots 每次整体替换 shots，kfVers 需重挂
-  async loadKfVersions() {
+  // 多拉是纯开销）。终审收敛：不随 1s 轮询每拍 N 发——仅 项目首次/切换后首次、
+  // useKf 成功后、redraw_kf 批次从在飞→结束（tick 检测，复用 queue.jobs）三种
+  // 时机强制重拉；force=false 且本项目已拉过 → 直接跳过
+  async loadKfVersions(force) {
     const pid = this.project && this.project.id;
     if (!pid || !this.project.redraw_characters) return;
+    if (!force && this._kfProjId === pid) return;
+    this._kfProjId = pid;
     await Promise.all(this.shots.map(async s => {
       try {
         const r = await fetch(`/api/shots/${s.id}/kf-versions`);
@@ -1028,6 +1053,7 @@ const methods = {
     if (!r.ok) { alert(await r.text()); return; }
     alert(`已切 ${ver}（视频待重渲）`);
     await this.loadShots();
+    await this.loadKfVersions(true);   // 终审：切版立即重拉（loadShots 的门控拉取不覆盖本时机）
   },
   async startSplit() {
     if (this.shots.length && !confirm('已存在分镜，重新拆解将覆盖（提示词会丢失）。继续？')) return;

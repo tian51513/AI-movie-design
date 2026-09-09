@@ -330,14 +330,23 @@ def create_from_audio(request: Request, name: str = Form(...),
 
 @router.post("/{project_id}/extract-comic-characters", status_code=202)
 def extract_comic_characters_route(project_id: int, request: Request):
-    """P8-B 漫改模式：VLM 读前几页提取角色 → 建资产（队列任务）。"""
+    """P8-B 漫改模式：VLM 读前几页提取角色 → 建资产（队列任务）。
+    终审 2026-09-09：动态漫+开重绘项目（按钮在此可见）必须携带重绘链键
+    characters_only/bind_shots——与 autopilot extract_comic 分支同语义，
+    缺键=重绘项目被当漫改全量提取（建场景/道具、不绑上镜）。"""
     db = request.app.state.db
     from ..engine.projects import get_project
-    if get_project(db, project_id) is None:
+    proj = get_project(db, project_id)
+    if proj is None:
         raise HTTPException(404, "项目不存在")
+    payload = {"project_id": project_id}
+    if (proj["comic_mode"] if "comic_mode" in proj.keys() else "") == "motion_comic" \
+            and "redraw_characters" in proj.keys() and proj["redraw_characters"]:
+        payload["characters_only"] = True
+        payload["bind_shots"] = True
     from ..engine.jobs import enqueue_job
     jid = enqueue_job(db, "extract_comic_characters", project_id=project_id,
-                      resource="gpu_llm_local", payload={"project_id": project_id})
+                      resource="gpu_llm_local", payload=payload)
     return {"job_id": jid}
 
 

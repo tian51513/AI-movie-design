@@ -154,6 +154,32 @@ def test_enqueue_batch_redraw_marks_and_idempotent(tmp_path):
     assert len(jobs) == 5   # 3 + 2：已标记的镜不重复入队
 
 
+def test_enqueue_batch_redraw_zero_pending_refull(tmp_path):
+    """终审统一零-pending 规则：整轮完成（标记全清）后再发批量=全新整批——
+    重新标记+入队全部非禁用镜（不论 redraw_done）。旧实现返 {"enqueued":0}
+    死路，卡死 purge→重提取→重批量 与 换画风→整批重做 两条恢复流。"""
+    db, pid = _motion_project(tmp_path, n=3)
+    from comic_studio.engine.pageredraw import enqueue_batch_redraw
+    from comic_studio.engine.settings import set_setting
+    set_setting(db, "comfy", {"base_url": "http://x:8188"})
+    assert enqueue_batch_redraw(db, tmp_path / "data", pid) == 3
+    # 模拟整轮完成：handler 成功语义=清全部标记
+    import json as _json
+    from comic_studio.engine.shots import list_shots, update_shot
+    for s in list_shots(db, pid):
+        led = _json.loads(s["ledger_json"]); led.pop("pending_redraw", None)
+        update_shot(db, s["id"],
+                    {"ledger_json": _json.dumps(led, ensure_ascii=False)})
+    # 重发 → 3（旧实现 0）
+    assert enqueue_batch_redraw(db, tmp_path / "data", pid) == 3
+    jobs = db.connect().execute(
+        "SELECT COUNT(*) c FROM jobs WHERE project_id=? AND type='redraw_kf'",
+        (pid,)).fetchone()["c"]
+    assert jobs == 6
+    for s in list_shots(db, pid):
+        assert _json.loads(s["ledger_json"]).get("pending_redraw") is True
+
+
 def test_handle_redraw_kf_clears_pending(tmp_path):
     db, pid = _motion_project(tmp_path, n=2)
     from comic_studio.engine.pageredraw import enqueue_batch_redraw, handle_redraw_kf

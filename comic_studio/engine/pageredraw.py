@@ -261,21 +261,30 @@ def require_redraw_project(db, project_id):
 def enqueue_batch_redraw(db, data_dir, project_id) -> int:
     """「批量重绘分镜」：标记 pending_redraw → 逐镜入队 gpu_comfy（决策 11 逐镜
     job：温和停止可停/单镜失败不殃及）→ redraw_done=1。
-    首次（redraw_done=0）全量标记+入队；重发只补仍带标记的镜——已完成
-    （handler 成功已清标记）的镜不再重绘，强制重绘单镜走单镜重生按钮。"""
+    统一零-pending 规则（终审 2026-09-09）：当前没有任何镜带 pending 标记 →
+    视为全新整批（全部非禁用镜重新标记+入队，不论 redraw_done——purge→重提取
+    →重批量 与 换画风→整批重做 的正当入口，前端有确认框守护）；仍有镜带标记
+    → 补漏（只入队带标记的镜，已完成镜不重复）。批次在飞中重发：在飞镜的
+    标记未清，落补漏路径，只对未提交的镜补队，无整批重复。"""
     from .jobs import enqueue_job
     from .settings import ensure_comfy_configured
-    proj = require_redraw_project(db, project_id)
+    require_redraw_project(db, project_id)
     ensure_comfy_configured(db)   # 409 门禁由路由转 HTTPException
-    first = not ("redraw_done" in proj.keys() and proj["redraw_done"])
+    shots = [s for s in list_shots(db, project_id) if not s["disabled"]]
+
+    def _pending(s) -> bool:
+        try:
+            return bool(json.loads(s["ledger_json"] or "{}").get("pending_redraw"))
+        except (ValueError, TypeError):
+            return False
+
+    fresh = not any(_pending(s) for s in shots)   # 零 pending = 全新整批
     n = 0
-    for s in list_shots(db, project_id):
-        if s["disabled"]:
-            continue
+    for s in shots:
         led = json.loads(s["ledger_json"] or "{}")
         if not led.get("pending_redraw"):
-            if not first:
-                continue   # 重发：已完成（标记已清）的镜不再重绘
+            if not fresh:
+                continue   # 补漏：已完成（标记已清）的镜不再重绘
             led["pending_redraw"] = True
             update_shot(db, s["id"],
                         {"ledger_json": json.dumps(led, ensure_ascii=False)})

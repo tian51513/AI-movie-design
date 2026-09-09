@@ -248,6 +248,13 @@ def regen_keyframes(request: Request, shot_id: int, phase: str = Query("all")):
                                    "seed": _rand.randint(0, 2 ** 31 - 1)})
         _us(db, shot_id, {"status": "生成首尾帧"})
         return {"job_id": jid}
+    # 门禁先于删帧（终审 2026-09-09）：未配置 comfy 的 409 绝不能发生在
+    # unlink 之后——旧项目无 pages/，活动 kf 是原图唯一副本，先删=不可逆
+    from ..engine.settings import get_setting
+    from ..engine.comfy.client import ComfyClient
+    base_url = (get_setting(db, "comfy") or {}).get("base_url")
+    if not base_url:
+        raise HTTPException(409, "未配置 ComfyUI 地址")
     kd = _dta(request.app.state.data_dir,
               f"projects/{proj['slug']}/shots/{shot['seq']}")
     _files = {"start": ["kf_start.png"], "end": ["kf_end.png"],
@@ -256,11 +263,6 @@ def regen_keyframes(request: Request, shot_id: int, phase: str = Query("all")):
         (kd / f).unlink(missing_ok=True)
     _us(db, shot_id, {"status": "生成首尾帧"})
     # 直接调 ensure_keyframes（同步执行，不入队渲染）
-    from ..engine.settings import get_setting
-    from ..engine.comfy.client import ComfyClient
-    base_url = (get_setting(db, "comfy") or {}).get("base_url")
-    if not base_url:
-        raise HTTPException(409, "未配置 ComfyUI 地址")
     from ..engine.rendershot import ensure_keyframes
     try:
         ensure_keyframes(db, request.app.state.data_dir, shot_id,
