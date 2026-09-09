@@ -15,6 +15,19 @@ from .logbus import emit as emit_log
 _VLM_LOCK = threading.Lock()
 
 
+def page_source_paths(data_dir, slug: str, seq: int) -> tuple:
+    """动态漫读图源页（迁移 35 单一事实源）：pages/page_NNN.png 优先，
+    旧项目（无 pages/）回落 shots/<seq>/kf 活动文件。返回 (start, end) 绝对路径。"""
+    from pathlib import Path
+    from .paths import data_to_abs
+    pages = data_to_abs(data_dir, f"projects/{slug}/pages")
+    start = pages / f"page_{seq:03d}.png"
+    if start.exists():
+        return start, pages / f"page_{seq + 1:03d}.png"
+    shot_dir = data_to_abs(data_dir, f"projects/{slug}/shots/{seq}")
+    return shot_dir / "kf_start.png", shot_dir / "kf_end.png"
+
+
 def import_comic(db, data_dir, name: str, aspect: str,
                  image_blobs: list, comic_mode: str = "motion_comic",
                  default_shot_duration: float = 0.0,
@@ -62,19 +75,25 @@ def import_comic(db, data_dir, name: str, aspect: str,
     # 渲染方式按模式：动态漫=fl2v（翻页插值），漫改=ref2va（参考图动画）
     workflow = "fl2v" if comic_mode != "film_adaptation" else "ref2va"
 
-    # 页落盘为各镜关键帧
+    # 原页单一事实源（迁移 35）：pages/ 永久保存（重绘底图/重读图源），
+    # kf 为 v1 版本文件 + 活动拷贝（下游渲染/查看器继续读活动名）
     from pathlib import Path
+    pages_dir = data_to_abs(data_dir, f"projects/{slug}/pages")
+    pages_dir.mkdir(parents=True, exist_ok=True)
     page_files: list[Path] = []
     for i, (fname, blob) in enumerate(image_blobs, 1):
-        shot_dir = data_to_abs(data_dir, f"projects/{slug}/shots/{i}")
-        shot_dir.mkdir(parents=True, exist_ok=True)
-        p = shot_dir / "kf_start.png"
+        p = pages_dir / f"page_{i:03d}.png"
         p.write_bytes(blob)
         page_files.append(p)
-    # 页 i+1 → 镜 i 尾帧（最后一镜无）——动态漫用，漫改模式仅供参考
-    for i in range(1, n):
-        end = page_files[i - 1].parent / "kf_end.png"
-        end.write_bytes(page_files[i].read_bytes())
+    for i, src in enumerate(page_files, 1):
+        shot_dir = data_to_abs(data_dir, f"projects/{slug}/shots/{i}")
+        shot_dir.mkdir(parents=True, exist_ok=True)
+        (shot_dir / "kf_start_v1.png").write_bytes(src.read_bytes())
+        (shot_dir / "kf_start.png").write_bytes(src.read_bytes())
+        if i < n:   # 页 i+1 → 镜 i 尾帧（最后一镜无）
+            nxt = page_files[i].read_bytes()
+            (shot_dir / "kf_end_v1.png").write_bytes(nxt)
+            (shot_dir / "kf_end.png").write_bytes(nxt)
 
     # P11-⑤：逐页时长读项目字段（此前硬编码 5.0——段时长/总时长形同虚设）；
     # 总时长>0 按页数均摊（下限 4s，与小说拆解均摊语义对齐），否则段时长>0

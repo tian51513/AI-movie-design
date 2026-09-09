@@ -866,6 +866,33 @@ def test_reestimate_project_durations_direct(tmp_path):
     assert [s["duration"] for s in list_shots(db, pid)] == [exp]
 
 
+def test_import_comic_pages_canonical_and_versions(tmp_path):
+    """原页落 pages/（单一事实源）+ kf v1 版本文件 + 活动拷贝；旧项目无 pages 时回落。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.comic import import_comic, page_source_paths
+    from comic_studio.engine.paths import data_to_abs
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "原页剧", "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG * 2)])["id"]
+    from comic_studio.engine.projects import get_project
+    slug = get_project(db, pid)["slug"]
+    pages = data_to_abs(tmp_path / "data", f"projects/{slug}/pages")
+    assert (pages / "page_001.png").read_bytes() == PNG
+    assert (pages / "page_002.png").read_bytes() == PNG * 2
+    d1 = data_to_abs(tmp_path / "data", f"projects/{slug}/shots/1")
+    assert (d1 / "kf_start_v1.png").read_bytes() == PNG
+    assert (d1 / "kf_start.png").read_bytes() == PNG          # 活动拷贝
+    assert (d1 / "kf_end_v1.png").read_bytes() == PNG * 2     # 尾帧=下镜首帧
+    assert (d1 / "kf_end.png").read_bytes() == PNG * 2
+    # page_source_paths：原页优先；末镜 end 为不存在路径（由调用方判 exists）
+    s1, e1 = page_source_paths(tmp_path / "data", slug, 1)
+    assert s1.name == "page_001.png" and e1.name == "page_002.png"
+    # 旧项目回落：删掉 pages 目录 → 返回 kf 活动文件
+    import shutil; shutil.rmtree(pages)
+    s1b, _ = page_source_paths(tmp_path / "data", slug, 1)
+    assert s1b.name == "kf_start.png"
+
+
 def test_speaker_blacklist_from_settings(tmp_path):
     """优化#6（2026-09-07）：净化词表外置——settings llm.speaker_blacklist
     追加黑名单（逗号分隔），免发版加词。"""
