@@ -1,6 +1,7 @@
 # comic_studio/web/routes_shots.py
 """分镜 REST：拆解发起/状态、列表、编辑、提示词重生/批量、门2（spec §5 门2）。"""
 import json
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Body, HTTPException, Request
@@ -174,6 +175,48 @@ def select_version(request: Request, shot_id: int, body: dict = Body(...)):
                  f"镜 {shot['seq']} 旧配音删除失败（{exc}）——下次合成会重生",
                  project_id=proj["id"])
     return _shot_public(get_shot(db, shot_id), versions=versions)
+
+
+@router.get("/api/shots/{shot_id}/kf-versions")
+def kf_versions_route(request: Request, shot_id: int):
+    """首尾帧版本清单（2026-09-09 角色重绘）：磁盘版本 + 当前活动版。
+    无版本文件（小说镜/导入前）返回空清单，活动版默认 v1——不报错。"""
+    from ..engine.pageredraw import active_kf_version, kf_versions
+    from ..engine.paths import data_to_abs
+    db = request.app.state.db
+    shot = get_shot(db, shot_id)
+    if shot is None:
+        raise HTTPException(404, "分镜不存在")
+    proj = get_project(db, shot["project_id"])
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    d = data_to_abs(request.app.state.data_dir,
+                    f"projects/{proj['slug']}/shots/{shot['seq']}")
+    return {"start": kf_versions(d, "start"), "end": kf_versions(d, "end"),
+            "active": {"start": active_kf_version(shot, "start"),
+                       "end": active_kf_version(shot, "end")}}
+
+
+@router.post("/api/shots/{shot_id}/use-kf")
+def use_kf_route(request: Request, shot_id: int, body: dict = Body(...)):
+    """切活动版本（Task 9）：start 联动前镜尾帧 + 双镜视频置空；end 仅末镜。
+    路由是注入门禁（2026-09-09 评审）：引擎把 role/version 插值进文件路径，
+    先白名单校验再进引擎——路径穿越拦在 422。"""
+    db = request.app.state.db
+    if get_shot(db, shot_id) is None:
+        raise HTTPException(404, "分镜不存在")
+    role = str(body.get("role") or "")
+    version = str(body.get("version") or "")
+    if role not in ("start", "end"):
+        raise HTTPException(422, "role 只能是 start/end")
+    if not re.fullmatch(r"v\d+", version):
+        raise HTTPException(422, "version 需为 v<数字> 格式（如 v1/v2）")
+    from ..engine.pageredraw import activate_kf_version
+    try:
+        return activate_kf_version(db, request.app.state.data_dir,
+                                   shot_id, role, version)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
 
 
 @router.patch("/api/shots/{shot_id}")

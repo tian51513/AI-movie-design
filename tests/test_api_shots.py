@@ -191,6 +191,103 @@ def test_batch_redraw_route_guards(tmp_path):
         assert r.status_code == 202 and r.json() == {"enqueued": 2}
 
 
+def _comic(c, name, redraw=True):
+    """from-comic 建动态漫项目（2 页 → 2 镜；首镜 kf_start_v1/kf_end_v1 齐备）。"""
+    png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
+    files = [("images", (f"p{i}.png", io.BytesIO(png), "image/png")) for i in (1, 2)]
+    r = c.post("/api/projects/from-comic", data={
+        "name": name, "aspect_ratio": "9:16",
+        "redraw": "true" if redraw else "false"}, files=files)
+    return r.json()["id"]
+
+
+def test_kf_versions_and_use(tmp_path):
+    """kf 版本清单 + 切活动版（Task 9）：磁盘 glob 数字序 + 活动拷贝刷新。"""
+    from comic_studio.engine.paths import data_to_abs
+    with _client(tmp_path) as c:
+        pid = _comic(c, "版本剧")
+        sid = c.get(f"/api/projects/{pid}/shots").json()[0]["id"]
+        v = c.get(f"/api/shots/{sid}/kf-versions").json()
+        assert v["start"] == ["v1"] and v["active"]["start"] == "v1"
+        assert v["end"] == ["v1"] and v["active"]["end"] == "v1"
+        assert c.get("/api/shots/99999/kf-versions").status_code == 404
+        # 造 v2 再切
+        from comic_studio.engine.paths import data_to_abs
+        d = data_to_abs(tmp_path / "data", "projects/版本剧/shots/1")
+        (d / "kf_start_v2.png").write_bytes(b"\x89PNGxx")
+        v = c.get(f"/api/shots/{sid}/kf-versions").json()
+        assert v["start"] == ["v1", "v2"]
+        r2 = c.post(f"/api/shots/{sid}/use-kf",
+                    json={"role": "start", "version": "v2"})
+        assert r2.status_code == 200 and r2.json()["start"] == "v2"
+        assert (d / "kf_start.png").read_bytes() == b"\x89PNGxx"
+        assert c.post("/api/shots/99999/use-kf",
+                      json={"role": "start", "version": "v2"}).status_code == 404
+
+
+def test_kf_versions_shot_without_files_defaults_v1(tmp_path):
+    """ruling 3：无版本文件的镜（小说项目）GET 不报错——空清单 + 活动版默认 v1，
+    GET 不做项目类型门禁。"""
+    with _client(tmp_path) as c:
+        pid = _mk(c, "小说剧")
+        sid = persist_shots(c.app.state.db, pid, [_shot()])[0]
+        v = c.get(f"/api/shots/{sid}/kf-versions").json()
+        assert v == {"start": [], "end": [],
+                     "active": {"start": "v1", "end": "v1"}}
+
+
+def test_use_kf_rejects_bad_role_and_version(tmp_path):
+    """路由是注入门禁（2026-09-09 评审）：role/version 白名单校验先于引擎
+    （引擎把这两个值插值进文件路径，路径穿越等必须拦在 422）。"""
+    with _client(tmp_path) as c:
+        pid = _comic(c, "注入剧")
+        sid = c.get(f"/api/projects/{pid}/shots").json()[0]["id"]
+        for body in ({"role": "mid", "version": "v1"},
+                     {"role": "start", "version": "v1/../../x"},
+                     {"role": "start", "version": "vX"},
+                     {"role": "start", "version": "v1; rm -rf"},
+                     {"role": "start", "version": "v"},
+                     {}):
+            r = c.post(f"/api/shots/{sid}/use-kf", json=body)
+            assert r.status_code == 422, (body, r.text)
+
+
+def test_regen_keyframes_routes_to_redraw(tmp_path):
+    """重绘项目单镜重生 → 202 入队 redraw_kf（不再同步 ensure_keyframes）。"""
+    from comic_studio.engine.settings import set_setting
+    import json as _json
+    with _client(tmp_path) as c:
+        pid = _comic(c, "单镜剧")
+        sid = c.get(f"/api/projects/{pid}/shots").json()[0]["id"]
+        set_setting(c.app.state.db, "comfy", {"base_url": "http://x:8188"})
+        r2 = c.post(f"/api/shots/{sid}/regen-keyframes")
+        assert r2.status_code == 202, r2.text
+        assert isinstance(r2.json().get("job_id"), int)
+        # ruling 2：无 list_jobs——直查 SQL
+        rows = c.app.state.db.connect().execute(
+            "SELECT * FROM jobs WHERE project_id=? AND type='redraw_kf'",
+            (pid,)).fetchall()
+        assert len(rows) == 1 and rows[0]["shot_id"] == sid
+        payload = _json.loads(rows[0]["payload_json"])
+        assert payload["shot_id"] == sid
+        assert isinstance(payload.get("seed"), int) and 0 <= payload["seed"] <= 2 ** 31 - 1
+
+
+def test_regen_keyframes_non_redraw_no_branch(tmp_path):
+    """非重绘项目（动态漫但未开重绘）不走 redraw_kf 分流——保持原同步路径
+    （comfy 空地址 → 409，且绝不入队 redraw_kf）。"""
+    from comic_studio.engine.settings import set_setting
+    with _client(tmp_path) as c:
+        pid = _comic(c, "未开重绘剧", redraw=False)
+        sid = c.get(f"/api/projects/{pid}/shots").json()[0]["id"]
+        set_setting(c.app.state.db, "comfy", {"base_url": ""})
+        r = c.post(f"/api/shots/{sid}/regen-keyframes")
+        assert r.status_code == 409
+        assert c.app.state.db.connect().execute(
+            "SELECT COUNT(*) c FROM jobs WHERE project_id=? AND type='redraw_kf'",
+            (pid,)).fetchone()["c"] == 0
+
+
 def test_stop_jobs_gentle_no_comfy_touch(tmp_path, monkeypatch):
     """温和停止（2026-09-05 用户决策 A）：stop-jobs 不再 interrupt/删队——
     ComfyUI 在跑任务跑完落盘（部分版本 interrupt 会崩实例）。"""

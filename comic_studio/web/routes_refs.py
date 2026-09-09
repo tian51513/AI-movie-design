@@ -229,6 +229,25 @@ def regen_keyframes(request: Request, shot_id: int, phase: str = Query("all")):
     from ..engine.projects import get_project as _gp
     from ..engine.paths import data_to_abs as _dta
     proj = _gp(db, shot["project_id"])
+    # 动态漫重绘项目（2026-09-09 决策 13）：单镜重生=整页重绘出新版本（新 seed）
+    # → 202 入队 redraw_kf，不走同步 ensure_keyframes；phase 在重绘项目被前端
+    # 文案引导（「尾帧=下镜首帧」），此处忽略
+    if (proj is not None and "comic_mode" in proj.keys()
+            and proj["comic_mode"] == "motion_comic"
+            and "redraw_characters" in proj.keys() and proj["redraw_characters"]):
+        import random as _rand
+        from ..engine.jobs import enqueue_job
+        from ..engine.settings import ensure_comfy_configured
+        try:
+            ensure_comfy_configured(db)   # 配置门禁（2026-09-01 事故）：空地址不入队
+        except ValueError as exc:
+            raise HTTPException(409, str(exc))
+        jid = enqueue_job(db, "redraw_kf", project_id=proj["id"], shot_id=shot_id,
+                          resource="gpu_comfy",
+                          payload={"shot_id": shot_id,
+                                   "seed": _rand.randint(0, 2 ** 31 - 1)})
+        _us(db, shot_id, {"status": "生成首尾帧"})
+        return {"job_id": jid}
     kd = _dta(request.app.state.data_dir,
               f"projects/{proj['slug']}/shots/{shot['seq']}")
     _files = {"start": ["kf_start.png"], "end": ["kf_end.png"],
