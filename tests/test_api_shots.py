@@ -169,6 +169,28 @@ def test_stop_jobs_targeted_queue_delete(tmp_path):
             assert m.queue_deletes == []          # 也不删 ComfyUI 队
 
 
+def test_batch_redraw_route_guards(tmp_path):
+    """非重绘项目 422；comfy 未配置 409；合法 202。"""
+    with _client(tmp_path) as c:
+        import io
+        png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
+        files = [("images", ("p.png", io.BytesIO(png), "image/png")),
+                 ("images", ("p2.png", io.BytesIO(png), "image/png"))]
+        r = c.post("/api/projects/from-comic", data={
+            "name": "路由剧", "aspect_ratio": "9:16"}, files=files)
+        pid = r.json()["id"]
+        assert c.post(f"/api/projects/{pid}/batch-redraw").status_code == 422
+        assert c.patch(f"/api/projects/{pid}", json={"redraw_characters": True})
+        from comic_studio.engine.settings import set_setting
+        # comfy 默认地址非空——显式清空才能触发 409 门禁
+        set_setting(c.app.state.db, "comfy", {"base_url": ""})
+        assert c.post(f"/api/projects/{pid}/batch-redraw").status_code == 409
+        assert c.post(f"/api/projects/99999/batch-redraw").status_code == 404
+        set_setting(c.app.state.db, "comfy", {"base_url": "http://x:8188"})
+        r = c.post(f"/api/projects/{pid}/batch-redraw")
+        assert r.status_code == 202 and r.json() == {"enqueued": 2}
+
+
 def test_stop_jobs_gentle_no_comfy_touch(tmp_path, monkeypatch):
     """温和停止（2026-09-05 用户决策 A）：stop-jobs 不再 interrupt/删队——
     ComfyUI 在跑任务跑完落盘（部分版本 interrupt 会崩实例）。"""

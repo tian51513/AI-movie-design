@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 
 from .logbus import emit as emit_log
+from .queue.worker import register
 from .shots import get_shot, list_shots, update_shot
 
 
@@ -242,3 +243,69 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
         cleared.append(prev_id)
     _clear_video(db, cleared)
     return shot_dir / f"kf_start_{version}.png"
+
+
+def require_redraw_project(db, project_id):
+    """批量重绘门禁：动态漫 + 已开角色重绘，否则 ValueError（路由转 422）。
+    通过则返回项目行。"""
+    from .projects import get_project
+    proj = get_project(db, project_id)
+    if proj is None \
+            or (proj["comic_mode"] if "comic_mode" in proj.keys() else "") \
+            != "motion_comic" \
+            or not ("redraw_characters" in proj.keys() and proj["redraw_characters"]):
+        raise ValueError("仅动态漫+开启重绘的项目可批量重绘分镜")
+    return proj
+
+
+def enqueue_batch_redraw(db, data_dir, project_id) -> int:
+    """「批量重绘分镜」：标记 pending_redraw → 逐镜入队 gpu_comfy（决策 11 逐镜
+    job：温和停止可停/单镜失败不殃及）→ redraw_done=1。
+    首次（redraw_done=0）全量标记+入队；重发只补仍带标记的镜——已完成
+    （handler 成功已清标记）的镜不再重绘，强制重绘单镜走单镜重生按钮。"""
+    from .jobs import enqueue_job
+    from .settings import ensure_comfy_configured
+    proj = require_redraw_project(db, project_id)
+    ensure_comfy_configured(db)   # 409 门禁由路由转 HTTPException
+    first = not ("redraw_done" in proj.keys() and proj["redraw_done"])
+    n = 0
+    for s in list_shots(db, project_id):
+        if s["disabled"]:
+            continue
+        led = json.loads(s["ledger_json"] or "{}")
+        if not led.get("pending_redraw"):
+            if not first:
+                continue   # 重发：已完成（标记已清）的镜不再重绘
+            led["pending_redraw"] = True
+            update_shot(db, s["id"],
+                        {"ledger_json": json.dumps(led, ensure_ascii=False)})
+        enqueue_job(db, "redraw_kf", project_id=project_id, shot_id=s["id"],
+                    resource="gpu_comfy", payload={"shot_id": s["id"]})
+        n += 1
+    conn = db.connect()
+    conn.execute("UPDATE projects SET redraw_done=1 WHERE id=?", (project_id,))
+    conn.commit()
+    emit_log(db, "comfy", "info", f"批量重绘分镜：入队 {n} 镜（整页重绘）",
+             project_id=project_id)
+    return n
+
+
+@register("redraw_kf")
+def handle_redraw_kf(db, data_dir, job, comfy):
+    payload = json.loads(job["payload_json"] or "{}")
+    shot = get_shot(db, payload["shot_id"])
+    if shot is None:
+        raise ValueError("分镜已删除（redraw_kf 任务）")
+    dest = redraw_page(db, data_dir, payload["shot_id"], comfy, job=job,
+                       seed=payload.get("seed"))
+    # 重读再清标记：redraw_page 经 _set_active 改过 ledger，勿拿旧行覆写
+    fresh = get_shot(db, payload["shot_id"])
+    led = json.loads(fresh["ledger_json"] or "{}")
+    led.pop("pending_redraw", None)   # 完成清标记（重发不重复入队的判据）
+    update_shot(db, payload["shot_id"],
+                {"ledger_json": json.dumps(led, ensure_ascii=False)})
+    emit_log(db, "comfy", "info",
+             f"分镜 {shot['seq']} 整页重绘完成：{dest.name}",
+             project_id=job["project_id"], job_id=job["id"],
+             data={"path": str(dest)})
+    return dest

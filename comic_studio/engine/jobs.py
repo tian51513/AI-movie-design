@@ -137,9 +137,11 @@ def retry_or_fail(db, job_id: int, error: str, max_attempts: int = 3,
 
 
 REQUEUE_ON_RESTART_TYPES = ("gen_ref", "split_storyboards", "gen_prompt",
-                            "gen_shot", "transcribe")
+                            "gen_shot", "transcribe", "redraw_kf")
 # transcribe（2026-09-05 真机）：转写幂等可重跑——此前不在白名单，卡死 job
 # 重启即 'interrupted by restart' 落 failed 且无入口再触发
+# redraw_kf（2026-09-09）：整页重绘幂等——成功镜已有版本文件，重跑 save 出新
+# 版本无害但浪费；重启对账未完成镜补跑（pending_redraw 标记仍真）
 
 
 def requeue_on_restart(db, requeue_types: tuple, exclude_ids=()) -> int:

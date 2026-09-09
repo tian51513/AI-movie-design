@@ -221,6 +221,29 @@ def regen_prompt(request: Request, shot_id: int, body: dict | None = Body(defaul
     return {"job_id": jid}
 
 
+@router.post("/api/projects/{project_id}/batch-redraw", status_code=202)
+def batch_redraw(request: Request, project_id: int):
+    """动态漫角色重绘（2026-09-09）：批量整页重绘分镜首帧（尾帧联动）。
+    决策 10：用户审完角色资产后手动触发；重发只补未完成的镜。"""
+    db = request.app.state.db
+    if get_project(db, project_id) is None:
+        raise HTTPException(404, "项目不存在")
+    from ..engine.pageredraw import enqueue_batch_redraw, require_redraw_project
+    try:
+        require_redraw_project(db, project_id)   # 项目门禁先判（422 优先于 409）
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    try:
+        ensure_comfy_configured(db)   # 配置门禁（2026-09-01 事故）：空地址不入队
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
+    try:
+        n = enqueue_batch_redraw(db, request.app.state.data_dir, project_id)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    return {"enqueued": n}
+
+
 @router.post("/api/projects/{project_id}/generate-prompts", status_code=202)
 def gen_batch(request: Request, project_id: int):
     db = request.app.state.db

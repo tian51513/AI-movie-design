@@ -124,6 +124,56 @@ def test_redraw_page_produces_v2_and_clears_video(tmp_path):
     # （comfy_mock 记录上传名，见 _make_handler；此处以产物存在为弱断言）
 
 
+def test_enqueue_batch_redraw_marks_and_idempotent(tmp_path):
+    """批量：标记 pending + 入队 + redraw_done=1；重发只补仍 pending 的镜。"""
+    db, pid = _motion_project(tmp_path, n=3)
+    from comic_studio.engine.pageredraw import enqueue_batch_redraw
+    from comic_studio.engine.projects import get_project
+    from comic_studio.engine.shots import list_shots, update_shot
+    import json as _json
+    # settings 配置 comfy 地址（门禁）
+    from comic_studio.engine.settings import set_setting
+    set_setting(db, "comfy", {"base_url": "http://x:8188"})
+    assert enqueue_batch_redraw(db, tmp_path / "data", pid) == 3
+    assert get_project(db, pid)["redraw_done"] == 1
+    # ruling 1：engine/jobs.py 无 list_jobs——直查 SQL
+    jobs = db.connect().execute(
+        "SELECT * FROM jobs WHERE project_id=? AND type='redraw_kf'",
+        (pid,)).fetchall()
+    assert len(jobs) == 3
+    for s in list_shots(db, pid):
+        assert _json.loads(s["ledger_json"]).get("pending_redraw") is True
+    # 模拟镜 2 已完成（清标记）→ 重发只入队 2 个（1/3 仍带标记不重复入队）
+    s2 = list_shots(db, pid)[1]
+    led = _json.loads(s2["ledger_json"]); led.pop("pending_redraw")
+    update_shot(db, s2["id"], {"ledger_json": _json.dumps(led, ensure_ascii=False)})
+    assert enqueue_batch_redraw(db, tmp_path / "data", pid) == 2
+    jobs = db.connect().execute(
+        "SELECT * FROM jobs WHERE project_id=? AND type='redraw_kf'",
+        (pid,)).fetchall()
+    assert len(jobs) == 5   # 3 + 2：已标记的镜不重复入队
+
+
+def test_handle_redraw_kf_clears_pending(tmp_path):
+    db, pid = _motion_project(tmp_path, n=2)
+    from comic_studio.engine.pageredraw import enqueue_batch_redraw, handle_redraw_kf
+    from comic_studio.engine.settings import set_setting
+    set_setting(db, "comfy", {"base_url": "http://x:8188"})
+    enqueue_batch_redraw(db, tmp_path / "data", pid)
+    from comic_studio.engine.shots import list_shots
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    job = db.connect().execute(
+        "SELECT * FROM jobs WHERE project_id=? AND type='redraw_kf' ORDER BY id LIMIT 1",
+        (pid,)).fetchone()
+    with comfy_server("ok") as m:
+        handle_redraw_kf(db, tmp_path / "data", job, ComfyClient(m.base_url))
+    sid = job["shot_id"]
+    s = {x["id"]: x for x in list_shots(db, pid)}[sid]
+    import json
+    assert "pending_redraw" not in json.loads(s["ledger_json"])
+
+
 def test_redraw_page_bootstraps_missing_pages(tmp_path):
     """旧项目（PATCH 后开重绘，无 pages/）：从活动 kf_start 拷贝建源页再重绘。"""
     import shutil
