@@ -968,3 +968,44 @@ def test_describe_shots_skips_speaker_assets_when_redraw(tmp_path):
     describe_shots(db, tmp_path / "data", pid_plain, FakeVLM())
     assert list_project_assets(db, pid_redraw) == []
     assert any(a["name"] == "小明" for a in list_project_assets(db, pid_plain))
+
+
+def test_extract_comic_characters_main_only_and_bind(tmp_path):
+    """决策 7：主要角色约束；characters_only 不建场景/道具；bind_shots 绑分镜。"""
+    from comic_studio.engine.comic import import_comic, extract_comic_characters
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    from comic_studio.engine.assets import list_project_assets
+    from comic_studio.engine.shots import list_shots
+    import json as _json
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "提取主", "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG)], redraw_characters=1)["id"]
+
+    class FakeVLM(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "m")
+            self.system = ""
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            self.system = messages[0]["content"]
+            return _json.dumps({
+                "characters": [{"name": "小明", "appearance": "性别：男\n年龄：12岁",
+                                "suggested_voice": ""}],
+                "scenes": [{"name": "教室", "appearance": "明亮"}],
+                "props": [{"name": "书包", "appearance": "红色"}]}), Usage(1, 1)
+
+    c = FakeVLM()
+    n = extract_comic_characters(db, tmp_path / "data", pid, c,
+                                 characters_only=True, bind_shots=True)
+    assert n == 1   # 只计角色
+    kinds = {a["kind"] for a in list_project_assets(db, pid)}
+    assert kinds == {"character"}                 # 场景/道具未建
+    assert "主要角色" in c.system and "背景" in c.system  # prompt 约束注入
+    # bind_shots：分镜 ledger 绑定小明（提示词含名字才会绑——先造提示词）
+    from comic_studio.engine.shots import update_shot
+    update_shot(db, list_shots(db, pid)[0]["id"],
+                {"prompt": "小明：「你好」", "description": "小明：「你好」"})
+    n2 = extract_comic_characters(db, tmp_path / "data", pid, c,
+                                  characters_only=True, bind_shots=True)
+    led = _json.loads(list_shots(db, pid)[0]["ledger_json"])
+    aids = sorted(a["id"] for a in list_project_assets(db, pid))
+    assert led.get("assets", {}).get("characters") == aids

@@ -747,10 +747,14 @@ def _sample_shot_indices(total: int, sample_size: int = 9) -> list[int]:
     return [i for i in picks if 1 <= i <= total][:sample_size]
 
 
-def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> int:
+def extract_comic_characters(db, data_dir, project_id, client, max_pages=9,
+                             characters_only: bool = False,
+                             bind_shots: bool = False) -> int:
     """P8-B 漫改模式：VLM 全篇采样读漫画 → 提取角色（名字+外貌）→ 建资产。
     之后生成参考图（gen_ref），ref2va 渲染用。返回提取的角色数。
-    采样策略：开头+中间+结尾均匀取页，覆盖后面出场的人物。"""
+    采样策略：开头+中间+结尾均匀取页，覆盖后面出场的人物。
+    characters_only（决策 7 重绘链）：只提取主要角色，不建场景/道具；
+    bind_shots：提取后按名字自动补绑分镜 ledger。"""
     from .paths import data_to_abs
     from .projects import get_project
     from .shots import list_shots
@@ -772,6 +776,12 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> i
              f"VLM 采样 {len(shots)} 页提取角色（全篇 {len(all_shots)} 页，"
              f"采样位置：{indices}）",
              project_id=project_id)
+    main_only = ""
+    if characters_only:
+        # 决策 7（重绘链）：只要人物主图——背景群像/路人建了也是空耗 VLM 与 gen_ref
+        main_only = ("\n只提取人物角色，不提取场景和道具；"
+                     "只列主要角色（有台词/有动作/推动剧情），"
+                     "背景群像、路人、未具名群众不建。scenes/props 返回空数组。\n")
     system = (
         "你是漫改电影的美术指导。给定漫画页面，提取角色、场景和重要道具。\n"
         "输出 JSON：\n"
@@ -781,6 +791,7 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> i
         "外貌行模板格式（每行一项）：性别：\\n年龄：\\n发色发型：\\n服装：\\n…\n"
         "场景描述：空间结构、光线氛围、色调、时代风格。\n"
         "道具描述：外观形状、材质质感、颜色纹样。\n"
+        + main_only +
         "只输出 JSON，不解释。\n\n"
         "角色音色（角色音色系统）：suggested_voice 从下方可用音色库中"
         "按角色年龄/性别/气质选最贴切的；拿不准按 性别×年龄 基线选。\n\n"
@@ -836,10 +847,12 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> i
 
     char_ns = [NS(name=c["name"], appearance=_to_str(c.get("appearance")), tags=["comic"])
                for c in (data.get("characters") or []) if c.get("name")]
-    scene_ns = [NS(name=s["name"], appearance=_to_str(s.get("appearance")), tags=["comic"])
-                for s in (data.get("scenes") or []) if s.get("name")]
-    prop_ns = [NS(name=p["name"], appearance=_to_str(p.get("appearance")), tags=["comic"])
-               for p in (data.get("props") or []) if p.get("name")]
+    scene_ns = [] if characters_only else [
+        NS(name=s["name"], appearance=_to_str(s.get("appearance")), tags=["comic"])
+        for s in (data.get("scenes") or []) if s.get("name")]
+    prop_ns = [] if characters_only else [
+        NS(name=p["name"], appearance=_to_str(p.get("appearance")), tags=["comic"])
+        for p in (data.get("props") or []) if p.get("name")]
 
     total = len(char_ns) + len(scene_ns) + len(prop_ns)
     if total == 0:
@@ -873,6 +886,13 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=9) -> i
         parts.append(f"道具 {len(prop_ns)}：{', '.join(p.name for p in prop_ns)}")
     emit_log(db, "llm", "info", f"资产提取完成——{'；'.join(parts)}",
              project_id=project_id)
+    if bind_shots:
+        # 决策 7（重绘链）：提取后按名字自动补绑分镜（同 describe_shots 尾链）
+        from .llm.storyboard import auto_bind_characters
+        bound = auto_bind_characters(db, project_id)
+        if bound:
+            emit_log(db, "llm", "info", f"角色自动绑定：{bound} 处",
+                     project_id=project_id)
     return total
 
 

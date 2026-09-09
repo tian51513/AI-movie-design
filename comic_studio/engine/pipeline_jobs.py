@@ -95,7 +95,9 @@ def handle_extract_comic_characters(db, data_dir, job, comfy):
     except Exception:
         client = client_for_task(db, "gen_video_prompt")
     n = extract_comic_characters(db, data_dir,
-                                 payload.get("project_id", job["project_id"]), client)
+                                 payload.get("project_id", job["project_id"]), client,
+                                 characters_only=bool(payload.get("characters_only")),
+                                 bind_shots=bool(payload.get("bind_shots")))
     emit_log(db, "llm", "info", f"角色提取任务完成：{n} 个角色",
              project_id=job["project_id"], job_id=job["id"])
 
