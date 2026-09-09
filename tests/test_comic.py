@@ -915,3 +915,56 @@ def test_speaker_blacklist_from_settings(tmp_path):
     describe_shots(db, tmp_path / "data", pid, FakeV())
     led = json.loads(list_shots(db, pid)[0]["ledger_json"] or "{}")
     assert [d["speaker"] for d in led["dialogue"]] == ["王叔叔"]
+
+
+def test_describe_shots_reads_original_pages_not_active(tmp_path):
+    """决策 16：读原页不读活动 kf——重绘覆盖 kf 后 force 重读对白不丢。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    from comic_studio.engine.paths import data_to_abs
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "原页读图", "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG * 2)])["id"]
+    slug = "原页读图"
+    # 模拟重绘覆盖活动 kf（无文字的图）；原页仍在 pages/
+    d1 = data_to_abs(tmp_path / "data", f"projects/{slug}/shots/1")
+    (d1 / "kf_start.png").write_bytes(b"REDAWN")
+    seen = []
+
+    class FakeVLM(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "m")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            seen.append(messages)
+            return "summary:过渡\n对白：「你好」", Usage(1, 1)
+
+    describe_shots(db, tmp_path / "data", pid, FakeVLM(), force=True)
+    import base64, json as _json
+    sent = seen[0][1]["content"][1]["image_url"]["url"]
+    assert base64.b64decode(sent.split(",", 1)[1]) == PNG   # 读的是原页字节
+
+
+def test_describe_shots_skips_speaker_assets_when_redraw(tmp_path):
+    """决策 5：重绘模式不建 speaker 资产（提取 job 是唯一建资产入口）。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    from comic_studio.engine.assets import list_project_assets
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid_redraw = import_comic(db, tmp_path / "data", "重绘不建", "9:16",
+                              [("p1.png", PNG), ("p2.png", PNG)],
+                              redraw_characters=1)["id"]
+    pid_plain = import_comic(db, tmp_path / "data", "普通建", "9:16",
+                             [("p1.png", PNG), ("p2.png", PNG)])["id"]
+
+    class FakeVLM(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "m")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return "summary:x\n小明：「你好」", Usage(1, 1)
+
+    describe_shots(db, tmp_path / "data", pid_redraw, FakeVLM())
+    describe_shots(db, tmp_path / "data", pid_plain, FakeVLM())
+    assert list_project_assets(db, pid_redraw) == []
+    assert any(a["name"] == "小明" for a in list_project_assets(db, pid_plain))

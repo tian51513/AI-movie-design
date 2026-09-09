@@ -127,7 +127,6 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None,
     shot_id 指定时只跑该镜（已有提示词也覆盖）；否则跑全部缺失的镜；
     force=True 批量也全覆盖（2026-09-06 改画风/换模型后整批重生成，
     时长随对白同步重估）。返回生成数。"""
-    from .paths import data_to_abs
     from .projects import get_project
     from .shots import list_shots, update_shot
     # 设置页追加黑名单（优化#6）：speaker_blacklist 逗号分隔词并入净化
@@ -223,9 +222,10 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None,
                 and s["status"] != "stale"):
             continue  # 批量模式：跳过已有提示词的镜（stale/QC-A 与 force 除外——
             # autopilot 把 stale 算缺口，此处不重生则无限重入循环）
-        shot_dir = data_to_abs(data_dir, f"projects/{slug}/shots/{s['seq']}")
-        start_png = shot_dir / "kf_start.png"
-        end_png = shot_dir / "kf_end.png"
+        # 决策 16（2026-09-09）：读原页（pages/ 单一事实源）不读活动 kf——
+        # 重绘覆盖活动 kf 后 force 重读对白不丢；旧项目无 pages/ 回落活动 kf
+        #（page_source_paths 内处理，迁移 35 前的存量兼容）
+        start_png, end_png = page_source_paths(data_dir, slug, s["seq"])
         if not start_png.exists():
             continue
         emit_log(db, "llm", "info",
@@ -310,11 +310,16 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None,
         # 动态漫角色音色（2026-08-31 用户需求）：对白聚合建角色（旁白过滤，
         # 不生参考图——fl2v 用原页）+ 音色绑定；幂等（同名不重建）
         if comic_mode != "film_adaptation":
-            built = _build_speaker_assets(db, data_dir, project_id, voices_meta)
-            if built:
-                emit_log(db, "llm", "info",
-                         f"对白角色 {built} 个入库（不生参考图，已自动匹配音色）",
-                         project_id=project_id)
+            # 决策 5（2026-09-09）：重绘模式跳过 speaker 资产——重绘提取 job
+            # 是唯一建资产入口（VLM 采样外貌行模板），speaker 资产撞名会被
+            # 重建清掉（外貌丢失）。ledger.dialogue 仍照常落库（TTS/字幕用）
+            _rw = bool(proj["redraw_characters"]) if "redraw_characters" in proj.keys() else False
+            if not _rw:
+                built = _build_speaker_assets(db, data_dir, project_id, voices_meta)
+                if built:
+                    emit_log(db, "llm", "info",
+                             f"对白角色 {built} 个入库（不生参考图，已自动匹配音色）",
+                             project_id=project_id)
         # 读图顺手提取角色——仅漫改（2026-08-29 真机教训：动态漫 fl2v 用漫画原页
         # 渲染，角色资产毫无用处，还提取出 83 个旁白/叙述垃圾资产 + 1195 处绑定）
         if comic_mode == "film_adaptation":
