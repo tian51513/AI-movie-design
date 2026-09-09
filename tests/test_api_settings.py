@@ -111,6 +111,18 @@ def test_put_template_map_rejects_unknown_key(tmp_path):
         assert resp.status_code == 422
 
 
+def test_put_template_map_accepts_page_redraw(tmp_path):
+    """page_redraw（动态漫整页重绘模板，2026-09-09 前端设置行）在白名单内，
+    PUT 能 roundtrip；否则设置页「保存全部设置」会整单 422。"""
+    with _client(tmp_path) as c:
+        resp = c.put("/api/settings", json={"template_map": {"page_redraw": "zimage_i2i"}})
+        assert resp.status_code == 200
+        body = c.get("/api/settings").json()
+        assert body["template_map"]["page_redraw"] == "zimage_i2i"
+        # 默认值兜底（DEFAULT_SETTINGS 里已是 zimage_i2i）
+        assert body["template_map"]["t2i"] == "zimage_t2i"
+
+
 def test_providers_partial_put_preserves_unset(tmp_path):
     """M15（2026-09-05 审计）：llm_providers PUT 全量 model_dump——部分字段
     PUT 会把未提供键冲默认（09-01 comfy 事故同款）。exclude_unset 后局部
