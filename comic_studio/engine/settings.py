@@ -56,7 +56,12 @@ DEFAULT_SETTINGS = {
               "mute_quiet_shots": False,
               # 整页重绘幅度（2026-09-09 决策 8）：画风空=原画风高清化也用同值，
               # 0.75 兼顾保构图与转风力度
-              "page_redraw_denoise": 0.75},
+              "page_redraw_denoise": 0.75,
+              # H3 SLA 注意力（2026-09-10 用户自定义节点 H3SLAAttention）：五模板
+              # LoRA 后最后一环；默认开（0.9=本机验证值/64=音频安全块，节点出厂默认）
+              "h3_sla_enabled": True,
+              "h3_sla_sparsity": 0.9,
+              "h3_sla_block_size": "64"},
     # 工作流模型槽位覆盖（计划5B 任务6）：{模板 id: {label: 文件名}}
     "model_overrides": {},
 }

@@ -561,6 +561,19 @@
        <label class="muted" style="font-size:12px"
               title="无台词镜的 H3 原声不进成片（封死残留杂音；代价是丢水声脚步等自然声）。有台词镜不受影响——配音本来就整轨替换"><input
               type="checkbox" v-model="settingsForm.comfy.mute_quiet_shots"> 无台词镜静音</label></p>
+       <p><label class="muted" style="font-size:12px"
+              title="H3SLAAttention 块稀疏注意力（五个 H3 模板 LoRA 后最后一环）。开=Sparse（Sage 自动停用防双实现叠加）；关=回 Sage 稠密基线，A/B 干净"><input
+              type="checkbox" v-model="settingsForm.comfy.h3_sla_enabled"> H3 SLA 注意力</label>
+       <label class="muted" style="font-size:12px; margin-left:8px"
+              title="跳过的 key 块比例：0.85=lightx2v 出厂（SLA LoRA 蒸馏基准）；0.90=本机验证值再快约15%；低于0.60比稠密更慢">稀疏度
+         <input type="number" step="0.05" min="0" max="0.95"
+                v-model="settingsForm.comfy.h3_sla_sparsity" style="width:64px"></label>
+       <label class="muted" style="font-size:12px; margin-left:8px"
+              title="音频按 80 行/秒打包：64 块≈0.8s 语音一个注意力模式（干净）；128 块=1.6s（语音易机器人腔），仅无意义音频时用">块大小
+         <select v-model="settingsForm.comfy.h3_sla_block_size" style="width:70px">
+           <option value="64">64</option>
+           <option value="128">128</option>
+         </select></label></p>
        <label class="muted" style="margin-left:8px">文生视频模板：</label>
        <select v-model="settingsForm.t2vTm" style="width:280px">
          <option v-for="t in templatesOfType('t2v')" :key="t.id" :value="t.id">{{ t.name }}</option>

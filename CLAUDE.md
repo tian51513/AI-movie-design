@@ -222,3 +222,7 @@
 - **API** — `POST /api/projects/{id}/batch-redraw`（202；项目门禁 422 优先于 comfy 未配置 409）；`GET /api/shots/{id}/kf-versions`（无版本文件返回空清单不报错）；`POST use-kf`（**路由层注入门禁：role 白名单+`^v\d+$`——引擎把值插值进文件路径，路径穿越拦在 422**）；`regen-keyframes` 重绘项目分流 202（新 seed 入队 redraw_kf 出新版本，不走同步 ensure_keyframes——决策 13 单镜重生=批量单镜版）；`TEMPLATE_MAP_KEYS` 白名单补 page_redraw（缺键=设置页「保存全部」整单 422，f103ee4）
 - **前端** — 创建弹窗「是否重绘角色」复选（切漫改复位+联动字幕开）、参数面板复选（PATCH 即翻）、「🖌 批量重绘分镜」按钮（redrawBusy 防重，仅 motion+已开重绘可见）、分镜卡首帧版本 chips（点击切活动版，仅重绘项目加载）、单镜重绘文案引导、清资产确认文案含重绘警示、提取按钮 motion 重绘项目可见、设置页「整页重绘模板」行
 - 注意：**清资产连重绘资产一起清**（含 main.png，确认框有警示文案）；存量项目 PATCH 开重绘不回填 pages/——bootstrap 拿「当前活动 kf」当源页，重绘过的镜再重绘=拿重绘结果当底图（逐代漂移）；重绘幅度手感调 `comfy.page_redraw_denoise`；12 项设计决策表见 docs/superpowers/plans/2026-09-09-motion-comic-character-redraw.md §0
+
+## 模块地图（H3 SLA 注意力 2026-09-10）
+
+- **用户自定义节点 `H3SLAAttention`（SparseAttention 类）接入五个 h3_* 模板**（fl2v/i2v/ref2va/t2v/director）——插在 MiniMaxLowVRAMAttention 之后、BasicGuider/MiniMaxH3Director 之前的**最后一环**（节点作者定位「LoRA 之后、采样器前最后」）；settings `comfy.h3_sla_enabled`（默认开）/`h3_sla_sparsity`（0.9 本机验证值）/`h3_sla_block_size`（"64" 音频安全——128 块 1.6s 语音一个注意力模式会机器人腔，COMBO 字符串）；**Sage 联动**：SLA 开→`PathchSageAttentionKJ` 注入 `disabled`（T8 SLA 家族明令 KJ Sage 不得在前，同为注意力实现替换后包覆盖前包），SLA 关→回 `auto` 稠密基线（A/B 干净）；`rendershot.h3_sla_params(db)` 单源→render_shot params + director 手工注入循环共用；加速 LoRA 默认换 `..._sla_..._bf16` 蒸馏版（sparsity 按它蒸馏；fl2v/i2v/ref2va/t2v 本就有 lora_turbo 设置槽可切回，director 这次补齐 lora_realism/lora_turbo 双槽）；filler 只注入模板声明键——旧/自建模板零影响

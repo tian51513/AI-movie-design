@@ -36,6 +36,10 @@ class ComfyConfig(BaseModel):
     director_batch_relay: bool = True  # P7-H 批间首帧接力
     director_mix: bool = True  # P7-J 整片混音（TTS+字幕）
     mute_quiet_shots: bool = False  # 无台词镜静音（2026-08-30）
+    page_redraw_denoise: float = 0.75  # 动态漫整页重绘幅度（2026-09-09）
+    h3_sla_enabled: bool = True  # H3 SLA 注意力（2026-09-10）
+    h3_sla_sparsity: float = 0.9
+    h3_sla_block_size: str = "64"  # COMBO "64"/"128"
     min_free_vram_gb: float = 8  # gpu_comfy 前置显存门槛（2026-08-28）
     director_batch_frames: int = 512  # 快车道分批帧数（2026-08-28）
 

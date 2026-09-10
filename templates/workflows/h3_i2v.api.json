@@ -15,7 +15,7 @@
   },
   "26": {
     "inputs": {
-      "lora_name": "minimax_h3\\minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy.safetensors",
+      "lora_name": "minimax_h3\\minimax_h3_fl2v_turbo_4step_v0.1_768p_sla_comfyui_bf16.safetensors",
       "strength_model": 0.75,
       "model": [
         "25",
@@ -166,7 +166,7 @@
   "50": {
     "inputs": {
       "model": [
-        "29",
+        "72",
         0
       ],
       "conditioning": [
@@ -365,6 +365,21 @@
     "class_type": "CreateVideo",
     "_meta": {
       "title": "创建视频"
+    }
+  },
+  "72": {
+    "class_type": "H3SLAAttention",
+    "inputs": {
+      "model": [
+        "29",
+        0
+      ],
+      "sparsity_ratio": 0.9,
+      "block_size": "64",
+      "min_seq_len": 8192,
+      "dense_last_steps": 0,
+      "protect_audio": true,
+      "enabled": true
     }
   }
 }

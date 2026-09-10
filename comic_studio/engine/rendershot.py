@@ -345,6 +345,21 @@ def _video_seed(shot) -> int:
     return int(s) if s else random.randint(0, 2 ** 31 - 1)
 
 
+def h3_sla_params(db) -> dict:
+    """H3 SLA 注意力（2026-09-10 用户自定义节点 H3SLAAttention）：settings 三键 →
+    filler params 键。模板 manifest 声明了注入点才真生效（五个 h3_* 模板已接，
+    其余模板 filler 忽略多余键）。部分覆盖/旧库缺键走 .get 缺省。
+    sage_attention 联动（T8 SLA 家族明令 KJ Sage 不得在前——同为注意力实现
+    替换，后包覆盖前包）：SLA 开→Sage disabled；SLA 关→Sage auto（回退到
+    改动前稠密加速基线，A/B 干净）。"""
+    cfg = get_setting(db, "comfy") or {}
+    enabled = bool(cfg.get("h3_sla_enabled", True))
+    return {"h3_sla_enabled": enabled,
+            "h3_sla_sparsity": cfg.get("h3_sla_sparsity", 0.9),
+            "h3_sla_block_size": str(cfg.get("h3_sla_block_size", "64")),
+            "sage_attention": "disabled" if enabled else "auto"}
+
+
 def render_shot(db, data_dir, shot_id, comfy, job_id=None,
                 first_frame_png: Path | None = None) -> Path:
     shot = get_shot(db, shot_id)
@@ -385,6 +400,7 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         "multiple": proj["video_multiple"],
         "duration": max(4, int(shot["duration"])),
         "lora_strength": proj["lora_realism"],
+        **h3_sla_params(db),   # SLA 注意力三键（模板声明才注入，2026-09-10）
     }
     # 远景规避：远景/大全景自动升一档兆像素（上限 1.2）
     camera = json.loads(shot["camera_json"] or "{}")

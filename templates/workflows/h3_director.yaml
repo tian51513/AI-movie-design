@@ -7,6 +7,20 @@ inject:
   params:
     timeline_data: {node: '12', field: timeline_data}
     seed: {node: '12', field: seed}
+    # H3 SLA 注意力（2026-09-10 用户自定义节点）：settings 三键注入，
+    # 模板缺声明时 filler 自动忽略（旧模板可共存）
+    h3_sla_enabled:
+      node: '54'
+      field: enabled
+    h3_sla_sparsity:
+      node: '54'
+      field: sparsity_ratio
+    h3_sla_block_size:
+      node: '54'
+      field: block_size
+    sage_attention:   # SLA 联动（2026-09-10）：SLA 开→disabled 防注意力双实现叠加（T8 禁令），SLA 关→auto 回稠密基线
+      node: '47'
+      field: sage_attention
 outputs:
   - {node: '7', filename_prefix: 'cs/{project}/director'}
 requires: [ComfyUI_MiniMaxH3_Director]
@@ -15,3 +29,5 @@ models:
 - {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: '文本编码器'}
 - {label: video_vae, node: '3', field: vae_name, cls: VAELoader, label_cn: '视频 VAE'}
 - {label: audio_vae, node: '4', field: vae_name, cls: VAELoader, label_cn: '音频 VAE'}
+- {label: lora_realism, node: '41', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 真实感 LoRA}
+- {label: lora_turbo, node: '42', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 加速 LoRA}
