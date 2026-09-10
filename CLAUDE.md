@@ -232,6 +232,13 @@
 - **F3/F4**：批量重绘同批共用一个 seed（payload.seed，单镜重生仍随机）；denoise 默认 0.75→0.55（settings comfy.page_redraw_denoise）
 - 存量项目恢复路径：点「🔄 强制重读」（名册约束统一命名）→「🖌 批量重绘分镜」（入口自动补绑+新模板+新提示词）；旧模板 zimage_i2i 保留（P3 资产精化用，cfg=5 问题不在本次范围）
 
-## 模块地图（H3 SLA 注意力 2026-09-10）
+## 模块地图（H3 提示词官方指南借鉴 + 重绘 v3 2026-09-11）
 
+- **素材源** `E:/AI/AI_Shared_Models/MiniMax-H3-skills`（h3-prompt-writing/references base-en + ref-en）——官方 T2VA/I2VA/FL2VA/L2VA 与全能参考模式写作规范
+- **T1 全局**：fl2v/i2v 渲染头换官方对齐原句（"How the reference pictures align with the target video —…" / "…is fully referenced"，训练分布内句式）；modes 公共尾追加运镜词表（13 型×幅度×速度、写镜头内自然动作句不堆标签）、说话人规范（(S1)(S2) 稳定 ID/首次音色锚/voiceover 精确短语+嘴唇闭合/<scenetrans>/<cutoff>）、画面文字原文双引号、soundscape 1-4 句对白不重复/music 写乐器速度动态禁情绪词
+- **T2 漫改**：六段结构对齐官方 ref 规范（中文正文保留——2026-08-31 实测回调不翻案）：subject_definitions 用 `<Subject N>（角色名）` 标签、summary 加 `[reference generation]` 任务型前缀、retention 四档标记（fully/partially_preserved/attribute_transfer/weak_reference）、detailed_description 风格开篇句置于 [Shot 1] 前、运镜自然动作句；`_anchor_subject_definitions` 同步新句式
+- **T3 动态漫**：**换官方 FL2VA 三段结构**（此前误喂六段 ref 格式给 base 模式）：`integrated_multimodal_description`（英文正文，首帧态→中间变化→收窄→尾帧路径 + 单镜头）+ soundscape + music + `No subtitles…` 固定结尾；对白 `<角色名> (S1) says: <d>[Mandarin Chinese]台词</d>`；`_extract_dialogue` 双格式（官方 <d> 优先——名字须以中文开头防 [Shot 1] 的 1 误中，旧「名：「台词」」兜底供漫改/存量）
+- **整页重绘 v3**：`zimage_page_redraw` 换线稿 ControlNet——原页 AnimeLineArt→Resize 到项目画幅→Qwen-Image-2512-Fun-Controlnet-Union（SetUnionControlNetType lineart 型，strength 0.85）→ControlNetApplyAdvanced 锁构图，EmptyLatent t2i denoise 1.0 全幅风格化（v1 cfg5 烹煮/v2 latent 0.55 改人数/v2.5 IP-Adapter 全局盖章三连否决后的正解）；settings `page_redraw_denoise` 默认 1.0（语义=生成幅度，结构由 CN 保证）；requires kjnodes + controlnet_aux
+
+## 模块地图（H3 SLA 注意力 2026-09-10）
 - **用户自定义节点 `H3SLAAttention`（SparseAttention 类）接入五个 h3_* 模板**（fl2v/i2v/ref2va/t2v/director）——插在 MiniMaxLowVRAMAttention 之后、BasicGuider/MiniMaxH3Director 之前的**最后一环**（节点作者定位「LoRA 之后、采样器前最后」）；settings `comfy.h3_sla_enabled`（默认开）/`h3_sla_sparsity`（0.9 本机验证值）/`h3_sla_block_size`（"64" 音频安全——128 块 1.6s 语音一个注意力模式会机器人腔，COMBO 字符串）；**Sage 联动**：SLA 开→`PathchSageAttentionKJ` 注入 `disabled`（T8 SLA 家族明令 KJ Sage 不得在前，同为注意力实现替换后包覆盖前包），SLA 关→回 `auto` 稠密基线（A/B 干净）；`rendershot.h3_sla_params(db)` 单源→render_shot params + director 手工注入循环共用；**加速 LoRA 也随开关联动**（`h3_lora_link(db, tmpl_id)`：开→SLA 蒸馏版、关→普通 turbo=整套历史基线，两版各按各的注意力蒸馏；设置页手动选过该模板 lora_turbo 槽→参数缺席手动优先；模板 api.json 默认=普通版）——fl2v/i2v/ref2va/t2v 本就有 lora_turbo 设置槽，director 这次补齐 lora_realism/lora_turbo 双槽；filler 只注入模板声明键——旧/自建模板零影响
