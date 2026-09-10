@@ -204,8 +204,9 @@ def test_from_comic_api_with_style(tmp_path):
 
 
 def test_describe_shots_motion_uses_integrated_format_and_heals(tmp_path):
-    """动态漫读图提示词（2026-08-31 定稿：H3 六模块骨架中文输出）：
-    system 要求六模块 + VOICES；落库前过 heal（缺音频节机械补）。"""
+    """动态漫读图提示词（2026-09-11 借鉴官方 base 指南：FL2VA 三段结构英文正文
+    + 中文台词 <d>；此前误用六段 ref 格式）：system 要求三段 + VOICES；
+    落库前过 heal（缺音频节机械补）。"""
     from comic_studio.engine.projects import create_project
     from comic_studio.engine.comic import import_comic, describe_shots
     from comic_studio.engine.llm.provider import LLMClient, Usage
@@ -219,21 +220,24 @@ def test_describe_shots_motion_uses_integrated_format_and_heals(tmp_path):
             super().__init__("http://x", "k", "v")
         def raw_chat(self, messages, temperature=0.3, max_tokens=None):
             seen.append(messages)
-            return ("subject_definitions:\n少年 是本镜画面中的人物\nsummary:\n少年推门。\n"
-                    "retention_analysis:\n少年：fully_preserved - 保持黑发\n"
-                    "detailed_description:\n[Shot 1] 少年推开门走进房间，镜头缓推，"
-                    "他说：「我回来了。」"), Usage(10, 20)
+            return ("integrated_multimodal_description:\n[Shot 1] Cinematic, "
+                    "the boy pushes the door open. The camera pushes in with "
+                    "small amplitude as 少年 (S1) says: <d>[Mandarin Chinese]"
+                    "我回来了。</d>\nNo subtitles, no logos, no watermarks, "
+                    "no text overlays."), Usage(10, 20)
 
     describe_shots(db, tmp_path / "data", pid, FakeVision())
     system = seen[0][0]["content"]
-    for sec in ("subject_definitions:", "summary:", "retention_analysis:",
-                "detailed_description:", "overall_soundscape:", "non_diegetic_music"):
+    for sec in ("integrated_multimodal_description:", "overall_soundscape:",
+                "non_diegetic_music", "[Mandarin Chinese]"):
         assert sec in system, sec
-    assert "overall_soundscape" in system and "non_diegetic_music" in system and "N/A" in system
+    assert "subject_definitions" not in system   # ref 六段不再进 base 模式
     from comic_studio.engine.shots import list_shots
     for s in list_shots(db, pid):
-        assert "detailed_description:" in s["prompt"]
-        assert "无字幕" in s["prompt"]
+        assert "integrated_multimodal_description:" in s["prompt"]
+        assert "No subtitles" in s["prompt"]
+        led = __import__("json").loads(s["ledger_json"])
+        assert led.get("dialogue") == [{"speaker": "少年", "line": "我回来了。"}]
 
 
 def test_describe_shots_film_uses_skeleton_and_heals(tmp_path):
@@ -696,8 +700,8 @@ def test_anchor_subject_definitions_by_binding(tmp_path):
     n = _anchor_subject_definitions(db, pid)
     shots = list_shots(db, pid)
     p0 = shots[0]["prompt"]
-    assert "妻子 是来自 <Picture 1> 的人物" in p0
-    assert "丈夫 是来自 <Picture 2> 的人物" in p0
+    assert "<Subject 1>（妻子）是来自 <Picture 1> 的人物" in p0
+    assert "<Subject 2>（丈夫）是来自 <Picture 2> 的人物" in p0
     assert "第 2 格" not in p0 and "岳母 是来自" not in p0   # 旧格引用清除
     assert "summary:一句话：本镜核心内容" in p0               # 其余节保留
     assert n == 1
@@ -1029,3 +1033,18 @@ def test_voices_tail_roster_carries_appearance_hint(tmp_path):
     assert "黄毛男1（金色短发）" in tail
     assert "怨主男2（黑发戴眼镜）" in tail
     assert "按外貌提示对号入座" in tail
+
+
+def test_extract_dialogue_official_d_format():
+    """T3（2026-09-11）：官方 <d>[Mandarin Chinese]…</d> 格式抽取——说话人取
+    <d> 前中文 token、(S1) 编号跳过；旧中文格式仍兜底。"""
+    from comic_studio.engine.comic import _extract_dialogue
+    text = ("[Shot 1] The camera pushes in. 黑发女性 (S1) says in a quiet "
+            "voice: <d>[Mandarin Chinese]你回来了。</d> 黄毛男1 (S2) exclaims: "
+            "<d>[Mandarin Chinese]好久不见！</d>")
+    out = _extract_dialogue(text)
+    assert [(d["speaker"], d["line"]) for d in out] == [
+        ("黑发女性", "你回来了。"), ("黄毛男1", "好久不见！")]
+    # 旧格式兜底（漫改/存量）
+    out2 = _extract_dialogue("summary:x\n小明：「你好」")
+    assert out2 == [{"speaker": "小明", "line": "你好"}]

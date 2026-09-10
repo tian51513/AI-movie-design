@@ -169,48 +169,61 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None,
             "5. 画风：检查漫画原画风格与目标画风是否一致，不一致则加入转换指令"
             + style_hint +
             "\n\n输出（直接输出，不解释）——严格按以下骨架，节标题逐字使用、独占一行"
-            "（2026-08-31 实测回调：中文输出）：\n"
+            "（2026-08-31 实测回调：中文正文；2026-09-11 结构对齐官方 ref 指南）：\n"
             "subject_definitions:\n"
-            "<角色名> 是来自 <Picture 1> 的人物，其外观由该图提供（每个主要角色一条）\n"
-            "summary:\n一句话：本镜核心内容与运镜\n"
+            "<Subject N>（<角色名>）是来自 <Picture 1> 的人物，其外观由该图提供"
+            "（每个主要角色一条，N 从 1 递增；正文后续用 <Subject N>（角色名）指代）\n"
+            "summary:\n"
+            "[reference generation] 一句话：本镜核心内容与运镜（任务型前缀逐字使用）\n"
             "retention_analysis:\n"
-            "<角色名>：fully_preserved - 保持<发型/服装/身份特征>（每个角色一条）\n"
+            "<Subject N>（<角色名>）：fully_preserved - 保持<发型/服装/身份特征>"
+            "（每个角色一条；标记只用 fully_preserved / partially_preserved / "
+            "attribute_transfer / weak_reference 四档）\n"
             "detailed_description:\n"
-            "[环境与光线一段]\n"
-            "主要角色具体动作（用角色名不用代词）+ 表情变化 + 镜头运动（如「镜头缓缓推近」），"
+            "<风格开篇句：一段话总述整体画风与光线（置于 [Shot 1] 之前）>\n"
+            "[Shot 1] 主要角色具体动作（用 <Subject N>（角色名）不用代词）+ 表情变化 + "
+            "运镜写成镜头内自然动作句（如 The camera pushes in slowly / pans right），"
             "80~120 字；对白写「角色名：「台词」」；背景角色简略但不遗漏\n"
             "overall_soundscape:\n"
-            "只写与画面一致的对白声/环境声/动作音，音量轻微；无对白时写明无对白无哼唱\n"
+            "只写与画面一致的环境声/动作音/人物非语言声（1-4 句连续段，对白不重复进此节），"
+            "音量轻微；无对白时写明无对白无哼唱\n"
             "non_diegetic_music: N/A\n"
             "关键：描述「正在发生的动画」，不是静态画面；画风转换要求（若有）写进 detailed_description。"
             + _voices_tail(db, data_dir, project_id))
     else:
-        # 动态漫模式：翻页过渡（现有行为）
+        # 动态漫模式：翻页过渡（2026-09-11 换官方 FL2VA 三段结构——base 指南明确
+        # FL2VA 不是 ref 模式，此前误喂六段 ref 格式；英文正文+中文台词）
         system = (
             "你是漫画转视频的分镜导演。你会收到同一漫画的两格画面（第一张=首帧，第二张=尾帧）。\n"
-            "你的任务：分析两格之间的剧情变化（含对白），写出视频生成提示词。\n\n"
+            "你的任务：分析两格之间的剧情变化（含对白），写出 FL2VA 官方格式视频提示词。\n\n"
             "分析步骤（内部完成，不要输出）：\n"
             "1. 看第一张图：谁在做什么？什么表情？什么场景？有什么对白气泡？\n"
             "2. 看第二张图：发生了什么变化？有什么对白气泡？\n"
             "3. 对白排序：按漫画阅读顺序（从上到下、从右到左）整理两格中出现的所有对白，"
             "标注说话人；多段对白按先后顺序排列\n"
             "4. 推导：从第一格到第二格，人物做了什么动作？说了什么话？镜头怎么动？\n\n"
-            "输出格式（直接输出，不解释；2026-08-31 实测回调中文 + 六模块骨架）——"
-            "严格按以下骨架，节标题逐字使用、独占一行：\n"
-            "subject_definitions:\n"
-            "<角色名> 是本镜画面中的人物，其外观由画面提供（每个主要角色一条）\n"
-            "summary:\n一句话：本镜核心内容与运镜\n"
-            "retention_analysis:\n"
-            "<角色名>：fully_preserved - 保持<发型/服装/身份特征>（每个角色一条）\n"
-            "detailed_description:\n"
-            "[环境与光线一段]\n"
-            "[Shot 1] 从第一格到第二格的具体过渡——人物名字+动作+表情变化+镜头运动+"
-            "环境变化，80~120 字；对白按漫画实际顺序写「角色名：「台词」」\n"
+            "输出（直接输出，不解释）——官方三段结构（2026-09-11 借鉴 MiniMax-H3-skills "
+            "base 指南），英文正文、中文台词，节标题逐字使用、独占一行：\n"
+            "integrated_multimodal_description:\n"
+            "[Shot 1] <风格词（如 Cinematic live-action / 2D-animated，跟随原画风）>，"
+            "<首帧构图与人物状态，对齐第一格>。 <从首帧到尾帧的连续变化路径：人物动作、"
+            "姿态、物件、构图与光线如何过渡，逐步收窄到尾帧构图（对齐第二格）>。"
+            "运镜写成镜头内的自然英文动作句（如 The camera pushes in with small "
+            "amplitude at slow speed；类型可用 Zoom/Push/Pull/Pan/Truck/Tilt/Pedestal/"
+            "Arc/Tracking/Static/Shake/POV/Roll，必要时带幅度与速度）。单镜头连续，"
+            "不得添加切镜。\n"
+            "对白：<角色名> (S1) <首次出现的身份与音色锚，如 quiet breathy voice> says: "
+            "<d>[Mandarin Chinese]台词原文</d>——台词逐字取自漫画气泡不得改写，"
+            "按阅读顺序排列，各说话人用稳定 (S1)(S2) 编号（合唱写 (S1,S2)）；"
+            "画外音用 says in an off-screen voiceover 并声明画面人物嘴唇保持闭合；"
+            "无对白写 No dialogue, no humming, no speech.\n"
+            "画面内可见文字（招牌/条幅）：英文双引号内保留原文逐字不译。\n"
+            "必须描述「从第一格到第二格的具体过渡过程」，不能只描述单帧静态画面。\n\n"
             "overall_soundscape:\n"
-            "只写与画面一致的对白声/环境声/动作音，音量轻微；无对白时写明无对白无哼唱\n"
-            "non_diegetic_music: N/A\n"
-            "必须描述「从第一格到第二格的具体过渡过程」，不能只描述单帧静态画面。\n"
-            "对白必须按漫画中的实际顺序排列，不能乱序。\n\n"
+            "1-4 句英文连续段：只写环境声/动作声/人物非语言声（对白不重复进此节），"
+            "音量轻微；无对白镜写明 no dialogue\n\n"
+            "non_diegetic_music:\nN/A\n\n"
+            "结尾固定句（逐字照抄）：No subtitles, no logos, no watermarks, no text overlays.\n"
             + _voices_tail(db, data_dir, project_id))
     n = 0
     voices_meta: dict = {}   # 说话人 → {gender, age, voice}（VOICES 尾行聚合）
@@ -635,7 +648,9 @@ def _anchor_subject_definitions(db, project_id) -> int:
                .get("assets") or {}).get("characters") or []
         if not ids:
             continue
-        defs = [f"{names[i]} 是来自 <Picture {k}> 的人物，其外观由该图提供"
+        # 2026-09-11 对齐官方 ref 指南：<Subject N> 标签 + 角色名 + 图源
+        defs = [f"<Subject {k}>（{names[i]}）是来自 <Picture {k}> 的人物，"
+                f"其外观由该图提供"
                 for k, i in enumerate(ids[:4], 1) if i in names]
         if not defs:
             continue
@@ -915,6 +930,7 @@ def extract_comic_characters(db, data_dir, project_id, client, max_pages=9,
 
 
 _DIALOGUE_RE = None
+_DIALOGUE_ENG_RE = None   # 官方 <d>[Mandarin Chinese]…</d> 格式（2026-09-11）
 
 # 2026-09-06 manga7 真机：28 个"角色"过半是脚手架短语（对白顺序/undscape=
 # soundscape 截断/画面中出现对白气泡/王叔叔轻声说）——提取时净化说话人
@@ -965,15 +981,30 @@ def _clean_speaker(name: str) -> str | None:
 
 
 def _extract_dialogue(text: str) -> list:
-    """从 VLM 输出中提取「角色名：「台词」」格式的对白，按出现顺序返回。
-    说话人过 _clean_speaker 净化（脚手架/叙述短语拒收）——manga7 真机
-    垃圾说话人曾同时污染资产表、TTS 与字幕。"""
-    global _DIALOGUE_RE
+    """从 VLM 输出提取对白（2026-09-11 双格式），按出现顺序返回：
+    ① 官方 <d>[Mandarin Chinese]台词</d>（动态漫 FL2VA 三段格式）——说话人取
+      <d> 前最近的中文 token（(S1) 编号段跳过），过 _clean_speaker 净化；
+      无中文名匹配时该句 speaker 留空（TTS 走 Edge 兜底，字幕仍有台词）
+    ② 旧「角色名：「台词」」中文格式（漫改/存量提示词）——说话人净化同款
+    （manga7 真机教训：垃圾说话人曾同时污染资产表、TTS 与字幕）。"""
+    global _DIALOGUE_RE, _DIALOGUE_ENG_RE
+    import re
     if _DIALOGUE_RE is None:
-        import re
         _DIALOGUE_RE = re.compile(
-            r"([一-龥A-Za-z·]{1,8})[：:]\s*[「“]([^」”]{1,80})[」”]")
+            r"([一-龥A-Za-z·]{1,8})[：:]\s*[「“]([^」”]{1,80})[”」]")
+    if _DIALOGUE_ENG_RE is None:
+        # 例：黑发女性 (S1) says in a quiet voice: <d>[Mandarin Chinese]你好</d>
+        # 名字须以中文开头（数字可跟尾：黄毛男1）——否则 [Shot 1] 的 1 会被
+        # 当名字候选（2026-09-11 真机测试教训）
+        _DIALOGUE_ENG_RE = re.compile(
+            r"([一-龥·][一-龥·0-9]{0,11})(?:\s*\((?:S\d+(?:,\s*S\d+)*)\))?"
+            r"[^\n<>]{0,80}?<d>\[[^\]]*\]([^<]{1,80})</d>")
     out = []
+    for m in _DIALOGUE_ENG_RE.finditer(text):
+        sp = _clean_speaker(m.group(1))
+        out.append({"speaker": sp or "", "line": m.group(2)})
+    if out:
+        return out
     for m in _DIALOGUE_RE.finditer(text):
         sp = _clean_speaker(m.group(1))
         if sp:
