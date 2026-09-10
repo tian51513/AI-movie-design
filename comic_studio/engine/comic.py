@@ -372,7 +372,9 @@ def _voices_tail(db, data_dir, project_id) -> str:
     from .assets import list_project_assets
     names = [a["name"] for a in list_project_assets(db, project_id)
              if a["kind"] == "character"]
-    roster = ("\n已有角色名册（命名必须沿用名单原名，禁止另起同义变体新名）："
+    roster = ("\n已有角色名册（对白说话人与 subject_definitions/详细描述中的角色"
+              "命名必须沿用名单原名，禁止另起同义变体新名——读图与提取两轮 VLM "
+              "各起各名会让角色绑定落空，2026-09-10 真机根因①）："
               + "、".join(names) + "\n") if names else ""
     return ("\n\n对白说话人音色标注（角色音色系统）：本镜有对白时，最后一行严格按此格式输出"
             "（不要代码块；无对白的镜不要输出此行）：\n"

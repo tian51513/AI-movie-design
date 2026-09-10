@@ -223,6 +223,15 @@
 - **前端** — 创建弹窗「是否重绘角色」复选（切漫改复位+联动字幕开）、参数面板复选（PATCH 即翻）、「🖌 批量重绘分镜」按钮（redrawBusy 防重，仅 motion+已开重绘可见）、分镜卡首帧版本 chips（点击切活动版，仅重绘项目加载）、单镜重绘文案引导、清资产确认文案含重绘警示、提取按钮 motion 重绘项目可见、设置页「整页重绘模板」行
 - 注意：**清资产连重绘资产一起清**（含 main.png，确认框有警示文案）；存量项目 PATCH 开重绘不回填 pages/——bootstrap 拿「当前活动 kf」当源页，重绘过的镜再重绘=拿重绘结果当底图（逐代漂移）；重绘幅度手感调 `comfy.page_redraw_denoise`；12 项设计决策表见 docs/superpowers/plans/2026-09-09-motion-comic-character-redraw.md §0
 
+## 模块地图（整页重绘真机四修 2026-09-10 晚）
+
+- **真机根因四条（寝取美人妻 项目批量重绘 2 镜实证）**：①读图 VLM 与提取 VLM 各起各名（白发女子/黑发女性）→ auto_bind 全空 → 身份桥断；②shots.seed 全 NULL → 每镜随机 seed 风格漂移；③重绘提示词塞视频六段脚手架截断文本 + denoise 0.75 → 构图崩无美化方向；④旧 zimage_i2i cfg=5+euler 对 turbo 模型（cfg=1 蒸馏）过度烹煮——用户 _raw 实测 cfg=1+res_multistep+ConditioningZeroOut 定稿
+- **F2a 新默认模板 `zimage_page_redraw`**（template_map.page_redraw）：双图槽 base=原页（VAEEncode 底图保构图）+ char_ref=角色主图（rembg u2net_human_seg → easy ipadapterApply PLUS 0.7 身份注入）；requires ComfyUI-Easy-Use + comfyui-rembg
+- **F1 提示词弃 description**：i2i 内容在底图 latent——文本只给重绘指令/角色外貌锚/清文字/画风段；主图入槽时追加「人物的五官、发型与体态与角色参考图保持一致」
+- **F2b 命名统一三件**：autopilot 重绘分支改序「提取→主图→读图」（①½a 前移，读图时名册已就位）；_voices_tail 名册约束扩到 subject_definitions/详细描述命名；enqueue_batch_redraw 入口补跑 auto_bind_characters（存量项目「强制重读」统一命名后点批量即绑上）
+- **F3/F4**：批量重绘同批共用一个 seed（payload.seed，单镜重生仍随机）；denoise 默认 0.75→0.55（settings comfy.page_redraw_denoise）
+- 存量项目恢复路径：点「🔄 强制重读」（名册约束统一命名）→「🖌 批量重绘分镜」（入口自动补绑+新模板+新提示词）；旧模板 zimage_i2i 保留（P3 资产精化用，cfg=5 问题不在本次范围）
+
 ## 模块地图（H3 SLA 注意力 2026-09-10）
 
 - **用户自定义节点 `H3SLAAttention`（SparseAttention 类）接入五个 h3_* 模板**（fl2v/i2v/ref2va/t2v/director）——插在 MiniMaxLowVRAMAttention 之后、BasicGuider/MiniMaxH3Director 之前的**最后一环**（节点作者定位「LoRA 之后、采样器前最后」）；settings `comfy.h3_sla_enabled`（默认开）/`h3_sla_sparsity`（0.9 本机验证值）/`h3_sla_block_size`（"64" 音频安全——128 块 1.6s 语音一个注意力模式会机器人腔，COMBO 字符串）；**Sage 联动**：SLA 开→`PathchSageAttentionKJ` 注入 `disabled`（T8 SLA 家族明令 KJ Sage 不得在前，同为注意力实现替换后包覆盖前包），SLA 关→回 `auto` 稠密基线（A/B 干净）；`rendershot.h3_sla_params(db)` 单源→render_shot params + director 手工注入循环共用；**加速 LoRA 也随开关联动**（`h3_lora_link(db, tmpl_id)`：开→SLA 蒸馏版、关→普通 turbo=整套历史基线，两版各按各的注意力蒸馏；设置页手动选过该模板 lora_turbo 槽→参数缺席手动优先；模板 api.json 默认=普通版）——fl2v/i2v/ref2va/t2v 本就有 lora_turbo 设置槽，director 这次补齐 lora_realism/lora_turbo 双槽；filler 只注入模板声明键——旧/自建模板零影响

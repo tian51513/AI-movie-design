@@ -282,3 +282,39 @@ def test_redraw_page_bootstraps_missing_pages(tmp_path):
         redraw_page(db, tmp_path / "data", list_shots(db, pid)[0]["id"],
                     ComfyClient(m.base_url))
     assert (data_to_abs(tmp_path / "data", f"projects/{slug}/pages/page_001.png")).exists()
+
+
+def test_batch_redraw_shares_one_seed(tmp_path):
+    """F3（2026-09-10 真机四修）：同批共用一个 seed——真机根因②两镜风格漂移
+    （shots.seed 全 NULL → 每镜随机）。单镜重生仍随机（routes 侧）。"""
+    db, pid = _motion_project(tmp_path, n=3)
+    from comic_studio.engine.pageredraw import enqueue_batch_redraw
+    from comic_studio.engine.settings import set_setting
+    set_setting(db, "comfy", {"base_url": "http://x:8188"})
+    enqueue_batch_redraw(db, tmp_path / "data", pid)
+    import json as _json
+    rows = db.connect().execute(
+        "SELECT payload_json FROM jobs WHERE project_id=? AND type='redraw_kf'",
+        (pid,)).fetchall()
+    seeds = {_json.loads(r["payload_json"]).get("seed") for r in rows}
+    assert len(rows) == 3 and len(seeds) == 1 and None not in seeds
+
+
+def test_batch_redraw_prebinds_named_characters(tmp_path):
+    """F2b：批量入口补跑 auto_bind——存量项目「强制重读」统一命名后点批量即绑上
+    （真机根因①：读图 VLM 与提取 VLM 各起各名，绑定全空=身份桥断）。"""
+    from types import SimpleNamespace as NS
+    db, pid = _motion_project(tmp_path, n=2)
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.pageredraw import enqueue_batch_redraw
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.shots import list_shots, update_shot
+    set_setting(db, "comfy", {"base_url": "http://x:8188"})
+    ids = persist_assets(db, tmp_path / "data", pid,
+                         NS(characters=[NS(name="小红", appearance="性别：女", tags=[])],
+                             scenes=[], props=[]))
+    s1 = list_shots(db, pid)[0]
+    update_shot(db, s1["id"], {"description": "小红 在院子里推门。"})
+    enqueue_batch_redraw(db, tmp_path / "data", pid)
+    led = __import__("json").loads(list_shots(db, pid)[0]["ledger_json"])
+    assert led["assets"]["characters"] == list(ids)

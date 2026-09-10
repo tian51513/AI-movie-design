@@ -271,9 +271,14 @@ def enqueue_batch_redraw(db, data_dir, project_id) -> int:
     → 补漏（只入队带标记的镜，已完成镜不重复）。批次在飞中重发：在飞镜的
     标记未清，落补漏路径，只对未提交的镜补队，无整批重复。"""
     from .jobs import enqueue_job
+    from .llm.storyboard import auto_bind_characters
     from .settings import ensure_comfy_configured
+    import random
     require_redraw_project(db, project_id)
     ensure_comfy_configured(db)   # 409 门禁由路由转 HTTPException
+    # F2b（2026-09-10 真机四修）：入口补跑补绑——存量项目「强制重读」统一命名后
+    # 点批量即自动绑上（真机根因①：读图 VLM 与提取 VLM 各起各名，绑定全空）
+    auto_bind_characters(db, project_id)
     shots = [s for s in list_shots(db, project_id) if not s["disabled"]]
 
     def _pending(s) -> bool:
@@ -283,6 +288,7 @@ def enqueue_batch_redraw(db, data_dir, project_id) -> int:
             return False
 
     fresh = not any(_pending(s) for s in shots)   # 零 pending = 全新整批
+    batch_seed = random.randint(0, 2 ** 31 - 1)   # F3：同批同 seed（根因②风格漂移）
     n = 0
     for s in shots:
         led = json.loads(s["ledger_json"] or "{}")
@@ -293,7 +299,8 @@ def enqueue_batch_redraw(db, data_dir, project_id) -> int:
             update_shot(db, s["id"],
                         {"ledger_json": json.dumps(led, ensure_ascii=False)})
         enqueue_job(db, "redraw_kf", project_id=project_id, shot_id=s["id"],
-                    resource="gpu_comfy", payload={"shot_id": s["id"]})
+                    resource="gpu_comfy",
+                    payload={"shot_id": s["id"], "seed": batch_seed})
         n += 1
     conn = db.connect()
     conn.execute("UPDATE projects SET redraw_done=1 WHERE id=?", (project_id,))

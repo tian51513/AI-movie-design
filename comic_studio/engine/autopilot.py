@@ -253,21 +253,9 @@ def _comic_flow(db, data_dir, project_id, proj) -> dict:
         if total == 0:
             return {"action": "wait", "detail": "无分镜（漫画导入异常）"}
 
-        # ① VLM 读图（含角色提取——2026-08-29 用户需求重构：一遍完成）
-        missing = _missing_prompt_shot_ids(db, project_id)
-        if missing:
-            if _has_active_job(db, project_id, "describe_shots"):
-                return {"action": "wait", "detail": f"VLM 读图+角色提取中（缺 {len(missing)} 镜）"}
-            if _latest_failed(db, project_id, "describe_shots"):
-                return {"action": "wait", "detail": "上次 VLM 读图失败，重试请手动发起"}
-            return {"action": "describe_shots",
-                    "detail": f"缺 {len(missing)} 条提示词（VLM 读图+提取角色）"}
-        if _has_active_job(db, project_id, "describe_shots"):
-            return {"action": "wait", "detail": "VLM 读图收尾中"}
-
-        # ①½ 动态漫角色重绘（2026-09-09 决策 10）：提取→角色重绘→停等用户批量重绘
-        # →整页重绘收尾，再落回 ③ 渲染缺口（停等 detail 刻意不含「失败」——
-        # tick 失败守卫按该子串上报卡死，停等是正常等待不是卡死）
+        # ①½a 动态漫重绘前置（2026-09-10 真机四修 F2b 改序）：提取→主图→读图
+        # ——提取先建名册，读图的名册约束才能统一角色命名（旧序读图先行，两个
+        # VLM 各起各名「白发女子/黑发女性」→ auto_bind 全空=身份桥断，根因①）
         _rw = (not is_film and "redraw_characters" in proj.keys()
                and bool(proj["redraw_characters"]))
         if _rw:
@@ -294,6 +282,24 @@ def _comic_flow(db, data_dir, project_id, proj) -> dict:
                             "detail": "上次角色重绘参考图失败，重试请手动发起"}
                 return {"action": "gen_refs",
                         "detail": f"重绘模式：角色重绘缺 {len(missing_mains)} 张主图"}
+
+        # ① VLM 读图（重绘项目此时名册已就位，subject_definitions 命名受约束）
+        missing = _missing_prompt_shot_ids(db, project_id)
+        if missing:
+            if _has_active_job(db, project_id, "describe_shots"):
+                return {"action": "wait", "detail": f"VLM 读图+角色提取中（缺 {len(missing)} 镜）"}
+            if _latest_failed(db, project_id, "describe_shots"):
+                return {"action": "wait", "detail": "上次 VLM 读图失败，重试请手动发起"}
+            return {"action": "describe_shots",
+                    "detail": f"缺 {len(missing)} 条提示词（VLM 读图+提取角色）"}
+        if _has_active_job(db, project_id, "describe_shots"):
+            return {"action": "wait", "detail": "VLM 读图收尾中"}
+
+        # ①½b 重绘停等与收尾（2026-09-09 决策 10；提取/主图层已前移 ①½a）：
+        # 停等 detail 刻意不含「失败」——tick 失败守卫按该子串上报卡死，
+        # 停等是正常等待不是卡死
+        if _rw:
+            from .shots import list_shots
             if not (proj["redraw_done"] if "redraw_done" in proj.keys() else 0):
                 return {"action": "wait",
                         "detail": "角色重绘资产就绪——请检查/重试角色图后点『批量重绘分镜』"}

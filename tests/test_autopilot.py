@@ -492,3 +492,18 @@ def test_comic_flow_redraw_genref_failed_waits(tmp_path):
     conn.commit()
     act = next_action(db, tmp_path / "data", pid)
     assert act["action"] == "wait" and "上次角色重绘参考图失败" in act["detail"], act
+
+
+def test_comic_flow_redraw_extracts_before_describe(tmp_path):
+    """F2b（2026-09-10 真机四修）：重绘模式改序——提取先于读图（建名册→读图
+    命名受约束→auto_bind 可命中）。无提示词+无资产 → extract_comic 而非 describe。"""
+    import pytest
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.comic import import_comic
+    from comic_studio.engine.autopilot import next_action
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = import_comic(db, tmp_path / "data", "改序剧", "9:16",
+                       [("p1.png", PNG), ("p2.png", PNG)],
+                       redraw_characters=1)["id"]
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "extract_comic"   # 未读图也先提取
