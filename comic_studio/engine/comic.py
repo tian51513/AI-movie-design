@@ -370,12 +370,28 @@ def _voices_tail(db, data_dir, project_id) -> str:
     漫改此前缺此段 → 性别恒待确认、音色无法自动匹配；名册注入让 VLM 沿用
     已有命名，不再每镜另起变体）。"""
     from .assets import list_project_assets
-    names = [a["name"] for a in list_project_assets(db, project_id)
+
+    def _hint(a) -> str:
+        """外貌提示（2026-09-10 四主角拆分）：名册只给名字时两位男性对不上号
+        （描述里 0 处区分命名），附外貌行首个有效值帮 VLM 对号入座。"""
+        try:
+            detail = json.loads(a["appearance_json"]).get("detail", "")
+            for ln in detail.splitlines():
+                m = ln.split("：", 1)[-1].strip() if "：" in ln else ""
+                if m and m != "无" and len(m) >= 2:
+                    return f"（{m[:12]}）"
+        except Exception:
+            pass
+        return ""
+
+    chars = [a for a in list_project_assets(db, project_id)
              if a["kind"] == "character"]
+    names = [a["name"] for a in chars]
     roster = ("\n已有角色名册（对白说话人与 subject_definitions/详细描述中的角色"
               "命名必须沿用名单原名，禁止另起同义变体新名——读图与提取两轮 VLM "
-              "各起各名会让角色绑定落空，2026-09-10 真机根因①）："
-              + "、".join(names) + "\n") if names else ""
+              "各起各名会让角色绑定落空，2026-09-10 真机根因①；多人画面按外貌"
+              "提示对号入座，拿不准才用泛称）："
+              + "、".join(a["name"] + _hint(a) for a in chars) + "\n") if names else ""
     return ("\n\n对白说话人音色标注（角色音色系统）：本镜有对白时，最后一行严格按此格式输出"
             "（不要代码块；无对白的镜不要输出此行）：\n"
             'VOICES:{"voices":[{"name":"说话人","gender":"女","age":8,"voice":"库内音色名"}]}\n'

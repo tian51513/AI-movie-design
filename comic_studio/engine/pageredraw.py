@@ -262,6 +262,51 @@ def require_redraw_project(db, project_id):
     return proj
 
 
+# 发色近义归一（2026-09-10 用户确认）：黑白/低饱和页的浅金发常被 VLM 读成
+# 白发（寝取美人妻 729 镜实测 白发女子 24 处与金发同人）；银发同源
+_HAIR_ALIAS = {"白发": "金发", "银发": "金发"}
+
+
+def bind_redraw_characters(db, project_id) -> int:
+    """重绘链专用补绑（F2b+ 2026-09-10 真机）：资产名**变体归一**匹配——
+    ① 全名精确；② 去末字前缀（资产名 ≥3 字：黑发女性↔黑发女子/黑发女——
+    VLM 的 性/子 尾字摇摆）；③ 发色近义归一（白发/银发→金发）。
+    2 字资产名只走精确（防 小红→小* 误绑）。只在批量重绘入口调用，
+    通用 auto_bind_characters（小说/漫改）语义不动。"""
+    from .assets import list_project_assets
+    from .shots import list_shots
+
+    def _norm_asset(name: str) -> str:
+        for a, b in _HAIR_ALIAS.items():
+            name = name.replace(a, b)
+        return name[:-1] if len(name) >= 3 else name   # 黑发女性→黑发女
+
+    chars = [(a["id"], _norm_asset(a["name"]))
+             for a in list_project_assets(db, project_id)
+             if a["kind"] == "character"]
+    if not chars:
+        return 0
+    conn = db.connect()
+    bound = 0
+    for shot in list_shots(db, project_id):
+        desc = shot["description"] or ""
+        for a, b in _HAIR_ALIAS.items():
+            desc = desc.replace(a, b)
+        ledger = json.loads(shot["ledger_json"] or "{}")
+        assets = ledger.setdefault("assets", {})
+        cur = set(assets.get("characters") or [])
+        for cid, cname in chars:
+            if cid not in cur and cname in desc:
+                cur.add(cid)
+                bound += 1
+        if cur != set(assets.get("characters") or []):
+            assets["characters"] = sorted(cur)
+            conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
+                         (json.dumps(ledger, ensure_ascii=False), shot["id"]))
+    conn.commit()
+    return bound
+
+
 def enqueue_batch_redraw(db, data_dir, project_id) -> int:
     """「批量重绘分镜」：标记 pending_redraw → 逐镜入队 gpu_comfy（决策 11 逐镜
     job：温和停止可停/单镜失败不殃及）→ redraw_done=1。
@@ -271,14 +316,13 @@ def enqueue_batch_redraw(db, data_dir, project_id) -> int:
     → 补漏（只入队带标记的镜，已完成镜不重复）。批次在飞中重发：在飞镜的
     标记未清，落补漏路径，只对未提交的镜补队，无整批重复。"""
     from .jobs import enqueue_job
-    from .llm.storyboard import auto_bind_characters
     from .settings import ensure_comfy_configured
     import random
     require_redraw_project(db, project_id)
     ensure_comfy_configured(db)   # 409 门禁由路由转 HTTPException
-    # F2b（2026-09-10 真机四修）：入口补跑补绑——存量项目「强制重读」统一命名后
-    # 点批量即自动绑上（真机根因①：读图 VLM 与提取 VLM 各起各名，绑定全空）
-    auto_bind_characters(db, project_id)
+    # F2b（2026-09-10 真机四修）：入口补跑变体归一补绑——真机根因①读图 VLM
+    # 每页自由命名（黑发女子/白发女子…），全名精确匹配覆盖率仅两三成
+    bind_redraw_characters(db, project_id)
     shots = [s for s in list_shots(db, project_id) if not s["disabled"]]
 
     def _pending(s) -> bool:

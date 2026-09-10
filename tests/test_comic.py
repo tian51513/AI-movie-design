@@ -1009,3 +1009,23 @@ def test_extract_comic_characters_main_only_and_bind(tmp_path):
     led = _json.loads(list_shots(db, pid)[0]["ledger_json"])
     aids = sorted(a["id"] for a in list_project_assets(db, pid))
     assert led.get("assets", {}).get("characters") == aids
+
+
+def test_voices_tail_roster_carries_appearance_hint(tmp_path):
+    """2026-09-10 四主角拆分：名册附外貌提示——两位男性只给名字 VLM 对不上号
+    （729 镜描述 0 处区分命名），提示取外貌行首个有效值。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.comic import _voices_tail
+    from comic_studio.engine.projects import create_project
+    from types import SimpleNamespace as NS
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "名册剧", "9:16", "正文" * 60)["id"]
+    from comic_studio.engine.assets import persist_assets
+    persist_assets(db, tmp_path / "data", pid, NS(characters=[
+        NS(name="黄毛男1", appearance="性别：男\n发色发型：金色短发", tags=[]),
+        NS(name="怨主男2", appearance="性别：男\n发色发型：黑发戴眼镜", tags=[]),
+    ], scenes=[], props=[]))
+    tail = _voices_tail(db, tmp_path / "data", pid)
+    assert "黄毛男1（金色短发）" in tail
+    assert "怨主男2（黑发戴眼镜）" in tail
+    assert "按外貌提示对号入座" in tail

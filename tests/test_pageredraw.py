@@ -318,3 +318,35 @@ def test_batch_redraw_prebinds_named_characters(tmp_path):
     enqueue_batch_redraw(db, tmp_path / "data", pid)
     led = __import__("json").loads(list_shots(db, pid)[0]["ledger_json"])
     assert led["assets"]["characters"] == list(ids)
+
+
+def test_bind_redraw_characters_variant_matching(tmp_path):
+    """F2b+（2026-09-10 真机加修）：变体归一补绑——前缀（黑发女性↔黑发女子）
+    + 发色近义（白发→金发，黑白页浅金发被读成白发，用户确认同人）；
+    不动通用 auto_bind（小说/漫改语义不变）。"""
+    from types import SimpleNamespace as NS
+    db, pid = _motion_project(tmp_path, n=4)
+    from comic_studio.engine.assets import persist_assets
+    from comic_studio.engine.pageredraw import bind_redraw_characters
+    from comic_studio.engine.shots import list_shots, update_shot
+    ids = persist_assets(db, tmp_path / "data", pid, NS(characters=[
+        NS(name="黑发女性", appearance="性别：女", tags=[]),
+        NS(name="金发女性", appearance="性别：女", tags=[]),
+        NS(name="小红", appearance="性别：女", tags=[]),
+    ], scenes=[], props=[]))
+    hid, jid, xid = ids
+    descs = ["黑发女子 在窗边梳头。",          # 前缀变体（去末字）
+             "白发女子 对镜自拍。",            # 发色近义 → 金发
+             "小红 和 小明 走过。",            # 2字名只精确匹配（不绑 小明——无此资产）
+             "金发女性 与 男性角色 交谈。"]     # 全名精确
+    for s, d in zip(list_shots(db, pid), descs):
+        update_shot(db, s["id"], {"description": d})
+    n = bind_redraw_characters(db, pid)
+    assert n >= 3
+    led = [__import__("json").loads(s["ledger_json"])["assets"]["characters"]
+           for s in list_shots(db, pid)]
+    assert led[0] == [hid]        # 黑发女子 → 黑发女性
+    assert led[1] == [jid]        # 白发女子 → 金发女性
+    assert led[2] == [xid]        # 小红 精确；小明无资产不绑
+    assert led[3] == [jid]        # 金发女性 精确（男性角色无资产不绑）
+    # 无交叉误绑：黑发desc不绑金发资产（led[0] 不含 jid）已在上面断言
