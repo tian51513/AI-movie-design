@@ -132,14 +132,15 @@ def test_page_redraw_template_mechanics():
 
 
 def test_redraw_page_injects_char_ref_slot(tmp_path):
-    """F2a：绑定角色有 main.png → char_ref 槽注入（uploads 含 char_ref 文件）。"""
+    """RC5（2026-09-10 真机二轮）：char_ref/IP-Adapter 参考注入**停用**——单参考
+    全局盖章把整页人物拉成参考脸（女性也变黄毛）；绑定角色+main.png 存在也
+    只注 base，模板双槽声明保留待未来分人区域控制。"""
     db, pid = _motion_project(tmp_path, n=2)
     from types import SimpleNamespace as NS
-    from comic_studio.engine.assets import persist_assets
-    from comic_studio.engine.shots import list_shots
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.shots import list_shots, update_shot
     from comic_studio.engine.pageredraw import redraw_page
     from comic_studio.engine.paths import data_to_abs
-    from comic_studio.engine.projects import get_project
     from tests.comfy_mock import comfy_server
     from comic_studio.engine.comfy.client import ComfyClient
     ids = persist_assets(db, tmp_path / "data", pid,
@@ -149,19 +150,15 @@ def test_redraw_page_injects_char_ref_slot(tmp_path):
     import json as _json
     led = _json.loads(s1["ledger_json"])
     led["assets"] = {"characters": ids, "scenes": [], "props": []}
-    from comic_studio.engine.shots import update_shot
     update_shot(db, s1["id"], {"ledger_json": _json.dumps(led, ensure_ascii=False)})
-    lib = data_to_abs(tmp_path / "data", get_project(db, pid)["slug"])
-    # persist_assets 的 library_dir 在资产行上——直接取
-    from comic_studio.engine.assets import list_project_assets
     a = list_project_assets(db, pid)[0]
     d = data_to_abs(tmp_path / "data", a["library_dir"]); d.mkdir(parents=True, exist_ok=True)
     (d / "main.png").write_bytes(PNG * 3)
     with comfy_server("ok") as m:
         redraw_page(db, tmp_path / "data", s1["id"], ComfyClient(m.base_url))
-    names = [u for u in m.uploads]
-    assert any("char_ref" in str(n) for n in names), names   # 主图入了第二槽
-    assert any("base" in str(n) for n in names), names
+    names = [str(u) for u in m.uploads]
+    assert any("base" in n for n in names), names
+    assert not any("char_ref" in n for n in names), names   # 参考脸不注入
 
 
 def test_redraw_page_produces_v2_and_clears_video(tmp_path):
@@ -298,6 +295,29 @@ def test_batch_redraw_shares_one_seed(tmp_path):
         (pid,)).fetchall()
     seeds = {_json.loads(r["payload_json"]).get("seed") for r in rows}
     assert len(rows) == 3 and len(seeds) == 1 and None not in seeds
+    # 补漏复用在飞 seed：模拟镜 2 完成（清标记）→ 重发只补它，seed 与整批一致
+    from comic_studio.engine.shots import list_shots, update_shot
+    s2 = list_shots(db, pid)[1]
+    led2 = _json.loads(s2["ledger_json"]); led2.pop("pending_redraw")
+    update_shot(db, s2["id"], {"ledger_json": _json.dumps(led2, ensure_ascii=False)})
+    # 把镜 1/3 的 job 置 done（模拟跑完），镜 2 重发后应复用同批 seed
+    db.connect().execute("UPDATE jobs SET status='done' WHERE project_id=?", (pid,))
+    db.connect().commit()
+    enqueue_batch_redraw(db, tmp_path / "data", pid)   # 零 pending=全新整批（新 seed 合法）
+    row = db.connect().execute(
+        "SELECT payload_json FROM jobs WHERE project_id=? AND type='redraw_kf' "
+        "AND status='pending' ORDER BY id DESC LIMIT 1", (pid,)).fetchone()
+    new_seed = _json.loads(row["payload_json"])["seed"]
+    # 在飞场景：留一个 pending（补漏路径）→ 复用其 seed
+    s3 = list_shots(db, pid)[2]
+    led3 = _json.loads(s3["ledger_json"]); led3["pending_redraw"] = True
+    update_shot(db, s3["id"], {"ledger_json": _json.dumps(led3, ensure_ascii=False)})
+    enqueue_batch_redraw(db, tmp_path / "data", pid)
+    rows2 = db.connect().execute(
+        "SELECT payload_json FROM jobs WHERE project_id=? AND type='redraw_kf' "
+        "AND status='pending'", (pid,)).fetchall()
+    for r in rows2:
+        assert _json.loads(r["payload_json"])["seed"] == new_seed, "补漏须复用在飞 seed"
 
 
 def test_batch_redraw_prebinds_named_characters(tmp_path):

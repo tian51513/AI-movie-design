@@ -196,20 +196,10 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
     tmpl = resolve_template(db, "page_redraw")
     images = [{"slot": tmpl.inject_images[0]["slot"], "path": str(base)}]
     anchor_line = ("。人物与背景的布局、构图与原页保持一致，仅画风与质感按提示词转换")
-    if len(tmpl.inject_images or []) >= 2:   # 条件双槽：角色主图身份锚（IP-Adapter）
-        led = json.loads(shot["ledger_json"] or "{}")
-        from .assets import get_asset
-        from .paths import data_to_abs
-        for aid in (led.get("assets", {}) or {}).get("characters", []):
-            a = get_asset(db, aid)
-            if a and a["library_dir"]:
-                main = data_to_abs(data_dir, a["library_dir"]) / "main.png"
-                if main.exists():
-                    images.append({"slot": tmpl.inject_images[1]["slot"],
-                                   "path": str(main)})
-                    # 主图入槽 → 提示词同步声明身份一致（用户 _raw 实测用语）
-                    anchor_line += "。人物的五官、发型与体态与角色参考图保持一致"
-            break
+    # RC5（2026-09-10 真机二轮）：char_ref/IP-Adapter 参考注入**停用**——单参考
+    # 全局盖章会把整页所有人物拉成参考脸（女性也变黄毛），多人页无解；模板
+    # 双槽声明保留（未来做分人区域控制再启用），此处只注 base。角色身份由
+    # 底图 latent（原作脸）+ 提示词文字锚承担。
     seed = seed if seed is not None else _video_seed(shot)
     prompt = build_page_redraw_prompt(db, proj, shot) + anchor_line
     wf, uploads = fill_workflow(
@@ -332,7 +322,20 @@ def enqueue_batch_redraw(db, data_dir, project_id) -> int:
             return False
 
     fresh = not any(_pending(s) for s in shots)   # 零 pending = 全新整批
-    batch_seed = random.randint(0, 2 ** 31 - 1)   # F3：同批同 seed（根因②风格漂移）
+    # F3：同批同 seed（根因②风格漂移）；**补漏/中断续跑复用在飞 seed**
+    # （每点击一次随机新 seed 会让补漏镜与整批风格分裂——真机二轮发现）
+    batch_seed = None
+    row = db.connect().execute(
+        "SELECT payload_json FROM jobs WHERE project_id=? AND type='redraw_kf' "
+        "AND status IN ('pending','running') ORDER BY id DESC LIMIT 1",
+        (project_id,)).fetchone()
+    if row:
+        try:
+            batch_seed = json.loads(row["payload_json"]).get("seed")
+        except (ValueError, TypeError):
+            batch_seed = None
+    if batch_seed is None:
+        batch_seed = random.randint(0, 2 ** 31 - 1)
     n = 0
     for s in shots:
         led = json.loads(s["ledger_json"] or "{}")
