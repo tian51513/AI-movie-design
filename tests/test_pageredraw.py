@@ -106,29 +106,34 @@ def test_build_page_redraw_prompt_style_and_clean_text(tmp_path):
 
 
 def test_page_redraw_template_mechanics():
-    """F2a（2026-09-10 真机四修）：双图槽（base 原页/char_ref 主图）+
-    rembg→IP-Adapter 身份链 + turbo 正确采样机制（cfg=1 res_multistep——
-    用户 _raw 实测定稿，旧 zimage_i2i 的 cfg=5+euler 是过度烹煮=根因④）。"""
+    """v3（2026-09-11）：线稿 ControlNet 版——原页提线稿→Fun-Union CN（lineart 型）
+    锁构图，t2i denoise 1.0 自由风格化（v1 latent i2i 跨域改人数、v2 IP-Adapter
+    全局盖章均真机否决）。采样机制沿用用户 _raw 实测（cfg=1 res_multistep）。"""
     from pathlib import Path
     from comic_studio.engine.workflows import registry
     tmpl = registry.scan_templates(Path("templates/workflows"))["zimage_page_redraw"]
-    assert [i["slot"] for i in tmpl.inject_images] == ["base", "char_ref"]
-    assert "denoise" in tmpl.inject_params and "seed" in tmpl.inject_params
+    assert [i["slot"] for i in tmpl.inject_images] == ["base"]
+    for p in ("denoise", "seed", "aspect", "megapixels"):
+        assert p in tmpl.inject_params, p
     wf = tmpl.api_json()
     classes = {n["class_type"] for n in wf.values()}
-    assert "Image Rembg (Remove Background)" in classes
-    assert "easy ipadapterApply" in classes
+    assert "AnimeLineArtPreprocessor" in classes      # 原页提线稿
+    assert "SetUnionControlNetType" in classes        # lineart 型
+    assert "ControlNetApplyAdvanced" in classes
+    assert "easy ipadapterApply" not in classes       # RC5 回收
+    sut = next(n for n in wf.values() if n["class_type"] == "SetUnionControlNetType")
+    assert sut["inputs"]["type"] == "canny/lineart/anime_lineart/mlsd"
+    apply_ = next(n for n in wf.values()
+                  if n["class_type"] == "ControlNetApplyAdvanced")
+    assert 0 < apply_["inputs"]["strength"] <= 1.0
     ks = next(n for n in wf.values() if n["class_type"] == "KSampler")
     assert ks["inputs"]["cfg"] == 1
     assert ks["inputs"]["sampler_name"] == "res_multistep"
-    assert ks["inputs"]["denoise"] == 0.55
-    # 身份链接线：rembg 吃 char_ref 图（节点对位），ipadapter 吃 rembg 出图
-    char_node = tmpl.inject_images[1]["node"]
-    rembg_id = next(nid for nid, n in wf.items()
-                    if n["class_type"] == "Image Rembg (Remove Background)")
-    assert wf[rembg_id]["inputs"]["images"] == [char_node, 0]
-    ipa = next(n for n in wf.values() if n["class_type"] == "easy ipadapterApply")
-    assert ipa["inputs"]["image"] == [rembg_id, 0]
+    assert ks["inputs"]["denoise"] == 1.0
+    # 线稿链：预处理器吃 base 图，CN 条件图=缩放后的线稿
+    pre = next(n for n in wf.values()
+               if n["class_type"] == "AnimeLineArtPreprocessor")
+    assert pre["inputs"]["image"] == [tmpl.inject_images[0]["node"], 0]
 
 
 def test_redraw_page_injects_char_ref_slot(tmp_path):

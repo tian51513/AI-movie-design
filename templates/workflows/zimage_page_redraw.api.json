@@ -1,120 +1,19 @@
 {
-  "1": {
-    "class_type": "UNETLoader",
-    "inputs": {
-      "unet_name": "z_image_turbo_bf16.safetensors",
-      "weight_dtype": "default"
-    }
-  },
-  "2": {
-    "class_type": "CLIPLoader",
-    "inputs": {
-      "clip_name": "qwen_3_4b-fp8.safetensors",
-      "type": "qwen_image",
-      "device": "default"
-    }
-  },
-  "3": {
-    "class_type": "VAELoader",
-    "inputs": {
-      "vae_name": "ae.safetensors"
-    }
-  },
-  "23": {
-    "class_type": "LoadImage",
-    "inputs": {
-      "image": "page.png"
-    }
-  },
-  "26": {
-    "class_type": "VAEEncode",
-    "inputs": {
-      "pixels": ["23", 0],
-      "vae": ["3", 0]
-    }
-  },
-  "100": {
-    "class_type": "LoadImage",
-    "inputs": {
-      "image": "character.png"
-    }
-  },
-  "102": {
-    "class_type": "Image Rembg (Remove Background)",
-    "inputs": {
-      "images": ["100", 0],
-      "transparency": true,
-      "model": "u2net_human_seg",
-      "post_processing": false,
-      "only_mask": false,
-      "alpha_matting": false,
-      "alpha_matting_foreground_threshold": 240,
-      "alpha_matting_background_threshold": 10,
-      "alpha_matting_erode_size": 10
-    }
-  },
-  "103": {
-    "class_type": "easy ipadapterApply",
-    "inputs": {
-      "model": ["1", 0],
-      "image": ["102", 0],
-      "preset": "PLUS (high strength)",
-      "lora_strength": 0.6,
-      "provider": "CUDA",
-      "weight": 0.7,
-      "weight_faceidv2": 1.0,
-      "start_at": 0.0,
-      "end_at": 1.0,
-      "cache_mode": "all",
-      "use_tiled": false
-    }
-  },
-  "28": {
-    "class_type": "PrimitiveStringMultiline",
-    "inputs": {
-      "value": ""
-    }
-  },
-  "5": {
-    "class_type": "CLIPTextEncode",
-    "inputs": {
-      "text": ["28", 0],
-      "clip": ["2", 0]
-    }
-  },
-  "31": {
-    "class_type": "ConditioningZeroOut",
-    "inputs": {
-      "conditioning": ["5", 0]
-    }
-  },
-  "4": {
-    "class_type": "KSampler",
-    "inputs": {
-      "model": ["103", 0],
-      "positive": ["5", 0],
-      "negative": ["31", 0],
-      "latent_image": ["26", 0],
-      "seed": 12345,
-      "steps": 10,
-      "cfg": 1,
-      "sampler_name": "res_multistep",
-      "scheduler": "simple",
-      "denoise": 0.55
-    }
-  },
-  "8": {
-    "class_type": "VAEDecode",
-    "inputs": {
-      "samples": ["4", 0],
-      "vae": ["3", 0]
-    }
-  },
-  "10": {
-    "class_type": "SaveImage",
-    "inputs": {
-      "filename_prefix": "cs/{project}/{asset}",
-      "images": ["8", 0]
-    }
-  }
+  "1": {"class_type": "UNETLoader", "inputs": {"unet_name": "z_image_turbo_bf16.safetensors", "weight_dtype": "default"}},
+  "2": {"class_type": "CLIPLoader", "inputs": {"clip_name": "qwen_3_4b-fp8.safetensors", "type": "qwen_image", "device": "default"}},
+  "3": {"class_type": "VAELoader", "inputs": {"vae_name": "ae.safetensors"}},
+  "23": {"class_type": "LoadImage", "inputs": {"image": "page.png"}},
+  "102": {"class_type": "AnimeLineArtPreprocessor", "inputs": {"image": ["23", 0], "resolution": 1024}},
+  "58": {"class_type": "ResolutionSelector", "inputs": {}},
+  "45": {"class_type": "ImageResizeKJv2", "inputs": {"image": ["102", 0], "width": ["58", 0], "height": ["58", 1], "upscale_method": "lanczos", "keep_proportion": "stretch", "pad_color": "0, 0, 0", "crop_position": "center", "divisible_by": 16}},
+  "141": {"class_type": "ControlNetLoader", "inputs": {"control_net_name": "Qwen-Image-2512-Fun-Controlnet-Union.safetensors"}},
+  "140": {"class_type": "SetUnionControlNetType", "inputs": {"control_net": ["141", 0], "type": "canny/lineart/anime_lineart/mlsd"}},
+  "28": {"class_type": "PrimitiveStringMultiline", "inputs": {"value": ""}},
+  "5": {"class_type": "CLIPTextEncode", "inputs": {"text": ["28", 0], "clip": ["2", 0]}},
+  "31": {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["5", 0]}},
+  "200": {"class_type": "ControlNetApplyAdvanced", "inputs": {"positive": ["5", 0], "negative": ["31", 0], "control_net": ["140", 0], "image": ["45", 0], "strength": 0.85, "start_percent": 0.0, "end_percent": 1.0}},
+  "104": {"class_type": "EmptyLatentImage", "inputs": {"width": ["58", 0], "height": ["58", 1], "batch_size": 1}},
+  "4": {"class_type": "KSampler", "inputs": {"model": ["1", 0], "positive": ["200", 0], "negative": ["200", 1], "latent_image": ["104", 0], "seed": 12345, "steps": 10, "cfg": 1, "sampler_name": "res_multistep", "scheduler": "simple", "denoise": 1.0}},
+  "8": {"class_type": "VAEDecode", "inputs": {"samples": ["4", 0], "vae": ["3", 0]}},
+  "10": {"class_type": "SaveImage", "inputs": {"filename_prefix": "cs/{project}/{asset}", "images": ["8", 0]}}
 }

@@ -1,6 +1,6 @@
 id: zimage_page_redraw
 type: i2i
-name: Z-Image 整页重绘（原页底图 i2i + 主图 rembg→IP-Adapter 身份锚）
+name: Z-Image 整页重绘（线稿 ControlNet 结构锁 + 自由风格化，2026-09-11 v3）
 file: zimage_page_redraw.api.json
 prompt_format: '{kind_label}：{name}。{detail}'
 inject:
@@ -11,31 +11,33 @@ inject:
     seed:
       node: '4'
       field: seed
-    # 2026-09-10 真机四修：0.75 构图只剩 25% latent（原页差异大根因③）
-    # ——0.55 保构图/人物位置，转风仍够力度；settings comfy.page_redraw_denoise 可调
+    # v3（2026-09-11）：ControlNet 锁结构后 denoise=1.0 全幅生成——构图/人数
+    # 由线稿条件保证（v2 纯 latent i2i 在漫画→真人跨域下 0.55 仍改人数）
     denoise:
       node: '4'
       field: denoise
-  # 双图槽：base=原页（VAEEncode 底图保构图）；char_ref=角色主图（rembg 抠背景
-  # → easy ipadapterApply PLUS 身份注入——修复「角色与主图差别大」根因①）
+    aspect:
+      node: '58'
+      field: aspect_ratio
+    megapixels:
+      node: '58'
+      field: megapixels
+  # base=原页：链内 AnimeLineArtPreprocessor 提线稿→Resize 到项目画幅→
+  # Qwen-Image Fun-Union ControlNet（lineart 型，strength 0.85）锁构图，
+  # 画风/质感全交提示词自由发挥——manga→photo 跨域的标准解
   images:
   - node: '23'
     field: image
     slot: base
-  - node: '100'
-    field: image
-    slot: char_ref
 outputs:
 - node: '10'
   filename_prefix: cs/{project}/{asset}
 requires:
-- ComfyUI-Easy-Use
-- comfyui-rembg
+- comfyui-kjnodes
+- comfyui_controlnet_aux
 
-# 采样机制（2026-09-10 用户 _raw 实测定稿）：Z-Image turbo 按 cfg=1 蒸馏——
-# 旧 zimage_i2i 的 cfg=5+euler 是过度烹煮（根因④）；res_multistep+simple 为
-# turbo 推荐采样器；负条件走 ConditioningZeroOut（turbo 惯例）
 models:
 - {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
 - {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
 - {label: vae, node: '3', field: vae_name, cls: VAELoader, label_cn: VAE}
+- {label: control_net, node: '141', field: control_net_name, cls: ControlNetLoader, label_cn: 结构控制 ControlNet}

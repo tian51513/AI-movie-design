@@ -56,9 +56,9 @@ DEFAULT_SETTINGS = {
               "director_mix": True,
               # 无台词镜静音（2026-08-30 杂音封堵）：H3 原声不进成片，代价是丢自然环境声
               "mute_quiet_shots": False,
-              # 整页重绘幅度（2026-09-09 决策 8 建 0.75；2026-09-10 真机四修 F4
-              # 降至 0.55——0.75 构图只剩 25% latent，原页差异大根因③）
-              "page_redraw_denoise": 0.55,
+              # 整页重绘幅度（2026-09-11 v3：线稿 ControlNet 锁结构后=1.0 全幅
+              # 生成，构图由 CN strength 保证；调风格化程度改此值意义已变）
+              "page_redraw_denoise": 1.0,
               # H3 SLA 注意力（2026-09-10 用户自定义节点 H3SLAAttention）：五模板
               # LoRA 后最后一环；默认开（0.9=本机验证值/64=音频安全块，节点出厂默认）
               "h3_sla_enabled": True,

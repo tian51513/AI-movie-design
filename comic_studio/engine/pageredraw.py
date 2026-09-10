@@ -195,17 +195,14 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
     base = _ensure_source_page(data_dir, proj, shot)
     tmpl = resolve_template(db, "page_redraw")
     images = [{"slot": tmpl.inject_images[0]["slot"], "path": str(base)}]
-    anchor_line = ("。人物与背景的布局、构图与原页保持一致，仅画风与质感按提示词转换")
-    # RC5（2026-09-10 真机二轮）：char_ref/IP-Adapter 参考注入**停用**——单参考
-    # 全局盖章会把整页所有人物拉成参考脸（女性也变黄毛），多人页无解；模板
-    # 双槽声明保留（未来做分人区域控制再启用），此处只注 base。角色身份由
-    # 底图 latent（原作脸）+ 提示词文字锚承担。
+    # v3（2026-09-11）：线稿 ControlNet 版——结构由 CN 条件锁（提线稿在模板链内），
+    # 提示词专注风格化/清文字/画质；v1 的「布局一致」句让位给结构条件
     seed = seed if seed is not None else _video_seed(shot)
-    prompt = build_page_redraw_prompt(db, proj, shot) + anchor_line
+    prompt = build_page_redraw_prompt(db, proj, shot)
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
         params={"seed": seed,
-                "denoise": (get_setting(db, "comfy") or {}).get("page_redraw_denoise", 0.55)},
+                "denoise": (get_setting(db, "comfy") or {}).get("page_redraw_denoise", 1.0)},
         images=images,
         output_ctx={"project": proj["slug"], "asset": f"shot-{shot['seq']}-redraw"},
         model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))

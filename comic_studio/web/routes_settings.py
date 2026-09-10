@@ -36,7 +36,7 @@ class ComfyConfig(BaseModel):
     director_batch_relay: bool = True  # P7-H 批间首帧接力
     director_mix: bool = True  # P7-J 整片混音（TTS+字幕）
     mute_quiet_shots: bool = False  # 无台词镜静音（2026-08-30）
-    page_redraw_denoise: float = 0.55  # 动态漫整页重绘幅度（2026-09-10 F4 降档）
+    page_redraw_denoise: float = 1.0  # 整页重绘生成幅度（v3 ControlNet 锁结构）
     h3_sla_enabled: bool = True  # H3 SLA 注意力（2026-09-10）
     h3_sla_sparsity: float = 0.9
     h3_sla_block_size: str = "64"  # COMBO "64"/"128"
