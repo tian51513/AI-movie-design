@@ -1051,9 +1051,15 @@ const methods = {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({role, version: ver})});
     if (!r.ok) { alert(await r.text()); return; }
+    // 局部更新（2026-09-10 真机：整页 reload 729 镜卡顿秒级 + loadShots×kfVers
+    // 双 await 期间轮询竞态 → 图不换）。chips 高亮与图 URL 同步原地翻新，
+    // 缓存戳换新强制浏览器重取活动文件
+    if (s.kfVers) {
+      s.kfVers.active = { ...(s.kfVers.active || {}), [role]: ver };
+    }
+    const u = s[`kf_${role}_url`] || `/media/projects/${this.project.slug}/shots/${s.seq}/kf_${role}.png`;
+    s[`kf_${role}_url`] = u.split('?')[0] + '?v=' + Date.now();
     alert(`已切 ${ver}（视频待重渲）`);
-    await this.loadShots();
-    await this.loadKfVersions(true);   // 终审：切版立即重拉（loadShots 的门控拉取不覆盖本时机）
   },
   async startSplit() {
     if (this.shots.length && !confirm('已存在分镜，重新拆解将覆盖（提示词会丢失）。继续？')) return;
