@@ -149,13 +149,15 @@ def _ensure_source_page(data_dir, proj, shot) -> Path:
 
 
 def build_page_redraw_prompt(db, proj, shot) -> str:
-    """整页重绘提示词：本镜内容概述（description 截断）+ 清文字 + 画风段 + 尾缀。
-    画风空=按原画风高清化（决策 8）。"""
+    """整页重绘提示词（F1 2026-09-10 真机四修）：i2i 的画面内容在底图 latent 里
+    ——文本只给重绘指令/角色外貌锚/清文字/画风段，**弃用 shot.description**
+    （旧版把视频提示词六段脚手架截断塞给图像模型=真机根因③：模型不知保什么、
+    不知往哪美化，summary 还是运镜描述）。画风空=按原画风高清化（决策 8）。"""
     from .genref import PHOTO_BOOST, condense_appearance, is_photo_style
     from .assets import get_asset
-    detail = (shot["description"] or "").strip().rstrip("。；;，,")
-    prompt = f"漫画页重绘（保持原构图与人物位置）：{detail[:160] or '按原页画面'}"
-    # 角色外貌锚（首个绑定角色——供 CLIP 文字锚；图像锚看第二槽位注入）
+    prompt = ("高质量重绘这张漫画页：保持原有分格构图、人物姿态、位置与表情"
+              "与参考图完全一致，仅提升画质清晰度、光影与细节")
+    # 角色外貌文字锚（首个绑定角色；IP-Adapter 图像锚走工作流 char_ref 槽）
     led = json.loads(shot["ledger_json"] or "{}")
     for aid in (led.get("assets", {}) or {}).get("characters", []):
         a = get_asset(db, aid)
@@ -194,7 +196,7 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
     tmpl = resolve_template(db, "page_redraw")
     images = [{"slot": tmpl.inject_images[0]["slot"], "path": str(base)}]
     anchor_line = ("。人物与背景的布局、构图与原页保持一致，仅画风与质感按提示词转换")
-    if len(tmpl.inject_images or []) >= 2:   # 条件双槽：角色主图身份锚
+    if len(tmpl.inject_images or []) >= 2:   # 条件双槽：角色主图身份锚（IP-Adapter）
         led = json.loads(shot["ledger_json"] or "{}")
         from .assets import get_asset
         from .paths import data_to_abs
@@ -205,13 +207,15 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
                 if main.exists():
                     images.append({"slot": tmpl.inject_images[1]["slot"],
                                    "path": str(main)})
+                    # 主图入槽 → 提示词同步声明身份一致（用户 _raw 实测用语）
+                    anchor_line += "。人物的五官、发型与体态与角色参考图保持一致"
             break
     seed = seed if seed is not None else _video_seed(shot)
     prompt = build_page_redraw_prompt(db, proj, shot) + anchor_line
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
         params={"seed": seed,
-                "denoise": (get_setting(db, "comfy") or {}).get("page_redraw_denoise", 0.75)},
+                "denoise": (get_setting(db, "comfy") or {}).get("page_redraw_denoise", 0.55)},
         images=images,
         output_ctx={"project": proj["slug"], "asset": f"shot-{shot['seq']}-redraw"},
         model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))

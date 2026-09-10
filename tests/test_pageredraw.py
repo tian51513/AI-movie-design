@@ -77,25 +77,91 @@ def test_page_redraw_template_declares_denoise(tmp_path):
 
 
 def test_build_page_redraw_prompt_style_and_clean_text(tmp_path):
+    """F1（2026-09-10 真机四修）：i2i 提示词弃用视频提示词 description——
+    旧版把六段脚手架截断塞给图像模型（真机根因③）。"""
     db, pid = _motion_project(tmp_path)
-    from comic_studio.engine.projects import update_video_params
-    from comic_studio.engine.shots import list_shots
+    from comic_studio.engine.shots import list_shots, update_shot
     from comic_studio.engine.pageredraw import build_page_redraw_prompt
     from comic_studio.engine.projects import get_project
-    update_video_params(db, pid)  # no-op 占位，保证 proj 新鲜
     proj = get_project(db, pid)
     shot = list_shots(db, pid)[0]
+    # 预置视频提示词脚手架当 description——重绘提示词不得携带
+    update_shot(db, shot["id"], {
+        "description": "subject_definitions:\n某某 是本镜画面中的人物\nsummary:镜头缓缓上移\n"
+                       "retention_analysis:某某：fully_pre"})
+    shot = list_shots(db, pid)[0]   # 重取：update 后旧行是陈旧的
     p = build_page_redraw_prompt(db, proj, shot)
-    assert "清除对白气泡内的" in p              # 决策 9：清文字（文本为「…全部文字」）
-    assert "按原页画风" in p                    # 画风空=原画风高清化
-    # 转风格：改画风后出现画风段与禁令
-    import sqlite3
+    assert "subject_definitions" not in p          # 视频脚手架不进图像提示词
+    assert "镜头" not in p.split("。")[0]           # 运镜描述不进
+    assert "清除对白气泡内的" in p                  # 决策 9：清文字
+    assert "按原页画风" in p                        # 画风空=原画风高清化
+    # 转风格：改画风后出现画风段
     conn = db.connect()
     conn.execute("UPDATE projects SET style=?, style_vis=? WHERE id=?",
                  ("宫崎骏水彩画风", "水彩手绘质感", pid))
     conn.commit()
     p2 = build_page_redraw_prompt(db, get_project(db, pid), shot)
     assert "水彩手绘质感" in p2
+    assert "subject_definitions" not in p2
+
+
+def test_page_redraw_template_mechanics():
+    """F2a（2026-09-10 真机四修）：双图槽（base 原页/char_ref 主图）+
+    rembg→IP-Adapter 身份链 + turbo 正确采样机制（cfg=1 res_multistep——
+    用户 _raw 实测定稿，旧 zimage_i2i 的 cfg=5+euler 是过度烹煮=根因④）。"""
+    from pathlib import Path
+    from comic_studio.engine.workflows import registry
+    tmpl = registry.scan_templates(Path("templates/workflows"))["zimage_page_redraw"]
+    assert [i["slot"] for i in tmpl.inject_images] == ["base", "char_ref"]
+    assert "denoise" in tmpl.inject_params and "seed" in tmpl.inject_params
+    wf = tmpl.api_json()
+    classes = {n["class_type"] for n in wf.values()}
+    assert "Image Rembg (Remove Background)" in classes
+    assert "easy ipadapterApply" in classes
+    ks = next(n for n in wf.values() if n["class_type"] == "KSampler")
+    assert ks["inputs"]["cfg"] == 1
+    assert ks["inputs"]["sampler_name"] == "res_multistep"
+    assert ks["inputs"]["denoise"] == 0.55
+    # 身份链接线：rembg 吃 char_ref 图（节点对位），ipadapter 吃 rembg 出图
+    char_node = tmpl.inject_images[1]["node"]
+    rembg_id = next(nid for nid, n in wf.items()
+                    if n["class_type"] == "Image Rembg (Remove Background)")
+    assert wf[rembg_id]["inputs"]["images"] == [char_node, 0]
+    ipa = next(n for n in wf.values() if n["class_type"] == "easy ipadapterApply")
+    assert ipa["inputs"]["image"] == [rembg_id, 0]
+
+
+def test_redraw_page_injects_char_ref_slot(tmp_path):
+    """F2a：绑定角色有 main.png → char_ref 槽注入（uploads 含 char_ref 文件）。"""
+    db, pid = _motion_project(tmp_path, n=2)
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.assets import persist_assets
+    from comic_studio.engine.shots import list_shots
+    from comic_studio.engine.pageredraw import redraw_page
+    from comic_studio.engine.paths import data_to_abs
+    from comic_studio.engine.projects import get_project
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    ids = persist_assets(db, tmp_path / "data", pid,
+                         NS(characters=[NS(name="小红", appearance="性别：女", tags=[])],
+                             scenes=[], props=[]))
+    s1 = list_shots(db, pid)[0]
+    import json as _json
+    led = _json.loads(s1["ledger_json"])
+    led["assets"] = {"characters": ids, "scenes": [], "props": []}
+    from comic_studio.engine.shots import update_shot
+    update_shot(db, s1["id"], {"ledger_json": _json.dumps(led, ensure_ascii=False)})
+    lib = data_to_abs(tmp_path / "data", get_project(db, pid)["slug"])
+    # persist_assets 的 library_dir 在资产行上——直接取
+    from comic_studio.engine.assets import list_project_assets
+    a = list_project_assets(db, pid)[0]
+    d = data_to_abs(tmp_path / "data", a["library_dir"]); d.mkdir(parents=True, exist_ok=True)
+    (d / "main.png").write_bytes(PNG * 3)
+    with comfy_server("ok") as m:
+        redraw_page(db, tmp_path / "data", s1["id"], ComfyClient(m.base_url))
+    names = [u for u in m.uploads]
+    assert any("char_ref" in str(n) for n in names), names   # 主图入了第二槽
+    assert any("base" in str(n) for n in names), names
 
 
 def test_redraw_page_produces_v2_and_clears_video(tmp_path):

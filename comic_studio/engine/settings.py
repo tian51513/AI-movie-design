@@ -20,7 +20,9 @@ DEFAULT_SETTINGS = {
         "t2v": "h3_t2v",
         "director": "h3_director",  # P7-D 整段快车道（从视频展示工作流抽离的专属模板）
         "asr": "asr_qwen3",  # P10-D ComfyUI Qwen3-ASR（audio_to_text）
-        "page_redraw": "zimage_i2i",  # 动态漫整页重绘（base=原页，2026-09-09）
+        # 动态漫整页重绘（2026-09-09 建；2026-09-10 真机四修 F2a 换双槽
+        # IP-Adapter 模板——单槽 zimage_i2i 主图进不了工作流=角色漂移根因①）
+        "page_redraw": "zimage_page_redraw",
     },
     "llm_providers": {
         "local": {"base_url": "http://localhost:11434/v1", "api_key": "ollama",
@@ -54,9 +56,9 @@ DEFAULT_SETTINGS = {
               "director_mix": True,
               # 无台词镜静音（2026-08-30 杂音封堵）：H3 原声不进成片，代价是丢自然环境声
               "mute_quiet_shots": False,
-              # 整页重绘幅度（2026-09-09 决策 8）：画风空=原画风高清化也用同值，
-              # 0.75 兼顾保构图与转风力度
-              "page_redraw_denoise": 0.75,
+              # 整页重绘幅度（2026-09-09 决策 8 建 0.75；2026-09-10 真机四修 F4
+              # 降至 0.55——0.75 构图只剩 25% latent，原页差异大根因③）
+              "page_redraw_denoise": 0.55,
               # H3 SLA 注意力（2026-09-10 用户自定义节点 H3SLAAttention）：五模板
               # LoRA 后最后一环；默认开（0.9=本机验证值/64=音频安全块，节点出厂默认）
               "h3_sla_enabled": True,

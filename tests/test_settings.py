@@ -66,14 +66,14 @@ def test_comfy_setting_default(tmp_path):
                                         "director_batch_relay": True,
                                         "director_mix": True,
                                         "mute_quiet_shots": False,
-                                        "page_redraw_denoise": 0.75,
+                                        "page_redraw_denoise": 0.55,
                                         "h3_sla_enabled": True,
                                         "h3_sla_sparsity": 0.9,
                                         "h3_sla_block_size": "64"}
 
 
 def test_page_redraw_defaults(tmp_path):
-    """动态漫整页重绘（2026-09-09）：page_redraw 模板键 + 重绘幅度默认。"""
+    """动态漫整页重绘（2026-09-09；2026-09-10 真机四修换双槽模板+denoise 0.55）。"""
     db = _db(tmp_path)
-    assert get_setting(db, "template_map")["page_redraw"] == "zimage_i2i"
-    assert get_setting(db, "comfy")["page_redraw_denoise"] == 0.75
+    assert get_setting(db, "template_map")["page_redraw"] == "zimage_page_redraw"
+    assert get_setting(db, "comfy")["page_redraw_denoise"] == 0.55
