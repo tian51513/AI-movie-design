@@ -21,6 +21,10 @@ inject:
     sage_attention:   # SLA 联动（2026-09-10）：SLA 开→disabled 防注意力双实现叠加（T8 禁令），SLA 关→auto 回稠密基线
       node: '47'
       field: sage_attention
+    lora_turbo_name:   # SLA 联动（2026-09-10）：开关各配蒸馏匹配版——开=SLA 版/
+      # 关=普通 turbo（历史基线）；设置页手动选过 lora_turbo 槽则不注入（手动优先）
+      node: '42'
+      field: lora_name
 outputs:
   - {node: '7', filename_prefix: 'cs/{project}/director'}
 requires: [ComfyUI_MiniMaxH3_Director]

@@ -12,6 +12,7 @@ import pytest
 
 TEMPLATES = ("h3_fl2v", "h3_i2v", "h3_ref2va", "h3_t2v", "h3_director")
 SLA_LORA = "minimax_h3\\minimax_h3_fl2v_turbo_4step_v0.1_768p_sla_comfyui_bf16.safetensors"
+PLAIN_LORA = "minimax_h3\\minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy.safetensors"
 
 
 def _tmpl(t):
@@ -53,10 +54,12 @@ def test_template_wiring(t):
                      if n["class_type"] in ("BasicGuider", "MiniMaxH3Director")
                      and n["inputs"].get("model") == [sla_id, 0]), None)
     assert consumer, f"{t} Guider/Director 未接 SLA 节点"
-    assert any(n["inputs"].get("lora_name") == SLA_LORA
-               for n in wf.values()
-               if n["class_type"] == "LoraLoaderModelOnly"), \
-        f"{t} 加速 LoRA 未换 SLA 蒸馏版"
+    # 加速 LoRA 默认=普通版（无参注入=历史基线），SLA 版由 lora_turbo_name 联动
+    turbo_node = next(nid for nid, n in wf.items()
+                      if n["class_type"] == "LoraLoaderModelOnly"
+                      and n["inputs"].get("lora_name") == PLAIN_LORA)
+    ltp = _tmpl(t).inject_params["lora_turbo_name"]
+    assert ltp.node == turbo_node and ltp.field == "lora_name", f"{t}.lora_turbo_name"
     tmpl = _tmpl(t)
     for key, field in (("h3_sla_enabled", "enabled"),
                        ("h3_sla_sparsity", "sparsity_ratio"),
@@ -83,6 +86,22 @@ def test_fill_workflow_injects_sla():
     ins = wf[sla_id]["inputs"]
     assert ins["enabled"] is False and ins["sparsity_ratio"] == 0.85 \
         and ins["block_size"] == "128"
+
+
+def test_lora_link_follows_sla_toggle(tmp_path):
+    """加速 LoRA 联动：SLA 开→SLA 蒸馏版；关→普通 turbo；手动槽优先（缺席参数）。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.rendershot import (PLAIN_TURBO_LORA, SLA_TURBO_LORA,
+                                                 h3_lora_link)
+    from comic_studio.engine.settings import set_setting
+    db = Database(tmp_path / "s.db"); db.migrate()
+    assert h3_lora_link(db, "h3_fl2v") == {"lora_turbo_name": SLA_TURBO_LORA}
+    set_setting(db, "comfy", {"h3_sla_enabled": False})
+    assert h3_lora_link(db, "h3_fl2v") == {"lora_turbo_name": PLAIN_TURBO_LORA}
+    set_setting(db, "model_overrides",
+                {"h3_fl2v": {"lora_turbo": "my_manual.safetensors"}})
+    assert h3_lora_link(db, "h3_fl2v") == {}   # 手动选过→参数缺席，槽注入生效
+    assert h3_lora_link(db, "h3_i2v") == {"lora_turbo_name": PLAIN_TURBO_LORA}
 
 
 def test_h3_sla_params_helper(tmp_path):
@@ -125,3 +144,7 @@ def test_render_shot_carries_sla_settings(tmp_path, monkeypatch):
         sage = next(n for n in wf.values()
                     if n["class_type"] == "PathchSageAttentionKJ")
         assert sage["inputs"]["sage_attention"] == "auto"   # SLA 关→Sage 基线
+        turbo = next(n["inputs"]["lora_name"] for n in wf.values()
+                     if n["class_type"] == "LoraLoaderModelOnly"
+                     and "turbo" in str(n["inputs"].get("lora_name", "")))
+        assert turbo == PLAIN_LORA   # SLA 关→普通 turbo（整套历史基线）

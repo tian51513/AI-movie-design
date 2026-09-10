@@ -360,6 +360,24 @@ def h3_sla_params(db) -> dict:
             "sage_attention": "disabled" if enabled else "auto"}
 
 
+# 加速 LoRA 双版（2026-09-10 联动）：普通 turbo 按稠密注意力蒸馏、SLA 版按
+# 块稀疏蒸馏——开关各配各的才是配对正确；模板 api.json 默认=普通版（无参=历史基线）
+SLA_TURBO_LORA = "minimax_h3\\minimax_h3_fl2v_turbo_4step_v0.1_768p_sla_comfyui_bf16.safetensors"
+PLAIN_TURBO_LORA = "minimax_h3\\minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy.safetensors"
+
+
+def h3_lora_link(db, tmpl_id: str) -> dict:
+    """加速 LoRA 随 SLA 开关联动：开→SLA 蒸馏版 / 关→普通 turbo（历史基线）。
+    settings model_overrides 手动选过该模板的 lora_turbo 槽 → 返回 {} 不注入
+    （filler 里参数后于槽注入会覆盖手动选择，手动优先就得缺席参数）。"""
+    mo = (get_setting(db, "model_overrides") or {}).get(tmpl_id) or {}
+    if "lora_turbo" in mo:
+        return {}
+    cfg = get_setting(db, "comfy") or {}
+    return {"lora_turbo_name": SLA_TURBO_LORA
+            if bool(cfg.get("h3_sla_enabled", True)) else PLAIN_TURBO_LORA}
+
+
 def render_shot(db, data_dir, shot_id, comfy, job_id=None,
                 first_frame_png: Path | None = None) -> Path:
     shot = get_shot(db, shot_id)
@@ -401,6 +419,7 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         "duration": max(4, int(shot["duration"])),
         "lora_strength": proj["lora_realism"],
         **h3_sla_params(db),   # SLA 注意力三键（模板声明才注入，2026-09-10）
+        **h3_lora_link(db, template.id),   # 加速 LoRA 随开关切换（手动槽优先）
     }
     # 远景规避：远景/大全景自动升一档兆像素（上限 1.2）
     camera = json.loads(shot["camera_json"] or "{}")

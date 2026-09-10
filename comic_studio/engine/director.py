@@ -237,11 +237,13 @@ def handle_gen_director(db, data_dir, job, comfy):
             comfy_cfg.get("director_clear_vram"))
         wf[dir_node]["inputs"]["export_source_images"] = bool(
             comfy_cfg.get("director_export_source"))
-        # H3 SLA 注意力三键（2026-09-10，h3_director manifest 已声明）
-        from .rendershot import h3_sla_params
+        # H3 SLA 注意力三键（2026-09-10，h3_director manifest 已声明）+ 加速
+        # LoRA 随开关联动（手动 lora_turbo 槽优先，h3_lora_link 内判）
+        from .rendershot import h3_lora_link, h3_sla_params
         for key, value in {"timeline_data": json.dumps(timeline, ensure_ascii=False),
                            "seed": random.randint(0, 2**31 - 1),
-                           **h3_sla_params(db)}.items():
+                           **h3_sla_params(db),
+                           **h3_lora_link(db, tmpl.id)}.items():
             ip = tmpl.inject_params.get(key)
             if ip:
                 wf[ip.node]["inputs"][ip.field] = value
