@@ -404,13 +404,18 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     if not prompt:
         raise ValueError("shot prompt 为空")
     if tmpl_id == "h3_fl2v":
-        # 对齐关系头（2026-08-30 用户实测英文句式）+ 镜内禁切约束（和解多镜提示词的镜内切换）
+        # 官方 FL2VA 对齐头（2026-09-11 借鉴 MiniMax-H3-skills base 指南 §2.1
+        # 原句——训练分布内的句式；此前自拟 EXACT 句为猜测近似）+ 镜内禁切约束
         dur = max(4, int(shot["duration"]))
-        prompt = (f"<Picture 1> is the EXACT starting key frame at 0.00 seconds. "
-                  f"<Picture 2> is the EXACT ending key frame at {dur:.2f} seconds. "
-                  f"The video must begin and end pixel-consistently with these two frames "
-                  f"for scene composition, character appearance and camera framing.\n\n"
+        prompt = ("How the reference pictures align with the target video — "
+                  "Picture 1 (from Shot 1) aligns with the 0.00-second mark of "
+                  "the target video; Picture 2 (from Shot 1) aligns with the "
+                  f"{dur:.2f}-second mark of the target video.\n\n"
                   + prompt + "\n" + KF_NO_CUT)
+    elif tmpl_id == "h3_i2v" and (first_frame_png is not None or kf_start.exists()):
+        # 官方 I2VA 对齐头（首帧参考注入时）
+        prompt = ("For the target video, at 0.00 seconds into the target video, "
+                  "<Picture 1> (from [Shot 1]) is fully referenced.\n\n" + prompt)
 
     params = {
         "seed": _video_seed(shot),

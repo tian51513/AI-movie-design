@@ -493,8 +493,11 @@ def test_fl2v_render_prepends_align_header(tmp_path, monkeypatch):
         out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
         assert out.exists()
         sent = m.prompts[0]["prompt"]["64"]["inputs"]["prompt"]
-        assert sent.startswith("<Picture 1> is the EXACT starting key frame at 0.00 seconds")
-        assert "<Picture 2> is the EXACT ending key frame at 5.00 seconds" in sent
+        # 官方 FL2VA 对齐头（2026-09-11 借鉴 base 指南原句）
+        assert sent.startswith("How the reference pictures align with the target video")
+        assert "aligns with the 0.00-second mark" in sent
+        assert "aligns with the 5.00-second mark of the target video" in sent
+        assert "No cuts" in sent or "no cuts" in sent   # KF_NO_CUT 仍附
 
 
 def test_ref2va_injects_voice_samples(tmp_path, monkeypatch):

@@ -25,6 +25,20 @@ _COMMON_TAIL = """
   分镜明确需要配乐时才写具体配乐描述。
 - 人物非语言发声（哼声、喘息、衣物声）在描述末尾加一句「同步声音：…」标注。
 - 无台词的镜：overall_soundscape 中明确写「无对白、无哼唱」。
+
+借鉴官方写作指南（2026-09-11 MiniMax-H3-skills base-en）：
+- 运镜写成镜头内的自然英文动作句（不堆标签）：类型 Zoom In/Out、Push In/Pull Out、
+  Pan/Truck Left/Right、Tilt Up/Down、Pedestal Up/Down、Arc Shot、Tracking Shot、
+  Static Shot、Shake、POV、Roll；必要时加幅度 with small/large amplitude、
+  速度 at slow/fast speed（中幅常速省略）。
+- 说话人可给稳定 (S1)(S2) 编号，跨镜不复用错号，合唱写 (S1,S2)；说话人首次出现
+  补一句身份与音色锚（类型/年龄/音高/语速）；画外音用精确短语
+  says in an off-screen voiceover，其后紧跟一句声明画面人物嘴唇保持闭合；
+  一句台词跨切时两段接点用 <scenetrans> 并声明音频跨切连续；片尾截断用 <cutoff>。
+- 画面内可见文字（招牌/字幕/霓虹）：英文双引号内保留原文逐字不译。
+- overall_soundscape：1-4 句连续段，只写环境声/动作声/人物非语言声，
+  对白与歌声不重复进此节；non_diegetic_music 写乐器/速度/动态变化，
+  不用抽象情绪词，无配乐写 N/A。
 """
 
 # 官方结构骨架（few-shot 填空模板，2026-08-25：此前只"要求列出"分段，
@@ -108,10 +122,15 @@ D 版实测模板：大全景缓推 → 近景跟拍 → 中景仰拍轮廓光�
 二、镜头段：
 [Shot 1] <时长>-second continuous cinematic shot. 环境与光影动态（光怎么移动、
 粒子/布料/头发怎么飘）→ <角色名> 动作细节与表情变化（严禁 he/she/it 代词，
-一律写角色名）→ 镜头运动（camera pushes in slowly / pans right 等具体幅度）。
+一律写角色名）→ 镜头运动写成镜头内自然动作句（camera pushes in with small
+amplitude at slow speed / the camera trucks right 等；类型可用 Zoom/Push/Pull/
+Pan/Truck/Tilt/Pedestal/Arc/Tracking/Static/Shake/POV/Roll，必要时带幅度与速度）。
 
 三、对白（台词逐字中文，不得改写）：
 <角色名> looks at <对象> and says in natural Mandarin: <d>[Mandarin Chinese]台词原文</d>
+说话人首次出现补身份音色锚（quiet breathy voice / deep measured voice 等）；
+画外音精确短语 says in an off-screen voiceover 且紧跟 the on-screen character's
+lips remain completely closed；台词跨切两段接点用 <scenetrans>；片尾截断用 <cutoff>。
 无对白的镜写：No dialogue, no humming, no speech.
 
 四、音频行为（英文短句，与画面逐项绑定；句尾固定加 No background music.）：
