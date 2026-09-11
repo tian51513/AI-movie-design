@@ -1,19 +1,201 @@
 {
-  "1": {"class_type": "UNETLoader", "inputs": {"unet_name": "z_image_turbo_bf16.safetensors", "weight_dtype": "default"}},
-  "2": {"class_type": "CLIPLoader", "inputs": {"clip_name": "qwen_3_4b-fp8.safetensors", "type": "qwen_image", "device": "default"}},
-  "3": {"class_type": "VAELoader", "inputs": {"vae_name": "ae.safetensors"}},
-  "23": {"class_type": "LoadImage", "inputs": {"image": "page.png"}},
-  "102": {"class_type": "AnimeLineArtPreprocessor", "inputs": {"image": ["23", 0], "resolution": 1024}},
-  "58": {"class_type": "ResolutionSelector", "inputs": {}},
-  "45": {"class_type": "ImageResizeKJv2", "inputs": {"image": ["102", 0], "width": ["58", 0], "height": ["58", 1], "upscale_method": "lanczos", "keep_proportion": "stretch", "pad_color": "0, 0, 0", "crop_position": "center", "divisible_by": 16}},
-  "141": {"class_type": "ControlNetLoader", "inputs": {"control_net_name": "Qwen-Image-2512-Fun-Controlnet-Union.safetensors"}},
-  "140": {"class_type": "SetUnionControlNetType", "inputs": {"control_net": ["141", 0], "type": "canny/lineart/anime_lineart/mlsd"}},
-  "28": {"class_type": "PrimitiveStringMultiline", "inputs": {"value": ""}},
-  "5": {"class_type": "CLIPTextEncode", "inputs": {"text": ["28", 0], "clip": ["2", 0]}},
-  "31": {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["5", 0]}},
-  "200": {"class_type": "ControlNetApplyAdvanced", "inputs": {"positive": ["5", 0], "negative": ["31", 0], "control_net": ["140", 0], "image": ["45", 0], "strength": 0.85, "start_percent": 0.0, "end_percent": 1.0}},
-  "104": {"class_type": "EmptyLatentImage", "inputs": {"width": ["58", 0], "height": ["58", 1], "batch_size": 1}},
-  "4": {"class_type": "KSampler", "inputs": {"model": ["1", 0], "positive": ["200", 0], "negative": ["200", 1], "latent_image": ["104", 0], "seed": 12345, "steps": 10, "cfg": 1, "sampler_name": "res_multistep", "scheduler": "simple", "denoise": 1.0}},
-  "8": {"class_type": "VAEDecode", "inputs": {"samples": ["4", 0], "vae": ["3", 0]}},
-  "10": {"class_type": "SaveImage", "inputs": {"filename_prefix": "cs/{project}/{asset}", "images": ["8", 0]}}
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "z_image_turbo_bf16.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen_3_4b-fp8.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "ae.safetensors"
+    }
+  },
+  "23": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "page.png"
+    }
+  },
+  "102": {
+    "class_type": "AnimeLineArtPreprocessor",
+    "inputs": {
+      "image": [
+        "23",
+        0
+      ],
+      "resolution": 1024
+    }
+  },
+  "58": {
+    "class_type": "ResolutionSelector",
+    "inputs": {}
+  },
+  "45": {
+    "class_type": "ImageResizeKJv2",
+    "inputs": {
+      "image": [
+        "102",
+        0
+      ],
+      "width": [
+        "58",
+        0
+      ],
+      "height": [
+        "58",
+        1
+      ],
+      "upscale_method": "lanczos",
+      "keep_proportion": "stretch",
+      "pad_color": "0, 0, 0",
+      "crop_position": "center",
+      "divisible_by": 16
+    }
+  },
+  "141": {
+    "class_type": "ControlNetLoader",
+    "inputs": {
+      "control_net_name": "Qwen-Image-2512-Fun-Controlnet-Union.safetensors"
+    }
+  },
+  "140": {
+    "class_type": "SetUnionControlNetType",
+    "inputs": {
+      "control_net": [
+        "141",
+        0
+      ],
+      "type": "canny/lineart/anime_lineart/mlsd"
+    }
+  },
+  "28": {
+    "class_type": "PrimitiveStringMultiline",
+    "inputs": {
+      "value": ""
+    }
+  },
+  "5": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": [
+        "28",
+        0
+      ],
+      "clip": [
+        "2",
+        0
+      ]
+    }
+  },
+  "31": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": {
+      "conditioning": [
+        "5",
+        0
+      ]
+    }
+  },
+  "200": {
+    "class_type": "ControlNetApplyAdvanced",
+    "inputs": {
+      "positive": [
+        "5",
+        0
+      ],
+      "negative": [
+        "31",
+        0
+      ],
+      "control_net": [
+        "140",
+        0
+      ],
+      "image": [
+        "45",
+        0
+      ],
+      "strength": 0.85,
+      "start_percent": 0.0,
+      "end_percent": 1.0,
+      "vae": [
+        "3",
+        0
+      ]
+    }
+  },
+  "104": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {
+      "width": [
+        "58",
+        0
+      ],
+      "height": [
+        "58",
+        1
+      ],
+      "batch_size": 1
+    }
+  },
+  "4": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "200",
+        0
+      ],
+      "negative": [
+        "200",
+        1
+      ],
+      "latent_image": [
+        "104",
+        0
+      ],
+      "seed": 12345,
+      "steps": 10,
+      "cfg": 1,
+      "sampler_name": "res_multistep",
+      "scheduler": "simple",
+      "denoise": 1.0
+    }
+  },
+  "8": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "4",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    }
+  },
+  "10": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "filename_prefix": "cs/{project}/{asset}",
+      "images": [
+        "8",
+        0
+      ]
+    }
+  }
 }

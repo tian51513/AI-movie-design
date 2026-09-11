@@ -126,6 +126,9 @@ def test_page_redraw_template_mechanics():
     apply_ = next(n for n in wf.values()
                   if n["class_type"] == "ControlNetApplyAdvanced")
     assert 0 < apply_["inputs"]["strength"] <= 1.0
+    # Fun-Union CN 是 VAE 编码型——Apply 不接 vae 真机抛
+    # "This Controlnet needs a VAE"（2026-09-11 真机判例）
+    assert apply_["inputs"]["vae"] == ["3", 0]
     ks = next(n for n in wf.values() if n["class_type"] == "KSampler")
     assert ks["inputs"]["cfg"] == 1
     assert ks["inputs"]["sampler_name"] == "res_multistep"
