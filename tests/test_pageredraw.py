@@ -106,26 +106,30 @@ def test_build_page_redraw_prompt_style_and_clean_text(tmp_path):
 
 
 def test_page_redraw_template_mechanics():
-    """v4（2026-09-11 夜）：Qwen-Edit-2511 直驱——保构图是 Edit 模型原生能力
-    （图条件+latent 同源），无需 CN（v3 的 Fun-Union 需 2512 系底模，本机
-    Z-Image turbo 硬崩 NextDiT.process_img）。采样链沿用万物迁移实测。"""
+    """v4.1（2026-09-11 夜）：Qwen-Edit-2511 直驱（保构图原生）+ 保原页比例
+    长边 1024——v3 CN 需 2512 系底模本机无（Z-Image turbo 硬崩 process_img）；
+    v4 曾按项目画幅 stretch 把横版原页压扁 217%+0.4MP 低清双失真。"""
     from pathlib import Path
     from comic_studio.engine.workflows import registry
     tmpl = registry.scan_templates(Path("templates/workflows"))["zimage_page_redraw"]
     assert [i["slot"] for i in tmpl.inject_images] == ["base"]
-    for p in ("denoise", "seed", "aspect", "megapixels", "multiple"):
+    for p in ("denoise", "seed"):
         assert p in tmpl.inject_params, p
     wf = tmpl.api_json()
     classes = {n["class_type"] for n in wf.values()}
     assert "TextEncodeQwenImageEdit" in classes       # 编辑编码（图条件保构图）
-    assert "ModelSamplingAuraFlow" in classes         # shift 3.1（万物迁移实测）
+    assert "ModelSamplingAuraFlow" in classes         # 万物迁移实测 shift 3.1
     for gone in ("ControlNetApplyAdvanced", "SetUnionControlNetType",
-                 "AnimeLineArtPreprocessor", "easy ipadapterApply"):
-        assert gone not in classes, gone               # CN/IPA 路线全撤
+                 "AnimeLineArtPreprocessor", "easy ipadapterApply",
+                 "ResolutionSelector"):
+        assert gone not in classes, gone               # CN/IPA/画幅强扭路线全撤
     enc = next(n for n in wf.values() if n["class_type"] == "TextEncodeQwenImageEdit")
     assert enc["inputs"]["image"] == ["45", 0]         # 图条件=缩放后原页
     rs = next(n for n in wf.values() if n["class_type"] == "ImageResizeKJv2")
     assert rs["inputs"]["image"] == [tmpl.inject_images[0]["node"], 0]
+    assert rs["inputs"]["aspect_ratio"] == "original"  # 保原页比例
+    assert rs["inputs"]["scale_to_side"] == "longest"
+    assert rs["inputs"]["scale_to_length"] >= 1024
     ks = next(n for n in wf.values() if n["class_type"] == "KSampler")
     assert (ks["inputs"]["cfg"], ks["inputs"]["steps"],
             ks["inputs"]["sampler_name"], ks["inputs"]["denoise"]) == (3.5, 8, "euler", 1.0)
@@ -375,8 +379,8 @@ def test_bind_redraw_characters_variant_matching(tmp_path):
 
 
 def test_redraw_page_injects_canvas_params(tmp_path, monkeypatch):
-    """v3 真机 400 修复：ResolutionSelector 三必填（aspect/megapixels/multiple）
-    必须随 params 注入——manifest 声明注入点≠params 自动带键。"""
+    """v4.1 真机判例：横版原页被项目竖版画幅 stretch 压扁 217%+0.4MP 低清
+    → 除首页外全崩。重绘改保原页比例+长边 1024（画幅归视频端 fl2v 处理）。"""
     db, pid = _motion_project(tmp_path, n=1)
     from pathlib import Path as _P
     from comic_studio.engine.pageredraw import redraw_page
@@ -390,5 +394,6 @@ def test_redraw_page_injects_canvas_params(tmp_path, monkeypatch):
         redraw_page(db, tmp_path / "data", s1["id"], ComfyClient(m.base_url))
         wf = m.prompts[0]["prompt"]
         rs = next(n["inputs"] for n in wf.values()
-                  if n["class_type"] == "ResolutionSelector")
-        assert rs["aspect_ratio"] and rs["megapixels"] and rs["multiple"]
+                  if n["class_type"] == "ImageResizeKJv2")
+        assert rs["aspect_ratio"] == "original"
+        assert rs["scale_to_side"] == "longest" and rs["scale_to_length"] == 1024

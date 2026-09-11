@@ -26,10 +26,6 @@
       "image": "page.png"
     }
   },
-  "58": {
-    "class_type": "ResolutionSelector",
-    "inputs": {}
-  },
   "45": {
     "class_type": "ImageResizeKJv2",
     "inputs": {
@@ -37,17 +33,15 @@
         "23",
         0
       ],
-      "width": [
-        "58",
-        0
-      ],
-      "height": [
-        "58",
-        1
-      ],
-      "upscale_method": "lanczos",
-      "keep_proportion": "stretch",
-      "pad_color": "0, 0, 0",
+      "width": 1024,
+      "height": 1024,
+      "aspect_ratio": "original",
+      "scale_to_side": "longest",
+      "scale_to_length": 1024,
+      "fit": "letterbox",
+      "method": "lanczos",
+      "round_to_multiple": "16",
+      "background_color": "0, 0, 0",
       "crop_position": "center",
       "divisible_by": 16
     }

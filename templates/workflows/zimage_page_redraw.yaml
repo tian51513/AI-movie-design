@@ -15,15 +15,6 @@ inject:
     denoise:
       node: '4'
       field: denoise
-    aspect:
-      node: '58'
-      field: aspect_ratio
-    megapixels:
-      node: '58'
-      field: megapixels
-    multiple:
-      node: '58'
-      field: multiple
   # base=原页（Resize 到项目画幅）：既是 Edit 的图条件（保构图/人数/表情）
   # 又是 latent 种子——「编辑此图」而非「重画此图」
   images:
