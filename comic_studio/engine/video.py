@@ -15,7 +15,7 @@ def extract_last_frame(video_path: Path, out_png: Path, timeout: int = 30) -> Pa
     r = subprocess.run(
         [ffmpeg_bin(), "-y", "-sseof", "-0.1", "-i", str(video_path),
          "-update", "1", "-frames:v", "1", str(out_png)],
-        capture_output=True, timeout=timeout, text=True)
+        capture_output=True, encoding='utf-8', errors='replace', timeout=timeout, text=True)
     if r.returncode != 0 or not out_png.exists():
         raise RuntimeError(f"末帧抽取失败: {(r.stderr or '')[-200:]}")
     return out_png

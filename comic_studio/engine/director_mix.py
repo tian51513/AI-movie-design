@@ -66,5 +66,5 @@ def mix_director_audio(video: Path, spans: list, output: Path,
            "-filter_complex", ";".join(parts + [concat]),
            "-map", "0:v", "-map", "[aout]", "-c:v", "copy", "-c:a", "aac",
            str(output)]
-    subprocess.run(cmd, check=True, capture_output=True, timeout=600)
+    subprocess.run(cmd, check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=600)
     return output

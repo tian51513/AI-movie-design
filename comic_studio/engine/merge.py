@@ -13,7 +13,7 @@ def ffmpeg_bin() -> str:
 
 def probe(path: Path) -> dict:
     """ffmpeg -i 解析 stderr（imageio-ffmpeg 不带 ffprobe）。"""
-    r = subprocess.run([ffmpeg_bin(), "-i", str(path)], capture_output=True, timeout=60, text=True)
+    r = subprocess.run([ffmpeg_bin(), "-i", str(path)], capture_output=True, encoding='utf-8', errors='replace', timeout=60, text=True)
     info = r.stderr or ""
     m = re.search(r"Duration: (\d+):(\d+):(\d+)\.(\d+)", info)
     duration = 0.0
@@ -51,13 +51,13 @@ def normalize(src: Path, dst: Path, w: int, h: int, fps: float) -> Path:
     if probe(src)["sample_rate"] is not None:
         subprocess.run([ffmpeg_bin(), "-y", "-i", str(src), *common,
                         "-f", "mp4", str(dst)],
-                       check=True, capture_output=True, timeout=300)
+                       check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=300)
     else:
         subprocess.run([ffmpeg_bin(), "-y", "-i", str(src),
                         "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
                         "-map", "0:v", "-map", "1:a", "-shortest", *common,
                         "-f", "mp4", str(dst)],
-                       check=True, capture_output=True, timeout=300)
+                       check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=300)
     return dst
 
 
@@ -78,7 +78,7 @@ def concat(parts: list, out: Path) -> Path:
     r = subprocess.run(
         [ffmpeg_bin(), "-y", "-f", "concat", "-safe", "0", "-i", str(lst),
          "-c", "copy", str(out)],
-        capture_output=True, timeout=300)
+        capture_output=True, encoding='utf-8', errors='replace', timeout=300)
     if r.returncode == 0 and out.exists():
         return out
     # 回退：逐段 concat filter 重编码
@@ -91,7 +91,7 @@ def concat(parts: list, out: Path) -> Path:
     args += ["-filter_complex", filt, "-map", "[v]", "-map", "[a]",
              "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p",
              "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2", str(out)]
-    subprocess.run(args, check=True, capture_output=True, timeout=600)
+    subprocess.run(args, check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=600)
     return out
 
 
@@ -144,7 +144,7 @@ def concat_xfade(parts: list, out: Path, fade: float = XFADE_SEC,
                  "-map", "[vout2]" if grade else "[vout]", "-map", "[aout]",
                  "-c:v", "libx264", "-crf", "20", "-preset", "fast",
                  "-pix_fmt", "yuv420p", "-c:a", "aac", str(out)]
-        subprocess.run(args, check=True, capture_output=True, timeout=3600)
+        subprocess.run(args, check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=3600)
     finally:
         import shutil as _sh
         _sh.rmtree(_sil_dir, ignore_errors=True)
@@ -153,7 +153,7 @@ def concat_xfade(parts: list, out: Path, fade: float = XFADE_SEC,
 
 def _ensure_audio(src: Path, workdir: Path) -> Path:
     """无音轨 → 复制视频流并垫静音轨（视频直拷零重编码）。"""
-    r = subprocess.run([ffmpeg_bin(), "-i", str(src)], capture_output=True,
+    r = subprocess.run([ffmpeg_bin(), "-i", str(src)], capture_output=True, encoding='utf-8', errors='replace',
                        timeout=60, text=True)
     if " Audio:" in (r.stderr or ""):
         return src
@@ -162,7 +162,7 @@ def _ensure_audio(src: Path, workdir: Path) -> Path:
         [ffmpeg_bin(), "-y", "-i", str(src),
          "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
          "-shortest", "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", str(dst)],
-        check=True, capture_output=True, timeout=300)
+        check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=300)
     return dst
 
 
@@ -199,11 +199,11 @@ def _replace_audio(video: Path, audio: Path, output: Path, target: float) -> Pat
                         "-vf", f"tpad=stop_mode=clone:stop_duration={target - v_dur:.2f}",
                         "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
                         *tail],
-                       check=True, capture_output=True, timeout=600)
+                       check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=600)
         return output
     subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-i", str(audio),
                     "-c:v", "copy", *tail],
-                   check=True, capture_output=True, timeout=300)
+                   check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=300)
     return output
 
 
@@ -212,7 +212,7 @@ def _mute_audio(video: Path, output: Path) -> Path:
     H3 原生残留杂音不进成片，代价是丢自然环境声（comfy.mute_quiet_shots）。"""
     subprocess.run([ffmpeg_bin(), "-y", "-i", str(video), "-af", "volume=0",
                     "-c:v", "copy", "-c:a", "aac", str(output)],
-                   check=True, capture_output=True, timeout=300)
+                   check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=300)
     return output
 
 
@@ -235,7 +235,7 @@ def _burn_subtitles(video: Path, srt: Path) -> None:
     subprocess.run([ffmpeg_bin(), "-y", "-i", str(video),
                     "-vf", f"subtitles={srt.name}:force_style='{style}'",
                     "-c:a", "copy", str(tmp)],
-                   check=True, capture_output=True, timeout=600, cwd=str(srt.parent))  # noqa: E501（srt 已绝对化）
+                   check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=600, cwd=str(srt.parent))  # noqa: E501（srt 已绝对化）
     tmp.replace(video)
 
 

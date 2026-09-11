@@ -226,7 +226,7 @@ def _to_mp3(src: Path, dest: Path) -> None:
     from .merge import ffmpeg_bin
     import subprocess
     subprocess.run([ffmpeg_bin(), "-y", "-i", str(src), "-codec:a", "libmp3lame",
-                    "-q:a", "4", str(dest)], check=True, capture_output=True, timeout=120)
+                    "-q:a", "4", str(dest)], check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=120)
 
 
 def _tts_sync(text: str, voice: str, output: Path):
@@ -255,6 +255,6 @@ def _concat_audio_parts(parts: list, output: Path):
     try:
         subprocess.run([ffmpeg_bin(), "-y", "-f", "concat", "-safe", "0",
                         "-i", list_file.name, "-c", "copy", str(output)],
-                       check=True, capture_output=True, timeout=60)
+                       check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=60)
     finally:
         Path(list_file.name).unlink(missing_ok=True)

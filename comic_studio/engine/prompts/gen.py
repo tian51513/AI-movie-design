@@ -161,7 +161,7 @@ def validate_h3(prompt_text: str, duration, ratio: str, images=0, videos=0) -> t
              "--input", tmp, "--mode", "reference-to-video",
              "--duration", str(int(duration)), "--ratio", ratio,
              "--images", str(images), "--videos", str(videos), "--audios", "0"],
-            capture_output=True, timeout=20, text=True)
+            capture_output=True, encoding='utf-8', errors='replace', timeout=20, text=True)
         return r.returncode == 0, (r.stdout + r.stderr).strip()[:300]
     finally:
         Path(tmp).unlink(missing_ok=True)

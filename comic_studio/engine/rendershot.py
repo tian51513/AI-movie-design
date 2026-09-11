@@ -710,5 +710,5 @@ def _silent_placeholder(data_dir) -> Path:
     f.parent.mkdir(parents=True, exist_ok=True)
     _sp.run([ffmpeg_bin(), "-y", "-f", "lavfi", "-i",
              "anullsrc=r=24000:cl=mono", "-t", "0.5", "-b:a", "32k", str(f)],
-            check=True, capture_output=True, timeout=60)
+            check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=60)
     return f

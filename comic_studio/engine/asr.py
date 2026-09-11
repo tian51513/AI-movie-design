@@ -441,7 +441,7 @@ def transcribe_comfy(db, audio_path, comfy, progress=None, theme: str = "",
         _sp.run([ffmpeg_bin(), "-y", "-i", str(audio_path), "-f", "segment",
                  "-segment_time", str(int(chunk_seconds)), "-c", "copy",
                  str(tmpdir / "c%04d.mp3")],
-                check=True, capture_output=True, timeout=600)
+                check=True, capture_output=True, encoding='utf-8', errors='replace', timeout=600)
         chunks = sorted(tmpdir.glob("c*.mp3"))
     else:
         chunks = [audio_path]
