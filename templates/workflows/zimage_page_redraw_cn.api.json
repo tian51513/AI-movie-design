@@ -52,22 +52,6 @@
       "divisible_by": 16
     }
   },
-  "141": {
-    "class_type": "ControlNetLoader",
-    "inputs": {
-      "control_net_name": "Z-Image-Turbo-Fun-Controlnet-Union-2.1.safetensors"
-    }
-  },
-  "140": {
-    "class_type": "SetUnionControlNetType",
-    "inputs": {
-      "control_net": [
-        "141",
-        0
-      ],
-      "type": "canny/lineart/anime_lineart/mlsd"
-    }
-  },
   "28": {
     "class_type": "PrimitiveStringMultiline",
     "inputs": {
@@ -96,34 +80,6 @@
       ]
     }
   },
-  "200": {
-    "class_type": "ControlNetApplyAdvanced",
-    "inputs": {
-      "positive": [
-        "5",
-        0
-      ],
-      "negative": [
-        "31",
-        0
-      ],
-      "control_net": [
-        "140",
-        0
-      ],
-      "image": [
-        "45",
-        0
-      ],
-      "strength": 0.85,
-      "start_percent": 0.0,
-      "end_percent": 1.0,
-      "vae": [
-        "3",
-        0
-      ]
-    }
-  },
   "104": {
     "class_type": "EmptyLatentImage",
     "inputs": {
@@ -142,16 +98,16 @@
     "class_type": "KSampler",
     "inputs": {
       "model": [
-        "1",
+        "150",
         0
       ],
       "positive": [
-        "200",
+        "5",
         0
       ],
       "negative": [
-        "200",
-        1
+        "31",
+        0
       ],
       "latent_image": [
         "104",
@@ -186,6 +142,34 @@
         "8",
         0
       ]
+    }
+  },
+  "141": {
+    "class_type": "ModelPatchLoader",
+    "inputs": {
+      "name": "Z-Image-Turbo-Fun-Controlnet-Union-2.1.safetensors"
+    }
+  },
+  "150": {
+    "class_type": "ZImageFunControlnet",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "model_patch": [
+        "141",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ],
+      "image": [
+        "45",
+        0
+      ],
+      "strength": 0.85
     }
   }
 }
