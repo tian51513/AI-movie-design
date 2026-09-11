@@ -375,3 +375,23 @@ def test_bind_redraw_characters_variant_matching(tmp_path):
     assert led[2] == [xid]        # 小红 精确；小明无资产不绑
     assert led[3] == [jid]        # 金发女性 精确（男性角色无资产不绑）
     # 无交叉误绑：黑发desc不绑金发资产（led[0] 不含 jid）已在上面断言
+
+
+def test_redraw_page_injects_canvas_params(tmp_path, monkeypatch):
+    """v3 真机 400 修复：ResolutionSelector 三必填（aspect/megapixels/multiple）
+    必须随 params 注入——manifest 声明注入点≠params 自动带键。"""
+    db, pid = _motion_project(tmp_path, n=1)
+    from pathlib import Path as _P
+    from comic_studio.engine.pageredraw import redraw_page
+    from comic_studio.engine.shots import list_shots
+    from comic_studio.engine.workflows import registry
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", _P("templates/workflows"))
+    s1 = list_shots(db, pid)[0]
+    with comfy_server("ok") as m:
+        redraw_page(db, tmp_path / "data", s1["id"], ComfyClient(m.base_url))
+        wf = m.prompts[0]["prompt"]
+        rs = next(n["inputs"] for n in wf.values()
+                  if n["class_type"] == "ResolutionSelector")
+        assert rs["aspect_ratio"] and rs["megapixels"] and rs["multiple"]

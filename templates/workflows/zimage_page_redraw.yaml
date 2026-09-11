@@ -22,6 +22,9 @@ inject:
     megapixels:
       node: '58'
       field: megapixels
+    multiple:
+      node: '58'
+      field: multiple
   # base=原页：链内 AnimeLineArtPreprocessor 提线稿→Resize 到项目画幅→
   # Qwen-Image Fun-Union ControlNet（lineart 型，strength 0.85）锁构图，
   # 画风/质感全交提示词自由发挥——manga→photo 跨域的标准解

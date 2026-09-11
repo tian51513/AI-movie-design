@@ -199,10 +199,16 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
     # 提示词专注风格化/清文字/画质；v1 的「布局一致」句让位给结构条件
     seed = seed if seed is not None else _video_seed(shot)
     prompt = build_page_redraw_prompt(db, proj, shot)
+    # v3 线稿 ControlNet 版画幅链：ResolutionSelector 三必填（2026-09-11 真机
+    # 400——manifest 声明了注入点但 params 没带键=required_input_missing）
+    from .rendershot import ASPECT_ENUM
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
         params={"seed": seed,
-                "denoise": (get_setting(db, "comfy") or {}).get("page_redraw_denoise", 1.0)},
+                "denoise": (get_setting(db, "comfy") or {}).get("page_redraw_denoise", 1.0),
+                "aspect": ASPECT_ENUM.get(proj["aspect_ratio"], ASPECT_ENUM["16:9"]),
+                "megapixels": proj["video_megapixels"],
+                "multiple": proj["video_multiple"]},
         images=images,
         output_ctx={"project": proj["slug"], "asset": f"shot-{shot['seq']}-redraw"},
         model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))
