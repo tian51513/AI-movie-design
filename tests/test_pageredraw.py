@@ -106,37 +106,31 @@ def test_build_page_redraw_prompt_style_and_clean_text(tmp_path):
 
 
 def test_page_redraw_template_mechanics():
-    """v3（2026-09-11）：线稿 ControlNet 版——原页提线稿→Fun-Union CN（lineart 型）
-    锁构图，t2i denoise 1.0 自由风格化（v1 latent i2i 跨域改人数、v2 IP-Adapter
-    全局盖章均真机否决）。采样机制沿用用户 _raw 实测（cfg=1 res_multistep）。"""
+    """v4（2026-09-11 夜）：Qwen-Edit-2511 直驱——保构图是 Edit 模型原生能力
+    （图条件+latent 同源），无需 CN（v3 的 Fun-Union 需 2512 系底模，本机
+    Z-Image turbo 硬崩 NextDiT.process_img）。采样链沿用万物迁移实测。"""
     from pathlib import Path
     from comic_studio.engine.workflows import registry
     tmpl = registry.scan_templates(Path("templates/workflows"))["zimage_page_redraw"]
     assert [i["slot"] for i in tmpl.inject_images] == ["base"]
-    for p in ("denoise", "seed", "aspect", "megapixels"):
+    for p in ("denoise", "seed", "aspect", "megapixels", "multiple"):
         assert p in tmpl.inject_params, p
     wf = tmpl.api_json()
     classes = {n["class_type"] for n in wf.values()}
-    assert "AnimeLineArtPreprocessor" in classes      # 原页提线稿
-    assert "SetUnionControlNetType" in classes        # lineart 型
-    assert "ControlNetApplyAdvanced" in classes
-    assert "easy ipadapterApply" not in classes       # RC5 回收
-    sut = next(n for n in wf.values() if n["class_type"] == "SetUnionControlNetType")
-    assert sut["inputs"]["type"] == "canny/lineart/anime_lineart/mlsd"
-    apply_ = next(n for n in wf.values()
-                  if n["class_type"] == "ControlNetApplyAdvanced")
-    assert 0 < apply_["inputs"]["strength"] <= 1.0
-    # Fun-Union CN 是 VAE 编码型——Apply 不接 vae 真机抛
-    # "This Controlnet needs a VAE"（2026-09-11 真机判例）
-    assert apply_["inputs"]["vae"] == ["3", 0]
+    assert "TextEncodeQwenImageEdit" in classes       # 编辑编码（图条件保构图）
+    assert "ModelSamplingAuraFlow" in classes         # shift 3.1（万物迁移实测）
+    for gone in ("ControlNetApplyAdvanced", "SetUnionControlNetType",
+                 "AnimeLineArtPreprocessor", "easy ipadapterApply"):
+        assert gone not in classes, gone               # CN/IPA 路线全撤
+    enc = next(n for n in wf.values() if n["class_type"] == "TextEncodeQwenImageEdit")
+    assert enc["inputs"]["image"] == ["45", 0]         # 图条件=缩放后原页
+    rs = next(n for n in wf.values() if n["class_type"] == "ImageResizeKJv2")
+    assert rs["inputs"]["image"] == [tmpl.inject_images[0]["node"], 0]
     ks = next(n for n in wf.values() if n["class_type"] == "KSampler")
-    assert ks["inputs"]["cfg"] == 1
-    assert ks["inputs"]["sampler_name"] == "res_multistep"
-    assert ks["inputs"]["denoise"] == 1.0
-    # 线稿链：预处理器吃 base 图，CN 条件图=缩放后的线稿
-    pre = next(n for n in wf.values()
-               if n["class_type"] == "AnimeLineArtPreprocessor")
-    assert pre["inputs"]["image"] == [tmpl.inject_images[0]["node"], 0]
+    assert (ks["inputs"]["cfg"], ks["inputs"]["steps"],
+            ks["inputs"]["sampler_name"], ks["inputs"]["denoise"]) == (3.5, 8, "euler", 1.0)
+    ve = next(n for n in wf.values() if n["class_type"] == "VAEEncode")
+    assert ve["inputs"]["pixels"] == ["45", 0]         # latent 与图条件同源
 
 
 def test_redraw_page_injects_char_ref_slot(tmp_path):

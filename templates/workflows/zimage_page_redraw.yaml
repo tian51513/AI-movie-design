@@ -1,6 +1,6 @@
 id: zimage_page_redraw
 type: i2i
-name: Z-Image 整页重绘（线稿 ControlNet 结构锁 + 自由风格化，2026-09-11 v3）
+name: 整页重绘（Qwen-Edit-2511 直驱，2026-09-11 v4）
 file: zimage_page_redraw.api.json
 prompt_format: '{kind_label}：{name}。{detail}'
 inject:
@@ -11,8 +11,7 @@ inject:
     seed:
       node: '4'
       field: seed
-    # v3（2026-09-11）：ControlNet 锁结构后 denoise=1.0 全幅生成——构图/人数
-    # 由线稿条件保证（v2 纯 latent i2i 在漫画→真人跨域下 0.55 仍改人数）
+    # v4：Edit 模型经图条件保构图，denoise 1.0 全幅编辑（改此值会破坏编辑语义）
     denoise:
       node: '4'
       field: denoise
@@ -25,9 +24,8 @@ inject:
     multiple:
       node: '58'
       field: multiple
-  # base=原页：链内 AnimeLineArtPreprocessor 提线稿→Resize 到项目画幅→
-  # Qwen-Image Fun-Union ControlNet（lineart 型，strength 0.85）锁构图，
-  # 画风/质感全交提示词自由发挥——manga→photo 跨域的标准解
+  # base=原页（Resize 到项目画幅）：既是 Edit 的图条件（保构图/人数/表情）
+  # 又是 latent 种子——「编辑此图」而非「重画此图」
   images:
   - node: '23'
     field: image
@@ -37,10 +35,12 @@ outputs:
   filename_prefix: cs/{project}/{asset}
 requires:
 - comfyui-kjnodes
-- comfyui_controlnet_aux
 
+# v4（2026-09-11 夜·三连否决后定型）：v3 的 Fun-Union CN 需 Qwen-Image-2512 系
+# 底模（本机只有 Z-Image turbo → NextDiT 无 process_img 硬崩）；Qwen-Edit-2511
+# 的训练目标就是「按指令编辑、其余保持」——保构图原生，无需 CN。采样链沿用
+# 万物迁移实测（AuraFlow shift 3.1 / 8 步 / cfg 3.5 / euler-simple）
 models:
-- {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
-- {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
-- {label: vae, node: '3', field: vae_name, cls: VAELoader, label_cn: VAE}
-- {label: control_net, node: '141', field: control_net_name, cls: ControlNetLoader, label_cn: 结构控制 ControlNet}
+- {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet（Edit-2511）}
+- {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器（qwen2.5-vl）}
+- {label: vae, node: '3', field: vae_name, cls: VAELoader, label_cn: VAE（qwen_image_vae）}
