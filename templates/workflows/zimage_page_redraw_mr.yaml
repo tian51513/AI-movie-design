@@ -1,0 +1,37 @@
+id: zimage_page_redraw_mr
+type: i2i
+name: 整页重绘·多角色（Edit-2511 PlusPro 五图槽，2026-09-12 v6）
+file: zimage_page_redraw_mr.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '28'
+    field: value
+  params:
+    seed:
+      node: '4'
+      field: seed
+    denoise:
+      node: '4'
+      field: denoise
+  # base=原页（图1/主图）；char1-4=该镜绑定角色主图（图2-5，参考到人的
+  # 对应是 Edit 模型原生能力）；空槽由引擎注 1x1 白图占位（PlusPro 全必填）
+  images:
+  - {node: '23', field: image, slot: base}
+  - {node: '100', field: image, slot: char1}
+  - {node: '101', field: image, slot: char2}
+  - {node: '110', field: image, slot: char3}
+  - {node: '111', field: image, slot: char4}
+outputs:
+- node: '10'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- comfyui-kjnodes
+
+# v6（2026-09-12）：多角色身份道——RC5 教训（IP-Adapter 单参考全局盖章）的
+# 正解是 Edit-2511 多图协议：每页绑定几个角色就注几张主图，提示词逐人点名
+# 「与图N完全一致」。采样链 = v4/万物迁移实测（AuraFlow 3.1 / 8步 / cfg3.5）。
+models:
+- {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet（Edit-2511）}
+- {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器（qwen2.5-vl）}
+- {label: vae, node: '3', field: vae_name, cls: VAELoader, label_cn: VAE}

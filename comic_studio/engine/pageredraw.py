@@ -199,6 +199,34 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
     # 提示词专注风格化/清文字/画质；v1 的「布局一致」句让位给结构条件
     seed = seed if seed is not None else _video_seed(shot)
     prompt = build_page_redraw_prompt(db, proj, shot)
+    # v6 多角色槽（2026-09-12）：模板声明 char1..N 槽时注入该镜绑定角色主图
+    # （Edit-2511 多图协议——参考到人的对应是模型原生能力，RC5 的 IP-Adapter
+    # 全局盖章教训的正解）；空槽 1x1 白图占位（PlusPro image2-5 全必填）；
+    # **v4/v5 模板无 char 槽——此块零执行，其他路线零影响**
+    char_slots = [i["slot"] for i in (tmpl.inject_images or [])[1:]
+                  if str(i.get("slot", "")).startswith("char")]
+    if char_slots:
+        from .assets import get_asset
+        from .paths import data_to_abs
+        refs, names = [], []
+        led = json.loads(shot["ledger_json"] or "{}")
+        for aid in (led.get("assets", {}) or {}).get("characters", []):
+            a = get_asset(db, aid)
+            if a and a["library_dir"]:
+                main = data_to_abs(data_dir, a["library_dir"]) / "main.png"
+                if main.exists():
+                    refs.append(str(main))
+                    names.append(a["name"])
+            if len(refs) >= len(char_slots):
+                break
+        for k, slot in enumerate(char_slots):
+            if k < len(refs):
+                images.append({"slot": slot, "path": refs[k]})
+                # 图N 从 2 起数（图1=原页），与模板 image1..5 对位
+                prompt += (f"。画面中的「{names[k]}」与图{k + 2}参考图的"
+                           "发型、五官与体态保持完全一致")
+            else:
+                images.append({"slot": slot, "path": str(_blank_ref_png(data_dir))})
     # v3 线稿 ControlNet 版画幅链：ResolutionSelector 三必填（2026-09-11 真机
     # 400——manifest 声明了注入点但 params 没带键=required_input_missing）
     from .rendershot import ASPECT_ENUM
@@ -258,6 +286,29 @@ def require_redraw_project(db, project_id):
 # 发色近义归一（2026-09-10 用户确认）：黑白/低饱和页的浅金发常被 VLM 读成
 # 白发（寝取美人妻 729 镜实测 白发女子 24 处与金发同人）；银发同源
 _HAIR_ALIAS = {"白发": "金发", "银发": "金发"}
+
+
+def _blank_ref_png(data_dir) -> Path:
+    """1x1 白图占位（v6）：PlusPro image2-5 全必填，未绑定角色的槽注白图
+    （data/_cache 缓存生成一次；纯 stdlib 手craft PNG，不引 PIL）。"""
+    import struct as _struct
+    import zlib as _zlib
+    f = Path(data_dir) / "_cache" / "blank_ref.png"
+    if f.exists():
+        return f
+    f.parent.mkdir(parents=True, exist_ok=True)
+
+    def _chunk(tag, data):
+        c = tag + data
+        return (_struct.pack(">I", len(data)) + c
+                + _struct.pack(">I", _zlib.crc32(c) & 0xffffffff))
+
+    png = (b"\x89PNG\r\n\x1a\n"
+           + _chunk(b"IHDR", _struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+           + _chunk(b"IDAT", _zlib.compress(b"\x00\xff\xff\xff"))
+           + _chunk(b"IEND", b""))
+    f.write_bytes(png)
+    return f
 
 
 def bind_redraw_characters(db, project_id) -> int:

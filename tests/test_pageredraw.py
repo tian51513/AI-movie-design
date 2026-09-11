@@ -433,3 +433,69 @@ def test_page_redraw_cn_template_mechanics():
     assert ks["inputs"]["positive"] == ["5", 0] and ks["inputs"]["negative"] == ["31", 0]
     assert (ks["inputs"]["cfg"], ks["inputs"]["sampler_name"],
             ks["inputs"]["scheduler"], ks["inputs"]["denoise"]) == (1, "res_multistep", "simple", 1.0)
+
+
+def test_page_redraw_mr_template_mechanics():
+    """v6（2026-09-12）：多角色道模板——PlusPro 五图槽（base+char1-4），
+    latent 用 PlusPro 自产输出（2002:1），采样链沿用 v4 实测。"""
+    from pathlib import Path
+    from comic_studio.engine.workflows import registry
+    tmpl = registry.scan_templates(Path("templates/workflows"))["zimage_page_redraw_mr"]
+    slots = [i["slot"] for i in tmpl.inject_images]
+    assert slots == ["base", "char1", "char2", "char3", "char4"]
+    wf = tmpl.api_json()
+    enc = next(n for n in wf.values()
+               if n["class_type"] == "TextEncodeQwenImageEditPlusPro_lrzjason")
+    assert enc["inputs"]["image1"] == ["45", 0]
+    assert enc["inputs"]["image5"] == ["111", 0]
+    assert enc["inputs"]["main_image_index"] == 1
+    ks = next(n for n in wf.values() if n["class_type"] == "KSampler")
+    assert ks["inputs"]["latent_image"] == ["2002", 1]   # PlusPro 自产 latent
+    assert ks["inputs"]["positive"] == ["2002", 0]
+
+
+def test_redraw_page_mr_injects_char_refs_and_placeholders(tmp_path, monkeypatch):
+    """v6：绑定 2 角色（有主图）→ char1/2 注主图 + 提示词逐人点名图2/图3；
+    char3/4 注 1x1 白图占位（PlusPro 全必填）；v4 模板（无 char 槽）零影响
+    ——既有单槽测试全绿即证明。"""
+    db, pid = _motion_project(tmp_path, n=2)
+    from types import SimpleNamespace as NS
+    from pathlib import Path as _P
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.pageredraw import redraw_page
+    from comic_studio.engine.paths import data_to_abs
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.shots import list_shots, update_shot
+    from comic_studio.engine.workflows import registry
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    set_setting(db, "template_map", {"page_redraw": "zimage_page_redraw_mr"})
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", _P("templates/workflows"))
+    ids = persist_assets(db, tmp_path / "data", pid, NS(characters=[
+        NS(name="黑发女性", appearance="性别：女", tags=[]),
+        NS(name="金发女性", appearance="性别：女", tags=[]),
+    ], scenes=[], props=[]))
+    s1 = list_shots(db, pid)[0]
+    import json as _json
+    led = _json.loads(s1["ledger_json"])
+    led["assets"] = {"characters": ids, "scenes": [], "props": []}
+    update_shot(db, s1["id"], {"ledger_json": _json.dumps(led, ensure_ascii=False)})
+    mains = []
+    for a in list_project_assets(db, pid):
+        d = data_to_abs(tmp_path / "data", a["library_dir"])
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "main.png").write_bytes(PNG * 5)
+        mains.append(str(d / "main.png"))
+    with comfy_server("ok") as m:
+        redraw_page(db, tmp_path / "data", s1["id"], ComfyClient(m.base_url))
+        wf = m.prompts[0]["prompt"]
+        # 提示词点名（图2/图3）
+        prompt = next(n["inputs"]["value"] for n in wf.values()
+                      if n["class_type"] == "PrimitiveStringMultiline")
+        assert "「黑发女性」与图2参考图" in prompt
+        assert "「金发女性」与图3参考图" in prompt
+        # 上传四槽全满：char1/char2=主图，char3/char4=白图占位（filler 按
+        # 槽名重命名上传——cs__…__charN.png，源路径不进名字）
+        ups = [str(u) for u in m.uploads]
+        for slot in ("char1", "char2", "char3", "char4"):
+            assert sum(1 for u in ups if f"__{slot}" in u) == 1, (slot, ups)
