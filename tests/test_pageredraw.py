@@ -127,9 +127,9 @@ def test_page_redraw_template_mechanics():
     assert enc["inputs"]["image"] == ["45", 0]         # 图条件=缩放后原页
     rs = next(n for n in wf.values() if n["class_type"] == "ImageResizeKJv2")
     assert rs["inputs"]["image"] == [tmpl.inject_images[0]["node"], 0]
-    assert rs["inputs"]["aspect_ratio"] == "original"  # 保原页比例
-    assert rs["inputs"]["scale_to_side"] == "longest"
-    assert rs["inputs"]["scale_to_length"] >= 1024
+    assert rs["inputs"]["keep_proportion"] == "resize"   # 保原页比例
+    assert rs["inputs"]["upscale_method"] == "lanczos"
+    assert rs["inputs"]["width"] >= 1024
     ks = next(n for n in wf.values() if n["class_type"] == "KSampler")
     assert (ks["inputs"]["cfg"], ks["inputs"]["steps"],
             ks["inputs"]["sampler_name"], ks["inputs"]["denoise"]) == (3.5, 8, "euler", 1.0)
@@ -395,5 +395,5 @@ def test_redraw_page_injects_canvas_params(tmp_path, monkeypatch):
         wf = m.prompts[0]["prompt"]
         rs = next(n["inputs"] for n in wf.values()
                   if n["class_type"] == "ImageResizeKJv2")
-        assert rs["aspect_ratio"] == "original"
-        assert rs["scale_to_side"] == "longest" and rs["scale_to_length"] == 1024
+        assert rs["keep_proportion"] == "resize"
+        assert rs["upscale_method"] == "lanczos" and rs["width"] == 1024

@@ -35,13 +35,9 @@
       ],
       "width": 1024,
       "height": 1024,
-      "aspect_ratio": "original",
-      "scale_to_side": "longest",
-      "scale_to_length": 1024,
-      "fit": "letterbox",
-      "method": "lanczos",
-      "round_to_multiple": "16",
-      "background_color": "0, 0, 0",
+      "upscale_method": "lanczos",
+      "keep_proportion": "resize",
+      "pad_color": "0, 0, 0",
       "crop_position": "center",
       "divisible_by": 16
     }
