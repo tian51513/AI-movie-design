@@ -208,7 +208,22 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
     if char_slots:
         from .assets import get_asset
         from .paths import data_to_abs
-        refs, names = [], []
+
+        def _ref_trait(detail: str) -> str:
+            """参考锚明细：直取外貌行的值（跳过性别/无值行）——condense_
+            appearance 会把发型/服装压掉只剩性别锚，锚不住大众特征。"""
+            parts = []
+            for ln in (detail or "").splitlines():
+                if "：" not in ln:
+                    continue
+                k, v = ln.split("：", 1)
+                k, v = k.strip(), v.strip()
+                if not v or v == "无" or k == "性别":
+                    continue
+                parts.append(v)
+            return "、".join(parts)[:60]
+
+        refs, names, traits = [], [], []
         led = json.loads(shot["ledger_json"] or "{}")
         for aid in (led.get("assets", {}) or {}).get("characters", []):
             a = get_asset(db, aid)
@@ -217,14 +232,21 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
                 if main.exists():
                     refs.append(str(main))
                     names.append(a["name"])
+                    # v6.1（2026-09-12 真机）：点名句注入具体外貌细节——
+                    # 「黑长直」类大众特征模型会拿原脸糊弄，写明细才锚得住
+                    traits.append(_ref_trait(
+                        json.loads(a["appearance_json"]).get("detail", "")))
             if len(refs) >= len(char_slots):
                 break
         for k, slot in enumerate(char_slots):
             if k < len(refs):
                 images.append({"slot": slot, "path": refs[k]})
-                # 图N 从 2 起数（图1=原页），与模板 image1..5 对位
-                prompt += (f"。画面中的「{names[k]}」与图{k + 2}参考图的"
-                           "发型、五官与体态保持完全一致")
+                # 图N 从 2 起数（图1=原页）；指令式措辞（真机对照实验：
+                # 指令式参考参与度明显高于陈述式）
+                detail = f"（{traits[k]}）" if traits[k] else ""
+                prompt += (f"。将图{k + 2}角色的面部特征与发型{detail}"
+                           f"应用到图1中「{names[k]}」对应的人物身上，"
+                           f"使其与图{k + 2}完全一致")
             else:
                 images.append({"slot": slot, "path": str(_blank_ref_png(data_dir))})
     # v3 线稿 ControlNet 版画幅链：ResolutionSelector 三必填（2026-09-11 真机

@@ -442,15 +442,14 @@ def test_page_redraw_mr_template_mechanics():
     from comic_studio.engine.workflows import registry
     tmpl = registry.scan_templates(Path("templates/workflows"))["zimage_page_redraw_mr"]
     slots = [i["slot"] for i in tmpl.inject_images]
-    assert slots == ["base", "char1", "char2", "char3", "char4"]
+    assert slots == ["base", "char1", "char2"]          # v6.1 核心 Plus 三槽
     wf = tmpl.api_json()
     enc = next(n for n in wf.values()
-               if n["class_type"] == "TextEncodeQwenImageEditPlusPro_lrzjason")
+               if n["class_type"] == "TextEncodeQwenImageEditPlus")
     assert enc["inputs"]["image1"] == ["45", 0]
-    assert enc["inputs"]["image5"] == ["111", 0]
-    assert enc["inputs"]["main_image_index"] == 1
+    assert enc["inputs"]["image3"] == ["101", 0]
     ks = next(n for n in wf.values() if n["class_type"] == "KSampler")
-    assert ks["inputs"]["latent_image"] == ["2002", 1]   # PlusPro 自产 latent
+    assert ks["inputs"]["latent_image"] == ["1085", 0]  # VAEEncode（Plus 单输出）
     assert ks["inputs"]["positive"] == ["2002", 0]
 
 
@@ -472,8 +471,10 @@ def test_redraw_page_mr_injects_char_refs_and_placeholders(tmp_path, monkeypatch
     set_setting(db, "template_map", {"page_redraw": "zimage_page_redraw_mr"})
     monkeypatch.setattr(registry, "TEMPLATE_ROOT", _P("templates/workflows"))
     ids = persist_assets(db, tmp_path / "data", pid, NS(characters=[
-        NS(name="黑发女性", appearance="性别：女", tags=[]),
-        NS(name="金发女性", appearance="性别：女", tags=[]),
+        NS(name="黑发女性",
+           appearance="性别：女\n发色发型：黑色长直发\n服装：白色衬衫", tags=[]),
+        NS(name="金发女性",
+           appearance="性别：女\n发色发型：金色卷发\n服装：红色连衣裙", tags=[]),
     ], scenes=[], props=[]))
     s1 = list_shots(db, pid)[0]
     import json as _json
@@ -492,10 +493,11 @@ def test_redraw_page_mr_injects_char_refs_and_placeholders(tmp_path, monkeypatch
         # 提示词点名（图2/图3）
         prompt = next(n["inputs"]["value"] for n in wf.values()
                       if n["class_type"] == "PrimitiveStringMultiline")
-        assert "「黑发女性」与图2参考图" in prompt
-        assert "「金发女性」与图3参考图" in prompt
-        # 上传四槽全满：char1/char2=主图，char3/char4=白图占位（filler 按
-        # 槽名重命名上传——cs__…__charN.png，源路径不进名字）
+        # v6.1 指令式 + 外貌细节（大众特征靠明细锚定）
+        assert "将图2角色的面部特征与发型" in prompt
+        assert "应用到图1中「黑发女性」" in prompt
+        assert "应用到图1中「金发女性」" in prompt
+        assert "黑色长直发" in prompt        # traits 注入
         ups = [str(u) for u in m.uploads]
-        for slot in ("char1", "char2", "char3", "char4"):
+        for slot in ("char1", "char2"):
             assert sum(1 for u in ups if f"__{slot}" in u) == 1, (slot, ups)

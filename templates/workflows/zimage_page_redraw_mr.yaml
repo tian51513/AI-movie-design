@@ -1,6 +1,6 @@
 id: zimage_page_redraw_mr
 type: i2i
-name: 整页重绘·多角色（Edit-2511 PlusPro 五图槽，2026-09-12 v6）
+name: 整页重绘·多角色（Edit-2511 三图槽，2026-09-12 v6.1）
 file: zimage_page_redraw_mr.api.json
 prompt_format: '{kind_label}：{name}。{detail}'
 inject:
@@ -14,14 +14,13 @@ inject:
     denoise:
       node: '4'
       field: denoise
-  # base=原页（图1/主图）；char1-4=该镜绑定角色主图（图2-5，参考到人的
-  # 对应是 Edit 模型原生能力）；空槽由引擎注 1x1 白图占位（PlusPro 全必填）
+  # base=原页（图1/主图）；char1/char2=该镜绑定角色主图（图2/3）——
+  # 核心 Plus 三图槽（v6.1：PlusPro 五槽的白图占位真机搅浑参考注意力，
+  # 且 2511 训练分布以 ≤3 图为主）；>2 角色取绑定序前二
   images:
   - {node: '23', field: image, slot: base}
   - {node: '100', field: image, slot: char1}
   - {node: '101', field: image, slot: char2}
-  - {node: '110', field: image, slot: char3}
-  - {node: '111', field: image, slot: char4}
 outputs:
 - node: '10'
   filename_prefix: cs/{project}/{asset}
