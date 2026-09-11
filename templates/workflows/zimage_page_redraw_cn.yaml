@@ -1,0 +1,37 @@
+id: zimage_page_redraw_cn
+type: i2i
+name: 整页重绘·turbo 快车道（Z-Image+Fun-CN-Union-2.1 线稿锁，2026-09-12 v5）
+file: zimage_page_redraw_cn.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '28'
+    field: value
+  params:
+    seed:
+      node: '4'
+      field: seed
+    denoise:
+      node: '4'
+      field: denoise
+  # base=原页：AnimeLineArt 提线稿→保比例缩入 1024 框→CN（lineart 型 0.85）锁构图
+  images:
+  - node: '23'
+    field: image
+    slot: base
+outputs:
+- node: '10'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- comfyui-kjnodes
+- comfyui_controlnet_aux
+
+# v5（2026-09-12）：turbo 快车道（~10s/页 级）——与 v4（Qwen-Edit-2511 画质道）
+# 并存，设置页「整页重绘模板」切换。turbo 采样 = 用户 _raw 实测
+# （cfg=1 res_multistep simple 10步 + ZeroOut 负条件）；CN 强扭画幅判例同 v4.1
+# （keep_proportion=resize 保原页比例）；latent 尺寸动态跟随缩放线稿输出
+models:
+- {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet（Z-Image turbo）}
+- {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae, node: '3', field: vae_name, cls: VAELoader, label_cn: VAE}
+- {label: control_net, node: '141', field: control_net_name, cls: ControlNetLoader, label_cn: 结构控制 CN}

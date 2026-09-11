@@ -397,3 +397,41 @@ def test_redraw_page_injects_canvas_params(tmp_path, monkeypatch):
                   if n["class_type"] == "ImageResizeKJv2")
         assert rs["keep_proportion"] == "resize"
         assert rs["upscale_method"] == "lanczos" and rs["width"] == 1024
+
+
+def test_page_redraw_cn_template_mechanics():
+    """v5（2026-09-12）：turbo 快车道模板——Z-Image + Fun-CN-Union-2.1 线稿锁。
+    钉住三判例：①turbo 采样（cfg=1 res_multistep，旧 cfg5 烹煮）②保原页比例
+    （keep_proportion=resize，stretch 压扁 217% 判例）③CN 是 VAE 型（Apply 必接
+    vae）+ latent 尺寸动态跟随缩放线稿。"""
+    from pathlib import Path
+    from comic_studio.engine.workflows import registry
+    tmpl = registry.scan_templates(Path("templates/workflows"))["zimage_page_redraw_cn"]
+    assert [i["slot"] for i in tmpl.inject_images] == ["base"]
+    assert "seed" in tmpl.inject_params and "denoise" in tmpl.inject_params
+    wf = tmpl.api_json()
+    classes = {n["class_type"] for n in wf.values()}
+    for need in ("AnimeLineArtPreprocessor", "SetUnionControlNetType",
+                 "ControlNetApplyAdvanced"):
+        assert need in classes, need
+    assert "ResolutionSelector" not in classes
+    sut = next(n for n in wf.values() if n["class_type"] == "SetUnionControlNetType")
+    assert sut["inputs"]["type"] == "canny/lineart/anime_lineart/mlsd"
+    apply_ = next(n for n in wf.values()
+                  if n["class_type"] == "ControlNetApplyAdvanced")
+    assert apply_["inputs"]["vae"] == ["3", 0]        # Fun-Union 系 VAE 型
+    assert 0 < apply_["inputs"]["strength"] <= 1.0
+    rs = next(n for n in wf.values() if n["class_type"] == "ImageResizeKJv2")
+    assert rs["inputs"]["keep_proportion"] == "resize"  # 保原页比例
+    assert rs["inputs"]["width"] >= 1024
+    # 线稿链：预处理器吃 base，CN 条件图=缩放后线稿
+    pre = next(n for n in wf.values()
+               if n["class_type"] == "AnimeLineArtPreprocessor")
+    assert pre["inputs"]["image"] == [tmpl.inject_images[0]["node"], 0]
+    assert apply_["inputs"]["image"] == ["45", 0]
+    # latent 尺寸动态跟随缩放输出（1=width 2=height）
+    el = next(n for n in wf.values() if n["class_type"] == "EmptyLatentImage")
+    assert el["inputs"]["width"] == ["45", 1] and el["inputs"]["height"] == ["45", 2]
+    ks = next(n for n in wf.values() if n["class_type"] == "KSampler")
+    assert (ks["inputs"]["cfg"], ks["inputs"]["sampler_name"],
+            ks["inputs"]["scheduler"], ks["inputs"]["denoise"]) == (1, "res_multistep", "simple", 1.0)
