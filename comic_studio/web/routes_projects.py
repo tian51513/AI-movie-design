@@ -385,6 +385,30 @@ def describe_shots_route(project_id: int, request: Request,
     return {"job_id": jid}
 
 
+@router.post("/{project_id}/export-comic")
+def export_comic(request: Request, project_id: int, format: str = "pdf"):
+    """漫画成书导出（小说转漫画 Task 5）：pages/page_NNN.png → PDF（Pillow
+    可选依赖）或竖排长图（ffmpeg）。同步执行（秒级）返回文件路径；
+    url=/media/<rel> 前端可直接预览/下载。format=pdf|strip。"""
+    db = request.app.state.db
+    if get_project(db, project_id) is None:
+        raise HTTPException(404, "项目不存在")
+    if format not in ("pdf", "strip"):
+        raise HTTPException(422, "format 只能是 pdf（PDF）或 strip（长图）")
+    from ..engine import comicexport
+    from ..engine.paths import rel_to_data
+    try:
+        out = (comicexport.export_comic_pdf if format == "pdf"
+               else comicexport.export_comic_strip)(
+            db, request.app.state.data_dir, project_id)
+    except ValueError as e:  # 无页/Pillow 缺失——显式 422 带安装指引（asr 判例）
+        raise HTTPException(422, str(e))
+    except RuntimeError as e:  # ffmpeg 拼接失败，stderr 尾段透出供排障
+        raise HTTPException(500, str(e))
+    rel = rel_to_data(request.app.state.data_dir, out)
+    return {"path": str(out), "rel": rel, "url": f"/media/{rel}"}
+
+
 @router.post("/from-theme/preview")
 def preview_from_theme(request: Request, body: dict):
     """两步创建第一步（2026-08-27 需求）：只生成正文给用户确认/编辑，不建项目。"""

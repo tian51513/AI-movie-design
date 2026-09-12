@@ -376,3 +376,149 @@ def test_postprocess_dialogue_footer_draws(monkeypatch, tmp_path):
     # 白底上画了非白像素（文字落上了）
     assert any(px.getpixel((x, y)) != (255, 255, 255)
                for x in range(20, 180, 4) for y in range(150, 190, 4))
+
+
+def test_footer_wrap_and_font_fallback():
+    """footer 完善（Task 5）：长对白按像素宽逐字换行（不再 80 字硬截断）+
+    跨平台 CJK 字体回退链（WSL 无 msyh.ttc 不落点阵小字）。"""
+    from comic_studio.engine.comicgen import _footer_font, _wrap_footer
+
+    class _F:  # 假字体：每字符 10px
+        def getlength(self, s):
+            return len(s) * 10.0
+
+    assert _wrap_footer("一" * 25, _F(), 200) == ["一" * 20, "一" * 5]
+    assert _wrap_footer("", _F(), 200) == []
+    assert hasattr(_footer_font(), "getlength")  # 回退链终点仍可度量
+
+
+def test_postprocess_dialogue_footer_wraps_long_line(tmp_path):
+    """超长台词 footer：换行全部画出（ok=True），不截断不炸。"""
+    pytest.importorskip("PIL")
+    from PIL import Image
+    from comic_studio.engine.comicgen import _postprocess_dialogue
+    p = tmp_path / "page_001.png"
+    Image.new("RGB", (400, 300), "white").save(p)
+    ok = _postprocess_dialogue(
+        p, [{"speaker": "少年", "line": "长" * 200}], "footer")
+    assert ok is True
+
+
+# ---- Task 5: 导出（PDF/长图） ----
+
+def _write_png(path, w=8, h=12, shade=(200, 30, 30)):
+    """纯 stdlib 造真 PNG（RGB 8bit 非隔行）：ffmpeg 可解码，strip 测试不吃 Pillow。"""
+    import struct
+    import zlib
+
+    def chunk(tag, payload):
+        c = tag + payload
+        return struct.pack(">I", len(payload)) + c + struct.pack(">I", zlib.crc32(c))
+
+    raw = b"".join(b"\x00" + bytes(shade) * w for _ in range(h))
+    path.write_bytes(b"\x89PNG\r\n\x1a\n"
+                     + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+                     + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+
+
+def _comic_pages(tmp_path, db, pid, shades=((200, 30, 30),)):
+    from comic_studio.engine.paths import data_to_abs
+    from comic_studio.engine.projects import get_project
+    slug = get_project(db, pid)["slug"]
+    pages = data_to_abs(tmp_path / "data", f"projects/{slug}/pages")
+    pages.mkdir(parents=True, exist_ok=True)
+    for i in range(1, 4):
+        _write_png(pages / f"page_{i:03d}.png", shade=shades[(i - 1) % len(shades)])
+    return pages
+
+
+def test_export_comic_pdf(tmp_path):
+    """PDF 导出：pages/ 三页 → output/comic.pdf（projects/<slug>/output/ 下）。"""
+    pytest.importorskip("PIL")
+    db, pid = _comic_project(tmp_path)
+    from comic_studio.engine.comicexport import export_comic_pdf
+    from comic_studio.engine.projects import get_project
+    _comic_pages(tmp_path, db, pid)
+    out = export_comic_pdf(db, tmp_path / "data", pid)
+    assert out.suffix == ".pdf" and out.exists()
+    assert out.read_bytes()[:5] == b"%PDF-"
+    assert "output" in out.parts and get_project(db, pid)["slug"] in out.parts
+
+
+def test_export_comic_strip(tmp_path):
+    """长图导出：pages/ 三页 → output/comic_strip.png（真 ffmpeg vstack）。"""
+    db, pid = _comic_project(tmp_path)
+    from comic_studio.engine.comicexport import export_comic_strip
+    _comic_pages(tmp_path, db, pid)
+    out = export_comic_strip(db, tmp_path / "data", pid)
+    assert out.suffix == ".png" and out.exists()
+    assert out.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_export_comic_strip_order(tmp_path):
+    """长图按页号升序自上而下拼接：首/中/尾像素各页底色。"""
+    pytest.importorskip("PIL")
+    from PIL import Image
+    db, pid = _comic_project(tmp_path)
+    from comic_studio.engine.comicexport import export_comic_strip
+    _comic_pages(tmp_path, db, pid,
+                 shades=[(255, 0, 0), (0, 255, 0), (0, 0, 255)])
+    out = export_comic_strip(db, tmp_path / "data", pid)
+    img = Image.open(out).convert("RGB")
+    assert img.size == (8, 36)  # 三页 8×12 竖排
+    assert img.getpixel((4, 1)) == (255, 0, 0)    # page_001 在顶
+    assert img.getpixel((4, 18)) == (0, 255, 0)
+    assert img.getpixel((4, 35)) == (0, 0, 255)   # page_003 在底
+
+
+def test_export_comic_excludes_disabled_and_dead_pages(tmp_path):
+    """无效镜页/已删镜残页不进导出（与「无效镜不进合成」纪律同口径）；
+    无分镜行的项目（手工放页）以磁盘为准全量导出。"""
+    from comic_studio.engine.comicexport import comic_pages
+    from comic_studio.engine.shots import persist_shots
+    db, pid = _comic_project(tmp_path)
+    _comic_pages(tmp_path, db, pid)
+    assert len(comic_pages(db, tmp_path / "data", pid)) == 3  # 无分镜 → 全量
+    from types import SimpleNamespace as NS
+    s1, s2, s3 = persist_shots(db, pid, [NS(
+        text_span="页", description="页", shot_type="",
+        camera={"景别": "中景"}, duration=5.0, workflow_type="comic", ledger={},
+        character_ids=[], scene_ids=[], prop_ids=[], depends_on=None, prompt="")]
+        * 3)
+    assert len(comic_pages(db, tmp_path / "data", pid)) == 3
+    from comic_studio.engine.shots import set_disabled_batch
+    set_disabled_batch(db, pid, [s2], 1)  # 中间页对应镜被禁用
+    pages = comic_pages(db, tmp_path / "data", pid)
+    assert [p.name for p in pages] == ["page_001.png", "page_003.png"]
+
+
+def test_export_comic_requires_pages(tmp_path):
+    """无页面显式报错（路由 422 语义）——空 pages/ 不产空成品。"""
+    from comic_studio.engine.comicexport import export_comic_pdf, export_comic_strip
+    db, pid = _comic_project(tmp_path)
+    with pytest.raises(ValueError, match="无已生成漫画页"):
+        export_comic_pdf(db, tmp_path / "data", pid)
+    with pytest.raises(ValueError, match="无已生成漫画页"):
+        export_comic_strip(db, tmp_path / "data", pid)
+
+
+def test_export_comic_api(tmp_path):
+    """POST export-comic：404/422 守卫 + strip 快乐路径返回 /media 可访问路径。"""
+    from fastapi.testclient import TestClient
+
+    from comic_studio.web.app import create_app
+    db, pid = _comic_project(tmp_path)
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        assert c.post("/api/projects/9999/export-comic").status_code == 404
+        assert c.post(
+            f"/api/projects/{pid}/export-comic?format=zip").status_code == 422
+        assert c.post(
+            f"/api/projects/{pid}/export-comic?format=pdf").status_code == 422  # 无页
+        _comic_pages(tmp_path, db, pid)
+        r = c.post(f"/api/projects/{pid}/export-comic?format=strip")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["rel"].endswith("output/comic_strip.png")
+        assert body["url"] == f"/media/{body['rel']}"
+        assert (tmp_path / "data" / body["rel"]).exists()

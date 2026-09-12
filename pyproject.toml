@@ -19,6 +19,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
 asr = ["faster-whisper>=1.0"]
+pdf = ["Pillow>=10.0"]
 
 [build-system]
 requires = ["hatchling"]

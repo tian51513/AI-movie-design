@@ -120,22 +120,23 @@ def _postprocess_dialogue(page_png, dialogue, mode) -> bool:
     if mode != "footer" or not dialogue:
         return True  # 无需处理 ≠ 失败
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image, ImageDraw
     except ImportError:
         return False
     try:
         img = Image.open(page_png).convert("RGBA")
     except Exception:
         return False
-    draw = ImageDraw.Draw(img)
-    try:
-        font = ImageFont.truetype("msyh.ttc", 28)
-    except (OSError, IOError):
-        font = ImageFont.load_default()
-    texts = [f"{d.get('speaker', '')}：{d.get('line', '')}"
-             for d in dialogue if d.get("line")]
+    font = _footer_font()
+    max_w = img.width - 40
+    rows: list[str] = []
+    for d in dialogue:
+        if not d.get("line"):
+            continue
+        rows.extend(_wrap_footer(f"{d.get('speaker', '')}：{d['line']}", font, max_w))
+    rows = rows[:8]  # 防爆：极端长对白最多 8 行（约 1/4 页高）
     line_h = 32
-    bar_h = len(texts) * line_h + 16
+    bar_h = len(rows) * line_h + 16
     # 半透明黑底条：白字在浅色漫画页上不可见（真机观感），压暗后清晰
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     ImageDraw.Draw(overlay).rectangle(
@@ -143,8 +144,47 @@ def _postprocess_dialogue(page_png, dialogue, mode) -> bool:
     img = Image.alpha_composite(img, overlay)
     draw = ImageDraw.Draw(img)
     y = img.height - bar_h + 8
-    for t in texts:
-        draw.text((20, y), t[:80], fill="white", font=font)
+    for t in rows:
+        draw.text((20, y), t, fill="white", font=font)
         y += line_h
     img.save(page_png)
     return True
+
+
+_FOOTER_FONT_CANDIDATES = (
+    "msyh.ttc",  # Windows 微软雅黑
+    "C:/Windows/Fonts/msyh.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",  # Debian/WSL
+    "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",  # Arch 系
+    "/System/Library/Fonts/PingFang.ttc",  # macOS 苹方
+)
+
+
+def _footer_font(size: int = 28):
+    """footer 字体：跨平台 CJK 回退链——WSL/Linux 无 msyh.ttc 时原实现落
+    load_default() 点阵小字（真机观感差），补 Noto/苹方常见路径兜底。"""
+    from PIL import ImageFont
+    for path in _FOOTER_FONT_CANDIDATES:
+        try:
+            return ImageFont.truetype(path, size)
+        except (OSError, IOError):
+            continue
+    try:
+        return ImageFont.load_default(size)
+    except TypeError:  # Pillow<10.1 的 load_default 无 size 参数
+        return ImageFont.load_default()
+
+
+def _wrap_footer(text: str, font, max_width: int) -> list[str]:
+    """按像素宽逐字换行（CJK 无空格断词）：替代原 t[:80] 硬截断——
+    长台词以前直接丢字，字幕条只显示前 80 字。"""
+    lines, cur = [], ""
+    for ch in text:
+        if cur and font.getlength(cur + ch) > max_width:
+            lines.append(cur)
+            cur = ch
+        else:
+            cur += ch
+    if cur:
+        lines.append(cur)
+    return lines
