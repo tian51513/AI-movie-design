@@ -50,6 +50,16 @@ def handle_gen_prompt(db, data_dir, job, comfy):
     shot = get_shot(db, payload["shot_id"])
     if shot is None:
         raise ValueError("分镜已删除（重拆后旧任务）")
+    if (shot["workflow_type"] or "") == "comic":
+        # 漫画镜短路（2026-09-13）：H3 视频提示词链不适用——prompt=description
+        # 机械填充（拆解时已填；此处兜住 stale 联动/手动重生路径），不烧 LLM
+        update_shot(db, shot["id"], {
+            "prompt": (shot["description"] or shot["text_span"] or "").strip(),
+            "status": "ready"})
+        emit_log(db, "llm", "info",
+                 f"漫画页 {shot['seq']} 提示词机械填充（不烧 LLM）",
+                 project_id=job["project_id"], job_id=job["id"])
+        return
     backend = "ltx" if "ltx" in (shot["workflow_type"] or "") else "h3"
     from .projects import get_project
     proj = get_project(db, shot["project_id"])

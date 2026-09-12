@@ -108,6 +108,71 @@ def test_comic_split_prompt_scoping(tmp_path, monkeypatch):
     assert "漫画页" not in seen_v["system"]  # 视频项目提示词不受漫画分支污染
 
 
+def test_comic_split_fills_prompt(tmp_path, monkeypatch):
+    """漫画镜拆解即填 prompt（=description）——gate2「全部镜有提示词」对
+    comic 项目天然成立；视频项目照旧留空等 gen_prompts（2026-09-13 计划
+    缺口补：否则 autopilot 把漫画镜带进 gen_prompts，H3 视频提示词链烧
+    重度模型却从不被页面消费）。"""
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.shots import list_shots
+
+    db, pid = _comic_project(tmp_path)
+    set_stage(db, pid, "assets_ready")
+    monkeypatch.setattr("comic_studio.engine.llm.storyboard.make_split_factory",
+                        lambda db_: _split_fake({}, _COMIC_REPLY))
+    split_storyboards(db, tmp_path / "data", pid)
+    s = list_shots(db, pid)[0]
+    assert s["prompt"] == s["description"]  # 拆解即填，gate2 无缺口
+
+    monkeypatch.setattr("comic_studio.engine.llm.storyboard.make_split_factory",
+                        lambda db_: _split_fake({}, _COMIC_REPLY))
+    db2, pid2 = _comic_project(tmp_path / "v", comic_mode="")
+    set_stage(db2, pid2, "assets_ready")
+    split_storyboards(db2, tmp_path / "v" / "data", pid2)
+    v = list_shots(db2, pid2)[0]
+    assert v["workflow_type"] != "comic" and v["prompt"] == ""  # 视频链不变
+
+
+def test_comic_autopilot_skips_video_prompts(tmp_path, monkeypatch):
+    """拆解完成后（assets_ready，镜已落库）autopilot 决策不进 gen_prompts，
+    直落 gate2——漫画页分支从 storyboard_ready 接手。"""
+    from comic_studio.engine.autopilot import next_action
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    from comic_studio.engine.projects import set_stage
+
+    db, pid = _comic_project(tmp_path)
+    set_stage(db, pid, "assets_ready")
+    monkeypatch.setattr("comic_studio.engine.llm.storyboard.make_split_factory",
+                        lambda db_: _split_fake({}, _COMIC_REPLY))
+    split_storyboards(db, tmp_path / "data", pid)
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "gate2"  # 缺口修复前是 gen_prompts
+
+
+def test_gen_prompt_comic_short_circuit(tmp_path, monkeypatch):
+    """comic 镜的 gen_prompt handler 短路：不碰 LLM（client_for_task 即炸），
+    prompt=description 机械填充——兜住 stale 联动/手动重生路径。"""
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.pipeline_jobs import handle_gen_prompt
+
+    db, pid = _comic_project(tmp_path)
+    (sid,) = _comic_shot_ids(db, pid)
+
+    def _boom(*a, **k):
+        raise AssertionError("comic 镜不应调 LLM")
+
+    monkeypatch.setattr("comic_studio.engine.llm.provider.client_for_task", _boom)
+    jid = enqueue_job(db, "gen_prompt", project_id=pid, shot_id=sid,
+                      payload={"shot_id": sid})
+    job = db.connect().execute("SELECT * FROM jobs WHERE id=?", (jid,)).fetchone()
+    handle_gen_prompt(db, tmp_path / "data", job, None)
+    from comic_studio.engine.shots import get_shot
+    s = get_shot(db, sid)
+    assert s["prompt"] == "室内场景，少年推门"  # _comic_shot_ids 的 description
+    assert s["status"] == "ready"
+
+
 # ---- Task 3: 逐页 t2i 生成（gen_comic_page） ----
 import pytest
 

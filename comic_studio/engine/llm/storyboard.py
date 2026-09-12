@@ -419,6 +419,11 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
                 gaze=d.gaze.strip(),
                 continuity=con,
                 seed=seed,
+                # 漫画输出（2026-09-13 计划缺口补）：拆解即填页提示词（=description）——
+                # gate2「全部镜有提示词」对 comic 项目天然成立，autopilot 不会把
+                # 漫画镜带进 gen_prompts（H3 视频提示词链烧重度模型却从不被页面
+                # 消费）；视频项目照旧留空等 gen_prompts 真填
+                prompt=((d.description or "").strip() or d.text_span) if _comic else "",
                 ledger={"must_appear": d.must_appear, "must_keep": d.must_keep,
                         "may_change": d.may_change, "must_avoid": d.must_avoid,
                         "dialogue": d.dialogue},
