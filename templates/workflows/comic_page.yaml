@@ -1,0 +1,32 @@
+id: comic_page
+type: t2i
+name: 漫画页文生图（小说转漫画）
+file: comic_page.api.json
+prompt_format: '{detail}'
+inject:
+  prompt:
+    node: '57:27'
+    field: text
+  params:
+    seed:
+      node: '57:3'
+      field: seed
+    steps:
+      node: '57:3'
+      field: steps
+    width:
+      node: '57:13'
+      field: width
+    height:
+      node: '57:13'
+      field: height
+outputs:
+- node: '9'
+  filename_prefix: cs/{project}/{asset}
+requires: []
+
+# 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
+models:
+- {label: unet, node: '57:28', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
+- {label: clip, node: '57:30', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae, node: '57:29', field: vae_name, cls: VAELoader, label_cn: VAE}

@@ -23,6 +23,8 @@ DEFAULT_SETTINGS = {
         # 动态漫整页重绘（2026-09-09 建；2026-09-10 真机四修 F2a 换双槽
         # IP-Adapter 模板——单槽 zimage_i2i 主图进不了工作流=角色漂移根因①）
         "page_redraw": "zimage_page_redraw",
+        # 小说转漫画逐页 t2i（2026-09-12）：comicgen.gen_comic_page 消费
+        "comic_page": "comic_page",
     },
     "llm_providers": {
         "local": {"base_url": "http://localhost:11434/v1", "api_key": "ollama",
