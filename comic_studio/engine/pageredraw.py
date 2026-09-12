@@ -179,17 +179,25 @@ def build_page_redraw_prompt(db, proj, shot) -> str:
     不知往哪美化，summary 还是运镜描述）。画风空=按原画风高清化（决策 8）。"""
     from .genref import PHOTO_BOOST, condense_appearance, is_photo_style
     from .assets import get_asset
-    prompt = ("高质量重绘这张漫画页：保持原有分格构图、人物姿态、位置与表情"
-              "与参考图完全一致，仅提升画质清晰度、光影与细节")
-    # 角色外貌文字锚（首个绑定角色；IP-Adapter 图像锚走工作流 char_ref 槽）
     led = json.loads(shot["ledger_json"] or "{}")
-    for aid in (led.get("assets", {}) or {}).get("characters", []):
-        a = get_asset(db, aid)
-        if a:
-            app = condense_appearance(json.loads(a["appearance_json"]).get("detail", ""))
-            if app:
-                prompt += f"。角色「{a['name']}」：{app[:150]}"
-            break
+    bound = list((led.get("assets", {}) or {}).get("characters", []))
+    if not bound:
+        # 纯场景镜（2026-09-12 真机三修）：零人像词——人物姿态/肢体/五官
+        # 词都在暗示模型造人（桌子镜真机判例），尾帧有人物不影响首帧重绘
+        prompt = ("高质量重绘这张漫画页：保持原有分格构图、场景布局、物体位置"
+                  "与透视关系完全一致，仅提升画质清晰度、光影与细节。"
+                  "严禁添加任何人物、角色或人脸——本画面中没有人物")
+    else:
+        prompt = ("高质量重绘这张漫画页：保持原有分格构图、人物姿态、位置与表情"
+                  "与参考图完全一致，仅提升画质清晰度、光影与细节")
+        # 角色外貌文字锚（首个绑定角色；IP-Adapter 图像锚走工作流 char_ref 槽）
+        for aid in bound:
+            a = get_asset(db, aid)
+            if a:
+                app = condense_appearance(json.loads(a["appearance_json"]).get("detail", ""))
+                if app:
+                    prompt += f"。角色「{a['name']}」：{app[:150]}"
+                break
     prompt += CLEAN_TEXT_LINE
     style = ((proj["style_vis"] or proj["style"]) or "").strip().rstrip("。；;，,")
     if style:
@@ -198,6 +206,10 @@ def build_page_redraw_prompt(db, proj, shot) -> str:
         prompt += "。按原页画风高清化重绘（不改变画风，提升清晰度与质感统一）"
     if is_photo_style(style):
         prompt += "。" + PHOTO_BOOST
+    if not bound:
+        # 场景尾缀：剥离人像纠错词（避免畸形肢体/五官扭曲暗示画面应有肢体五官）
+        return prompt + ("，cinematic color grading，sharp focus，ultra-detailed，"
+                         "8k，无乱码文字，无文字水印，画面完整")
     return prompt + PAGE_TAIL
 
 
