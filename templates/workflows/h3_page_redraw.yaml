@@ -1,0 +1,82 @@
+id: h3_page_redraw
+type: ref2va
+name: 整页重绘·H3 一致性（短视频抽帧，2026-09-12 v7）
+file: h3_page_redraw.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '110'
+    field: prompt
+  params:
+    seed:
+      node: '105'
+      field: seed
+    # v7 抽帧用途：4s 短视频够抽稳定帧，别烧长
+    duration:
+      node: '109'
+      field: value
+    aspect:
+      node: '116'
+      field: aspect_ratio
+    megapixels:
+      node: '116'
+      field: megapixels
+    multiple:
+      node: '116'
+      field: multiple
+    steps:
+      node: '101'
+      field: steps
+    lora_strength:
+      node: '117'
+      field: strength_model
+    h3_sla_enabled:
+      node: '130'
+      field: enabled
+    h3_sla_sparsity:
+      node: '130'
+      field: sparsity_ratio
+    h3_sla_block_size:
+      node: '130'
+      field: block_size
+    sage_attention:
+      node: '123'
+      field: sage_attention
+    lora_turbo_name:
+      node: '118'
+      field: lora_name
+  # base=原页（构图参考 ref_image_0）；char1/char2=绑定角色主图（身份参考
+  # ref_image_1/2——H3 的 <Picture N> 锚协议即项目漫改链同款）；未绑定槽
+  # 由引擎回填原页（重复参考无语义污染，比白图安全）
+  images:
+  - node: '96'
+    field: image
+    slot: base
+  - node: '97'
+    field: image
+    slot: char1
+  - node: '99'
+    field: image
+    slot: char2
+  # 音频槽：抽帧用不到声音——引擎注静音占位过模板校验（cs_voice 判例）
+  - node: '95'
+    field: audio
+    slot: audio0
+  - node: '98'
+    field: audio
+    slot: audio1
+outputs:
+- node: '114'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- ComfyUI-GGUF
+- comfyui-kjnodes
+
+# v7（2026-09-12 用户提案）：Edit-2511 多参考路线真机否决（角色参考参与度
+# 不足）后换道——H3 ref2va 的参考一致性是项目已验证主场（漫改链同协议），
+# 生成 4s 静态短视频抽首帧作重绘版本。克隆自 h3_ref2va，仅加第三参考槽。
+models:
+- {label: unet, node: '90', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
+- {label: clip, node: '92', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae_audio, node: '93', field: vae_name, cls: VAELoader, label_cn: 音频 VAE}
+- {label: vae_video, node: '94', field: vae_name, cls: VAELoader, label_cn: 视频 VAE}

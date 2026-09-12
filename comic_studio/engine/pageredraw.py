@@ -177,10 +177,164 @@ def build_page_redraw_prompt(db, proj, shot) -> str:
     return prompt + PAGE_TAIL
 
 
+def _bound_char_refs(db, data_dir, shot, limit: int) -> list:
+    """该镜绑定角色 → [(name, 明细, main.png 绝对路径)]，取有主图的前 limit 个。
+    v6/v7 共用（v6.1 真机：大众特征须带明细锚定）。"""
+    from .assets import get_asset
+    from .paths import data_to_abs
+
+    def _ref_trait(detail: str) -> str:
+        """参考锚明细：直取外貌行的值（跳过性别/无值行）——condense_
+        appearance 会把发型/服装压掉只剩性别锚，锚不住大众特征。"""
+        parts = []
+        for ln in (detail or "").splitlines():
+            if "：" not in ln:
+                continue
+            k, v = ln.split("：", 1)
+            k, v = k.strip(), v.strip()
+            if not v or v == "无" or k == "性别":
+                continue
+            parts.append(v)
+        return "、".join(parts)[:60]
+
+    out = []
+    led = json.loads(shot["ledger_json"] or "{}")
+    for aid in (led.get("assets", {}) or {}).get("characters", []):
+        a = get_asset(db, aid)
+        if a and a["library_dir"]:
+            main = data_to_abs(data_dir, a["library_dir"]) / "main.png"
+            if main.exists():
+                out.append((a["name"],
+                            _ref_trait(json.loads(a["appearance_json"])
+                                       .get("detail", "")),
+                            str(main)))
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _extract_first_frame(video: Path, out_png: Path) -> None:
+    """ffmpeg 抽视频首帧（v7 重绘抽帧用）——select 滤镜内逗号须反斜杠转义
+    （Windows 滤镜判例同款）；capture 统一 utf-8（GBK 判例）。"""
+    import subprocess as _sp
+    from .merge import ffmpeg_bin
+    _sp.run([ffmpeg_bin(), "-y", "-i", str(video),
+             "-vf", "select=eq(n\\,0)", "-frames:v", "1", str(out_png)],
+            check=True, capture_output=True, timeout=120,
+            encoding="utf-8", errors="replace")
+
+
+def build_page_redraw_h3_prompt(db, proj, shot, char_refs: list) -> str:
+    """v7（2026-09-12 用户提案）：H3 一致性重绘提示词——漫改 ref2va 协议
+    （<Picture N> 锚 + subject_definitions，项目已验证格式）+ 静态镜头约束
+    （抽帧用途：无运镜无切镜、人物仅微动）。"""
+    style = ((proj["style_vis"] or proj["style"]) or "").strip().rstrip("。；;，,")
+    style_line = f"转为{style}画风与质感" if style else "画质高清化重制（保持原画风）"
+    lines = ["subject_definitions:"]
+    lines.append("<Picture 1> 是原漫画页，本镜画面内容与构图的参考")
+    for k, (name, trait, _p) in enumerate(char_refs, start=2):
+        detail = f"（{trait}）" if trait else ""
+        lines.append(f"<Subject {k - 1}>（{name}）是来自 <Picture {k}> 的人物，"
+                     f"其外观由该图提供{detail}")
+    lines.append("summary:")
+    lines.append(f"[reference generation] 静态重绘：按 <Picture 1> 的构图与人物"
+                 f"位置重绘画面，{style_line}，人物使用参考图外观")
+    lines.append("retention_analysis:")
+    lines.append("<Picture 1>（构图与分格）：weak_reference - 保持画面布局、"
+                 "人物站位、姿态与表情，画风与质感转换")
+    for k, (name, _t, _p) in enumerate(char_refs, start=2):
+        lines.append(f"<Subject {k - 1}>（{name}）：fully_preserved - "
+                     "保持参考图的发型、五官与服装")
+    lines.append("detailed_description:")
+    lines.append(f"画面为静态重绘结果。[Shot 1] 画面内容与构图严格按 <Picture 1>："
+                 "相同的分格布局、人物位置、姿态与表情；所有人物使用对应 "
+                 "<Subject N> 参考图的外貌；清除对白气泡内的全部文字"
+                 "（保留气泡形状与位置）。The camera is completely static — "
+                 "镜头完全静止，人物仅保持姿态与微小呼吸浮动，无运镜无切镜。")
+    lines.append("overall_soundscape:")
+    lines.append("安静的环境氛围，无对白，无哼唱。")
+    lines.append("non_diegetic_music: N/A")
+    return "\n".join(lines)
+
+
+def _redraw_page_h3(db, data_dir, shot, proj, comfy, tmpl, base,
+                    job=None, seed=None) -> Path:
+    """v7 重绘执行：H3 ref2va 三参考（原页+角色主图）→ 4s 静态短视频 →
+    抽首帧 → kf 版本落盘（尾帧联动/视频置空与图像道共用语义）。"""
+    from .rendershot import (ASPECT_ENUM, _silent_placeholder, _video_seed,
+                             h3_lora_link, h3_sla_params)
+    from .settings import get_setting
+    from .workflows.filler import fill_workflow
+    from .jobs import attach_snapshot
+
+    shot_id = shot["id"]
+    seed = seed if seed is not None else _video_seed(shot)
+    char_slots = [i["slot"] for i in (tmpl.inject_images or [])[1:]
+                  if str(i.get("slot", "")).startswith("char")]
+    char_refs = _bound_char_refs(db, data_dir, shot, len(char_slots))
+    prompt = build_page_redraw_h3_prompt(db, proj, shot, char_refs)
+    images = [{"slot": tmpl.inject_images[0]["slot"], "path": str(base)}]
+    for k, slot in enumerate(char_slots):
+        # 未绑定槽回填原页（重复参考无语义污染，比白图安全——Edit 道判例）
+        images.append({"slot": slot,
+                       "path": char_refs[k][2] if k < len(char_refs) else str(base)})
+    wf, uploads = fill_workflow(
+        tmpl, prompt=prompt,
+        params={"seed": seed, "duration": 4,
+                "aspect": ASPECT_ENUM.get(proj["aspect_ratio"], ASPECT_ENUM["16:9"]),
+                "megapixels": proj["video_megapixels"],
+                "multiple": proj["video_multiple"],
+                "lora_strength": proj["lora_realism"],
+                **h3_sla_params(db), **h3_lora_link(db, tmpl.id)},
+        images=images,
+        output_ctx={"project": proj["slug"], "asset": f"shot-{shot['seq']}-redraw"},
+        model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))
+    # 音频槽静音占位（cs_voice 判例：抽帧不用声音，未注入槽补静音过校验）
+    _injected = {u["name"] for u in uploads}
+    for spec in (tmpl.inject_images or []):
+        if not str(spec.get("slot", "")).startswith("audio"):
+            continue
+        _cur = wf.get(str(spec["node"]), {}).get("inputs", {}).get(spec["field"])
+        if _cur and _cur not in _injected:
+            uploads.append({"path": str(_silent_placeholder(data_dir)), "name": _cur})
+    for up in uploads:
+        comfy.upload_media(Path(up["path"]), up["name"])
+    if job is not None:
+        attach_snapshot(db, job["id"], prompt=prompt, workflow=wf, template_id=tmpl.id)
+    emit_log(db, "comfy", "info",
+             f"分镜 {shot['seq']} 整页重绘提交（模板 {tmpl.id}，H3 抽帧）",
+             project_id=proj["id"], job_id=job["id"] if job else None)
+    results = comfy.wait_and_collect(
+        comfy.submit(wf, client_id=f"cs-redraw-{shot_id}"), stall_seconds=900)
+    video = next((r for r in results if r.get("_kind") == "video"), None)
+    if video is None:
+        raise RuntimeError(f"分镜 {shot['seq']} H3 重绘未返回视频")
+    shot_dir = Path(data_dir) / "projects" / proj["slug"] / "shots" / str(shot["seq"])
+    shot_dir.mkdir(parents=True, exist_ok=True)
+    tmp_mp4 = shot_dir / f"_redraw_tmp_{shot_id}.mp4"
+    tmp_png = shot_dir / f"_redraw_tmp_{shot_id}.png"
+    comfy.download(video["filename"], video.get("subfolder", ""),
+                   video.get("type", "output"), tmp_mp4)
+    try:
+        _extract_first_frame(tmp_mp4, tmp_png)
+        version = save_kf_version(shot_dir, "start", tmp_png)
+    finally:
+        tmp_mp4.unlink(missing_ok=True)
+        tmp_png.unlink(missing_ok=True)
+    _set_active(db, shot, "start", version)
+    data = (shot_dir / "kf_start.png").read_bytes()
+    cleared = [shot_id]
+    prev_id = _sync_prev_end(db, data_dir, shot, data, version)
+    if prev_id is not None:
+        cleared.append(prev_id)
+    _clear_video(db, cleared)
+    return shot_dir / f"kf_start_{version}.png"
+
+
 def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
     """整页重绘一镜首帧：base=原页 → 新版本 → 激活 → 前镜尾帧联动 → 视频置空。
-    模板=template_map.page_redraw（决策：默认 zimage_i2i base 槽；模板若声明
-    第二图槽则注入该镜首个绑定角色 main.png——条件双槽）。"""
+    模板=template_map.page_redraw——按类型分道：ref2va=H3 抽帧道（v7），
+    其余=图像编辑道（v4/v5/v6）。"""
     from .projects import get_project
     from .rendershot import _video_seed
     from .settings import get_setting
@@ -194,6 +348,9 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
     proj = get_project(db, shot["project_id"])
     base = _ensure_source_page(data_dir, proj, shot)
     tmpl = resolve_template(db, "page_redraw")
+    if tmpl.type == "ref2va":
+        return _redraw_page_h3(db, data_dir, shot, proj, comfy, tmpl, base,
+                               job=job, seed=seed)
     images = [{"slot": tmpl.inject_images[0]["slot"], "path": str(base)}]
     # v3（2026-09-11）：线稿 ControlNet 版——结构由 CN 条件锁（提线稿在模板链内），
     # 提示词专注风格化/清文字/画质；v1 的「布局一致」句让位给结构条件

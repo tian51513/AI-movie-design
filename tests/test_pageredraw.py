@@ -501,3 +501,76 @@ def test_redraw_page_mr_injects_char_refs_and_placeholders(tmp_path, monkeypatch
         ups = [str(u) for u in m.uploads]
         for slot in ("char1", "char2"):
             assert sum(1 for u in ups if f"__{slot}" in u) == 1, (slot, ups)
+
+
+def test_page_redraw_h3_template_mechanics():
+    """v7（2026-09-12）：H3 抽帧道模板——克隆 h3_ref2va + 第三参考槽
+    （ref_image_2），三图槽 base/char1/char2 + 双音频槽（引擎注静音）。"""
+    from pathlib import Path
+    from comic_studio.engine.workflows import registry
+    tmpl = registry.scan_templates(Path("templates/workflows"))["h3_page_redraw"]
+    assert tmpl.type == "ref2va"
+    slots = [i["slot"] for i in tmpl.inject_images]
+    assert slots == ["base", "char1", "char2", "audio0", "audio1"]
+    wf = tmpl.api_json()
+    node = wf["110"]
+    assert node["class_type"] == "MiniMaxH3ReferenceToVideo"
+    assert node["inputs"]["ref_images.ref_image_0"] == ["96", 0]
+    assert node["inputs"]["ref_images.ref_image_2"] == ["99", 0]
+
+
+def test_redraw_page_h3_e2e(tmp_path, monkeypatch):
+    """v7 引擎道：H3 提示词（<Picture> 锚+静态约束）+ 未绑定槽回填原页 +
+    音频静音占位 + 视频抽首帧落版本 + 尾帧联动。抽帧 monkeypatch（假 mp4
+    过不了真 ffmpeg——TTS 判例同款：假字节测真工具必 mock 边界）。"""
+    db, pid = _motion_project(tmp_path, n=2)
+    from types import SimpleNamespace as NS
+    from pathlib import Path as _P
+    import shutil as _sh
+    from comic_studio.engine.assets import persist_assets
+    from comic_studio.engine.pageredraw import redraw_page, _extract_first_frame
+    from comic_studio.engine.paths import data_to_abs
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.shots import list_shots, update_shot
+    from comic_studio.engine.workflows import registry
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    set_setting(db, "template_map", {"page_redraw": "h3_page_redraw"})
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", _P("templates/workflows"))
+    ids = persist_assets(db, tmp_path / "data", pid, NS(characters=[
+        NS(name="黑发女性",
+           appearance="性别：女\n发色发型：黑色长直发", tags=[])],
+        scenes=[], props=[]))
+    s1 = list_shots(db, pid)[0]
+    import json as _json
+    led = _json.loads(s1["ledger_json"])
+    led["assets"] = {"characters": ids, "scenes": [], "props": []}
+    update_shot(db, s1["id"], {"ledger_json": _json.dumps(led, ensure_ascii=False)})
+    from comic_studio.engine.assets import list_project_assets
+    _a = list_project_assets(db, pid)[0]
+    a_dir = data_to_abs(tmp_path / "data", _a["library_dir"])
+    a_dir.mkdir(parents=True, exist_ok=True)
+    (a_dir / "main.png").write_bytes(PNG * 7)
+
+    def _fake_extract(video, out_png):
+        out_png.write_bytes(PNG * 11)      # 假抽帧：直接落一张新图
+    monkeypatch.setattr("comic_studio.engine.pageredraw._extract_first_frame",
+                        _fake_extract)
+    with comfy_server("ok", video=True) as m:
+        out = redraw_page(db, tmp_path / "data", s1["id"], ComfyClient(m.base_url))
+        assert out.name == "kf_start_v2.png"
+        wf = m.prompts[0]["prompt"]
+        prompt = wf["110"]["inputs"]["prompt"]
+        assert "<Picture 1> 是原漫画页" in prompt
+        assert "（黑发女性）是来自 <Picture 2> 的人物" in prompt
+        assert "黑色长直发" in prompt                     # 明细锚
+        assert "completely static" in prompt              # 静态约束
+        # 音频静音占位：上传名=模板默认槽值（cs_voice_N.mp3），源文件为静音；
+        # mock 按后缀把音频分到 audio_uploads 列表
+        ups = [str(u) for u in m.uploads + m.audio_uploads]
+        assert any("cs_voice" in u for u in ups), ups
+        # 提示词节点入参为文本（110 prompt 注入）
+    # 前镜无（镜1）→ 尾帧联动对象为本镜自身清视频
+    from comic_studio.engine.shots import list_shots as _ls
+    after = {s["id"]: s for s in _ls(db, pid)}
+    assert after[s1["id"]]["video_path"] is None
