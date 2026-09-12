@@ -496,7 +496,8 @@ def test_redraw_page_mr_injects_char_refs_and_placeholders(tmp_path, monkeypatch
         # v6.1 指令式 + 外貌细节（大众特征靠明细锚定）
         assert "若图1中存在「黑发女性」" in prompt
         assert "与图2参考图一致" in prompt
-        assert "不添加任何人物" in prompt
+        assert "不得删除、隐藏、合并或补全" in prompt
+        assert "不添加人物" in prompt
         assert "黑色长直发" in prompt        # traits 注入
         ups = [str(u) for u in m.uploads]
         for slot in ("char1", "char2"):
