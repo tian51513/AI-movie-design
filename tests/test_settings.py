@@ -78,3 +78,4 @@ def test_page_redraw_defaults(tmp_path):
     db = _db(tmp_path)
     assert get_setting(db, "template_map")["page_redraw"] == "zimage_page_redraw"
     assert get_setting(db, "comfy")["page_redraw_denoise"] == 1.0
+

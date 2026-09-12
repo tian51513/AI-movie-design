@@ -1,0 +1,149 @@
+[
+  {
+    "name": "Arctic Grimdark Mythos",
+    "prompt": "cinematic dark fantasy, arctic grimdark, colossal scale, desaturated icy palette, monumental winter landscape, high-contrast atmospheric lighting, intricate frostbitten textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ArcticGrimdark神话",
+    "thumbnail": "samples/Arctic_Grimdark_Mythos.webp"
+  },
+  {
+    "name": "Bioluminescent Abyssal Mysticism",
+    "prompt": "bioluminescent glow, atmospheric dark fantasy, submerged ancient ruins, caustic light rays, moss-covered monoliths, deep teal and indigo palette, surreal subterranean landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Bioluminescent Abyssal Mysticism",
+    "thumbnail": "samples/Bioluminescent_Abyssal_Mysticism.webp"
+  },
+  {
+    "name": "Cinematic Angular Noir",
+    "prompt": "chiaroscuro lighting, sharp geometric planes, painterly digital brushstrokes, high-contrast noir, stylized concept art, dramatic rim lighting, volumetric shading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Angular黑色",
+    "thumbnail": "samples/Cinematic_Angular_Noir.webp"
+  },
+  {
+    "name": "Dust-Worn Esoteric Futurism",
+    "prompt": "dusty desert wasteland, monolithic brutalist architecture, retro-futuristic concept art, esoteric ritual ceremony, muted earth tones, atmospheric hazy lighting, textured digital illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "灰尘WornEsotericFuturism",
+    "thumbnail": "samples/Dust-Worn_Esoteric_Futurism.webp"
+  },
+  {
+    "name": "Dynamic Neon Urbanism",
+    "prompt": "dynamic low-angle perspective, vibrant neon palette, expressive painterly brushstrokes, cyberpunk urban action, high-contrast lighting, stylized digital illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态霓虹Urbanism",
+    "thumbnail": "samples/Dynamic_Neon_Urbanism.webp"
+  },
+  {
+    "name": "Ethereal Fantasy Concept",
+    "prompt": "character concept art, delicate ink linework, watercolor wash, minimalist background, ethereal fantasy aesthetic, rpg character sheet, fluid motion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵幻想概念",
+    "thumbnail": "samples/Ethereal_Fantasy_Concept.webp"
+  },
+  {
+    "name": "Grand Ethereal Fantasy",
+    "prompt": "monumental fantasy architecture, atmospheric perspective, painterly digital art, ethereal lighting, epic scale contrast, vibrant color palette, mystical landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Grand空灵幻想",
+    "thumbnail": "samples/Grand_Ethereal_Fantasy.webp"
+  },
+  {
+    "name": "Gritty Atmospheric Concept",
+    "prompt": "character concept art, painterly digital illustration, gritty realism, weathered textures, muted earth tones, moody atmospheric lighting, full-body portrait, tactical utilitarian design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty氛围概念",
+    "thumbnail": "samples/Gritty_Atmospheric_Concept.webp"
+  },
+  {
+    "name": "Gritty Painterly Chiaroscuro",
+    "prompt": "painterly digital art, dramatic chiaroscuro lighting, bold visible brushstrokes, high-contrast composition, faceted shading, industrial earth tones, gritty concept art style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Painterly Chiaroscuro",
+    "thumbnail": "samples/Gritty_Painterly_Chiaroscuro.webp"
+  },
+  {
+    "name": "Luminous Abyssal Fantasy",
+    "prompt": "bioluminescent subterranean landscape, stylized digital fantasy, glowing crystalline structures, high-contrast atmospheric lighting, deep blue and cyan gradient, mystical god rays, geometric rock formations. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮深渊幻想",
+    "thumbnail": "samples/Luminous_Abyssal_Fantasy.webp"
+  },
+  {
+    "name": "Luminous Forest Mystery",
+    "prompt": "stylized digital illustration, chiaroscuro lighting, enchanted forest, glowing focal point, lush botanical foliage, dramatic god rays, whimsical fantasy atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮森林Mystery",
+    "thumbnail": "samples/Luminous_Forest_Mystery.webp"
+  },
+  {
+    "name": "Luminous Monolithic Void",
+    "prompt": "monolithic surrealism, glowing cyan portal, deep indigo atmosphere, lone silhouette, cinematic backlighting, minimalist composition, atmospheric grain, vast scale. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮MonolithicVoid",
+    "thumbnail": "samples/Luminous_Monolithic_Void.webp"
+  },
+  {
+    "name": "Luminous Urban Narrative",
+    "prompt": "painterly digital art, dramatic lighting, urban environment, introspective mood, high-angle perspective, volumetric light, detailed texture, narrative atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮都市叙事",
+    "thumbnail": "samples/Luminous_Urban_Narrative.webp"
+  },
+  {
+    "name": "Lush Mythic Solarpunk",
+    "prompt": "stylized digital painting, volumetric lighting, overgrown architecture, painterly texture, vibrant color palette, solarpunk aesthetic, dramatic golden hour, mythic scale. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Lush Mythic Solarpunk",
+    "thumbnail": "samples/Lush_Mythic_Solarpunk.webp"
+  },
+  {
+    "name": "Misty Primeval Gothic",
+    "prompt": "cinematic dark fantasy, misty primordial forest, overgrown ancient ruins, desaturated green and earth tones, volumetric atmospheric lighting, scale comparison, moss-draped textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "薄雾Primeval哥特",
+    "thumbnail": "samples/Misty_Primeval_Gothic.webp"
+  },
+  {
+    "name": "Monolithic Atmospheric Dystopia",
+    "prompt": "brutalist sci-fi, monolithic structures, atmospheric haze, desaturated teal and grey, cinematic wide-angle, dystopian landscape, ethereal fantasy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic Atmospheric Dystopia",
+    "thumbnail": "samples/Monolithic_Atmospheric_Dystopia.webp"
+  },
+  {
+    "name": "Monolithic Cyber-Brutalist Horizon",
+    "prompt": "monolithic sci-fi megastructures, dystopian vertical cityscape, atmospheric twilight haze, high-contrast industrial lighting, painterly digital art style, retro-futuristic cyberpunk architecture, extreme scale perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic赛博粗野主义地平线",
+    "thumbnail": "samples/Monolithic_Cyber-Brutalist_Horizon.webp"
+  },
+  {
+    "name": "Monolithic Industrial Futurism — Golden Matte Haze",
+    "prompt": "brutalist megastructures, golden hour atmospheric haze, monolithic industrial scale, retro-futuristic realism, cinematic matte painting, weathered metal and concrete, vast desolate landscapes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic Industrial Futurism — Golden Matte Haze",
+    "thumbnail": "samples/Monolithic_Industrial_Futurism_—_Golden_Matte_Haze.webp"
+  },
+  {
+    "name": "Tactical Ronin Fantasy",
+    "prompt": "character concept art, chiaroscuro lighting, tactical armor, muted earth tones, digital painting style, intricate textile details, gritty realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "TacticalRonin幻想",
+    "thumbnail": "samples/Tactical_Ronin_Fantasy.webp"
+  },
+  {
+    "name": "Tactile Fantasy Conceptism",
+    "prompt": "character concept art, tactile textures, cinematic studio lighting, stylized digital painting, full-body portrait, grounded fantasy aesthetics, intricate material detail. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉幻想Conceptism",
+    "thumbnail": "samples/Tactile_Fantasy_Conceptism.webp"
+  },
+  {
+    "name": "Vibrant Whimsical Painterly",
+    "prompt": "stylized digital painting, vibrant color palette, expressive brushstrokes, whimsical concept art, high-contrast lighting, saturated landscape, exaggerated perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳Whimsical绘画感",
+    "thumbnail": "samples/Vibrant_Whimsical_Painterly.webp"
+  }
+]

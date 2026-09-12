@@ -1,0 +1,702 @@
+[
+  {
+    "name": "Analog Cosmic Surrealism — Starburst Neon",
+    "prompt": "retro-futurism, analog film grain, cosmic surrealism, starburst lens flare, airbrush illustration, neon chromatic aberration, vintage sci-fi aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟宇宙超现实Starburst霓虹",
+    "thumbnail": "samples/Analog_Cosmic_Surrealism_-_Starburst_Neon.webp"
+  },
+  {
+    "name": "Analog Glitch Melancholy",
+    "prompt": "CRT monitor aesthetic, analog glitch art, chromatic aberration, scanlines, 90s anime atmosphere, retro-futuristic melancholy, neon cyan and violet glow, liminal retro space. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟故障忧郁",
+    "thumbnail": "samples/Analog_Glitch_Melancholy.webp"
+  },
+  {
+    "name": "Analog Glitch Noir — Phosphor Magenta Bloom",
+    "prompt": "analog CRT monitor, lo-fi glitch art, high-contrast neon glow, vintage scanlines, retro-futuristic surveillance, film grain and dust, chromatic aberration, analog sci-fi archive. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟故障黑色Phosphor品红辉光",
+    "thumbnail": "samples/Analog_Glitch_Noir_—_Phosphor_Magenta_Bloom.webp"
+  },
+  {
+    "name": "Atmospheric Cinematic Noir",
+    "prompt": "cinematic neon noir, teal and orange color grade, motion blur trails, dramatic low-key lighting, analog film grain, atmospheric silhouette, soft glow projection. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围电影感黑色",
+    "thumbnail": "samples/Atmospheric_Cinematic_Noir.webp"
+  },
+  {
+    "name": "Atmospheric Neon Dystopia",
+    "prompt": "cyberpunk megacity, volumetric atmospheric haze, high-contrast neon lighting, rain-slicked urban canyons, dramatic vertical perspective, futuristic industrial decay, magenta and cyan color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围霓虹Dystopia",
+    "thumbnail": "samples/Atmospheric_Neon_Dystopia.webp"
+  },
+  {
+    "name": "Atmospheric Nocturnal Noir",
+    "prompt": "cinematic noir, volumetric lighting, dense atmospheric fog, high-contrast silhouette, minimalist composition, teal and amber palette, glowing light sources, liminal night landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围夜行黑色",
+    "thumbnail": "samples/Atmospheric_Nocturnal_Noir.webp"
+  },
+  {
+    "name": "Bioluminescent Abyssal Macro",
+    "prompt": "bioluminescent macro photography, translucent organic textures, electric neon glow, deep ocean abyss, subsurface scattering, vibrant high-contrast marine life, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Bioluminescent深渊微距",
+    "thumbnail": "samples/Bioluminescent_Abyssal_Macro.webp"
+  },
+  {
+    "name": "Bioluminescent Liminal Decay",
+    "prompt": "crepuscular rays, toxic green glow, low-angle perspective, wet reflective surfaces, atmospheric haze, backlit silhouettes, biohazardous murky depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Bioluminescent阈限衰败",
+    "thumbnail": "samples/Bioluminescent_Liminal_Decay.webp"
+  },
+  {
+    "name": "Chromatic Kinetic Surrealism",
+    "prompt": "long exposure motion blur, electric blue and neon palette, high-fashion surrealism, gel lighting, kinetic silhouettes, high-contrast editorial, spectral light trails. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色动态超现实",
+    "thumbnail": "samples/Chromatic_Kinetic_Surrealism.webp"
+  },
+  {
+    "name": "Chromatic Liminal Aura",
+    "prompt": "airbrushed silhouette, acidic neon aura, heavy grain noise, soft-focus blur, liminal atmosphere, chromatic gradient, minimalist high-contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色阈限Aura",
+    "thumbnail": "samples/Chromatic_Liminal_Aura.webp"
+  },
+  {
+    "name": "Chromatic Neon Noir",
+    "prompt": "dual-tone lighting, chiaroscuro, saturated red and blue, high-contrast studio lighting, cinematic noir, dramatic silhouette, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色霓虹黑色",
+    "thumbnail": "samples/Chromatic_Neon_Noir.webp"
+  },
+  {
+    "name": "Chrome Noir Futurism",
+    "prompt": "liquid chrome, 1980s airbrush art, starburst lens flare, high-contrast noir, retro-futuristic gothic, analog grain texture, saturated neon highlights. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "铬黑色Futurism",
+    "thumbnail": "samples/Chrome_Noir_Futurism.webp"
+  },
+  {
+    "name": "Cinematic Acid Nocturne",
+    "prompt": "cinematic neon mist, acid green lighting, nocturnal urban isolation, high contrast silhouettes, wet asphalt reflections, atmospheric film grain, eerie liminal spaces. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感AcidNocturne",
+    "thumbnail": "samples/Cinematic_Acid_Nocturne.webp"
+  },
+  {
+    "name": "Cinematic Cobalt Noir — Frosted Calm",
+    "prompt": "chiaroscuro lighting, cobalt blue color palette, low-key studio portrait, high-contrast shadows, cinematic noir lighting, minimalist composition, dual-tone neon accent, contemplative mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Cobalt Noir — Frosted Calm",
+    "thumbnail": "samples/Cinematic_Cobalt_Noir_—_Frosted_Calm.webp"
+  },
+  {
+    "name": "Cinematic Crimson Noir — Neon Rim Grit",
+    "prompt": "cinematic noir, high-contrast chiaroscuro, saturated crimson and black, heavy analog film grain, neon red rim light, gritty urban texture, moody underground aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感绯红黑色霓虹边缘光Grit",
+    "thumbnail": "samples/Cinematic_Crimson_Noir_-_Neon_Rim_Grit.webp"
+  },
+  {
+    "name": "Cinematic Cyber Noir — Neon Green Smoke",
+    "prompt": "cyber-noir cinematography, high-contrast silhouette, atmospheric haze and smoke, neon and cobalt lighting, retro-futuristic digital textures, cinematic urban moody lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感赛博黑色霓虹Green烟",
+    "thumbnail": "samples/Cinematic_Cyber_Noir_—_Neon_Green_Smoke.webp"
+  },
+  {
+    "name": "Cinematic Neon Liminality",
+    "prompt": "cinematic twilight, neon illumination, liminal space, nostalgic americana, deep indigo gradients, isolated roadside structure, atmospheric solitude, medium format film texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感霓虹Liminality",
+    "thumbnail": "samples/Cinematic_Neon_Liminality.webp"
+  },
+  {
+    "name": "Cinematic Neon Noir — Amber Cyan Block",
+    "prompt": "dual-tone lighting, high-contrast studio photography, cyberpunk aesthetic, vibrant color blocking, sculptural silhouette, cinematic rim lighting, electric neon palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感霓虹黑色琥珀青色Block",
+    "thumbnail": "samples/Cinematic_Neon_Noir_—_Amber_Cyan_Block.webp"
+  },
+  {
+    "name": "Cinematic Neon Noir — Gel Wet Sheen",
+    "prompt": "high-contrast studio portrait, dramatic gel lighting, bichromatic color palette, cinematic neon noir, sharp rim light, glossy skin texture, editorial fashion photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感霓虹黑色Gel湿Sheen",
+    "thumbnail": "samples/Cinematic_Neon_Noir_—_Gel_Wet_Sheen.webp"
+  },
+  {
+    "name": "Cinematic Neon Noir — Sleek Gel Rims",
+    "prompt": "chiaroscuro portrait, saturated gel lighting, high-contrast silhouette, dramatic rim light, neon noir, minimalist fashion photography, deep black background, cinematic mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感霓虹黑色SleekGelRims",
+    "thumbnail": "samples/Cinematic_Neon_Noir_-_Sleek_Gel_Rims.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Blur — Streetlamp Glimmer",
+    "prompt": "motion blur, analog film grain, nocturnal long exposure, cinematic haze, light trails, liminal space, neon glow, lo-fi aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行模糊StreetlampGlimmer",
+    "thumbnail": "samples/Cinematic_Nocturnal_Blur_—_Streetlamp_Glimmer.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Liminality — Pushed Flash",
+    "prompt": "cinematic film grain, nocturnal liminal space, high contrast chiaroscuro, moody twilight atmosphere, harsh direct flash, desaturated cool tones, solitary figure, soft urban bokeh. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行LiminalityPushedFlash",
+    "thumbnail": "samples/Cinematic_Nocturnal_Liminality_—_Pushed_Flash.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Melancholia — Golden Painterly",
+    "prompt": "cinematic night photography, analog film grain, teal and amber lighting, atmospheric bokeh, heavy snowfall, high contrast silhouettes, lo-fi dreamscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行Melancholia黄金绘画感",
+    "thumbnail": "samples/Cinematic_Nocturnal_Melancholia_—_Golden_Painterly.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Minimalism — Stippled Chalk",
+    "prompt": "cinematic night photography, volumetric light beams, solitary silhouette, heavy atmospheric fog, teal and black color palette, high contrast chiaroscuro, minimalist dark ambient. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行极简主义StippledChalk",
+    "thumbnail": "samples/Cinematic_Nocturnal_Minimalism_—_Stippled_Chalk.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Minimalism — String Light Warmth",
+    "prompt": "cinematic night photography, high contrast lighting, minimalist architecture, blue hour atmosphere, warm interior glow, serene isolation, geometric composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Nocturnal Minimalism — String Light Warmth",
+    "thumbnail": "samples/Cinematic_Nocturnal_Minimalism_—_String_Light_Warmth.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Noir — Bokeh Orb Glow",
+    "prompt": "cinematic night photography, heavy 35mm film grain, deep blue and cyan color grading, soft bokeh city lights, moody urban isolation, low light film noir, tactile analog texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行黑色BokehOrb发光",
+    "thumbnail": "samples/Cinematic_Nocturnal_Noir_—_Bokeh_Orb_Glow.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Noir — Neon Halation",
+    "prompt": "cinematic night photography, 35mm film grain, shallow depth of field, neon light bloom, urban isolation, high contrast color palette, analog aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行黑色霓虹Halation",
+    "thumbnail": "samples/Cinematic_Nocturnal_Noir_-_Neon_Halation.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Noir — Neon Indigo",
+    "prompt": "cinematic film grain, low-key lighting, duotone color palette, intimate portraiture, high-contrast shadows, moody atmospheric lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行黑色霓虹靛蓝",
+    "thumbnail": "samples/Cinematic_Nocturnal_Noir_—_Neon_Indigo.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Solitude — Prismatic Accents",
+    "prompt": "cinematic night photography, chiaroscuro lighting, warm window glow, film grain, urban isolation, high contrast composition, twilight blue hour. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Nocturnal Solitude — Prismatic Accents",
+    "thumbnail": "samples/Cinematic_Nocturnal_Solitude_—_Prismatic_Accents.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Transit — Amber Blue Drift",
+    "prompt": "cinematic motion blur, warm amber lighting, analog film grain, urban night photography, transient atmosphere, high contrast shadows, liminal space. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Nocturnal Transit — Amber Blue Drift",
+    "thumbnail": "samples/Cinematic_Nocturnal_Transit_—_Amber_Blue_Drift.webp"
+  },
+  {
+    "name": "Cinematic Noir Glitch",
+    "prompt": "high-contrast noir, minimalist negative space, glowing neon accents, stippled grain texture, digital glitch distortion, cinematic motion blur, shadow-heavy composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感黑色故障",
+    "thumbnail": "samples/Cinematic_Noir_Glitch.webp"
+  },
+  {
+    "name": "Cinematic Noir Surrealism",
+    "prompt": "high contrast noir, heavy analog film grain, graphic silhouette, surreal lighting effects, minimalist composition, retro sci-fi aesthetic, dramatic chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感黑色超现实",
+    "thumbnail": "samples/Cinematic_Noir_Surrealism.webp"
+  },
+  {
+    "name": "Cinematic Urban Nocturne — Teal Amber Glow",
+    "prompt": "cinematic night photography, atmospheric urban solitude, teal and amber color grading, soft bokeh, low-key lighting, shallow depth of field, neo-noir mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市Nocturne青蓝琥珀发光",
+    "thumbnail": "samples/Cinematic_Urban_Nocturne_—_Teal_Amber_Glow.webp"
+  },
+  {
+    "name": "Corrupted Neon Dreamcore",
+    "prompt": "pixel sorting, chromatic aberration, digital glitch, neon saturation, analog grain, distorted silhouette, synthwave aesthetic, data corruption. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Corrupted Neon Dreamcore",
+    "thumbnail": "samples/Corrupted_Neon_Dreamcore.webp"
+  },
+  {
+    "name": "Crimson Contour Minimalism",
+    "prompt": "stark black silhouette, glowing crimson contour, high-contrast chiaroscuro, minimalist neon geometry, topographic light map, cybernetic rim lighting, clean dark ambient. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红轮廓极简主义",
+    "thumbnail": "samples/Crimson_Contour_Minimalism.webp"
+  },
+  {
+    "name": "Crimson Cyber Noir — Neon Lacquer",
+    "prompt": "saturated red neon lighting, high-contrast noir, futuristic cyberpunk aesthetic, glossy metallic surfaces, deep shadows, cinematic low-key photography, industrial synthwave atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红赛博黑色霓虹Lacquer",
+    "thumbnail": "samples/Crimson_Cyber_Noir_-_Neon_Lacquer.webp"
+  },
+  {
+    "name": "Distorted Analog Fisheye",
+    "prompt": "fisheye lens, extreme wide-angle distortion, circular vignette, analog film grain, dynamic low-angle perspective, retro color grading, chromatic aberration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted模拟鱼眼",
+    "thumbnail": "samples/Distorted_Analog_Fisheye.webp"
+  },
+  {
+    "name": "Distorted Neon Nostalgia",
+    "prompt": "fisheye lens distortion, hyper-saturated color palette, chromatic aberration, y2k nostalgic aesthetic, vintage flash photography, psychedelic surrealism, low angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted Neon Nostalgia",
+    "thumbnail": "samples/Distorted_Neon_Nostalgia.webp"
+  },
+  {
+    "name": "Dynamic Kinetic Velocity — Neon Analog Trails",
+    "prompt": "motion blur, panning photography, kinetic energy, long exposure, dynamic velocity, abstract movement, action sports photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dynamic Kinetic Velocity — Neon Analog Trails",
+    "thumbnail": "samples/Dynamic_Kinetic_Velocity_-_Neon_Analog_Trails.webp"
+  },
+  {
+    "name": "Dynamic Velocity Blur",
+    "prompt": "motion blur, panning photography, kinetic energy, dynamic diagonal lines, vibrant color streaks, high-speed action, directional momentum. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态Velocity模糊",
+    "thumbnail": "samples/Dynamic_Velocity_Blur.webp"
+  },
+  {
+    "name": "Dystopian Transit Noir",
+    "prompt": "cyberpunk subway station, brutalist architecture, neon glow, liminal space, cinematic urban decay, high-contrast lighting, wet concrete reflections. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "DystopianTransit黑色",
+    "thumbnail": "samples/Dystopian_Transit_Noir.webp"
+  },
+  {
+    "name": "Electric Glitch Noir",
+    "prompt": "electric blue and neon pink, high contrast chiaroscuro, chromatic aberration, digital glitch distortion, analog VHS scanlines, surreal double exposure, cyber-gothic, cinematic shadow play. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric故障黑色",
+    "thumbnail": "samples/Electric_Glitch_Noir.webp"
+  },
+  {
+    "name": "Esoteric Neon Radiance",
+    "prompt": "high contrast black background, textured chalk grain, prismatic light burst, esoteric geometric symmetry, retro analog glow, chromatic aberration, hand-drawn radiant lines. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Esoteric Neon Radiance",
+    "thumbnail": "samples/Esoteric_Neon_Radiance.webp"
+  },
+  {
+    "name": "Ethereal Avant-Garde Beauty",
+    "prompt": "macro beauty photography, dewy skin texture, high-fashion editorial, surreal makeup, soft-focus lighting, glass skin effect, intense color contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵AvantGarde美",
+    "thumbnail": "samples/Ethereal_Avant-Garde_Beauty.webp"
+  },
+  {
+    "name": "Ethereal Chromatic Aura",
+    "prompt": "chromatic aura gradient, soft-focus blur, ethereal neon halo, minimalist white background, airbrushed color bleed, digital spiritual atmosphere, grainy texture, glowing celestial orb. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵彩色Aura",
+    "thumbnail": "samples/Ethereal_Chromatic_Aura.webp"
+  },
+  {
+    "name": "Ethereal Chromatic Noir",
+    "prompt": "cinematic noir silhouette, thermal aura gradient, heavy film grain, high-contrast chiaroscuro, soft-focus ethereal blur, cobalt and neon palette, tactile noise texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵彩色黑色",
+    "thumbnail": "samples/Ethereal_Chromatic_Noir.webp"
+  },
+  {
+    "name": "Ethereal Cosmic Luminescence",
+    "prompt": "nebula luminescence, deep space void, magenta and violet palette, ethereal stardust, high-contrast celestial light, bioluminescent textures, analog film grain, cosmic mysticism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵宇宙Luminescence",
+    "thumbnail": "samples/Ethereal_Cosmic_Luminescence.webp"
+  },
+  {
+    "name": "Ethereal Cyan Nocturne",
+    "prompt": "deep cobalt and cyan palette, heavy analog film grain, ethereal motion blur, soft-focus silhouette, atmospheric twilight light, dreamy impressionistic diffusion, mysterious melancholic mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵青色Nocturne",
+    "thumbnail": "samples/Ethereal_Cyan_Nocturne.webp"
+  },
+  {
+    "name": "Ethereal Grain Gradient",
+    "prompt": "ethereal airbrush gradient, stippled grain texture, soft-focus abstraction, pastel neon color blend, holographic light leak, tactile felt paper surface, dreamy atmospheric aura. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵颗粒渐变",
+    "thumbnail": "samples/Ethereal_Grain_Gradient.webp"
+  },
+  {
+    "name": "Ethereal Kinetic Iridescence",
+    "prompt": "intentional motion blur, ethereal pastel gradient, iridescent glow, long exposure kinetic energy, soft-focus dreamcore, minimalist painterly aesthetic, saturated neon accents. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵动态Iridescence",
+    "thumbnail": "samples/Ethereal_Kinetic_Iridescence.webp"
+  },
+  {
+    "name": "Ethereal Neon Aura",
+    "prompt": "heavy film grain, soft-focus silhouette, glowing neon aura, airbrush gradient, minimalist composition, high-contrast lighting, surreal thermal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵霓虹Aura",
+    "thumbnail": "samples/Ethereal_Neon_Aura.webp"
+  },
+  {
+    "name": "Ethereal Neon Fauvism",
+    "prompt": "oil pastel texture, fauvist color palette, gestural scribbles, electric yellow highlights, dreamlike atmosphere, textured paper background, ethereal glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵霓虹Fauvism",
+    "thumbnail": "samples/Ethereal_Neon_Fauvism.webp"
+  },
+  {
+    "name": "Ethereal Neon Noir",
+    "prompt": "retro-futurism, synthwave color palette, analog film grain, neon noir atmosphere, liminal space, CRT scanline texture, high-contrast lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵霓虹黑色",
+    "thumbnail": "samples/Ethereal_Neon_Noir.webp"
+  },
+  {
+    "name": "Ethereal Neon Silhouette",
+    "prompt": "minimalist silhouette, soft-focus diffusion, glowing aura, emerald and neon gradients, heavy film grain, high-contrast ethereal atmosphere, backlit mystery. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵霓虹剪影",
+    "thumbnail": "samples/Ethereal_Neon_Silhouette.webp"
+  },
+  {
+    "name": "Ethereal Neon Twilight — Prismatic Brutalist Haze",
+    "prompt": "volumetric neon lighting, cinematic chiaroscuro, liminal space aesthetic, prismatic color gradients, dreamy atmospheric haze, minimalist architectural forms, retro film grain, saturated light refraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵霓虹暮光棱镜粗野主义Haze",
+    "thumbnail": "samples/Ethereal_Neon_Twilight_—_Prismatic_Brutalist_Haze.webp"
+  },
+  {
+    "name": "Ethereal Thermal Aura — Ink-Bleed Halo",
+    "prompt": "thermal aura glow, chromatic gradient silhouette, soft-focus ink bleed, grainy analog texture, minimalist conceptual portrait, neon airbrush halo, stark dark silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Thermal Aura — Ink-Bleed Halo",
+    "thumbnail": "samples/Ethereal_Thermal_Aura_—_Ink-Bleed_Halo.webp"
+  },
+  {
+    "name": "Ethereal Thermal Dreamscape",
+    "prompt": "heavy film grain, chromatic aberration, thermal gradient glow, ethereal silhouette, analog double exposure, surreal dreamscape, tactile noise texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵ThermalDreamscape",
+    "thumbnail": "samples/Ethereal_Thermal_Dreamscape.webp"
+  },
+  {
+    "name": "Ethereal Thermal Minimalism — Airbrushed Dreamcore",
+    "prompt": "high-contrast silhouette, analog film grain, chromatic thermal gradient, minimalist surrealism, neon aura luminescence, ethereal airbrushed texture, dreamcore aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Thermal Minimalism — Airbrushed Dreamcore",
+    "thumbnail": "samples/Ethereal_Thermal_Minimalism_—_Airbrushed_Dreamcore.webp"
+  },
+  {
+    "name": "Ethereal Twilight Luminescence",
+    "prompt": "long exposure photography, analog film grain, fiery light trails, deep indigo twilight, ethereal motion blur, high contrast silhouette, liminal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵暮光Luminescence",
+    "thumbnail": "samples/Ethereal_Twilight_Luminescence.webp"
+  },
+  {
+    "name": "Fragmented Digital Realism",
+    "prompt": "glitch art, pixel sorting, datamoshing, chromatic aberration, digital corruption, fragmented realism, cybernetic decay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fragmented数字写实",
+    "thumbnail": "samples/Fragmented_Digital_Realism.webp"
+  },
+  {
+    "name": "Fragmented Neon Surrealism",
+    "prompt": "glitch art, chromatic aberration, fragmented reality, neon gradients, digital distortion, mixed-media collage, prismatic refraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fragmented霓虹超现实",
+    "thumbnail": "samples/Fragmented_Neon_Surrealism.webp"
+  },
+  {
+    "name": "Glitch-Infused Digital Constructivism",
+    "prompt": "digital glitch art, chromatic aberration, pixel sorting, scanline texture, geometric constructivism, neon cyan and magenta, retro-futurist, high-contrast black background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Glitch-Infused Digital Constructivism",
+    "thumbnail": "samples/Glitch-Infused_Digital_Constructivism.webp"
+  },
+  {
+    "name": "Gritty Neon Decay",
+    "prompt": "gritty industrial decay, vibrant neon accents, cinematic low-key lighting, weathered concrete texture, urban noir atmosphere, high-contrast shadows, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty霓虹衰败",
+    "thumbnail": "samples/Gritty_Neon_Decay.webp"
+  },
+  {
+    "name": "Hyper-Distorted Urban Street",
+    "prompt": "fisheye lens distortion, extreme low-angle perspective, forced perspective, vibrant neon streetwear, harsh midday sunlight, wide-angle urban photography, high-contrast color blocking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "HyperDistorted都市街道",
+    "thumbnail": "samples/Hyper-Distorted_Urban_Street.webp"
+  },
+  {
+    "name": "Hyper-Gothic Digital Noir",
+    "prompt": "extreme close-up portrait, chiaroscuro lighting, uncanny valley aesthetic, visceral texture, neon gothic, avant-garde digital art, high-contrast noir, surreal horror. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper哥特数字黑色",
+    "thumbnail": "samples/Hyper-Gothic_Digital_Noir.webp"
+  },
+  {
+    "name": "Hyper-Saturated Glitch Nostalgia",
+    "prompt": "glitch art, chromatic aberration, pixelation, VHS tracking distortion, neon color palette, scanlines, retro digital aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper-Saturated Glitch Nostalgia",
+    "thumbnail": "samples/Hyper-Saturated_Glitch_Nostalgia.webp"
+  },
+  {
+    "name": "Kinetic Amber Nocturne — Velvety Golden Trails",
+    "prompt": "motion blur, long exposure, amber glow, cinematic night photography, kinetic light trails, analog film grain, high contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Kinetic Amber Nocturne — Velvety Golden Trails",
+    "thumbnail": "samples/Kinetic_Amber_Nocturne_—_Velvety_Golden_Trails.webp"
+  },
+  {
+    "name": "Kinetic Analog Abstraction",
+    "prompt": "intentional camera movement, heavy analog film grain, blurred silhouette, high-contrast lighting, painterly motion blur, experimental texture, chromatic degradation, atmospheric abstraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态模拟Abstraction",
+    "thumbnail": "samples/Kinetic_Analog_Abstraction.webp"
+  },
+  {
+    "name": "Kinetic Glitch Surrealism",
+    "prompt": "cinematic motion blur, chromatic aberration, minimalist editorial, digital glitch art, high-contrast portraiture, textured paper background, double exposure, vibrant light trails. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态故障超现实",
+    "thumbnail": "samples/Kinetic_Glitch_Surrealism.webp"
+  },
+  {
+    "name": "Kinetic Luminous Blur — Neon Velocity Trails",
+    "prompt": "intentional camera movement, long exposure light trails, kinetic motion blur, high-contrast neon palette, abstract velocity, dynamic light streaks, painterly abstraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态明亮模糊霓虹VelocityTrails",
+    "thumbnail": "samples/Kinetic_Luminous_Blur_—_Neon_Velocity_Trails.webp"
+  },
+  {
+    "name": "Kinetic Luminous Flux",
+    "prompt": "motion blur, light trails, central perspective, futuristic velocity, high contrast neon, long exposure, kinetic energy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态明亮Flux",
+    "thumbnail": "samples/Kinetic_Luminous_Flux.webp"
+  },
+  {
+    "name": "Kinetic Luminous Nocturne",
+    "prompt": "long exposure, motion blur, neon light trails, high contrast, spectral glow, chromatic aberration, stark black background, kinetic energy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态明亮Nocturne",
+    "thumbnail": "samples/Kinetic_Luminous_Nocturne.webp"
+  },
+  {
+    "name": "Kinetic Neon Distortion",
+    "prompt": "motion blur, high-contrast studio lighting, neon saturation, abstract distortion, shutter drag, tactile texture overlays, vibrant color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态霓虹Distortion",
+    "thumbnail": "samples/Kinetic_Neon_Distortion.webp"
+  },
+  {
+    "name": "Kinetic Neon Etherealism",
+    "prompt": "long exposure motion blur, neon light painting, high contrast dark background, kinetic light streaks, ethereal glow, cyberpunk color palette, shutter drag. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态霓虹Etherealism",
+    "thumbnail": "samples/Kinetic_Neon_Etherealism.webp"
+  },
+  {
+    "name": "Kinetic Neon Nocturne",
+    "prompt": "cinematic motion blur, long exposure portrait, teal and amber lighting, neon light trails, high-contrast chiaroscuro, surreal ghosting effect, prismatic refraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态霓虹Nocturne",
+    "thumbnail": "samples/Kinetic_Neon_Nocturne.webp"
+  },
+  {
+    "name": "Kinetic Neon Spectralism",
+    "prompt": "long exposure motion blur, chromatic aberration, neon light trails, kinetic energy photography, holographic light streaks, cinematic moody lighting, digital distortion, vibrant color bleed. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态霓虹Spectralism",
+    "thumbnail": "samples/Kinetic_Neon_Spectralism.webp"
+  },
+  {
+    "name": "Kinetic Nocturnal Amber",
+    "prompt": "long exposure motion blur, amber and indigo contrast, analog film grain, ethereal light trails, cinematic twilight, nocturnal silhouette, dreamlike bokeh. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态夜行琥珀",
+    "thumbnail": "samples/Kinetic_Nocturnal_Amber.webp"
+  },
+  {
+    "name": "Kinetic Nocturnal Blur — Amber Neon Panning",
+    "prompt": "long-exposure photography, kinetic motion blur, cinematic film grain, high-contrast shadows, glowing light streaks, nocturnal urban atmosphere, chromatic aberration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态夜行模糊琥珀霓虹Panning",
+    "thumbnail": "samples/Kinetic_Nocturnal_Blur_—_Amber_Neon_Panning.webp"
+  },
+  {
+    "name": "Kinetic Nocturnal Blur — Deep Blue Ghosting",
+    "prompt": "long exposure light trails, heavy analog film grain, chromatic aberration, nocturnal motion blur, neon cyan and electric blue, ethereal ghosting, liminal night photography, cinematic diffusion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态夜行模糊深BlueGhosting",
+    "thumbnail": "samples/Kinetic_Nocturnal_Blur_—_Deep_Blue_Ghosting.webp"
+  },
+  {
+    "name": "Kinetic Nocturnal Flow",
+    "prompt": "long exposure photography, kinetic light trails, nocturnal urban cityscape, motion blur, neon color palette, high contrast composition, cinematic urban flow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态夜行流动",
+    "thumbnail": "samples/Kinetic_Nocturnal_Flow.webp"
+  },
+  {
+    "name": "Kinetic Nocturnal Haze",
+    "prompt": "long exposure motion blur, cinematic film grain, amber light trails, nocturnal urban atmosphere, dreamy shutter drag, lo-fi analog aesthetic, warm and cool contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态夜行Haze",
+    "thumbnail": "samples/Kinetic_Nocturnal_Haze.webp"
+  },
+  {
+    "name": "Kinetic Nocturnal Transit",
+    "prompt": "long exposure photography, neon light trails, urban motion blur, kinetic energy, high contrast night photography, cinematic city streets. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态夜行Transit",
+    "thumbnail": "samples/Kinetic_Nocturnal_Transit.webp"
+  },
+  {
+    "name": "Kinetic Nocturnal Velocity",
+    "prompt": "long exposure, motion blur, intentional camera movement, urban light trails, minimalist abstraction, nocturnal cityscape, kinetic energy, vibrant neon contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态夜行Velocity",
+    "thumbnail": "samples/Kinetic_Nocturnal_Velocity.webp"
+  },
+  {
+    "name": "Kinetic Noir Nocturne",
+    "prompt": "long exposure light trails, cinematic urban noir, neon crimson and cyan, brutalist architecture, high contrast chiaroscuro, motion blur, futuristic city night, dynamic light streaks. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态黑色Nocturne",
+    "thumbnail": "samples/Kinetic_Noir_Nocturne.webp"
+  },
+  {
+    "name": "Kinetic Prismatic Nocturne",
+    "prompt": "long exposure motion blur, chromatic aberration, analog film grain, spectral light trails, nocturnal deep blue palette, high-contrast neon streaks, surreal kinetic energy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态棱镜Nocturne",
+    "thumbnail": "samples/Kinetic_Prismatic_Nocturne.webp"
+  },
+  {
+    "name": "Kinetic Spectral Luminescence",
+    "prompt": "long exposure photography, kinetic motion blur, neon light trails, chromatic aberration, spectral bioluminescence, high contrast dark background, ethereal energy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态光谱Luminescence",
+    "thumbnail": "samples/Kinetic_Spectral_Luminescence.webp"
+  },
+  {
+    "name": "Kinetic Sun-Drenched Surrealism",
+    "prompt": "hyper-saturated neon colors, dynamic motion blur, harsh sun-drenched lighting, low-angle wide-angle perspective, surreal dreamcore atmosphere, high-contrast desert grit, vibrant Y2K aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态日Drenched超现实",
+    "thumbnail": "samples/Kinetic_Sun-Drenched_Surrealism.webp"
+  },
+  {
+    "name": "Kinetic Twilight Impressionism",
+    "prompt": "intentional camera movement, long exposure light trails, twilight blue hour, dreamy bokeh, urban abstraction, cinematic motion blur, warm amber glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态暮光印象派",
+    "thumbnail": "samples/Kinetic_Twilight_Impressionism.webp"
+  },
+  {
+    "name": "Liminal Analog Glitch",
+    "prompt": "analog VHS glitch, liminal space, retro-futuristic neon, chromatic aberration, dreamcore aesthetic, low-fidelity 3D render, pixelated scanlines. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "阈限模拟故障",
+    "thumbnail": "samples/Liminal_Analog_Glitch.webp"
+  },
+  {
+    "name": "Luminescent Cyber-Noir",
+    "prompt": "bioluminescent neon glow, chromatic aberration, CRT scanline distortion, electric cyan and violet palette, lo-fi digital noise, high-contrast noir shadows, cybernetic organic texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminescent赛博黑色",
+    "thumbnail": "samples/Luminescent_Cyber-Noir.webp"
+  },
+  {
+    "name": "Luminescent Macro Biometrics",
+    "prompt": "extreme macro photography, bioluminescent color palette, thermal imaging influence, high-grain texture, shallow depth of field, neon chromatic aberration, surreal organic detail. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminescent Macro Biometrics",
+    "thumbnail": "samples/Luminescent_Macro_Biometrics.webp"
+  },
+  {
+    "name": "Luminous Analog Dissociation",
+    "prompt": "heavy film grain, extreme motion blur, chromatic aberration, analog glitch, glowing light leaks, liminal dreamcore, high contrast chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮模拟Dissociation",
+    "thumbnail": "samples/Luminous_Analog_Dissociation.webp"
+  },
+  {
+    "name": "Luminous Analog Glitch",
+    "prompt": "chromatic aberration, heavy film grain, analog glow, phosphor distortion, dreamlike bokeh, digital glitch, nocturnal neon contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮模拟故障",
+    "thumbnail": "samples/Luminous_Analog_Glitch.webp"
+  },
+  {
+    "name": "Luminous Botanical Chiaroscuro — Dual Neon Rim",
+    "prompt": "botanical chiaroscuro, dual-tone neon lighting, translucent petal texture, saturated gradient background, macro floral photography, dramatic rim lighting, minimalist organic geometry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮BotanicalChiaroscuroDual霓虹边缘光",
+    "thumbnail": "samples/Luminous_Botanical_Chiaroscuro_-_Dual_Neon_Rim.webp"
+  },
+  {
+    "name": "Luminous Botanical Surrealism — Neon Violet-Cyan",
+    "prompt": "bioluminescent botanical macro, neon fluorescence, ethereal violet and cyan gradients, surreal organic textures, studio lighting precision, glowing plant veins, dreamy macro photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Botanical超现实霓虹紫罗兰青色",
+    "thumbnail": "samples/Luminous_Botanical_Surrealism_—_Neon_Violet-Cyan.webp"
+  },
+  {
+    "name": "Luminous Chromatic Dissolution",
+    "prompt": "bioluminescent light trails, chromatic aberration, surreal neon fluid dynamics, high contrast dark background, ethereal silhouette, dreamlike motion smear, vibrant neon spectrum. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮彩色Dissolution",
+    "thumbnail": "samples/Luminous_Chromatic_Dissolution.webp"
+  },
+  {
+    "name": "Luminous Cobalt Noir — Neon Halation Rim",
+    "prompt": "cobalt blue neon, high-contrast noir, cinematic rim lighting, heavy film grain, ethereal halation, cybernetic noir, chiaroscuro shadows, bioluminescent glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Cobalt Noir — Neon Halation Rim",
+    "thumbnail": "samples/Luminous_Cobalt_Noir_—_Neon_Halation_Rim.webp"
+  },
+  {
+    "name": "Luminous Cosmic Dreamscape — Nebular Vortex Glow",
+    "prompt": "bioluminescent neon glow, swirling fluid patterns, surreal dreamscape, cosmic high-contrast lighting, ethereal nebula textures, mystical vortex depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮宇宙DreamscapeNebularVortex发光",
+    "thumbnail": "samples/Luminous_Cosmic_Dreamscape_-_Nebular_Vortex_Glow.webp"
+  },
+  {
+    "name": "Luminous Glitch Spectrum",
+    "prompt": "chromatic aberration, analog glitch, spectral gradients, linear light distortion, neon glow, scanline texture, minimalist geometry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮故障Spectrum",
+    "thumbnail": "samples/Luminous_Glitch_Spectrum.webp"
+  },
+  {
+    "name": "Luminous Kinetic Dreamwave",
+    "prompt": "kinetic motion blur, prismatic light leaks, iridescent holographic textures, nocturnal glamour, chromatic aberration, shimmering glitter particles, high-contrast neon palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮动态Dreamwave",
+    "thumbnail": "samples/Luminous_Kinetic_Dreamwave.webp"
+  }
+]

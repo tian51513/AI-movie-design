@@ -1,0 +1,36 @@
+id: krea_page_redraw
+type: i2i
+name: 整页重绘·Krea2 快道（双图分工 10-15s，2026-09-12 v8）
+file: krea_page_redraw.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '28'
+    field: value
+  params:
+    seed:
+      node: '2001'
+      field: 种子
+  # base=原页（图像1=场景参考：构图/布局）；char1=绑定角色主图（图像2=主体
+  # 参考：人物外观）——LazyKreaGenerate 双图分工（ref_boost 主体 4.0 /
+  # ref_boost_a 场景 1.0 分强度，RC5 以来缺的语义显式分离）
+  images:
+  - node: '23'
+    field: image
+    slot: base
+  - node: '100'
+    field: image
+    slot: char1
+outputs:
+- node: '10'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- ComfyUI_Lazybuxuexi
+
+# v8（2026-09-12）：走引擎通用图像道（char 槽点名/v6.1 指令式提示词/
+# 版本落盘全复用，零引擎改动）。双图顺序=图1场景+图2人物（默认值）；
+# 步数 10/CFG 1/euler-simple=示例工作流实测；宽高仅文生生效（编辑跟原图）
+models:
+- {label: unet, node: '90', field: unet_name, cls: UNETLoader, label_cn: 主模型（Krea2）}
+- {label: clip, node: '91', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器（qwen3vl）}
+- {label: vae, node: '93', field: vae_name, cls: VAELoader, label_cn: VAE}

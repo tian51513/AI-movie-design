@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Deconstructed Archival Minimalism",
+    "prompt": "minimalist gallery layout, deconstructed photo collage, staggered paper layers, archival photography aesthetic, fragmented cubist perspective, muted earth tones, tactile paper edges. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "DeconstructedArchival极简主义",
+    "thumbnail": "samples/Deconstructed_Archival_Minimalism.webp"
+  },
+  {
+    "name": "Fragmented Noir Portraiture",
+    "prompt": "torn paper collage, chiaroscuro portraiture, distressed texture, monochromatic noir, fragmented composition, psychological atmosphere, raw emotional gaze. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fragmented黑色肖像摄影",
+    "thumbnail": "samples/Fragmented_Noir_Portraiture.webp"
+  },
+  {
+    "name": "Fragmented Tactile Realism",
+    "prompt": "tactile paper collage, shattered mirror refraction, layered dimensional composition, analogue deconstruction, soft drop shadows, muted earth tones, fragmented perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fragmented触觉写实",
+    "thumbnail": "samples/Fragmented_Tactile_Realism.webp"
+  },
+  {
+    "name": "Surreal Deconstructed Portraiture",
+    "prompt": "surreal portraiture, torn paper collage, shattered glass overlay, chiaroscuro lighting, muted earth tones, tactile mixed-media, fragmented identity. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实Deconstructed肖像摄影",
+    "thumbnail": "samples/Surreal_Deconstructed_Portraiture.webp"
+  },
+  {
+    "name": "Surreal Liminal Nostalgia — Oversaturated Y2K Collage",
+    "prompt": "frutiger eco, weirdcore, dreamcore, surreal digital collage, oversaturated green landscape, uncanny liminal space, nostalgic analog texture, first-person perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实阈限NostalgiaOversaturatedY2K拼贴",
+    "thumbnail": "samples/Surreal_Liminal_Nostalgia_—_Oversaturated_Y2K_Collage.webp"
+  },
+  {
+    "name": "Tactile Deconstructed Collage — Woven Mosaic Strips",
+    "prompt": "analogue paper collage, grid-based mosaic, woven vintage photography, tactile paper texture, fragmented geometric composition, muted retro color palette, deconstructed imagery. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Tactile Deconstructed Collage — Woven Mosaic Strips",
+    "thumbnail": "samples/Tactile_Deconstructed_Collage_—_Woven_Mosaic_Strips.webp"
+  },
+  {
+    "name": "Translucent Bio-Cyber Assemblage",
+    "prompt": "translucent resin shell, exposed circuit board anatomy, biomorphic cybernetic sculpture, soft pastel and metallic color palette, stark black background, intricate fiber optic wiring, macro studio photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "半透明Bio赛博Assemblage",
+    "thumbnail": "samples/Translucent_Bio-Cyber_Assemblage.webp"
+  },
+  {
+    "name": "Translucent Cyber-Organic Assemblage — Mint-Copper Resin",
+    "prompt": "translucent resin, intricate circuitry, macro photography, stark black background, techno-organic hybrid, studio lighting, pastel and metallic palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Translucent Cyber-Organic Assemblage — Mint-Copper Resin",
+    "thumbnail": "samples/Translucent_Cyber-Organic_Assemblage_—_Mint-Copper_Resin.webp"
+  },
+  {
+    "name": "Translucent Cyber-Organic Assemblage — Vivid Circuit Glow",
+    "prompt": "translucent cybernetic anatomy, circuit board integration, glossy resin and glass, stark black background, biomechanical sculpture, retro-futuristic hardware, macro studio lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Translucent Cyber-Organic Assemblage — Vivid Circuit Glow",
+    "thumbnail": "samples/Translucent_Cyber-Organic_Assemblage_—_Vivid_Circuit_Glow.webp"
+  },
+  {
+    "name": "Vibrant Naive Collage",
+    "prompt": "naive folk art, vibrant gouache texture, hand-drawn aesthetic, bold flat shapes, whimsical collage, saturated color palette, tactile brushwork. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳Naive拼贴",
+    "thumbnail": "samples/Vibrant_Naive_Collage.webp"
+  }
+]

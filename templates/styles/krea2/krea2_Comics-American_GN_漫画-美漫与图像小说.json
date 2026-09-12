@@ -1,0 +1,149 @@
+[
+  {
+    "name": "Bold Retro Pop Illustration",
+    "prompt": "bold black ink outlines, saturated pop art palette, risograph screenprint texture, flat graphic illustration, halftone dot shading, retro nostalgic mood, vibrant vector style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "大胆复古Pop插画",
+    "thumbnail": "samples/Bold_Retro_Pop_Illustration.webp"
+  },
+  {
+    "name": "Crimson Noir Graphic — Anime Flat Ink",
+    "prompt": "crimson and black palette, high-contrast noir lighting, bold ink outlines, graphic novel style, nocturnal atmosphere, sharp anime-inspired linework, minimalist shading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色图形动漫平坦墨",
+    "thumbnail": "samples/Crimson_Noir_Graphic_—_Anime_Flat_Ink.webp"
+  },
+  {
+    "name": "Crimson Noir Graphic — Blue Duotone Hatch",
+    "prompt": "high-contrast duotone, crimson and black aesthetic, woodcut print texture, halftone screenprint, gothic noir, gritty ink bleed, graphic novel style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Crimson Noir Graphic — Blue Duotone Hatch",
+    "thumbnail": "samples/Crimson_Noir_Graphic_—_Blue_Duotone_Hatch.webp"
+  },
+  {
+    "name": "Crimson Noir Graphic — Woodcut Triad",
+    "prompt": "high-contrast crimson and black, noir graphic novel style, halftone and woodcut texture, minimalist ink illustration, op-art psychological tension, gritty screenprint aesthetic, bold organic abstraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色图形木刻Triad",
+    "thumbnail": "samples/Crimson_Noir_Graphic_—_Woodcut_Triad.webp"
+  },
+  {
+    "name": "Distorted Graphic Noir",
+    "prompt": "fisheye lens perspective, bold black ink outlines, dense cross-hatching, triadic color scheme, graphic novel illustration, high contrast shadows, surreal gothic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted图形黑色",
+    "thumbnail": "samples/Distorted_Graphic_Noir.webp"
+  },
+  {
+    "name": "Expressive Graphic Noir",
+    "prompt": "expressive ink linework, high-contrast chiaroscuro, rough digital sketch style, painterly texture, moody atmospheric lighting, limited color palette, graphic character illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Expressive图形黑色",
+    "thumbnail": "samples/Expressive_Graphic_Noir.webp"
+  },
+  {
+    "name": "Graphic Halftone Minimalism",
+    "prompt": "halftone dot pattern, high-contrast graphic illustration, retro screenprint texture, minimalist silhouette, CMYK color palette, vintage comic book print style, stark white background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形半色调极简主义",
+    "thumbnail": "samples/Graphic_Halftone_Minimalism.webp"
+  },
+  {
+    "name": "Graphic Halftone Pop",
+    "prompt": "halftone dot pattern, screen print texture, high contrast pop art, retro comic book style, CMYK color separation, distressed ink texture, vibrant saturated colors, graphic silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形半色调Pop",
+    "thumbnail": "samples/Graphic_Halftone_Pop.webp"
+  },
+  {
+    "name": "Graphic Neon Noir",
+    "prompt": "high-contrast ink illustration, stark black and white, vibrant magenta accent, cross-hatching, graphic novel aesthetic, apocalyptic surrealism, sharp angular linework. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形霓虹黑色",
+    "thumbnail": "samples/Graphic_Neon_Noir.webp"
+  },
+  {
+    "name": "Graphic Pop Surrealism — Inked Outline Melancholy",
+    "prompt": "flat vector illustration, bold black outlines, pop surrealism, saturated color palette, graphic novel aesthetic, minimalist shading, whimsical surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Pop超现实InkedOutline忧郁",
+    "thumbnail": "samples/Graphic_Pop_Surrealism_—_Inked_Outline_Melancholy.webp"
+  },
+  {
+    "name": "Graphic Retro Pop",
+    "prompt": "bold black ink outlines, saturated pop art palette, halftone and ben-day dots, retro risograph texture, graphic still life illustration, high-contrast screenprint aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形复古Pop",
+    "thumbnail": "samples/Graphic_Retro_Pop.webp"
+  },
+  {
+    "name": "Gritty Neon Pop-Retro",
+    "prompt": "retro-futuristic comic illustration, bold black ink outlines, halftone dot texture, saturated pop art palette, distressed screenprint effect, cyberpunk aesthetic, high-contrast duotone. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty霓虹Pop复古",
+    "thumbnail": "samples/Gritty_Neon_Pop-Retro.webp"
+  },
+  {
+    "name": "Gritty Retro Pop",
+    "prompt": "halftone dots, CMYK screen print, vintage comic book style, chromatic aberration, bold ink outlines, distressed paper texture, high-contrast pop art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty复古Pop",
+    "thumbnail": "samples/Gritty_Retro_Pop.webp"
+  },
+  {
+    "name": "Muted Graphic Retro-Ink",
+    "prompt": "bold black ink outlines, muted screenprint color palette, textured paper background, halftone and stipple shading, minimalist graphic illustration, retro indie comic style, flat composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "柔和图形复古墨",
+    "thumbnail": "samples/Muted_Graphic_Retro-Ink.webp"
+  },
+  {
+    "name": "Nocturnal Graphic Surrealism",
+    "prompt": "cobalt and yellow duotone, high-contrast ink illustration, nocturnal atmosphere, surreal graphic narrative, luminous light source, textured grain finish, liminal space aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行图形超现实",
+    "thumbnail": "samples/Nocturnal_Graphic_Surrealism.webp"
+  },
+  {
+    "name": "Psychedelic Halftone Pop",
+    "prompt": "vintage screenprint texture, halftone dot pattern, psychedelic pop art, saturated electric blue and orange, distressed paper grain, bold comic outlines, high-contrast graphic illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Psychedelic半色调Pop",
+    "thumbnail": "samples/Psychedelic_Halftone_Pop.webp"
+  },
+  {
+    "name": "Retro Graphic Surrealism",
+    "prompt": "risograph print aesthetic, ligne claire style, vintage comic illustration, high-contrast ink linework, terracotta and teal palette, surreal desert landscape, screenprint grain texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古图形超现实",
+    "thumbnail": "samples/Retro_Graphic_Surrealism.webp"
+  },
+  {
+    "name": "Retro Halftone Printworks",
+    "prompt": "halftone dot pattern, vintage screenprint texture, risograph print aesthetic, duotone color palette, retro analog grain, surreal graphic illustration, aged paper texture, bold ink outlines. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古半色调Printworks",
+    "thumbnail": "samples/Retro_Halftone_Printworks.webp"
+  },
+  {
+    "name": "Sun-Drenched Illustrative Mediterranean",
+    "prompt": "stylized digital illustration, warm terracotta and ochre palette, dramatic sharp shadows, painterly texture, bold ink outlines, European urban atmosphere, graphic architectural shapes, cinematic lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "日DrenchedIllustrativeMediterranean",
+    "thumbnail": "samples/Sun-Drenched_Illustrative_Mediterranean.webp"
+  },
+  {
+    "name": "Vintage Narrative Illustration",
+    "prompt": "vintage comic illustration, bold ink outlines, mid-century aesthetic, screen-print texture, muted earth tones, surreal narrative, retro pulp paper grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古叙事插画",
+    "thumbnail": "samples/Vintage_Narrative_Illustration.webp"
+  },
+  {
+    "name": "Vivid Crimson Graphicism",
+    "prompt": "saturated crimson and gold palette, bold ink outlines, dynamic anime-inspired character design, painterly digital textures, high-contrast dramatic lighting, expressive emotive features, stylized graphic novel aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "生动绯红Graphicism",
+    "thumbnail": "samples/Vivid_Crimson_Graphicism.webp"
+  }
+]

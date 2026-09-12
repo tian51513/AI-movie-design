@@ -1,0 +1,702 @@
+[
+  {
+    "name": "Amber Atmospheric Grandeur",
+    "prompt": "golden hour lighting, atmospheric amber haze, monumental scale, volumetric light rays, classical oil painting texture, dramatic chiaroscuro, sepia-toned palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀氛围Grandeur",
+    "thumbnail": "samples/Amber_Atmospheric_Grandeur.webp"
+  },
+  {
+    "name": "Analog Glitch Mysticism",
+    "prompt": "analog digital hybrid, glowing typographic glyphs, vintage film grain, pixelated crosshair pattern, hazy atmospheric depth, surreal glitch art, muted desaturated palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟故障Mysticism",
+    "thumbnail": "samples/Analog_Glitch_Mysticism.webp"
+  },
+  {
+    "name": "Apocalyptic Crimson Impressionism",
+    "prompt": "classical oil painting, heavy impasto texture, dramatic chiaroscuro, fiery crimson and amber palette, atmospheric smoky glow, high-contrast silhouettes, apocalyptic mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Apocalyptic绯红印象派",
+    "thumbnail": "samples/Apocalyptic_Crimson_Impressionism.webp"
+  },
+  {
+    "name": "Atmospheric Gothic Tonalism",
+    "prompt": "chiaroscuro lighting, heavy impasto oil painting, atmospheric dark romanticism, tenebrous nocturne, textured canvas grain, muted earth tones, gothic noir aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围哥特Tonalism",
+    "thumbnail": "samples/Atmospheric_Gothic_Tonalism.webp"
+  },
+  {
+    "name": "Baroque Chiaroscuro Mysticism",
+    "prompt": "chiaroscuro lighting, stark black background, high-contrast photography, tactile textures, mystical symbolism, dramatic side-lighting, muted pastel accents. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "巴洛克ChiaroscuroMysticism",
+    "thumbnail": "samples/Baroque_Chiaroscuro_Mysticism.webp"
+  },
+  {
+    "name": "Baroque Cybernetic Opulence",
+    "prompt": "baroque futurism, gilded biomechanical filigree, porcelain skin texture, avant-garde high fashion, studio portrait lighting, opulent metallic embellishments, surreal cybernetic anatomy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "巴洛克CyberneticOpulence",
+    "thumbnail": "samples/Baroque_Cybernetic_Opulence.webp"
+  },
+  {
+    "name": "Baroque Infernal Gothic",
+    "prompt": "chiaroscuro lighting, baroque oil painting style, deep crimson and black palette, regal gothic aesthetic, intricate metallic textures, dramatic shadows, infernal dark fantasy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "巴洛克Infernal哥特",
+    "thumbnail": "samples/Baroque_Infernal_Gothic.webp"
+  },
+  {
+    "name": "Bioluminescent Abyssal Biomech",
+    "prompt": "bioluminescent, biomechanical, cinematic chiaroscuro, iridescent textures, abyssal atmosphere, ornate filigree, high-contrast macro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Bioluminescent Abyssal Biomech",
+    "thumbnail": "samples/Bioluminescent_Abyssal_Biomech.webp"
+  },
+  {
+    "name": "Celestial Baroque Melancholy",
+    "prompt": "chiaroscuro oil painting, craquelure texture, tenebrism, dark baroque, surreal cosmic motifs, classical portraiture, muted earth tones, reflective gold accents. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体巴洛克忧郁",
+    "thumbnail": "samples/Celestial_Baroque_Melancholy.webp"
+  },
+  {
+    "name": "Celestial Dualistic Surrealism",
+    "prompt": "classical oil painting texture, cosmic surrealism, chiaroscuro lighting, day and night split composition, starry nocturnal void, magical realism, voluminous cumulus clouds. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体Dualistic超现实",
+    "thumbnail": "samples/Celestial_Dualistic_Surrealism.webp"
+  },
+  {
+    "name": "Celestial Surrealist Chiaroscuro",
+    "prompt": "celestial surrealism, chiaroscuro lighting, double exposure, cloud texture, nocturnal atmospheric, classical oil painting, starry void, magical realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体超现实Chiaroscuro",
+    "thumbnail": "samples/Celestial_Surrealist_Chiaroscuro.webp"
+  },
+  {
+    "name": "Celestial Surrealist Dichotomy",
+    "prompt": "surrealist oil painting, celestial dichotomy, Magritte-inspired, starry night sky, volumetric clouds, chiaroscuro, classical craquelure texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体超现实Dichotomy",
+    "thumbnail": "samples/Celestial_Surrealist_Dichotomy.webp"
+  },
+  {
+    "name": "Celestial Surrealist Oil",
+    "prompt": "surrealist oil painting, magical realism, impasto clouds, starlit void, day and night contrast, cracked canvas texture, celestial silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体超现实油画",
+    "thumbnail": "samples/Celestial_Surrealist_Oil.webp"
+  },
+  {
+    "name": "Celestial Surrealist Synthesis",
+    "prompt": "Magritte-inspired surrealism, oil painting texture, celestial body juxtaposition, cloud skin, starry night void, cerulean sky, metaphysical composition, impasto brushwork. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体超现实Synthesis",
+    "thumbnail": "samples/Celestial_Surrealist_Synthesis.webp"
+  },
+  {
+    "name": "Celestial Surrealist Vision",
+    "prompt": "celestial surrealism, classical oil painting texture, cosmic double exposure, chiaroscuro lighting, magritte-inspired, starlit void, baroque cumulus clouds. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体超现实Vision",
+    "thumbnail": "samples/Celestial_Surrealist_Vision.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Elegance",
+    "prompt": "chiaroscuro lighting, dramatic low-key shadows, cinematic moody atmosphere, shallow depth of field, rich tactile textures, classical oil painting influence, warm ambient glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感ChiaroscuroElegance",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Elegance.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Painterly",
+    "prompt": "chiaroscuro lighting, painterly brushstrokes, high-contrast shadows, atmospheric cinematic mood, rich impasto texture, deep earth tones, luminous golden highlights. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Chiaroscuro绘画感",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Painterly.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Portraiture — Amber Nostalgia",
+    "prompt": "cinematic chiaroscuro, sharp light sliver, deep black background, high contrast portraiture, warm amber glow, introspective mood, analog film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Chiaroscuro Portraiture — Amber Nostalgia",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Portraiture_—_Amber_Nostalgia.webp"
+  },
+  {
+    "name": "Cinematic Crimson Noir — Velvet Satin",
+    "prompt": "chiaroscuro lighting, deep crimson and black, theatrical noir, avant-garde portraiture, dramatic shadows, surrealist minimalism, rich velvet texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感绯红黑色天鹅绒缎面",
+    "thumbnail": "samples/Cinematic_Crimson_Noir_—_Velvet_Satin.webp"
+  },
+  {
+    "name": "Cinematic Gothic Nocturne — Impasto Candlelight",
+    "prompt": "chiaroscuro lighting, gothic romanticism, textured oil painting, nocturnal atmosphere, theatrical storytelling, impasto brushwork, dark academy palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Gothic Nocturne — Impasto Candlelight",
+    "thumbnail": "samples/Cinematic_Gothic_Nocturne_—_Impasto_Candlelight.webp"
+  },
+  {
+    "name": "Cosmic Surrealist Oil",
+    "prompt": "surrealist oil painting, heavy impasto texture, cosmic landscape, day and night split, high contrast chiaroscuro, classical composition, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "宇宙超现实油画",
+    "thumbnail": "samples/Cosmic_Surrealist_Oil.webp"
+  },
+  {
+    "name": "Cosmic Twilight Surrealism",
+    "prompt": "surrealist oil painting, twilight gradient sky, deep blue and orange palette, cosmic scale, biomorphic forms, chiaroscuro lighting, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "宇宙暮光超现实",
+    "thumbnail": "samples/Cosmic_Twilight_Surrealism.webp"
+  },
+  {
+    "name": "Crimson Gothic Baroque",
+    "prompt": "Baroque chiaroscuro lighting, saturated crimson and black palette, painterly oil painting style, dark gothic romanticism, dramatic high contrast, tactile texture, theatrical moody atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红哥特巴洛克",
+    "thumbnail": "samples/Crimson_Gothic_Baroque.webp"
+  },
+  {
+    "name": "Crimson Gothic Opulence",
+    "prompt": "crimson and gold palette, gothic surrealism, baroque and byzantine textures, dramatic low-key lighting, intricate gold leaf ornamentation, uncanny theatrical portraiture, mystical sci-fi fusion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红哥特Opulence",
+    "thumbnail": "samples/Crimson_Gothic_Opulence.webp"
+  },
+  {
+    "name": "Crimson Surreal Minimalism",
+    "prompt": "minimalist surrealism, crimson and black palette, high-contrast chiaroscuro, metallic gold accents, stark graphic composition, textured shadows, dramatic directional lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红超现实极简主义",
+    "thumbnail": "samples/Crimson_Surreal_Minimalism.webp"
+  },
+  {
+    "name": "Dark Moody Gastronomy",
+    "prompt": "chiaroscuro food photography, moody dark aesthetic, overhead flat lay, dramatic directional lighting, rich color contrast, tactile rustic textures, baroque still life. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "黑暗MoodyGastronomy",
+    "thumbnail": "samples/Dark_Moody_Gastronomy.webp"
+  },
+  {
+    "name": "Decayed Baroque Elegance",
+    "prompt": "baroque chiaroscuro, weathered metallic textures, faded crimson damask, ornate filigree detail, cinematic dramatic shadows, cracked porcelain, historical dark fantasy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Decayed Baroque Elegance",
+    "thumbnail": "samples/Decayed_Baroque_Elegance.webp"
+  },
+  {
+    "name": "Digital Baroque Tapestry",
+    "prompt": "chiaroscuro lighting, baroque still life, pixelated tapestry texture, digital glitch corruption, rich jewel tones, Dutch Golden Age composition, high contrast shading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "数字巴洛克Tapestry",
+    "thumbnail": "samples/Digital_Baroque_Tapestry.webp"
+  },
+  {
+    "name": "Digital Renaissance Glitch — Craquelure Blocks",
+    "prompt": "classical oil painting, digital glitch art, chiaroscuro lighting, data corruption, anachronistic collage, pixelated artifacts, textured canvas, surreal fusion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Digital Renaissance Glitch — Craquelure Blocks",
+    "thumbnail": "samples/Digital_Renaissance_Glitch_—_Craquelure_Blocks.webp"
+  },
+  {
+    "name": "Digital Renaissance Glitch — Datamosh Varnish",
+    "prompt": "classical oil painting, digital glitch art, chiaroscuro lighting, datamoshing, renaissance iconography, pixelated artifacts, surreal collage. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Digital Renaissance Glitch — Datamosh Varnish",
+    "thumbnail": "samples/Digital_Renaissance_Glitch_—_Datamosh_Varnish.webp"
+  },
+  {
+    "name": "Dramatic Chiaroscuro Botanicals",
+    "prompt": "chiaroscuro lighting, hyper-detailed botanical, translucent petals, dramatic studio lighting, vibrant gradient background, sculptural floral portrait, high-contrast macro photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "戏剧性ChiaroscuroBotanicals",
+    "thumbnail": "samples/Dramatic_Chiaroscuro_Botanicals.webp"
+  },
+  {
+    "name": "Dramatic Chiaroscuro Realism",
+    "prompt": "chiaroscuro lighting, low-key photography, stark black background, hyper-detailed texture, dramatic rim light, warm earthy tones, intimate portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "戏剧性Chiaroscuro写实",
+    "thumbnail": "samples/Dramatic_Chiaroscuro_Realism.webp"
+  },
+  {
+    "name": "Dramatic Naturalist Chiaroscuro",
+    "prompt": "chiaroscuro lighting, stark black background, macro photography, scientific realism, high-contrast texture, intimate studio portrait, naturalist specimen. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "戏剧性NaturalistChiaroscuro",
+    "thumbnail": "samples/Dramatic_Naturalist_Chiaroscuro.webp"
+  },
+  {
+    "name": "Ethereal Digital Archival",
+    "prompt": "analog film grain, digital glitch artifacts, painterly texture, glowing data overlays, nostalgic color palette, hazy soft focus, surreal digital hybrid. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵数字Archival",
+    "thumbnail": "samples/Ethereal_Digital_Archival.webp"
+  },
+  {
+    "name": "Ethereal Gilded Nostalgia",
+    "prompt": "cinematic chiaroscuro, gilded crimson palette, analog film grain, soft focus bloom, intricate metallic textures, dreamy golden hour, vintage portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵GildedNostalgia",
+    "thumbnail": "samples/Ethereal_Gilded_Nostalgia.webp"
+  },
+  {
+    "name": "Ethereal Gothic Tonalism",
+    "prompt": "atmospheric fog, melancholic silhouette, Tonalist painting style, Gothic Romanticism, soft-focus oil texture, muted monochromatic palette, sublime isolation, aged canvas grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵哥特Tonalism",
+    "thumbnail": "samples/Ethereal_Gothic_Tonalism.webp"
+  },
+  {
+    "name": "Ethereal Impressionist Pastoral",
+    "prompt": "impasto oil painting, impressionism, dappled sunlight, textured brushstrokes, pastel color palette, ethereal atmosphere, romanticized nature. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵印象派Pastoral",
+    "thumbnail": "samples/Ethereal_Impressionist_Pastoral.webp"
+  },
+  {
+    "name": "Ethereal Surreal Skybound",
+    "prompt": "surrealist oil painting, voluminous cumulus clouds, ethereal dreamscape, painterly texture, nostalgic atmosphere, floating motifs, soft impasto brushstrokes, aged canvas aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵超现实Skybound",
+    "thumbnail": "samples/Ethereal_Surreal_Skybound.webp"
+  },
+  {
+    "name": "Ethereal Surrealist Romanticism",
+    "prompt": "classical surrealism, magical realism, oil painting texture, chiaroscuro lighting, ethereal atmospheric haze, vibrant saturated accents, neo-classical realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵超现实浪漫主义",
+    "thumbnail": "samples/Ethereal_Surrealist_Romanticism.webp"
+  },
+  {
+    "name": "Gilded Chiaroscuro Expressionism",
+    "prompt": "chiaroscuro lighting, metallic gold accents, impasto texture, dramatic low-key portraiture, baroque botanical motifs, deep black background, avant-garde artistry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "GildedChiaroscuro表现主义",
+    "thumbnail": "samples/Gilded_Chiaroscuro_Expressionism.webp"
+  },
+  {
+    "name": "Gilded Chiaroscuro Impasto",
+    "prompt": "chiaroscuro lighting, liquid gold body paint, impasto texture, dramatic high-contrast portrait, metallic sheen, dark atmospheric background, sculptural makeup. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "GildedChiaroscuro厚涂",
+    "thumbnail": "samples/Gilded_Chiaroscuro_Impasto.webp"
+  },
+  {
+    "name": "Gilded Obsidian Chiaroscuro",
+    "prompt": "chiaroscuro lighting, gilded gold makeup, matte black textures, high-contrast editorial portrait, sculptural skin detail, metallic shimmer, minimalist dark background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gilded Obsidian Chiaroscuro",
+    "thumbnail": "samples/Gilded_Obsidian_Chiaroscuro.webp"
+  },
+  {
+    "name": "Infernal Gothic Impasto",
+    "prompt": "dark gothic fantasy, chiaroscuro lighting, fiery crimson accents, expressive impasto texture, ominous atmosphere, dynamic painterly brushstrokes, high contrast composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Infernal哥特厚涂",
+    "thumbnail": "samples/Infernal_Gothic_Impasto.webp"
+  },
+  {
+    "name": "Luminous Botanical Chiaroscuro — Vanitas Oil Glow",
+    "prompt": "chiaroscuro, bioluminescent botanical, dark dramatic background, oil on canvas texture, hyper-detailed organic, surreal nature study, saturated color gradients. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮BotanicalChiaroscuroVanitas油画发光",
+    "thumbnail": "samples/Luminous_Botanical_Chiaroscuro_—_Vanitas_Oil_Glow.webp"
+  },
+  {
+    "name": "Luminous Celestial Impasto — Emerald Chartreuse Swirls",
+    "prompt": "swirling impasto brushstrokes, post-impressionist digital painting, celestial nocturne, vibrant cobalt and gold, textured oil texture, dreamlike luminous atmosphere, dynamic rhythmic movement. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮天体厚涂翠绿ChartreuseSwirls",
+    "thumbnail": "samples/Luminous_Celestial_Impasto_—_Emerald_Chartreuse_Swirls.webp"
+  },
+  {
+    "name": "Luminous Chiaroscuro Botanical",
+    "prompt": "chiaroscuro lighting, Dutch Golden Age still life, dramatic sunbeams, tactile organic textures, deep moody shadows, warm amber glow, painterly realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮ChiaroscuroBotanical",
+    "thumbnail": "samples/Luminous_Chiaroscuro_Botanical.webp"
+  },
+  {
+    "name": "Luminous Chiaroscuro Etherealism",
+    "prompt": "chiaroscuro lighting, painterly brushstrokes, ethereal luminescence, dramatic contrast, iridescent caustics, soft-focus glow, celestial fantasy, baroque atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮ChiaroscuroEtherealism",
+    "thumbnail": "samples/Luminous_Chiaroscuro_Etherealism.webp"
+  },
+  {
+    "name": "Luminous Chiaroscuro Portraits",
+    "prompt": "dramatic rim lighting, chiaroscuro, golden hour backlight, shallow depth of field, painterly portraiture, moody dark background, warm glowing highlights. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮ChiaroscuroPortraits",
+    "thumbnail": "samples/Luminous_Chiaroscuro_Portraits.webp"
+  },
+  {
+    "name": "Luminous Dark Ritualism",
+    "prompt": "chiaroscuro lighting, high-contrast composition, saturated crimson and obsidian, radial symmetry, fluid organic movement, theatrical macro detail, reflective dark surfaces. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮黑暗Ritualism",
+    "thumbnail": "samples/Luminous_Dark_Ritualism.webp"
+  },
+  {
+    "name": "Luminous Digital Archeology",
+    "prompt": "glowing ASCII overlay, painterly analog texture, surreal digital glitch, hazy atmospheric lighting, nostalgic film grain, luminous symbolic geometry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮数字Archeology",
+    "thumbnail": "samples/Luminous_Digital_Archeology.webp"
+  },
+  {
+    "name": "Luminous Impasto Atmosphere",
+    "prompt": "heavy impasto oil painting, expressive palette knife texture, dappled light and shadow, chiaroscuro mood, emerald and teal palette, ethereal atmosphere, shimmering caustic reflections. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮厚涂Atmosphere",
+    "thumbnail": "samples/Luminous_Impasto_Atmosphere.webp"
+  },
+  {
+    "name": "Luminous Impasto Dreamscapes",
+    "prompt": "heavy impasto oil painting, thick palette knife texture, chiaroscuro lighting, emerald and teal palette, shimmering gold accents, dreamlike impressionism, tactile brushwork, ethereal underwater refraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮厚涂Dreamscapes",
+    "thumbnail": "samples/Luminous_Impasto_Dreamscapes.webp"
+  },
+  {
+    "name": "Luminous Impasto Impressionism",
+    "prompt": "thick impasto oil painting, sculptural palette knife texture, dappled sunlight, vibrant neo-impressionist palette, shimmering water reflections, heavy visible brushstrokes, lush organic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮厚涂印象派",
+    "thumbnail": "samples/Luminous_Impasto_Impressionism.webp"
+  },
+  {
+    "name": "Luminous Impasto Mythos",
+    "prompt": "thick impasto oil painting, chiaroscuro lighting, mythological realism, vibrant warm and cool contrast, swirling textured brushstrokes, ethereal bioluminescent glow, classical romantic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮厚涂神话",
+    "thumbnail": "samples/Luminous_Impasto_Mythos.webp"
+  },
+  {
+    "name": "Luminous Impasto Pastoral",
+    "prompt": "thick impasto oil painting, visible textured brushstrokes, French Impressionist style, dappled natural sunlight, serene water reflections, warm earthy palette, pastoral romanticism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮厚涂Pastoral",
+    "thumbnail": "samples/Luminous_Impasto_Pastoral.webp"
+  },
+  {
+    "name": "Luminous Impasto Realism",
+    "prompt": "thick impasto oil painting, dramatic chiaroscuro lighting, classical realism, dreamy atmospheric haze, visible painterly brushstrokes, luminous gold accents, sfumato. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮厚涂写实",
+    "thumbnail": "samples/Luminous_Impasto_Realism.webp"
+  },
+  {
+    "name": "Luminous Impasto Waters — Chartreuse Knife Texture",
+    "prompt": "thick impasto oil painting, emerald and teal palette, shimmering water caustics, textured palette knife strokes, sun-dappled liquid reflections, high-contrast lighting, submerged distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮厚涂WatersChartreuseKnife纹理",
+    "thumbnail": "samples/Luminous_Impasto_Waters_—_Chartreuse_Knife_Texture.webp"
+  },
+  {
+    "name": "Luminous Impasto Waters — Dappled Liquid Chiaroscuro",
+    "prompt": "thick impasto oil painting, shimmering water caustics, emerald and teal palette, expressive palette knife texture, dappled sunlight, liquid refraction, high-contrast chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮厚涂WatersDappledLiquidChiaroscuro",
+    "thumbnail": "samples/Luminous_Impasto_Waters_—_Dappled_Liquid_Chiaroscuro.webp"
+  },
+  {
+    "name": "Luminous Impasto Waters — Viridian Swirl Shimmer",
+    "prompt": "thick impasto oil painting, emerald and viridian palette, shimmering water caustics, visible painterly brushstrokes, high angle liquid reflections, swirling fluid texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮厚涂WatersViridianSwirlShimmer",
+    "thumbnail": "samples/Luminous_Impasto_Waters_—_Viridian_Swirl_Shimmer.webp"
+  },
+  {
+    "name": "Luminous Impressionist Dreamscape",
+    "prompt": "impressionist oil painting, thick impasto texture, dappled sunlight, ethereal glowing light, lush emerald and teal palette, soft painterly brushstrokes, dreamy atmosphere, idyllic pastoral landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮印象派Dreamscape",
+    "thumbnail": "samples/Luminous_Impressionist_Dreamscape.webp"
+  },
+  {
+    "name": "Luminous Impressionist Motion",
+    "prompt": "impressionist oil painting, dynamic motion blur, heavy impasto texture, sun-drenched palette, soft focus, vibrant wildflowers, dreamy painterly atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮印象派运动",
+    "thumbnail": "samples/Luminous_Impressionist_Motion.webp"
+  },
+  {
+    "name": "Luminous Impressionist Pastoral — Classical Impasto Warmth",
+    "prompt": "impressionist oil painting, thick impasto brushstrokes, dappled sunlight, ethereal landscape, palette knife texture, vibrant pastoral palette, soft focus atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Impressionist Pastoral — Classical Impasto Warmth",
+    "thumbnail": "samples/Luminous_Impressionist_Pastoral_—_Classical_Impasto_Warmth.webp"
+  },
+  {
+    "name": "Luminous Impressionist Wilderness",
+    "prompt": "impressionist oil painting, dappled light, ethereal soft focus, textured impasto brushstrokes, dreamy forest landscape, luminous atmospheric perspective, vibrant natural color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮印象派Wilderness",
+    "thumbnail": "samples/Luminous_Impressionist_Wilderness.webp"
+  },
+  {
+    "name": "Luminous Narrative Realism",
+    "prompt": "dramatic chiaroscuro lighting, rich jewel tone palette, cinematic warm illumination, painterly digital rendering, atmospheric narrative composition, stylized high-fidelity textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮叙事写实",
+    "thumbnail": "samples/Luminous_Narrative_Realism.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Abyss",
+    "prompt": "nocturnal oil painting, deep teal and indigo palette, ethereal chiaroscuro, diffused underwater light, atmospheric dreamlike texture, expressive impasto brushwork, spectral glowing highlights. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行深渊",
+    "thumbnail": "samples/Luminous_Nocturnal_Abyss.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Impasto — Teal Knife Ridges",
+    "prompt": "thick impasto oil painting, nocturnal atmospheric scene, bioluminescent golden glow, chiaroscuro lighting, heavy palette knife texture, deep teal and navy palette, magical realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行厚涂青蓝KnifeRidges",
+    "thumbnail": "samples/Luminous_Nocturnal_Impasto_—_Teal_Knife_Ridges.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Impressionism",
+    "prompt": "impasto oil painting, ethereal sfumato, nocturne atmosphere, luminous celestial light, textured brushwork, dreamy impressionism, mystical symbolism, iridescent highlights. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行印象派",
+    "thumbnail": "samples/Luminous_Nocturnal_Impressionism.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Tonalism",
+    "prompt": "tonalism, nocturne oil painting, atmospheric fog, deep emerald and teal palette, chiaroscuro lighting, painterly impasto texture, ethereal glow, melancholic isolation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行Tonalism",
+    "thumbnail": "samples/Luminous_Nocturnal_Tonalism.webp"
+  },
+  {
+    "name": "Luminous Sylvan Impressionism",
+    "prompt": "impressionist oil painting, thick impasto texture, ethereal god rays, shimmering golden highlights, deep teal and emerald palette, luminous atmospheric lighting, dreamy overgrown nature. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Sylvan印象派",
+    "thumbnail": "samples/Luminous_Sylvan_Impressionism.webp"
+  },
+  {
+    "name": "Luminous Verdant Impressionism",
+    "prompt": "painterly impasto texture, lush verdant foliage, dappled sunlight, impressionist oil painting style, vibrant greens and cerulean, expressive brushwork, serene pastoral landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮翠绿印象派",
+    "thumbnail": "samples/Luminous_Verdant_Impressionism.webp"
+  },
+  {
+    "name": "Luminous Whimsical Impressionism",
+    "prompt": "vibrant gouache and oil hybrid, expressive impasto brushwork, sun-drenched high contrast lighting, whimsical anime-influenced illustration, saturated color palette, textured painterly aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Whimsical印象派",
+    "thumbnail": "samples/Luminous_Whimsical_Impressionism.webp"
+  },
+  {
+    "name": "Metaphysical Celestial Surrealism",
+    "prompt": "surrealist oil painting, magical realism, day and night juxtaposition, craquelure texture, cosmic void, classical brushwork, metaphysical art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Metaphysical天体超现实",
+    "thumbnail": "samples/Metaphysical_Celestial_Surrealism.webp"
+  },
+  {
+    "name": "Monochromatic Gothic Chiaroscuro",
+    "prompt": "chiaroscuro portraiture, high-contrast monochromatic, deep shadow, visceral texture, ethereal dark gothic, low-key lighting, intense gaze. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色哥特Chiaroscuro",
+    "thumbnail": "samples/Monochromatic_Gothic_Chiaroscuro.webp"
+  },
+  {
+    "name": "Moody Tonalist Romanticism",
+    "prompt": "classical oil painting, chiaroscuro lighting, tonalist landscape, dark romanticism, textured canvas, nocturne atmosphere, muted earth tones, impasto brushstrokes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "MoodyTonalist浪漫主义",
+    "thumbnail": "samples/Moody_Tonalist_Romanticism.webp"
+  },
+  {
+    "name": "Mystical Folk Surrealism",
+    "prompt": "mystical folk surrealism, oil on canvas texture, soft chiaroscuro lighting, deep forest palette, stylized organic forms, dreamlike atmosphere, symbolist illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "MysticalFolk超现实",
+    "thumbnail": "samples/Mystical_Folk_Surrealism.webp"
+  },
+  {
+    "name": "Mystical Nocturnal Romanticism",
+    "prompt": "classical oil painting, atmospheric chiaroscuro, mystical forest landscape, bioluminescent accents, romanticist texture, dark whimsical folklore, crepuscular lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Mystical夜行浪漫主义",
+    "thumbnail": "samples/Mystical_Nocturnal_Romanticism.webp"
+  },
+  {
+    "name": "Narrative Surrealist Synthesis",
+    "prompt": "magical realism, surrealist oil painting, uncanny narrative, dreamlike juxtaposition, vintage texture, whimsical absurdity, cinematic lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "叙事超现实Synthesis",
+    "thumbnail": "samples/Narrative_Surrealist_Synthesis.webp"
+  },
+  {
+    "name": "Neon Impasto Expressionism",
+    "prompt": "heavy impasto texture, fluorescent neon accents, muted earthy base, palette knife technique, expressive gestural brushwork, contemporary abstract oil painting, distressed industrial finish. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹厚涂表现主义",
+    "thumbnail": "samples/Neon_Impasto_Expressionism.webp"
+  },
+  {
+    "name": "Nocturnal Bioluminescent Tonalism",
+    "prompt": "chiaroscuro oil painting, deep teal and indigo palette, bioluminescent glow, heavy impasto texture, nocturnal atmosphere, symbolist dreamscape, ethereal light, moody tonalism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行BioluminescentTonalism",
+    "thumbnail": "samples/Nocturnal_Bioluminescent_Tonalism.webp"
+  },
+  {
+    "name": "Nocturnal Emerald Etherealism",
+    "prompt": "impasto oil painting, nocturnal teal and emerald, soft-focus chiaroscuro, mystical aquatic atmosphere, thick textured brushstrokes, ethereal light diffusion, dreamy expressionist landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行翠绿Etherealism",
+    "thumbnail": "samples/Nocturnal_Emerald_Etherealism.webp"
+  },
+  {
+    "name": "Nocturnal Fauvist Impasto",
+    "prompt": "heavy impasto texture, expressive oil painting, naive folk art influence, vibrant nocturnal palette, saturated color blocking, palette knife strokes, whimsical dreamscape, thick paint application. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行Fauvist厚涂",
+    "thumbnail": "samples/Nocturnal_Fauvist_Impasto.webp"
+  },
+  {
+    "name": "Nocturnal Gothic Romanticism",
+    "prompt": "chiaroscuro oil painting, gothic romanticism, nocturnal landscape, dramatic atmospheric lighting, 19th century art style, moody dark aesthetic, impasto canvas texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行哥特浪漫主义",
+    "thumbnail": "samples/Nocturnal_Gothic_Romanticism.webp"
+  },
+  {
+    "name": "Nocturnal Impasto Abyss",
+    "prompt": "impasto oil painting, chiaroscuro lighting, deep teal and prussian blue palette, ethereal atmospheric depth, expressive visible brushstrokes, nocturnal moody tenebrism, submerged liquid haze. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行厚涂深渊",
+    "thumbnail": "samples/Nocturnal_Impasto_Abyss.webp"
+  },
+  {
+    "name": "Nocturnal Impasto Expressionism",
+    "prompt": "heavy impasto oil painting, nocturnal atmospheric lighting, chiaroscuro contrast, deep emerald and ultramarine palette, visible expressive brushstrokes, textured canvas surface, surreal melancholic mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行厚涂表现主义",
+    "thumbnail": "samples/Nocturnal_Impasto_Expressionism.webp"
+  },
+  {
+    "name": "Nocturnal Impasto Melancholy",
+    "prompt": "heavy impasto oil painting, chiaroscuro lighting, nocturnal blue palette, expressive gestural brushstrokes, ethereal atmosphere, deep teal and indigo, tactile paint texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行厚涂忧郁",
+    "thumbnail": "samples/Nocturnal_Impasto_Melancholy.webp"
+  },
+  {
+    "name": "Nocturnal Impasto Tonalism",
+    "prompt": "thick impasto oil painting, palette knife texture, nocturnal moody landscape, deep teal and emerald palette, atmospheric chiaroscuro, visible brushstrokes, luminous light contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行厚涂Tonalism",
+    "thumbnail": "samples/Nocturnal_Impasto_Tonalism.webp"
+  },
+  {
+    "name": "Opulent Crimson Chiaroscuro",
+    "prompt": "neo-baroque, crimson velvet, chiaroscuro lighting, opulent gold accents, high-fashion editorial, dramatic warm rim light, cinematic portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Opulent Crimson Chiaroscuro",
+    "thumbnail": "samples/Opulent_Crimson_Chiaroscuro.webp"
+  },
+  {
+    "name": "Opulent Gothic Surrealism",
+    "prompt": "dark baroque, gothic couture, spiked halo crown, chiaroscuro lighting, intricate gold filigree, black lace veil, macabre elegance. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Opulent哥特超现实",
+    "thumbnail": "samples/Opulent_Gothic_Surrealism.webp"
+  },
+  {
+    "name": "Prismatic Nocturnal Glitch",
+    "prompt": "chromatic aberration, iridescent light leaks, digital glitch art, nocturnal dreamscape, prismatic lens flare, textured digital oil painting, high-contrast spectral distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜夜行故障",
+    "thumbnail": "samples/Prismatic_Nocturnal_Glitch.webp"
+  },
+  {
+    "name": "Retro-Futurist Surreal Dreamscapes",
+    "prompt": "1970s sci-fi aesthetic, surrealist landscape, magical realism, levitating land masses, reflective chrome surfaces, crisp volumetric clouds, vibrant retro color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古未来主义超现实Dreamscapes",
+    "thumbnail": "samples/Retro-Futurist_Surreal_Dreamscapes.webp"
+  },
+  {
+    "name": "Romantic Academic Realism",
+    "prompt": "19th century academic oil painting, Pre-Raphaelite romanticism, chiaroscuro lighting, pastoral landscape, classical drapery, fine art oil on canvas, mythological realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "浪漫Academic写实",
+    "thumbnail": "samples/Romantic_Academic_Realism.webp"
+  },
+  {
+    "name": "Romantic Pastoral Impressionism — Earthy Oil Brushwork",
+    "prompt": "impressionist oil painting, dappled sunlight, textured brushstrokes, pastoral landscape, soft natural lighting, romantic naturalism, serene atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "浪漫Pastoral印象派泥土色油画笔触",
+    "thumbnail": "samples/Romantic_Pastoral_Impressionism_—_Earthy_Oil_Brushwork.webp"
+  },
+  {
+    "name": "Romantic Pastoral Impressionism — Golden Impasto Haze",
+    "prompt": "impressionist oil painting, dappled sunlight, pastoral landscape, thick impasto brushstrokes, golden hour atmosphere, romanticized nature, atmospheric haze. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Romantic Pastoral Impressionism — Golden Impasto Haze",
+    "thumbnail": "samples/Romantic_Pastoral_Impressionism_—_Golden_Impasto_Haze.webp"
+  },
+  {
+    "name": "Sacred Gilded Void",
+    "prompt": "chiaroscuro lighting, gilded gold accents, sacred dark art, veiled figure, ethereal atmospheric smoke, baroque gothic, celestial mysticism, deep void background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "神圣GildedVoid",
+    "thumbnail": "samples/Sacred_Gilded_Void.webp"
+  },
+  {
+    "name": "Sacred Gothic Opulence",
+    "prompt": "gothic baroque, chiaroscuro lighting, ornate metallic halo, intricate lace and embroidery, dark fantasy portrait, monochromatic high contrast, sacred mystery. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "神圣哥特Opulence",
+    "thumbnail": "samples/Sacred_Gothic_Opulence.webp"
+  },
+  {
+    "name": "Sacred Obsidian Noir",
+    "prompt": "chiaroscuro portrait, gothic regal aesthetic, ornate metallic crowns, macabre occult symbolism, low-key lighting, intricate lace veils, desaturated cool tones, symmetrical composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "神圣黑曜黑色",
+    "thumbnail": "samples/Sacred_Obsidian_Noir.webp"
+  },
+  {
+    "name": "Sculptural Aquatic Impressionism",
+    "prompt": "thick sculptural impasto, heavy palette knife texture, tactile oil painting, shimmering light refraction, expressive brushwork, moody blue and teal palette, dappled atmospheric light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sculptural水生印象派",
+    "thumbnail": "samples/Sculptural_Aquatic_Impressionism.webp"
+  },
+  {
+    "name": "Sculptural Impasto Expressionism",
+    "prompt": "heavy impasto oil painting, sculptural palette knife texture, visceral expressive brushstrokes, high-contrast chiaroscuro, tactile paint layers, bold abstract figurative, raw physical materiality. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sculptural厚涂表现主义",
+    "thumbnail": "samples/Sculptural_Impasto_Expressionism.webp"
+  },
+  {
+    "name": "Sculptural Impressionist Waterscapes",
+    "prompt": "heavy impasto oil painting, sculptural palette knife texture, impressionistic light play, dynamic marine movement, serene waterscape reflections, vibrant color layering. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sculptural Impressionist Waterscapes",
+    "thumbnail": "samples/Sculptural_Impressionist_Waterscapes.webp"
+  },
+  {
+    "name": "Sculptural Neon Chiaroscuro",
+    "prompt": "thick impasto texture, dramatic chiaroscuro lighting, sculptural palette knife strokes, neon saturated color palette, angular faceted forms, moody low-key atmosphere, tactile oil paint aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sculptural Neon Chiaroscuro",
+    "thumbnail": "samples/Sculptural_Neon_Chiaroscuro.webp"
+  }
+]

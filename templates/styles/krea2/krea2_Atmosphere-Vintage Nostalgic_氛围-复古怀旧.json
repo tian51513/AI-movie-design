@@ -1,0 +1,303 @@
+[
+  {
+    "name": "Aerial Verdant Solitude",
+    "prompt": "high-angle aerial photography, lush forest canopy, moody diffused lighting, deep emerald and moss tones, minimalist composition, scale contrast, secluded wilderness. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空中翠绿Solitude",
+    "thumbnail": "samples/Aerial_Verdant_Solitude.webp"
+  },
+  {
+    "name": "Atmospheric Shin-Hanga Prints",
+    "prompt": "shin-hanga style, japanese woodblock print, textured washi paper, hasui kawase inspired, atmospheric perspective, traditional ukiyo-e, muted earth tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围ShinHangaPrints",
+    "thumbnail": "samples/Atmospheric_Shin-Hanga_Prints.webp"
+  },
+  {
+    "name": "Biophilic Organic Brutalism",
+    "prompt": "organic brutalism, board-formed concrete, biophilic architecture, dappled natural light, sculptural concrete, indoor-outdoor integration, earthy minimalist textures, cinematic architectural shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Biophilic Organic Brutalism",
+    "thumbnail": "samples/Biophilic_Organic_Brutalism.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Noir — Teal Gold Rim",
+    "prompt": "chiaroscuro, low-key portraiture, teal and gold palette, dramatic contrast, cinematic grain, rim lighting, mysterious mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Chiaroscuro黑色青蓝金边缘光",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Noir_—_Teal_Gold_Rim.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Solitude — Hazy Grain",
+    "prompt": "cinematic blue hour, glowing amber light, surreal melancholia, wet asphalt reflection, moody noir atmosphere, minimalist composition, deep indigo palette, vintage cinematic grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行Solitude朦胧颗粒",
+    "thumbnail": "samples/Cinematic_Nocturnal_Solitude_—_Hazy_Grain.webp"
+  },
+  {
+    "name": "Constructivist Folk Modernism",
+    "prompt": "constructivist graphic design, naive folk illustration, primary color palette, hard-edge geometric abstraction, gouache hand-painted texture, minimalist composition, vintage screenprint aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "构成主义FolkModernism",
+    "thumbnail": "samples/Constructivist_Folk_Modernism.webp"
+  },
+  {
+    "name": "Cozy Retro Kawaii Pixels",
+    "prompt": "pixel art, kawaii aesthetic, pastel color palette, 8-bit retro style, chibi character design, clean isolated sprite, nostalgic game asset. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cozy Retro Kawaii Pixels",
+    "thumbnail": "samples/Cozy_Retro_Kawaii_Pixels.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Action — Y2K Sun Glare",
+    "prompt": "fisheye lens, extreme low-angle, vivid sunlight, forced perspective, urban action, dynamic foreshortening, saturated blue sky, Y2K streetwear. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼行动Y2K日Glare",
+    "thumbnail": "samples/Dynamic_Fisheye_Action_—_Y2K_Sun_Glare.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Perspective — Graphic Sun Shadow",
+    "prompt": "fisheye lens distortion, extreme wide-angle perspective, dynamic low-angle shot, saturated vibrant colors, high-contrast sunlight, Y2K street culture, sharp graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼透视图形日影",
+    "thumbnail": "samples/Dynamic_Fisheye_Perspective_—_Graphic_Sun_Shadow.webp"
+  },
+  {
+    "name": "Dynamic Wide-Angle Realism",
+    "prompt": "fisheye lens distortion, extreme low angle shot, vibrant color saturation, clear blue sky, sharp daylight, tactile textures, wide-angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态宽角写实",
+    "thumbnail": "samples/Dynamic_Wide-Angle_Realism.webp"
+  },
+  {
+    "name": "Dynamic Worm's-Eye Realism",
+    "prompt": "extreme low-angle shot, worm's-eye view, wide-angle lens distortion, vibrant blue sky, harsh direct sunlight, high-contrast action photography, forced perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态Worm's眼写实",
+    "thumbnail": "samples/Dynamic_Worm's-Eye_Realism.webp"
+  },
+  {
+    "name": "Earthy Gouache Serenity",
+    "prompt": "digital gouache texture, earthy color palette, dappled sunlight, minimalist organic shapes, visible dry brushstrokes, serene nature illustration, muted sage and ochre. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "泥土色GouacheSerenity",
+    "thumbnail": "samples/Earthy_Gouache_Serenity.webp"
+  },
+  {
+    "name": "Hyper-Saturated Pastoral Surrealism",
+    "prompt": "hyper-saturated, surreal pastoral, direct sunlight, dreamcore, clean studio minimalism, tactile textures, vivid color blocking, retro-modern editorial. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper-Saturated Pastoral Surrealism",
+    "thumbnail": "samples/Hyper-Saturated_Pastoral_Surrealism.webp"
+  },
+  {
+    "name": "Luminous Cosmic Folklore",
+    "prompt": "dark surrealism, painterly texture, glowing orange accents, nocturnal atmosphere, vintage lithograph style, mystical folklore, high-contrast chiaroscuro, grainy oil pastel finish. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮宇宙民俗",
+    "thumbnail": "samples/Luminous_Cosmic_Folklore.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Hatchwork",
+    "prompt": "dense cross-hatching, tactile pencil texture, luminous chiaroscuro, nocturnal atmospheric lighting, dreamlike impressionism, deep indigo and teal palette, vintage storybook aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行Hatchwork",
+    "thumbnail": "samples/Luminous_Nocturnal_Hatchwork.webp"
+  },
+  {
+    "name": "Luminous Painterly Solitude",
+    "prompt": "digital gouache, painterly texture, saturated emerald and cobalt palette, expressive brushstrokes, solitary wanderer, nostalgic anime background style, high contrast lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮绘画感Solitude",
+    "thumbnail": "samples/Luminous_Painterly_Solitude.webp"
+  },
+  {
+    "name": "Luminous Pastoral Nostalgia",
+    "prompt": "painterly gouache texture, vibrant summer palette, dappled sunlight, nostalgic pastoral landscape, anime inspired background, soft brushstroke details, lush rolling hills. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮PastoralNostalgia",
+    "thumbnail": "samples/Luminous_Pastoral_Nostalgia.webp"
+  },
+  {
+    "name": "Melancholic Nocturnal Minimalism — Hand-Drawn Indigo",
+    "prompt": "deep indigo color palette, minimalist composition, nocturnal atmosphere, soft grainy texture, hand-drawn aesthetic, melancholic mood, subtle luminescence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "忧郁夜行极简主义手Drawn靛蓝",
+    "thumbnail": "samples/Melancholic_Nocturnal_Minimalism_—_Hand-Drawn_Indigo.webp"
+  },
+  {
+    "name": "Minimalist Cobalt Pixelism",
+    "prompt": "1-bit pixel art, cobalt blue and white, dithered textures, retro computer UI, minimalist digital graphics, aliased edges, high contrast composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简CobaltPixelism",
+    "thumbnail": "samples/Minimalist_Cobalt_Pixelism.webp"
+  },
+  {
+    "name": "Monochromatic Indigo Minimalism",
+    "prompt": "minimalist monochromatic, deep indigo blue, high contrast, linocut print texture, stark white illustration, negative space, tactile paper grain, graphic silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色靛蓝极简主义",
+    "thumbnail": "samples/Monochromatic_Indigo_Minimalism.webp"
+  },
+  {
+    "name": "Monolithic Summer Sky",
+    "prompt": "monumental cumulonimbus clouds, deep cobalt blue sky, low angle perspective, anime background aesthetic, volumetric lighting, nostalgic summer atmosphere, dramatic high contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic夏天空",
+    "thumbnail": "samples/Monolithic_Summer_Sky.webp"
+  },
+  {
+    "name": "Naive Cobalt Minimalist",
+    "prompt": "naive art style, cobalt blue palette, textured gouache illustration, minimalist folk art, hand-drawn aesthetic, warm cream background, whimsical simplified shapes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "NaiveCobalt极简",
+    "thumbnail": "samples/Naive_Cobalt_Minimalist.webp"
+  },
+  {
+    "name": "Nocturnal Atmospheric Whimsy",
+    "prompt": "painterly nocturnal landscape, deep indigo and amber contrast, cozy glowing windows, atmospheric twilight mood, hand-drawn storybook texture, misty night environment. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行氛围Whimsy",
+    "thumbnail": "samples/Nocturnal_Atmospheric_Whimsy.webp"
+  },
+  {
+    "name": "Nocturnal Woodblock Noir — Crimson Crosshatch Glow",
+    "prompt": "shin-hanga woodblock style, nocturnal indigo and crimson palette, graphic chiaroscuro, woodcut crosshatching texture, serene yet eerie atmosphere, traditional architectural silhouettes, high-contrast cinematic light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nocturnal Woodblock Noir — Crimson Crosshatch Glow",
+    "thumbnail": "samples/Nocturnal_Woodblock_Noir_—_Crimson_Crosshatch_Glow.webp"
+  },
+  {
+    "name": "Nostalgic Folk Storybook",
+    "prompt": "children's book illustration, nostalgic folk art, textured paper aesthetic, muted earthy palette, whimsical character design, soft grainy texture, gouache and colored pencil. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Folk Storybook",
+    "thumbnail": "samples/Nostalgic_Folk_Storybook.webp"
+  },
+  {
+    "name": "Nostalgic Grain Storybook",
+    "prompt": "grainy colored pencil texture, minimalist character design, soft stipple shading, warm nostalgic color palette, whimsical storybook illustration, clean white background, organic shapes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Grain Storybook",
+    "thumbnail": "samples/Nostalgic_Grain_Storybook.webp"
+  },
+  {
+    "name": "Nostalgic Woodblock Landscapes",
+    "prompt": "Shin-Hanga woodblock print, WPA poster aesthetic, bold graphic ink outlines, visible woodgrain texture, atmospheric vintage landscape, saturated earth-toned palette, stylized nature illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Woodblock Landscapes",
+    "thumbnail": "samples/Nostalgic_Woodblock_Landscapes.webp"
+  },
+  {
+    "name": "Oneiric Ink Surrealism",
+    "prompt": "fine line crosshatching, surreal twilight atmosphere, vintage woodcut aesthetic, indigo and amber palette, mystical dreamscape, retro editorial illustration, organic digital fusion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Oneiric墨超现实",
+    "thumbnail": "samples/Oneiric_Ink_Surrealism.webp"
+  },
+  {
+    "name": "Optimistic Urban Constructivism",
+    "prompt": "architectural low-angle perspective, vivid blue sky, clean geometric facades, painterly sunlight, terracotta and warm earth tones, stylized anime background aesthetic, urban optimism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Optimistic Urban Constructivism",
+    "thumbnail": "samples/Optimistic_Urban_Constructivism.webp"
+  },
+  {
+    "name": "Rustic Artisanal Printmaking",
+    "prompt": "linocut print, monochromatic ink illustration, textured cream paper, rustic block print, hand-carved aesthetic, cross-hatching detail, vintage engraving style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Rustic Artisanal Printmaking",
+    "thumbnail": "samples/Rustic_Artisanal_Printmaking.webp"
+  },
+  {
+    "name": "Spherical Miniature Worlds",
+    "prompt": "tiny planet effect, stereographic projection, extreme fisheye lens, spherical distortion, curved horizon, vibrant nature palette, sunlight lens flare. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Spherical Miniature Worlds",
+    "thumbnail": "samples/Spherical_Miniature_Worlds.webp"
+  },
+  {
+    "name": "Tactile Whimsical Stop-Motion",
+    "prompt": "tactile stop-motion style, felt and claymation textures, vibrant primary color palette, miniature diorama composition, shallow depth of field, whimsical character design, soft studio lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉Whimsical停止运动",
+    "thumbnail": "samples/Tactile_Whimsical_Stop-Motion.webp"
+  },
+  {
+    "name": "Textured Minimalist Narrative",
+    "prompt": "minimalist illustration, hand-painted gouache texture, bold graphic ink outlines, grainy paper overlay, flat stylized shapes, serene nostalgic atmosphere, muted vintage color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理极简叙事",
+    "thumbnail": "samples/Textured_Minimalist_Narrative.webp"
+  },
+  {
+    "name": "Textured Naive Storybook",
+    "prompt": "naive art style, wax crayon and oil pastel texture, storybook illustration, vibrant primary color palette, thick textured strokes, childlike simplicity, flat graphic composition, isolated on white. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理NaiveStorybook",
+    "thumbnail": "samples/Textured_Naive_Storybook.webp"
+  },
+  {
+    "name": "Textured Naive Whimsy",
+    "prompt": "naive art style, wax crayon texture, minimalist folk illustration, bold black outlines, flat 2D composition, off-white paper background, whimsical childlike sketch. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理NaiveWhimsy",
+    "thumbnail": "samples/Textured_Naive_Whimsy.webp"
+  },
+  {
+    "name": "Vibrant Anime Escapism",
+    "prompt": "painterly anime background, saturated color palette, towering cumulus clouds, vibrant landscape, serene water reflection, stylized digital art, nostalgic summer atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳动漫Escapism",
+    "thumbnail": "samples/Vibrant_Anime_Escapism.webp"
+  },
+  {
+    "name": "Vibrant Low-Angle Perspective",
+    "prompt": "low-angle shot, worm's-eye view, vibrant blue sky, sun-drenched lighting, wide-angle lens, bokeh foreground framing, saturated color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳Low角透视",
+    "thumbnail": "samples/Vibrant_Low-Angle_Perspective.webp"
+  },
+  {
+    "name": "Vibrant Painterly Landscapes",
+    "prompt": "digital painterly style, bold blocky brushstrokes, high-contrast lighting, vibrant color palette, stylized realism, atmospheric perspective, expressive texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳绘画感Landscapes",
+    "thumbnail": "samples/Vibrant_Painterly_Landscapes.webp"
+  },
+  {
+    "name": "Vibrant Solar Perspective",
+    "prompt": "extreme low-angle perspective, vibrant sun-drenched colors, dramatic lens flare, backlit botanical textures, hyper-saturated cobalt sky, wide-angle fisheye distortion, high-contrast natural light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳Solar透视",
+    "thumbnail": "samples/Vibrant_Solar_Perspective.webp"
+  },
+  {
+    "name": "Vibrant Sun-Drenched Coastal",
+    "prompt": "painterly digital art, vibrant saturated colors, sun-drenched coastal landscape, towering cumulus clouds, anime-inspired background, stylized geometric shapes, dramatic lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳日Drenched海岸",
+    "thumbnail": "samples/Vibrant_Sun-Drenched_Coastal.webp"
+  },
+  {
+    "name": "Vibrant Urban Impressionism",
+    "prompt": "digital gouache painting, painterly brushstrokes, urban impressionism, high contrast sunlight, sharp graphic shadows, vibrant saturated palette, stylized cityscape, slice of life. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳都市印象派",
+    "thumbnail": "samples/Vibrant_Urban_Impressionism.webp"
+  },
+  {
+    "name": "Vintage Japanese Naturalism",
+    "prompt": "Shin-Hanga style, Japanese woodblock print, vintage botanical illustration, aged parchment texture, hand-colored lithograph, delicate ink linework, muted earth tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古JapaneseNaturalism",
+    "thumbnail": "samples/Vintage_Japanese_Naturalism.webp"
+  },
+  {
+    "name": "Whimsical Earthy Storytelling",
+    "prompt": "whimsical illustration, earthy color palette, painterly texture, cozy atmosphere, isometric perspective, folk art influence, nature-inspired storytelling. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Whimsical Earthy Storytelling",
+    "thumbnail": "samples/Whimsical_Earthy_Storytelling.webp"
+  }
+]

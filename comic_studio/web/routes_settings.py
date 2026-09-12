@@ -59,6 +59,13 @@ class SettingsUpdate(BaseModel):
     speaker_blacklist: str | None = None  # 2026-09-07 优化#6：净化追加词（逗号分隔）
 
 
+@router.get("/style-presets")
+def style_presets():
+    """Krea2 风格预设库（2026-09-12 借鉴 Lazybuxuexi）：{库名: [{name,prompt}]}。"""
+    from ..engine.stylepresets import list_style_libs
+    return list_style_libs()
+
+
 @router.get("")
 def read(request: Request):
     from ..engine.workflows import registry

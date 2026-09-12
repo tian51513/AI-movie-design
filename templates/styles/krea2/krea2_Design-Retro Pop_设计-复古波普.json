@@ -1,0 +1,177 @@
+[
+  {
+    "name": "Classical Intaglio Monochromatism",
+    "prompt": "intaglio engraving, cross-hatching, chiaroscuro ink illustration, aged parchment, monochrome etching, stipple texture, vintage printmaking style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "古典IntaglioMonochromatism",
+    "thumbnail": "samples/Classical_Intaglio_Monochromatism.webp"
+  },
+  {
+    "name": "Clinical Avant-Garde Pop",
+    "prompt": "high-contrast studio portrait, avant-garde beauty photography, primary color palette, graphic makeup, extreme close-up, surrealist editorial, hyper-detailed skin texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Clinical Avant-Garde Pop",
+    "thumbnail": "samples/Clinical_Avant-Garde_Pop.webp"
+  },
+  {
+    "name": "Dynamic Kinetic Collage",
+    "prompt": "mixed media collage, vibrant paint splatters, digital scribble overlay, dynamic action photography, tactile paper texture, high-contrast pop art, kinetic motion trails. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态动态拼贴",
+    "thumbnail": "samples/Dynamic_Kinetic_Collage.webp"
+  },
+  {
+    "name": "Fragmented Monochrome Surrealism — Lenticular Shift",
+    "prompt": "monochrome photography, vertical strip displacement, high-contrast lighting, surrealist collage, lenticular effect, fragmented portraiture, glitch art aesthetic, tactile paper texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fragmented Monochrome Surrealism — Lenticular Shift",
+    "thumbnail": "samples/Fragmented_Monochrome_Surrealism_—_Lenticular_Shift.webp"
+  },
+  {
+    "name": "Graphic Print Illustration",
+    "prompt": "cross-hatching illustration, stippling and ink textures, limited CMYK pastel palette, fine line engraving style, flat graphic composition, isometric perspective, vintage printmaking aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形印刷插画",
+    "thumbnail": "samples/Graphic_Print_Illustration.webp"
+  },
+  {
+    "name": "Graphic Retro Surrealism",
+    "prompt": "surrealist digital collage, vintage print aesthetic, woodcut engraving texture, high-contrast graphic design, grainy paper texture, psychedelic retro minimalism, stippling art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形复古超现实",
+    "thumbnail": "samples/Graphic_Retro_Surrealism.webp"
+  },
+  {
+    "name": "Hyper-Saturated Surreal Pop — Glossy Studio Sheen",
+    "prompt": "surrealist pop art, hyper-saturated color palette, sharp studio lighting, glossy material finish, minimalist sculptural composition, bizarre object juxtaposition, vivid color blocking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper-Saturated Surreal Pop — Glossy Studio Sheen",
+    "thumbnail": "samples/Hyper-Saturated_Surreal_Pop_—_Glossy_Studio_Sheen.webp"
+  },
+  {
+    "name": "Luminous Analog Flux",
+    "prompt": "chromatic gradient, tactile film grain, bioluminescent glow, fluid organic shapes, high-contrast black background, thermographic color palette, analog noise texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮模拟Flux",
+    "thumbnail": "samples/Luminous_Analog_Flux.webp"
+  },
+  {
+    "name": "Luminous Cyan Nocturne — Stippled Indigo Print",
+    "prompt": "bioluminescent cyan glow, monochromatic indigo palette, heavy film grain, cyanotype texture, low-key chiaroscuro, ethereal silhouettes, stippled printmaking style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮青色NocturneStippled靛蓝印刷",
+    "thumbnail": "samples/Luminous_Cyan_Nocturne_—_Stippled_Indigo_Print.webp"
+  },
+  {
+    "name": "Monochromatic Surrealist Noir — Airbrushed Vintage Print",
+    "prompt": "monochromatic, stippled grain texture, high-contrast chiaroscuro, minimalist surrealism, organic abstraction, vintage print aesthetic, noir atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色超现实黑色Airbrushed复古印刷",
+    "thumbnail": "samples/Monochromatic_Surrealist_Noir_—_Airbrushed_Vintage_Print.webp"
+  },
+  {
+    "name": "Neon Biomorphic Surrealism",
+    "prompt": "hyper-saturated neon, biomorphic surrealism, stark high-contrast background, digital tactile texture, fluorescent duotone, liquid gradient, surreal organic form. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Biomorphic超现实",
+    "thumbnail": "samples/Neon_Biomorphic_Surrealism.webp"
+  },
+  {
+    "name": "Neon Surreal Collage",
+    "prompt": "vintage monochrome photography, analog collage, neon graphic intervention, high-contrast surrealism, distressed paper texture, pop art silhouette, mixed media juxtaposition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹超现实拼贴",
+    "thumbnail": "samples/Neon_Surreal_Collage.webp"
+  },
+  {
+    "name": "Nostalgic Blue Etherealism",
+    "prompt": "heavy film grain, cobalt indigo palette, minimalist composition, dreamy surrealism, soft focus blur, stippled texture, vintage print aesthetic, atmospheric isolation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Blue Etherealism",
+    "thumbnail": "samples/Nostalgic_Blue_Etherealism.webp"
+  },
+  {
+    "name": "Nostalgic Golden Pastoral",
+    "prompt": "vintage 35mm film, heavy analog grain, golden hour glow, hazy atmosphere, pastoral nostalgia, soft focus, warm amber tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Golden Pastoral",
+    "thumbnail": "samples/Nostalgic_Golden_Pastoral.webp"
+  },
+  {
+    "name": "Nostalgic Surrealist Azure",
+    "prompt": "vintage film grain, surreal collage, saturated azure palette, retro analog texture, dreamlike atmosphere, mid-century print aesthetic, lo-fi surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic超现实蔚蓝",
+    "thumbnail": "samples/Nostalgic_Surrealist_Azure.webp"
+  },
+  {
+    "name": "Saturated Duotone Minimalism",
+    "prompt": "duotone gel lighting, cobalt blue and scarlet red, high-contrast studio photography, graphic color blocking, saturated pop art aesthetic, minimalist composition, sharp studio lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "高饱和双色调极简主义",
+    "thumbnail": "samples/Saturated_Duotone_Minimalism.webp"
+  },
+  {
+    "name": "Surreal Infrared Minimalist",
+    "prompt": "infrared photography aesthetic, minimalist surrealism, high-contrast color palette, dreamlike geological formations, grainy film texture, stark graphic shadows, vibrant color-blocked composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实Infrared极简",
+    "thumbnail": "samples/Surreal_Infrared_Minimalist.webp"
+  },
+  {
+    "name": "Surreal Pastoral Pop",
+    "prompt": "surrealist photography, vibrant red contrast, analog film grain, pastoral landscape, primary color palette, dreamlike juxtaposition, direct sunlight, cinematic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实PastoralPop",
+    "thumbnail": "samples/Surreal_Pastoral_Pop.webp"
+  },
+  {
+    "name": "Surreal Retro-Cosmic Collage — Die-Cut Seventies Print",
+    "prompt": "retro-futuristic surrealism, cosmic void portals, vintage die-cut collage, metaphysical landscape, saturated mid-century print, airbrush gradient, cracked oil painting texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实复古宇宙拼贴死CutSeventies印刷",
+    "thumbnail": "samples/Surreal_Retro-Cosmic_Collage_—_Die-Cut_Seventies_Print.webp"
+  },
+  {
+    "name": "Surrealist Geometric Liminality",
+    "prompt": "retro-surrealism, one-point perspective, hyper-saturated primary colors, cloudless blue sky, liminal space, geometric composition, sharp-edged graphic style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实几何Liminality",
+    "thumbnail": "samples/Surrealist_Geometric_Liminality.webp"
+  },
+  {
+    "name": "Surrealist Graphic Pop",
+    "prompt": "surrealist pop collage, high-fashion editorial, bold color blocking, geometric graphic design, vibrant primary colors, sharp studio lighting, avant-garde portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实图形Pop",
+    "thumbnail": "samples/Surrealist_Graphic_Pop.webp"
+  },
+  {
+    "name": "Tactile Noir Geometric",
+    "prompt": "tactile paint texture, minimalist geometric abstraction, earthy matte palette, chiaroscuro graphic illustration, vintage print grain, hard-edged composition, organic modernism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉黑色几何",
+    "thumbnail": "samples/Tactile_Noir_Geometric.webp"
+  },
+  {
+    "name": "Tactile Retro Surrealism",
+    "prompt": "tactile surrealism, cobalt blue and crimson red, retro-futuristic airbrush, dramatic chiaroscuro, vintage film grain, furry texture, extreme close-up. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉复古超现实",
+    "thumbnail": "samples/Tactile_Retro_Surrealism.webp"
+  },
+  {
+    "name": "Vibrant Aerial Surrealism",
+    "prompt": "levitating subjects, minimalist surrealism, vibrant sky background, cinematic lighting, whimsical atmosphere, saturated primary colors, clean composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳空中超现实",
+    "thumbnail": "samples/Vibrant_Aerial_Surrealism.webp"
+  },
+  {
+    "name": "Vibrant Minimalist Botanical",
+    "prompt": "minimalist studio photography, vibrant color gradients, hyper-saturated, botanical macro detail, glossy wet texture, clean negative space, sculptural composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳极简Botanical",
+    "thumbnail": "samples/Vibrant_Minimalist_Botanical.webp"
+  }
+]

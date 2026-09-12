@@ -1,0 +1,702 @@
+[
+  {
+    "name": "Abyssal Storm Gothic",
+    "prompt": "cinematic dark gothic, volumetric teal lighting, monolithic scale, atmospheric storm, ethereal blue glow, high-contrast silhouettes, gothic ruins, cosmic horror. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "深渊风暴哥特",
+    "thumbnail": "samples/Abyssal_Storm_Gothic.webp"
+  },
+  {
+    "name": "Academic Chiaroscuro Realism",
+    "prompt": "graphite and charcoal portrait, chiaroscuro lighting, hyper-realistic skin texture, academic drawing style, volumetric shading, monochromatic fine art, gestural sketch elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "AcademicChiaroscuro写实",
+    "thumbnail": "samples/Academic_Chiaroscuro_Realism.webp"
+  },
+  {
+    "name": "Amber Noir Linearism",
+    "prompt": "glowing amber contour lines, stark charcoal textured background, minimalist graphic illustration, high contrast warm gradients, fine parallel linework, analog grain texture, surreal geometric forms. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀黑色Linearism",
+    "thumbnail": "samples/Amber_Noir_Linearism.webp"
+  },
+  {
+    "name": "Apocalyptic Gothic Sublime",
+    "prompt": "chiaroscuro lighting, apocalyptic dark fantasy, monumental ruined architecture, obsidian and crimson palette, sublime dramatic scale, volcanic atmospheric gloom. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Apocalyptic哥特崇高",
+    "thumbnail": "samples/Apocalyptic_Gothic_Sublime.webp"
+  },
+  {
+    "name": "Apocalyptic Thermal Nocturne",
+    "prompt": "high-contrast silhouette, analog film grain, thermal halo glow, solarized dark surrealism, fiery orange and cyan palette, chromatic aberration, vintage airbrush texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Apocalyptic Thermal Nocturne",
+    "thumbnail": "samples/Apocalyptic_Thermal_Nocturne.webp"
+  },
+  {
+    "name": "Atmospheric Charcoal Minimalism",
+    "prompt": "monochromatic charcoal aesthetic, matte texture, fine-grained noise, low-key chiaroscuro, tactile dark surface, stippled atmospheric grain, minimalist dark composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围Charcoal极简主义",
+    "thumbnail": "samples/Atmospheric_Charcoal_Minimalism.webp"
+  },
+  {
+    "name": "Atmospheric Gothic Nocturnes",
+    "prompt": "atmospheric oil painting, chiaroscuro lighting, impasto brushstrokes, nocturnal landscape, gothic architecture, warm amber glow, painterly texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围哥特Nocturnes",
+    "thumbnail": "samples/Atmospheric_Gothic_Nocturnes.webp"
+  },
+  {
+    "name": "Atmospheric Monochromatic Noir — Aged Paper Grain",
+    "prompt": "high-contrast monochrome, heavy tactile grain, soft-focus silhouette, atmospheric chiaroscuro, motion blur, charcoal texture, cinematic noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围单色黑色Aged纸颗粒",
+    "thumbnail": "samples/Atmospheric_Monochromatic_Noir_—_Aged_Paper_Grain.webp"
+  },
+  {
+    "name": "Atmospheric Monochromatic Noir — Digital Noise",
+    "prompt": "high-contrast monochrome, heavy film grain, chiaroscuro lighting, stark abstract silhouette, charcoal texture, atmospheric motion blur, minimalist noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围单色黑色数字噪点",
+    "thumbnail": "samples/Atmospheric_Monochromatic_Noir_—_Digital_Noise.webp"
+  },
+  {
+    "name": "Atmospheric Monochromatic Noir — Fog Halo Softness",
+    "prompt": "monochromatic, heavy film grain, soft focus blur, haunting silhouettes, dense fog, high contrast noir, pictorialist texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围单色黑色雾HaloSoftness",
+    "thumbnail": "samples/Atmospheric_Monochromatic_Noir_—_Fog_Halo_Softness.webp"
+  },
+  {
+    "name": "Atmospheric Nocturnal Gothic",
+    "prompt": "gothic architecture, chiaroscuro lighting, atmospheric mist, warm amber glow, rain-slicked surfaces, cinematic noir, symmetrical composition, desaturated color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围夜行哥特",
+    "thumbnail": "samples/Atmospheric_Nocturnal_Gothic.webp"
+  },
+  {
+    "name": "Atmospheric Nocturnal Romanticism",
+    "prompt": "impasto oil painting, chiaroscuro lighting, nocturnal atmospheric landscape, sublime romanticism, mystical hazy glow, textured brushstrokes, deep moody palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围夜行浪漫主义",
+    "thumbnail": "samples/Atmospheric_Nocturnal_Romanticism.webp"
+  },
+  {
+    "name": "Atmospheric Nordic Gothic",
+    "prompt": "cinematic atmospheric landscape, moody low-key lighting, dense fog and mist, desaturated cool tones, rugged nordic wilderness, somber isolated composition, overcast diffused light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围Nordic哥特",
+    "thumbnail": "samples/Atmospheric_Nordic_Gothic.webp"
+  },
+  {
+    "name": "Chiaroscuro Gold Surrealism",
+    "prompt": "chiaroscuro lighting, graphite and charcoal realism, metallic gold leaf accents, baroque filigree, ethereal atmospheric shadows, monochrome fine art, surreal symbolic portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Chiaroscuro金超现实",
+    "thumbnail": "samples/Chiaroscuro_Gold_Surrealism.webp"
+  },
+  {
+    "name": "Cinematic Abyssal Minimalism",
+    "prompt": "chiaroscuro lighting, volumetric light beams, deep cyan and charcoal palette, monolithic minimalism, cinematic atmospheric haze, solitary subject in vast space, brutalist architecture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感深渊极简主义",
+    "thumbnail": "samples/Cinematic_Abyssal_Minimalism.webp"
+  },
+  {
+    "name": "Cinematic Foggy Mysticism",
+    "prompt": "cinematic fog, glowing light source, muted moody colors, analog film grain, atmospheric mystery, minimalist composition, soft diffused lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感有雾Mysticism",
+    "thumbnail": "samples/Cinematic_Foggy_Mysticism.webp"
+  },
+  {
+    "name": "Cinematic Liminal Fog",
+    "prompt": "heavy atmospheric fog, desaturated teal and charcoal, cinematic liminal space, diffused glowing light, grainy film texture, moody silhouette, high contrast shadows, wet reflective surfaces. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感阈限雾",
+    "thumbnail": "samples/Cinematic_Liminal_Fog.webp"
+  },
+  {
+    "name": "Cinematic Motion Impressionism",
+    "prompt": "heavy film grain, motion blur, cinematic low light, ghostly silhouette, liminal atmosphere, long exposure, moody color grading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感运动印象派",
+    "thumbnail": "samples/Cinematic_Motion_Impressionism.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Crimson",
+    "prompt": "cinematic nocturnal photography, glowing neon red highlights, deep indigo and charcoal palette, high contrast dramatic lighting, long exposure motion blur, sleek minimalist silhouettes, atmospheric fog and reflections. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行绯红",
+    "thumbnail": "samples/Cinematic_Nocturnal_Crimson.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Liminality — Teal Charcoal",
+    "prompt": "volumetric lighting, heavy film grain, low-key cinematic atmosphere, cool teal and charcoal palette, obscured silhouettes, dense fog and particulates, lo-fi analog aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Nocturnal Liminality — Teal Charcoal",
+    "thumbnail": "samples/Cinematic_Nocturnal_Liminality_—_Teal_Charcoal.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Minimalism — Pinpoint Light Grain",
+    "prompt": "chiaroscuro lighting, volumetric atmospheric fog, deep indigo and charcoal palette, minimalist composition, cinematic isolation, stark silhouettes, dreamlike surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行极简主义Pinpoint浅颗粒",
+    "thumbnail": "samples/Cinematic_Nocturnal_Minimalism_—_Pinpoint_Light_Grain.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Noir — Single Spot Haze",
+    "prompt": "chiaroscuro lighting, cinematic spotlight, volumetric haze, cool blue color grading, deep shadows, lo-fi film grain, high-contrast noir, nocturnal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行黑色单SpotHaze",
+    "thumbnail": "samples/Cinematic_Nocturnal_Noir_—_Single_Spot_Haze.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Noir — Velvet Concrete",
+    "prompt": "cinematic chiaroscuro, low-key moody lighting, desaturated teal and charcoal palette, dramatic volumetric shadows, high-ISO film grain, gothic noir atmosphere, symmetrical cinematic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行黑色天鹅绒Concrete",
+    "thumbnail": "samples/Cinematic_Nocturnal_Noir_—_Velvet_Concrete.webp"
+  },
+  {
+    "name": "Cinematic Shadow Noir",
+    "prompt": "heavy film grain, chiaroscuro lighting, stark silhouette, low-key atmosphere, analog aesthetic, muted sepia and charcoal tones, mysterious backlighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感影黑色",
+    "thumbnail": "samples/Cinematic_Shadow_Noir.webp"
+  },
+  {
+    "name": "Cinematic Surreal Chiaroscuro",
+    "prompt": "chiaroscuro lighting, surreal fluid distortion, cinematic motion blur, warm amber tones, intimate close-up, deep shadows, liquid texture, long exposure light trails. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感超现实Chiaroscuro",
+    "thumbnail": "samples/Cinematic_Surreal_Chiaroscuro.webp"
+  },
+  {
+    "name": "Crimson Monolith Minimalism",
+    "prompt": "saturarted crimson palette, minimalist brutalism, tactile velvet and stone, high contrast silhouettes, industrial dystopian atmosphere, surreal geometric forms. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红Monolith极简主义",
+    "thumbnail": "samples/Crimson_Monolith_Minimalism.webp"
+  },
+  {
+    "name": "Crimson Nocturnal Blur",
+    "prompt": "motion blur, shutter drag, crimson and amber palette, heavy analog film grain, high contrast silhouettes, cinematic chiaroscuro, lo-fi darkroom aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红夜行模糊",
+    "thumbnail": "samples/Crimson_Nocturnal_Blur.webp"
+  },
+  {
+    "name": "Crimson Velvet Surrealism — Grainy Biomorphic",
+    "prompt": "surrealist digital painting, crimson and charcoal contrast, velvety organic textures, minimalist scale juxtaposition, grainy illustration style, dreamlike liminal space. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红天鹅绒超现实颗粒感Biomorphic",
+    "thumbnail": "samples/Crimson_Velvet_Surrealism_—_Grainy_Biomorphic.webp"
+  },
+  {
+    "name": "Deconstructed Archival Collage",
+    "prompt": "torn paper collage, distressed vintage photography, tactile paper texture, archival decay, fragmented portrait, sepia and charcoal palette, singed edges, analog mixed media. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "DeconstructedArchival拼贴",
+    "thumbnail": "samples/Deconstructed_Archival_Collage.webp"
+  },
+  {
+    "name": "Distorted Cinematic Melancholia",
+    "prompt": "analog film grain, digital glitch distortion, low-key cinematic lighting, desaturated cool tones, introspective silhouette, scanline texture, somber mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted Cinematic Melancholia",
+    "thumbnail": "samples/Distorted_Cinematic_Melancholia.webp"
+  },
+  {
+    "name": "Distorted Noir Lithography",
+    "prompt": "monochromatic portrait, charcoal and halftone texture, cream paper background, digital glitch art, pixel sorting, high-contrast noir, distressed vignette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted Noir Lithography",
+    "thumbnail": "samples/Distorted_Noir_Lithography.webp"
+  },
+  {
+    "name": "Distorted Urban Brutalism",
+    "prompt": "extreme low-angle shot, wide-angle lens distortion, desaturated moody tones, overcast flat lighting, brutalist urban architecture, cinematic streetwear portraiture, worm's eye perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted Urban Brutalism",
+    "thumbnail": "samples/Distorted_Urban_Brutalism.webp"
+  },
+  {
+    "name": "Electric Fractal Minimalism",
+    "prompt": "fractal geometry, electric cobalt blue, high-contrast digital art, recursive algorithmic patterns, cold winter aesthetic, procedural displacement, sharp vector detail. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ElectricFractal极简主义",
+    "thumbnail": "samples/Electric_Fractal_Minimalism.webp"
+  },
+  {
+    "name": "Electric Nocturnal Surrealism — Amber Trail Burn",
+    "prompt": "analog film grain, deep teal and amber palette, long exposure light trails, surreal atmosphere, high contrast silhouettes, liminal space photography, ethereal motion blur. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric Nocturnal Surrealism — Amber Trail Burn",
+    "thumbnail": "samples/Electric_Nocturnal_Surrealism_—_Amber_Trail_Burn.webp"
+  },
+  {
+    "name": "Ethereal Airbrushed Dollcore",
+    "prompt": "airbrush digital art, soft-focus bloom, doll-like features, heavy blush, oversized glossy eyes, ethereal porcelain skin, dreamy melancholic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵AirbrushedDollcore",
+    "thumbnail": "samples/Ethereal_Airbrushed_Dollcore.webp"
+  },
+  {
+    "name": "Ethereal Analog Noir — Photogravure Haze",
+    "prompt": "heavy film grain, high-contrast monochrome, pictorialist soft focus, distressed analog texture, charcoal-like stippling, mysterious shadow silhouettes, vintage photogravure effect. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵模拟黑色PhotogravureHaze",
+    "thumbnail": "samples/Ethereal_Analog_Noir_—_Photogravure_Haze.webp"
+  },
+  {
+    "name": "Ethereal Chromatic Sketch",
+    "prompt": "colored pencil sketch, cobalt blue background, prismatic rim lighting, fine cross-hatching, vibrant gouache underlay, energetic scribble lines, ethereal glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵彩色速写",
+    "thumbnail": "samples/Ethereal_Chromatic_Sketch.webp"
+  },
+  {
+    "name": "Ethereal Cloud Surrealism — Golden Mint Aerial",
+    "prompt": "surreal cloudscape, volumetric lighting, dreamlike atmosphere, dynamic perspective, ethereal fog, sculptural composition, high-altitude setting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵云超现实黄金Mint空中",
+    "thumbnail": "samples/Ethereal_Cloud_Surrealism_—_Golden_Mint_Aerial.webp"
+  },
+  {
+    "name": "Ethereal Cobalt Melancholy",
+    "prompt": "cobalt blue palette, expressive charcoal linework, ethereal glowing aura, heavy analog film grain, high contrast chiaroscuro, textured paper aesthetic, spectral silhouette, melancholic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Cobalt忧郁",
+    "thumbnail": "samples/Ethereal_Cobalt_Melancholy.webp"
+  },
+  {
+    "name": "Ethereal Glitch Melancholy",
+    "prompt": "pixel-sorting, digital decay, glitch art, vertical distortion, monochromatic cool tones, surreal fragmentation, clinical lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵故障忧郁",
+    "thumbnail": "samples/Ethereal_Glitch_Melancholy.webp"
+  },
+  {
+    "name": "Ethereal Grain Monochrome",
+    "prompt": "heavy film grain, high-contrast monochrome, soft-focus blur, motion blur, ethereal atmosphere, analog noir texture, charcoal-like shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵颗粒单色",
+    "thumbnail": "samples/Ethereal_Grain_Monochrome.webp"
+  },
+  {
+    "name": "Ethereal Gritty Noir",
+    "prompt": "heavy film grain, high-contrast monochrome, dreamy motion blur, stark silhouette, textured charcoal aesthetic, lo-fi archival photography, atmospheric mist. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Gritty黑色",
+    "thumbnail": "samples/Ethereal_Gritty_Noir.webp"
+  },
+  {
+    "name": "Ethereal Indigo Minimalism",
+    "prompt": "minimalist ink wash, atmospheric indigo gradient, soft-focus sfumato, textured paper grain, ethereal blue fog, abstract color field, diffused silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵靛蓝极简主义",
+    "thumbnail": "samples/Ethereal_Indigo_Minimalism.webp"
+  },
+  {
+    "name": "Ethereal Kinetic Minimalism — Graphite Studio Veil",
+    "prompt": "long exposure motion blur, shutter drag, ghostly double exposure, ethereal silhouettes, minimalist high-contrast, kinetic energy, fleeting movement. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Kinetic Minimalism — Graphite Studio Veil",
+    "thumbnail": "samples/Ethereal_Kinetic_Minimalism_—_Graphite_Studio_Veil.webp"
+  },
+  {
+    "name": "Ethereal Kinetic Monochrome — Brushstroke Streak",
+    "prompt": "motion blur photography, high contrast monochrome, ghostly silhouettes, long exposure, shutter drag, minimalist white background, kinetic energy, fine film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵动态单色BrushstrokeStreak",
+    "thumbnail": "samples/Ethereal_Kinetic_Monochrome_—_Brushstroke_Streak.webp"
+  },
+  {
+    "name": "Ethereal Kinetic Monochrome — Charcoal Grain Smear",
+    "prompt": "high-contrast monochrome, motion blur silhouette, heavy film grain, stark minimalist background, spectral atmosphere, charcoal texture, dynamic movement. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Kinetic Monochrome — Charcoal Grain Smear",
+    "thumbnail": "samples/Ethereal_Kinetic_Monochrome_—_Charcoal_Grain_Smear.webp"
+  },
+  {
+    "name": "Ethereal Monochromatic Motion",
+    "prompt": "high-contrast monochrome, intentional camera movement, heavy film grain, spectral silhouette, charcoal texture, atmospheric abstraction, dreamlike motion blur. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵单色运动",
+    "thumbnail": "samples/Ethereal_Monochromatic_Motion.webp"
+  },
+  {
+    "name": "Ethereal Monochrome Abstraction",
+    "prompt": "monochromatic, heavy film grain, extreme motion blur, atmospheric mist, charcoal texture, ghostly silhouettes, soft-focus pictorialism, high-contrast minimalism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵单色Abstraction",
+    "thumbnail": "samples/Ethereal_Monochrome_Abstraction.webp"
+  },
+  {
+    "name": "Ethereal Monochrome Grain",
+    "prompt": "stippled charcoal texture, high-contrast monochrome, coarse halftone grain, soft-edged silhouette, minimalist graphic noir, atmospheric noise, vintage print aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵单色颗粒",
+    "thumbnail": "samples/Ethereal_Monochrome_Grain.webp"
+  },
+  {
+    "name": "Ethereal Monochrome Minimalism",
+    "prompt": "monochrome minimalism, stippled charcoal texture, ink wash dispersion, high contrast composition, soft-focus gradients, vaporous shadows, stark negative space. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵单色极简主义",
+    "thumbnail": "samples/Ethereal_Monochrome_Minimalism.webp"
+  },
+  {
+    "name": "Ethereal Monochrome Motion — Backlit Charcoal",
+    "prompt": "stark high-contrast monochrome, ethereal motion blur, ghostly silhouettes, charcoal and ink texture, dreamlike atmospheric mist, minimalist surrealism, intentional camera movement. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵单色运动逆光Charcoal",
+    "thumbnail": "samples/Ethereal_Monochrome_Motion_—_Backlit_Charcoal.webp"
+  },
+  {
+    "name": "Ethereal Monochrome Motion — Ink-Wash Smudge",
+    "prompt": "minimalist monochrome, high-contrast black and white, ethereal motion blur, smudged charcoal texture, ghostly silhouettes, stark white background, ink wash aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵单色运动墨渲染Smudge",
+    "thumbnail": "samples/Ethereal_Monochrome_Motion_—_Ink-Wash_Smudge.webp"
+  },
+  {
+    "name": "Ethereal Monochrome Noir — Misted Silver",
+    "prompt": "high-contrast monochrome, charcoal drawing texture, extreme soft focus, heavy analog film grain, spectral silhouettes, diffused misty lighting, pictorialism aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵单色黑色Misted银",
+    "thumbnail": "samples/Ethereal_Monochrome_Noir_—_Misted_Silver.webp"
+  },
+  {
+    "name": "Ethereal Monochrome Noir — Smoky Ink Wash",
+    "prompt": "monochrome photography, chiaroscuro, pictorialist aesthetic, heavy film grain, ethereal motion blur, smoky charcoal texture, atmospheric negative space. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵单色黑色Smoky墨渲染",
+    "thumbnail": "samples/Ethereal_Monochrome_Noir_—_Smoky_Ink_Wash.webp"
+  },
+  {
+    "name": "Ethereal Monochrome Noir — Stippled Paper White",
+    "prompt": "monochrome photography, charcoal drawing texture, heavy film grain, soft-focus blur, high-contrast noir, ethereal silhouettes, stippled atmospheric depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Monochrome Noir — Stippled Paper White",
+    "thumbnail": "samples/Ethereal_Monochrome_Noir_—_Stippled_Paper_White.webp"
+  },
+  {
+    "name": "Ethereal Monochrome Noir — Tactile Charcoal Grain",
+    "prompt": "high-contrast black and white, heavy tactile film grain, soft-focus silhouettes, atmospheric blur, charcoal texture, minimalist composition, pictorialist aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵单色黑色触觉Charcoal颗粒",
+    "thumbnail": "samples/Ethereal_Monochrome_Noir_—_Tactile_Charcoal_Grain.webp"
+  },
+  {
+    "name": "Ethereal Monochrome Pictorialism",
+    "prompt": "pictorialism, monochrome photography, heavy film grain, sfumato effect, ethereal silhouettes, soft focus, minimalist composition, atmospheric fog. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵单色Pictorialism",
+    "thumbnail": "samples/Ethereal_Monochrome_Pictorialism.webp"
+  },
+  {
+    "name": "Ethereal Motion Noir — Charcoal Smoke",
+    "prompt": "high-contrast monochrome, heavy analog film grain, intentional motion blur, spectral noir, chiaroscuro lighting, ghostly silhouette, dreamlike charcoal texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵运动黑色Charcoal烟",
+    "thumbnail": "samples/Ethereal_Motion_Noir_—_Charcoal_Smoke.webp"
+  },
+  {
+    "name": "Ethereal Muted Haze",
+    "prompt": "soft-focus, heavy film grain, frosted glass texture, desaturated sage palette, dreamy atmospheric haze, minimalist abstract composition, ethereal blurred silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵柔和Haze",
+    "thumbnail": "samples/Ethereal_Muted_Haze.webp"
+  },
+  {
+    "name": "Ethereal Nocturnal Minimalism — Frosted Charcoal Halo",
+    "prompt": "high-contrast monochrome, heavy textured grain, diffused backlit silhouette, atmospheric noir, minimalist chiaroscuro, soft-focus halo, ethereal dark ambient. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵夜行极简主义FrostedCharcoalHalo",
+    "thumbnail": "samples/Ethereal_Nocturnal_Minimalism_—_Frosted_Charcoal_Halo.webp"
+  },
+  {
+    "name": "Ethereal Nocturnal Pictorialism — Charcoal Photogravure",
+    "prompt": "pictorialist photography, deep indigo and prussian blue, heavy charcoal grain, soft-focus atmosphere, chiaroscuro lighting, ethereal glowing highlights, dreamlike impressionism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵夜行PictorialismCharcoalPhotogravure",
+    "thumbnail": "samples/Ethereal_Nocturnal_Pictorialism_—_Charcoal_Photogravure.webp"
+  },
+  {
+    "name": "Ethereal Noir Pictorialism — Vignetted Swirl",
+    "prompt": "heavy film grain, high contrast monochrome, pictorialist photography, atmospheric fog, soft focus blur, stark silhouette, charcoal texture, dreamy vintage vignette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵黑色PictorialismVignettedSwirl",
+    "thumbnail": "samples/Ethereal_Noir_Pictorialism_—_Vignetted_Swirl.webp"
+  },
+  {
+    "name": "Ethereal Pastel Minimalism — Colored Pencil Tooth",
+    "prompt": "soft pastel color palette, ethereal diffused light, tactile paper texture, minimalist composition, impressionistic brushstrokes, nostalgic dreamlike atmosphere, gentle hand-drawn quality. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩极简主义ColoredPencilTooth",
+    "thumbnail": "samples/Ethereal_Pastel_Minimalism_—_Colored_Pencil_Tooth.webp"
+  },
+  {
+    "name": "Ethereal Pastel Sketchbook",
+    "prompt": "soft watercolor wash, delicate pencil sketch, ethereal pastel palette, hazy dreamlike atmosphere, high-key lighting, textured paper, iridescent shimmer. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩Sketchbook",
+    "thumbnail": "samples/Ethereal_Pastel_Sketchbook.webp"
+  },
+  {
+    "name": "Ethereal Pictorialist Noir",
+    "prompt": "pictorialism, monochrome film grain, soft-focus blur, high-contrast chiaroscuro, atmospheric haze, dreamlike vignette, charcoal texture, mysterious liminality. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Pictorialist黑色",
+    "thumbnail": "samples/Ethereal_Pictorialist_Noir.webp"
+  },
+  {
+    "name": "Ethereal Sketch Expressionism",
+    "prompt": "colored pencil sketch, translucent risograph texture, expressive scribbled linework, glowing pastel highlights, double exposure, cerulean and cobalt palette, hand-drawn graphite texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵速写表现主义",
+    "thumbnail": "samples/Ethereal_Sketch_Expressionism.webp"
+  },
+  {
+    "name": "Ethereal Sketch Synthesis",
+    "prompt": "colored pencil sketch, double exposure, ethereal lighting, visible pencil texture, high-contrast color palette, translucent layering, expressive charcoal lines. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵速写Synthesis",
+    "thumbnail": "samples/Ethereal_Sketch_Synthesis.webp"
+  },
+  {
+    "name": "Experimental Noir Abstraction",
+    "prompt": "high-contrast monochrome, heavy film grain, motion blur, chiaroscuro lighting, experimental darkroom, long exposure, atmospheric noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Experimental Noir Abstraction",
+    "thumbnail": "samples/Experimental_Noir_Abstraction.webp"
+  },
+  {
+    "name": "Gilded Fractured Surrealism",
+    "prompt": "chiaroscuro lighting, gilded kintsugi, cracked porcelain texture, surreal melancholic portrait, gold leaf accents, tactile contrast, matte charcoal skin. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "GildedFractured超现实",
+    "thumbnail": "samples/Gilded_Fractured_Surrealism.webp"
+  },
+  {
+    "name": "Granular Analog Noir",
+    "prompt": "heavy film grain, monochrome noir, charcoal silhouettes, pictorialism, high-contrast analog texture, soft-focus mystery, liminal space, distressed lo-fi photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Granular模拟黑色",
+    "thumbnail": "samples/Granular_Analog_Noir.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Noir — Charcoal Stipple Decay",
+    "prompt": "high-contrast monochrome, photocopy texture, analog glitch, heavy film grain, gritty halftone, noir atmosphere, stippled charcoal, distressed lo-fi. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Noir — Charcoal Stipple Decay",
+    "thumbnail": "samples/Gritty_Monochromatic_Noir_—_Charcoal_Stipple_Decay.webp"
+  },
+  {
+    "name": "Gritty Monochrome Brutalism",
+    "prompt": "high-contrast monochrome, gritty halftone texture, stippled ink spray, brutalist graphic design, lo-fi xerox aesthetic, minimalist ink wash, organic abstract silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochrome Brutalism",
+    "thumbnail": "samples/Gritty_Monochrome_Brutalism.webp"
+  },
+  {
+    "name": "Gritty Noir Risograph",
+    "prompt": "risograph print, stipple texture, halftone pattern, high-contrast black and pink, distressed xerox effect, chiaroscuro ink, punk zine aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Noir Risograph",
+    "thumbnail": "samples/Gritty_Noir_Risograph.webp"
+  },
+  {
+    "name": "Haunting Liminal Monochrome",
+    "prompt": "high-contrast monochrome, ethereal silhouettes, motion blur, liminal atmosphere, stark minimalism, grainy charcoal texture, ghostly dreamlike haze. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Haunting阈限单色",
+    "thumbnail": "samples/Haunting_Liminal_Monochrome.webp"
+  },
+  {
+    "name": "Intimate Monochrome Macro",
+    "prompt": "black and white photography, extreme macro, chiaroscuro lighting, high contrast, intimate portrait, sharp texture detail, minimalist background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "亲密单色微距",
+    "thumbnail": "samples/Intimate_Monochrome_Macro.webp"
+  },
+  {
+    "name": "Kinetic Amber Noir",
+    "prompt": "amber and charcoal palette, dynamic motion blur, gritty analog film grain, high-contrast backlighting, liquid distortion effects, fiery atmospheric glow, graphic silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态琥珀黑色",
+    "thumbnail": "samples/Kinetic_Amber_Noir.webp"
+  },
+  {
+    "name": "Kinetic Ghost Minimalism — Sterile Cold Trails",
+    "prompt": "long exposure photography, motion blur, ghostly silhouette, minimalist studio setting, desaturated cool tones, intentional camera movement, high contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Kinetic Ghost Minimalism — Sterile Cold Trails",
+    "thumbnail": "samples/Kinetic_Ghost_Minimalism_—_Sterile_Cold_Trails.webp"
+  },
+  {
+    "name": "Kinetic Monochrome Abstraction",
+    "prompt": "high-contrast monochrome, intentional motion blur, stark silhouette, heavy film grain, minimalist abstraction, shutter drag, charcoal texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态单色Abstraction",
+    "thumbnail": "samples/Kinetic_Monochrome_Abstraction.webp"
+  },
+  {
+    "name": "Luminous Abyssal Noir — Foggy Volumetric Beams",
+    "prompt": "bioluminescent glow, volumetric lighting, deep cyan and charcoal palette, cinematic high contrast, heavy film grain, ethereal silhouettes, atmospheric fog. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮深渊黑色有雾VolumetricBeams",
+    "thumbnail": "samples/Luminous_Abyssal_Noir_—_Foggy_Volumetric_Beams.webp"
+  },
+  {
+    "name": "Luminous Amber Silhouette — Ochre Charcoal Haze",
+    "prompt": "backlit silhouette, golden hour glow, amber and charcoal palette, atmospheric haze, high contrast, minimalist composition, dramatic sunset lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮琥珀剪影OchreCharcoalHaze",
+    "thumbnail": "samples/Luminous_Amber_Silhouette_—_Ochre_Charcoal_Haze.webp"
+  },
+  {
+    "name": "Luminous Chiaroscuro Noir — Fiery Orange Brushwork",
+    "prompt": "chiaroscuro lighting, fiery orange and charcoal palette, expressive digital brushstrokes, cinematic moody atmosphere, high-contrast silhouettes, textured painterly finish, nocturnal abstraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Chiaroscuro Noir — Fiery Orange Brushwork",
+    "thumbnail": "samples/Luminous_Chiaroscuro_Noir_—_Fiery_Orange_Brushwork.webp"
+  },
+  {
+    "name": "Luminous Ethereal Impressionism — Pastel Charcoal Shimmer",
+    "prompt": "soft-focus impressionism, ethereal bokeh, painterly texture, luminous glow, atmospheric blur, chiaroscuro lighting, pastel and charcoal palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮空灵印象派粉彩CharcoalShimmer",
+    "thumbnail": "samples/Luminous_Ethereal_Impressionism_—_Pastel_Charcoal_Shimmer.webp"
+  },
+  {
+    "name": "Luminous Kinetic Abstraction",
+    "prompt": "intentional camera movement, long exposure motion blur, fiery amber and charcoal palette, high contrast silhouette, painterly film grain, abstract light trails, shutter drag. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮动态Abstraction",
+    "thumbnail": "samples/Luminous_Kinetic_Abstraction.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Noir",
+    "prompt": "high-contrast duotone, glowing orange light, charcoal and deep blue palette, painterly brushstrokes, nocturnal atmosphere, minimalist digital landscape, stenciled silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行黑色",
+    "thumbnail": "samples/Luminous_Nocturnal_Noir.webp"
+  },
+  {
+    "name": "Luminous Spectral Silhouette",
+    "prompt": "luminous orange aura, minimalist dark silhouette, analog film grain, soft-focus airbrush texture, chromatic aberration, dreamlike surrealism, high contrast chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮光谱剪影",
+    "thumbnail": "samples/Luminous_Spectral_Silhouette.webp"
+  },
+  {
+    "name": "Luminous Thermal Expressionism",
+    "prompt": "thermal infrared aesthetic, saturated crimson and orange, heavy analog film grain, glowing heat signature, dramatic chiaroscuro, gestural charcoal texture, ethereal chromatic bloom. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Thermal表现主义",
+    "thumbnail": "samples/Luminous_Thermal_Expressionism.webp"
+  },
+  {
+    "name": "Melancholic Coastal Nocturne",
+    "prompt": "cinematic chiaroscuro, moody indigo atmosphere, solitary silhouette, coastal twilight, stormy ocean, atmospheric fog, dramatic light contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "忧郁海岸Nocturne",
+    "thumbnail": "samples/Melancholic_Coastal_Nocturne.webp"
+  },
+  {
+    "name": "Monochromatic Occult Noir",
+    "prompt": "monochromatic charcoal texture, atmospheric dark noir, stippled gothic surrealism, heavy film grain, liminal silhouette, eerie misty depth, high-contrast chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色Occult黑色",
+    "thumbnail": "samples/Monochromatic_Occult_Noir.webp"
+  },
+  {
+    "name": "Monochromatic Sculptural Minimalist",
+    "prompt": "minimalist editorial, sculptural silhouette, monochromatic, high-contrast lighting, avant-garde fashion, desaturated palette, studio portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色Sculptural极简",
+    "thumbnail": "samples/Monochromatic_Sculptural_Minimalist.webp"
+  },
+  {
+    "name": "Monochromatic Surrealist Deconstruction",
+    "prompt": "monochromatic surrealism, high-contrast portrait collage, fragmented human form, tactile charcoal texture, stark negative space, conceptual double exposure, chiaroscuro lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色超现实Deconstruction",
+    "thumbnail": "samples/Monochromatic_Surrealist_Deconstruction.webp"
+  },
+  {
+    "name": "Monochromatic Symbolist Noir",
+    "prompt": "chiaroscuro noir, charcoal and sepia texture, intaglio etching style, moody tonalism, distressed paper grain, symbolist atmosphere, high contrast ink wash. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色Symbolist黑色",
+    "thumbnail": "samples/Monochromatic_Symbolist_Noir.webp"
+  },
+  {
+    "name": "Monochrome Academic Realism",
+    "prompt": "monochrome charcoal portrait, chiaroscuro lighting, hyper-detailed graphite drawing, cross-hatching texture, academic realism, high-contrast black and white, expressive facial details, stark white background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色Academic写实",
+    "thumbnail": "samples/Monochrome_Academic_Realism.webp"
+  },
+  {
+    "name": "Monochrome Chiaroscuro Realism",
+    "prompt": "monochrome, chiaroscuro, high-contrast, charcoal and graphite, expressive portraiture, tactile texture, dramatic lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色Chiaroscuro写实",
+    "thumbnail": "samples/Monochrome_Chiaroscuro_Realism.webp"
+  },
+  {
+    "name": "Monochrome Ethereal Tempest",
+    "prompt": "high-contrast monochrome, intentional camera movement, long exposure seascape, grainy charcoal texture, spectral ethereal glow, moody atmospheric vignette, liminal nature photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色空灵Tempest",
+    "thumbnail": "samples/Monochrome_Ethereal_Tempest.webp"
+  },
+  {
+    "name": "Monochrome Glitch Noir — Photocopy Pixel Decay",
+    "prompt": "monochrome glitch art, pixel sorting, high-contrast chiaroscuro, analog photocopy texture, digital decay, scanlines, liminal noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色故障黑色PhotocopyPixel衰败",
+    "thumbnail": "samples/Monochrome_Glitch_Noir_—_Photocopy_Pixel_Decay.webp"
+  },
+  {
+    "name": "Monochrome Graphic Realism",
+    "prompt": "hyper-realistic portrait, chiaroscuro lighting, stippling and cross-hatching, high-contrast monochrome, ink and graphite texture, minimalist white background, intense graphic realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色图形写实",
+    "thumbnail": "samples/Monochrome_Graphic_Realism.webp"
+  },
+  {
+    "name": "Monochrome Liminal Noir",
+    "prompt": "high-contrast monochrome photography, heavy analog film grain, dense atmospheric fog, stark minimalist silhouettes, desolate liminal landscape, moody cinematic noir, textured black and white. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色阈限黑色",
+    "thumbnail": "samples/Monochrome_Liminal_Noir.webp"
+  },
+  {
+    "name": "Monochrome Noir Tactility",
+    "prompt": "high-contrast monochrome, halftone grain texture, tactile charcoal surface, noir lighting, metallic sheen, surrealist composition, analog film aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色黑色Tactility",
+    "thumbnail": "samples/Monochrome_Noir_Tactility.webp"
+  },
+  {
+    "name": "Monochrome Shadow Grain",
+    "prompt": "high-contrast monochrome, heavy film grain, chiaroscuro lighting, stippled charcoal texture, motion blur silhouette, dark ambient photography, low shutter speed. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色影颗粒",
+    "thumbnail": "samples/Monochrome_Shadow_Grain.webp"
+  },
+  {
+    "name": "Monochrome Surrealist Realism",
+    "prompt": "hyper-realistic graphite drawing, surrealist anatomical distortion, high-contrast chiaroscuro, stark white background, monochrome fine art, uncanny realism, micro-texture detail. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色超现实写实",
+    "thumbnail": "samples/Monochrome_Surrealist_Realism.webp"
+  }
+]

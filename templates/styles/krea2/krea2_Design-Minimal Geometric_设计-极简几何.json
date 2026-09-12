@@ -1,0 +1,394 @@
+[
+  {
+    "name": "Aerial Oceanic Minimalism",
+    "prompt": "top-down aerial perspective, minimalist graphic composition, stark sunlight and sharp shadows, deep blue and turquoise palette, high-angle drone photography, dramatic scale contrast, vibrant color blocking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空中Oceanic极简主义",
+    "thumbnail": "samples/Aerial_Oceanic_Minimalism.webp"
+  },
+  {
+    "name": "Amber Surrealist Noir",
+    "prompt": "saturated yellow background, high-contrast chiaroscuro, sharp directional shadows, avant-garde portraiture, whimsical surrealism, monochromatic amber palette, minimalist graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀超现实黑色",
+    "thumbnail": "samples/Amber_Surrealist_Noir.webp"
+  },
+  {
+    "name": "Brutalist Chiaroscuro Noir",
+    "prompt": "brutalist architecture, chiaroscuro lighting, raw concrete texture, vivid crimson accents, liminal space, cinematic high contrast, geometric minimalism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "粗野主义Chiaroscuro黑色",
+    "thumbnail": "samples/Brutalist_Chiaroscuro_Noir.webp"
+  },
+  {
+    "name": "Cinematic Amber Silhouette",
+    "prompt": "high-contrast silhouette, saturated amber backdrop, chiaroscuro lighting, minimalist graphic composition, golden rim lighting, cinematic noir atmosphere, sharp edge definition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感琥珀剪影",
+    "thumbnail": "samples/Cinematic_Amber_Silhouette.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Noir — Ember Saturation",
+    "prompt": "high-contrast noir, minimalist graphic portrait, saturated color background, dramatic chiaroscuro lighting, sharp silhouette, rim lighting, avant-garde editorial. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Chiaroscuro Noir — Ember Saturation",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Noir_—_Ember_Saturation.webp"
+  },
+  {
+    "name": "Cinematic Crimson Noir — Wet Vinyl Gloss",
+    "prompt": "high-contrast cinematic lighting, saturated crimson and neon palette, sharp chiaroscuro shadows, avant-garde fashion aesthetic, glossy wet-look textures, minimalist graphic composition, cyberpunk atmospheric mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感绯红黑色湿Vinyl光泽",
+    "thumbnail": "samples/Cinematic_Crimson_Noir_—_Wet_Vinyl_Gloss.webp"
+  },
+  {
+    "name": "Cinematic Neon Noir — Airbrush Rim Glow",
+    "prompt": "high-contrast silhouette, retro-futuristic airbrush, vibrant rim lighting, fine film grain, noir cinematic mood, minimalist graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感霓虹黑色Airbrush边缘光发光",
+    "thumbnail": "samples/Cinematic_Neon_Noir_—_Airbrush_Rim_Glow.webp"
+  },
+  {
+    "name": "Cinematic Neon Silhouette",
+    "prompt": "cinematic side-profile portrait, sharp rim lighting, high-contrast silhouette, neo-noir aesthetic, vibrant neon backlighting, dramatic chiaroscuro, minimalist graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感霓虹剪影",
+    "thumbnail": "samples/Cinematic_Neon_Silhouette.webp"
+  },
+  {
+    "name": "Clinical Brutalist Noir",
+    "prompt": "brutalist architecture, clinical blue lighting, dystopian noir, high-contrast shadows, desaturated color grading, minimalist sci-fi, cinematic low-key lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Clinical粗野主义黑色",
+    "thumbnail": "samples/Clinical_Brutalist_Noir.webp"
+  },
+  {
+    "name": "Cobalt Botanical Fauvism",
+    "prompt": "cobalt blue background, saturated warm-toned florals, fauvist brushwork, high-contrast color blocking, minimalist graphic composition, vivid orange and crimson, painterly texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cobalt Botanical Fauvism",
+    "thumbnail": "samples/Cobalt_Botanical_Fauvism.webp"
+  },
+  {
+    "name": "Crimson Noir Minimalism — Stencil Mid-Century",
+    "prompt": "high-contrast silhouette, minimalist graphic illustration, crimson red and black, stark negative space, linocut print style, bold stencil art, mid-century modern graphic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色极简主义StencilMidCentury",
+    "thumbnail": "samples/Crimson_Noir_Minimalism_—_Stencil_Mid-Century.webp"
+  },
+  {
+    "name": "Crimson Silhouette Noir — Amber Gradient Glitch",
+    "prompt": "stark silhouette, minimalist composition, crimson and amber palette, high contrast noir, cinematic film grain, glitch distortion effect, dramatic backlighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红剪影黑色琥珀渐变故障",
+    "thumbnail": "samples/Crimson_Silhouette_Noir_—_Amber_Gradient_Glitch.webp"
+  },
+  {
+    "name": "Crimson Silhouette Noir — Sleek Fashion Rim",
+    "prompt": "high-contrast crimson lighting, stark silhouette, minimalist graphic composition, low-key chiaroscuro, vibrant red and black palette, anatomical precision, dramatic rim lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红剪影黑色SleekFashion边缘光",
+    "thumbnail": "samples/Crimson_Silhouette_Noir_—_Sleek_Fashion_Rim.webp"
+  },
+  {
+    "name": "Crimson Thermal Noir",
+    "prompt": "high contrast silhouettes, saturated crimson and blue lighting, heavy film grain, cinematic noir atmosphere, spectral glowing aura, minimalist graphic composition, retro-futuristic haze. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红Thermal黑色",
+    "thumbnail": "samples/Crimson_Thermal_Noir.webp"
+  },
+  {
+    "name": "Cyanic Minimalist Noir",
+    "prompt": "cyan studio lighting, high-contrast chiaroscuro, minimalist graphic composition, sharp dramatic shadows, cool blue color grading, editorial fashion photography, sculptural silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cyanic极简黑色",
+    "thumbnail": "samples/Cyanic_Minimalist_Noir.webp"
+  },
+  {
+    "name": "Ethereal Minimalist Aura",
+    "prompt": "chromatic aura, minimalist geometric void, ink bleed gradient, soft focus silhouette, grainy tactile texture, ethereal light glow, high contrast composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵极简Aura",
+    "thumbnail": "samples/Ethereal_Minimalist_Aura.webp"
+  },
+  {
+    "name": "Ethereal Pastel Surrealism — Celestial Geometry",
+    "prompt": "ethereal surrealism, pastel gradient sky, minimalist dreamscape, glowing celestial body, soft-focus atmosphere, twilight lighting, serene solitude, geometric minimalism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩超现实天体Geometry",
+    "thumbnail": "samples/Ethereal_Pastel_Surrealism_—_Celestial_Geometry.webp"
+  },
+  {
+    "name": "Expressive NaÃ¯ve Minimalism",
+    "prompt": "naive art style, expressive hand-drawn lines, wax crayon texture, minimalist graphic illustration, bold primary colors, stark negative space, folksy whimsicality. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ExpressiveNaÃ¯ve极简主义",
+    "thumbnail": "samples/Expressive_NaÃ¯ve_Minimalism.webp"
+  },
+  {
+    "name": "Fragmented Surrealist Portraiture",
+    "prompt": "conceptual portraiture, glitch art, geometric fragmentation, muted minimalist color palette, surrealist undertones, stucco texture, digital artifacting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fragmented超现实肖像摄影",
+    "thumbnail": "samples/Fragmented_Surrealist_Portraiture.webp"
+  },
+  {
+    "name": "Geometric Aerial Minimalism",
+    "prompt": "top-down aerial view, geometric composition, sharp dramatic shadows, minimalist graphic layout, high-angle perspective, structured urban patterns, high contrast, stark color accents. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "几何空中极简主义",
+    "thumbnail": "samples/Geometric_Aerial_Minimalism.webp"
+  },
+  {
+    "name": "Geometric Sunset Noir",
+    "prompt": "stylized digital painting, bold geometric composition, high-contrast sunset lighting, warm and cool color palette, clean brushstrokes, atmospheric perspective, dramatic shadows, graphic landscape illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "几何Sunset黑色",
+    "thumbnail": "samples/Geometric_Sunset_Noir.webp"
+  },
+  {
+    "name": "Geometric Voyeuristic Surrealism",
+    "prompt": "geometric minimalism, binocular POV, desaturated earth tones, cinematic melancholy, textured paper grain, symmetrical composition, surrealist vignette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "几何Voyeuristic超现实",
+    "thumbnail": "samples/Geometric_Voyeuristic_Surrealism.webp"
+  },
+  {
+    "name": "Graphic Chiaroscuro Minimalism — Theatrical Backlit Glow",
+    "prompt": "high-contrast studio lighting, chiaroscuro portraiture, minimalist editorial aesthetic, graphic beauty photography, sharp silhouette, avant-garde makeup, ethereal backlit glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Graphic Chiaroscuro Minimalism — Theatrical Backlit Glow",
+    "thumbnail": "samples/Graphic_Chiaroscuro_Minimalism_—_Theatrical_Backlit_Glow.webp"
+  },
+  {
+    "name": "Graphic Crimson Couture",
+    "prompt": "avant-garde editorial fashion, dramatic spotlight lighting, deep crimson background, chiaroscuro contrast, sculptural silhouettes, minimalist graphic composition, high-fashion portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形绯红Couture",
+    "thumbnail": "samples/Graphic_Crimson_Couture.webp"
+  },
+  {
+    "name": "Graphic Geometric Minimalism — Sunlit Hard Shadows",
+    "prompt": "minimalist composition, sharp hard shadows, overhead perspective, geometric color blocking, high-contrast lighting, graphic abstraction, isolated subject. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Graphic Geometric Minimalism — Sunlit Hard Shadows",
+    "thumbnail": "samples/Graphic_Geometric_Minimalism_—_Sunlit_Hard_Shadows.webp"
+  },
+  {
+    "name": "Graphic Geometric Minimalism — Whimsical Primary Blocking",
+    "prompt": "geometric minimalism, bold primary color blocking, clean studio lighting, flat graphic composition, whimsical surrealism, hard-edge shapes, minimalist portraiture, high-contrast aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Graphic Geometric Minimalism — Whimsical Primary Blocking",
+    "thumbnail": "samples/Graphic_Geometric_Minimalism_—_Whimsical_Primary_Blocking.webp"
+  },
+  {
+    "name": "Graphic Linocut Printmaking",
+    "prompt": "linocut print, woodblock texture, high-contrast graphic, hand-carved ink, distressed stamp effect, minimalist relief art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形麻胶版Printmaking",
+    "thumbnail": "samples/Graphic_Linocut_Printmaking.webp"
+  },
+  {
+    "name": "Graphic Neo-Pop Surrealism",
+    "prompt": "high-contrast studio photography, vibrant saturated solid background, minimalist graphic composition, mixed media collage elements, sharp clean edges, bold color blocking, xerox punk textures, surrealist digital overlay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形NeoPop超现实",
+    "thumbnail": "samples/Graphic_Neo-Pop_Surrealism.webp"
+  },
+  {
+    "name": "Graphic Painterly Narrative",
+    "prompt": "gouache painting style, bold graphic shapes, hand-painted textures, high-contrast color palette, minimalist composition, naive art influence, expressive brushstrokes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形绘画感叙事",
+    "thumbnail": "samples/Graphic_Painterly_Narrative.webp"
+  },
+  {
+    "name": "Graphic Sunlit Minimalism",
+    "prompt": "geometric minimalism, high-contrast shadows, harsh direct sunlight, graphic color blocking, aerial perspective, vintage film grain, architectural isolation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Sunlit极简主义",
+    "thumbnail": "samples/Graphic_Sunlit_Minimalism.webp"
+  },
+  {
+    "name": "Graphic Surrealist Minimalism — Immaculate Primary Blocking",
+    "prompt": "minimalist studio photography, bold primary color palette, graphic composition, surrealist concept, high-contrast color blocking, geometric symmetry, clean flat lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Graphic Surrealist Minimalism — Immaculate Primary Blocking",
+    "thumbnail": "samples/Graphic_Surrealist_Minimalism_—_Immaculate_Primary_Blocking.webp"
+  },
+  {
+    "name": "High-Contrast Fauvist Glitch",
+    "prompt": "high-contrast color blocking, cobalt blue and crimson red, fauvist expressionist strokes, surrealist silhouette, digital glitch distortion, tactile pastel texture, minimalist graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "High-Contrast Fauvist Glitch",
+    "thumbnail": "samples/High-Contrast_Fauvist_Glitch.webp"
+  },
+  {
+    "name": "Hypnotic Linocut Nocturne",
+    "prompt": "linocut printmaking, high-contrast duotone, concentric line patterns, surreal woodblock texture, minimalist graphic illustration, hand-carved organic aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hypnotic Linocut Nocturne",
+    "thumbnail": "samples/Hypnotic_Linocut_Nocturne.webp"
+  },
+  {
+    "name": "Luminous Grainy Etherealism — Pink-Teal Bleed",
+    "prompt": "grainy film texture, ethereal gradient, soft focus, luminous aura, chromatic diffusion, dreamlike haze, abstract fluid geometry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Grainy Etherealism — Pink-Teal Bleed",
+    "thumbnail": "samples/Luminous_Grainy_Etherealism_—_Pink-Teal_Bleed.webp"
+  },
+  {
+    "name": "Minimalist Azure Silhouette",
+    "prompt": "high-contrast silhouette, cool blue studio lighting, minimalist graphic portrait, translucent technical fabrics, sharp rim lighting, futuristic athletic aesthetic, cobalt and cyan monochrome. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简蔚蓝剪影",
+    "thumbnail": "samples/Minimalist_Azure_Silhouette.webp"
+  },
+  {
+    "name": "Modern Terracotta Noir",
+    "prompt": "mid-century noir, linocut print texture, terracotta and black palette, minimalist graphic illustration, distressed ink grain, high-contrast silhouette, screenprint aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "现代Terracotta黑色",
+    "thumbnail": "samples/Modern_Terracotta_Noir.webp"
+  },
+  {
+    "name": "Monochromatic Avant-Garde Noir — Aged Paper Severity",
+    "prompt": "high-contrast noir, vintage paper texture, minimalist geometric composition, surrealist collage, aged monochromatic film grain, stark typography, tactile dark background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monochromatic Avant-Garde Noir — Aged Paper Severity",
+    "thumbnail": "samples/Monochromatic_Avant-Garde_Noir_—_Aged_Paper_Severity.webp"
+  },
+  {
+    "name": "Monochromatic Avant-Garde Noir — Photogram Linocut",
+    "prompt": "high-contrast black and white, experimental photogram, avant-garde geometric abstraction, distressed film texture, linocut printmaking aesthetic, kinetic motion blur, chiaroscuro lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monochromatic Avant-Garde Noir — Photogram Linocut",
+    "thumbnail": "samples/Monochromatic_Avant-Garde_Noir_—_Photogram_Linocut.webp"
+  },
+  {
+    "name": "Monochromatic Crimson Avant-Garde",
+    "prompt": "monochromatic crimson, high-contrast editorial photography, sharp studio lighting, minimalist avant-garde, glossy textures, striking graphic composition, deep red background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色绯红AvantGarde",
+    "thumbnail": "samples/Monochromatic_Crimson_Avant-Garde.webp"
+  },
+  {
+    "name": "Monochromatic Sculptural Noir",
+    "prompt": "high-contrast silhouette, minimalist editorial fashion, dramatic studio backlighting, cool desaturated palette, sculptural form, tactile texture, avant-garde noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色Sculptural黑色",
+    "thumbnail": "samples/Monochromatic_Sculptural_Noir.webp"
+  },
+  {
+    "name": "Monochrome Stipple Noir — Ink Splatter Xerox",
+    "prompt": "high-contrast black and white, stipple and grain texture, stark chiaroscuro lighting, gritty ink splatter, minimalist graphic composition, xerox aesthetic, monochrome liquid noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色点彩黑色墨SplatterXerox",
+    "thumbnail": "samples/Monochrome_Stipple_Noir_—_Ink_Splatter_Xerox.webp"
+  },
+  {
+    "name": "Nocturnal Minimalist Geometry",
+    "prompt": "minimalist nocturnal painting, ultramarine blue background, glowing yellow window, stark silhouette, matte gouache texture, geometric isolation, high contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行极简Geometry",
+    "thumbnail": "samples/Nocturnal_Minimalist_Geometry.webp"
+  },
+  {
+    "name": "Nocturnal Retro-Futurist Noir",
+    "prompt": "nocturnal atmospheric noir, grainy airbrush texture, cobalt and indigo palette, high-contrast silhouette, retro 1980s cinematic aesthetic, glowing neon rim light, minimalist graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行复古未来主义黑色",
+    "thumbnail": "samples/Nocturnal_Retro-Futurist_Noir.webp"
+  },
+  {
+    "name": "Plush Surreal Liminality",
+    "prompt": "minimalist 3D surrealism, tactile moss texture, glassy mirror reflection, liminal space, plush organic forms, soft diffuse lighting, hyper-clean composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Plush Surreal Liminality",
+    "thumbnail": "samples/Plush_Surreal_Liminality.webp"
+  },
+  {
+    "name": "Refracted Neon Minimalism",
+    "prompt": "fluted glass refraction, neon gradient lighting, minimalist architectural silhouette, atmospheric vertical distortion, chromatic dispersion, cinematic noir mood, metallic iridescence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Refracted霓虹极简主义",
+    "thumbnail": "samples/Refracted_Neon_Minimalism.webp"
+  },
+  {
+    "name": "Retro Digital Minimalism",
+    "prompt": "1-bit pixel art, cobalt blue duotone, retro computer terminal, dithered textures, minimalist digital interface, scanline CRT effect. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古数字极简主义",
+    "thumbnail": "samples/Retro_Digital_Minimalism.webp"
+  },
+  {
+    "name": "Sculptural Monochrome Minimalism",
+    "prompt": "high-contrast monochrome photography, sculptural chiaroscuro lighting, minimalist studio portraiture, avant-garde architectural styling, sharp tactile textures, dramatic low-key shadows, graphic silhouette composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sculptural单色极简主义",
+    "thumbnail": "samples/Sculptural_Monochrome_Minimalism.webp"
+  },
+  {
+    "name": "Surreal Botanical Archive",
+    "prompt": "vintage scientific illustration, botanical surrealism, cyanotype collage, muted pastel palette, tactile paper texture, whimsical narrative, minimalist graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实BotanicalArchive",
+    "thumbnail": "samples/Surreal_Botanical_Archive.webp"
+  },
+  {
+    "name": "Surreal Citron Maximalism",
+    "prompt": "vibrant yellow palette, surreal floral fusion, tactile organic texture, high-contrast studio lighting, pop surrealism, minimalist graphic composition, whimsical editorial style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实CitronMaximalism",
+    "thumbnail": "samples/Surreal_Citron_Maximalism.webp"
+  },
+  {
+    "name": "Surreal Geometric Minimalism",
+    "prompt": "high-angle overhead view, geometric symmetry, surreal miniature diorama, concentric patterns, velvety textures, soft dramatic shadows, minimalist landscape design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实几何极简主义",
+    "thumbnail": "samples/Surreal_Geometric_Minimalism.webp"
+  },
+  {
+    "name": "Surreal Minimalist Horizon",
+    "prompt": "surreal minimalism, cobalt blue sky, terracotta landscape, liminal space, stark graphic shadows, painterly texture, vibrant color blocking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实极简地平线",
+    "thumbnail": "samples/Surreal_Minimalist_Horizon.webp"
+  },
+  {
+    "name": "Surreal Neo-Pop Pastoral",
+    "prompt": "surreal pastoral, saturated candy colors, geometric minimalism, whimsical pop art, velvety texture, bold graphic lighting, dreamscape, stylized vector rendering. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实NeoPopPastoral",
+    "thumbnail": "samples/Surreal_Neo-Pop_Pastoral.webp"
+  },
+  {
+    "name": "Surrealist Cobalt Horizon",
+    "prompt": "volumetric cumulus clouds, cobalt blue sky, surrealist landscape, sharp geometric contrast, painterly texture, liminal solitude, high-contrast lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实Cobalt地平线",
+    "thumbnail": "samples/Surrealist_Cobalt_Horizon.webp"
+  },
+  {
+    "name": "Synthetic Retro-Graphic Constructivism",
+    "prompt": "geometric abstraction, retro-futuristic vector, Swiss design influence, pixelated glitch art, high-contrast color blocking, isometric precision, dithered ink textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "合成复古图形Constructivism",
+    "thumbnail": "samples/Synthetic_Retro-Graphic_Constructivism.webp"
+  },
+  {
+    "name": "Textured Fauvist Minimalism",
+    "prompt": "gouache painting, visible brushstrokes, minimalist composition, neo-fauvism, organic color blocking, thick impasto texture, matte finish, naive art style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理Fauvist极简主义",
+    "thumbnail": "samples/Textured_Fauvist_Minimalism.webp"
+  },
+  {
+    "name": "Textured Monochromatic Printmaking",
+    "prompt": "linocut print, distressed ink texture, handmade paper, high-contrast silhouette, minimalist woodblock style, organic imperfections, monochromatic printmaking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理单色Printmaking",
+    "thumbnail": "samples/Textured_Monochromatic_Printmaking.webp"
+  }
+]

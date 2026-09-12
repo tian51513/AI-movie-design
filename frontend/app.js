@@ -49,7 +49,7 @@ function data() {
     settingsTab: 'llm', wfImportFile: null, wfImporting: false, activeShotSeq: 1,
     themesManage: [], themeImportFile: null, themeImporting: false,
     editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character',
-    newStyleKey: '', newStyleText: '',
+    newStyleKey: '', newStyleText: '', kreaLibs: {}, kreaLib: '', kreaName: '',
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
       comfy: {}, t2i_tm: '', speakerBlacklist: '',
@@ -166,8 +166,8 @@ const methods = {
     this.creating = true;
     const fd = new FormData();
     fd.append('name', this.newName); fd.append('aspect_ratio', this.newRatio);
-    fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : presetStyle(this.newStyleKey));
-    fd.append('style_vis', this.newStyleKey === '自定义' ? this.newStyleText : presetStyleVis(this.newStyleKey));
+    fd.append('style', this._styleText());
+    fd.append('style_vis', this._styleVis());
     fd.append('subtitles', this.newSubtitles); fd.append('video_megapixels', this.newMegapixels);
     fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
     fd.append('render_mode', this.newRenderMode);
@@ -1135,8 +1135,8 @@ const methods = {
       fd.append('redraw', this.comicRedraw ? 'true' : 'false');  // 动态漫角色重绘（漫改忽略）
       // 画风（2026-09-06）：漫改模式的画风转换目标随创建提交（与上传 tab 同款映射）；
       // 动态漫不消费（画风跟随原页），提交了也只作项目元信息留存
-      fd.append('style', this.newStyleKey === '自定义' ? this.newStyleText : presetStyle(this.newStyleKey));
-      fd.append('style_vis', this.newStyleKey === '自定义' ? this.newStyleText : presetStyleVis(this.newStyleKey));
+      fd.append('style', this._styleText());
+      fd.append('style_vis', this._styleVis());
       fd.append('subtitles', this.newSubtitles); fd.append('video_megapixels', this.newMegapixels);
       fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
       fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0   // M16：漫画 tab 时长此前是摆设
@@ -1601,7 +1601,25 @@ createApp({ components: { PromptBox }, data, computed, methods,
     // 决策 9：勾重绘=要按新画风重绘出新画面 → 漫画字幕默认开（漫画 tab 的字幕复选就是 newSubtitles）
     comicRedraw(v) { if (v && this.comicMode === 'motion_comic') this.newSubtitles = true; },
   },
+    _styleText() {
+      if (this.newStyleKey === '自定义') return this.newStyleText;
+      if (this.newStyleKey === 'Krea2库') return this._kreaPrompt();
+      return presetStyle(this.newStyleKey);
+    },
+    _styleVis() {
+      if (this.newStyleKey === '自定义') return this.newStyleText;
+      if (this.newStyleKey === 'Krea2库') return this._kreaPrompt();
+      return presetStyleVis(this.newStyleKey);
+    },
+    _kreaPrompt() {
+      const styles = this.kreaLibs[this.kreaLib] || [];
+      const s = styles.find(x => x.name === this.kreaName);
+      return s ? s.prompt : '';
+    },
   async mounted() {
+    fetch('/api/settings/style-presets').then(r => r.json())
+      .then(d => { this.kreaLibs = d; })
+      .catch(() => {});   // 预设拉不到不阻塞创建
     await this.refresh();
     setInterval(async () => {  // 项目列表轮询：autopilot 角标/成片状态实时化
       if (this.view === 'projects' && !this.creating) {

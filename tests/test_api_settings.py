@@ -149,3 +149,18 @@ def test_asr_engine_setting_roundtrip(tmp_path):
         assert r.status_code == 200
         assert c.get("/api/settings").json()["asr"]["engine"] == "comfy_qwen3"
         assert c.put("/api/settings", json={"asr": {"engine": "xx"}}).status_code == 422
+
+
+def test_style_presets_api(tmp_path):
+    """Krea2 风格库（2026-09-12）：GET /api/settings/style-presets 返回
+    73 库两级结构，每风格带成品 prompt。"""
+    with _client(tmp_path) as c:
+        r = c.get("/api/settings/style-presets")
+        assert r.status_code == 200
+        libs = r.json()
+        assert len(libs) >= 70
+        first_lib = next(iter(libs.values()))
+        assert first_lib and all("prompt" in s and s["prompt"]
+                                 for s in first_lib[:3])
+
+

@@ -1,0 +1,702 @@
+[
+  {
+    "name": "Analog Glitch Nostalgia — Neon Cel Smear",
+    "prompt": "retro 90s anime style, analog VHS distortion, chromatic aberration, bold cel-shaded outlines, vibrant neon color palette, CRT scanlines, motion blur glitch, lo-fi digital artifacting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Analog Glitch Nostalgia — Neon Cel Smear",
+    "thumbnail": "samples/Analog_Glitch_Nostalgia_—_Neon_Cel_Smear.webp"
+  },
+  {
+    "name": "Bioluminescent Cosmic Abyss",
+    "prompt": "90s anime aesthetic, bioluminescent blue palette, cosmic surrealism, monumental scale contrast, ethereal atmospheric depth, futuristic city silhouettes, high-contrast lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Bioluminescent宇宙深渊",
+    "thumbnail": "samples/Bioluminescent_Cosmic_Abyss.webp"
+  },
+  {
+    "name": "Bold Cel-Shaded Realism",
+    "prompt": "bold ink outlines, sharp cel shading, muscular anatomy, high contrast shadows, graphic novel style, isolated on white background, vector art aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "大胆CelShaded写实",
+    "thumbnail": "samples/Bold_Cel-Shaded_Realism.webp"
+  },
+  {
+    "name": "Bold Crimson Anime Art",
+    "prompt": "solid crimson red background, high-contrast anime portrait, painterly digital illustration, bold graphic silhouette, vibrant color blocking, expressive character design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "大胆绯红动漫艺术",
+    "thumbnail": "samples/Bold_Crimson_Anime_Art.webp"
+  },
+  {
+    "name": "Bold Graphic Anime",
+    "prompt": "clean bold line art, anime illustration, flat color fills, high-contrast graphic style, expressive character design, vibrant color blocking, modern anime aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "大胆图形动漫",
+    "thumbnail": "samples/Bold_Graphic_Anime.webp"
+  },
+  {
+    "name": "Bold Graphic Vectorism",
+    "prompt": "vector illustration, bold graphic outlines, high-contrast cel shading, minimalist composition, earthy and crimson palette, clean vector linework. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "大胆图形Vectorism",
+    "thumbnail": "samples/Bold_Graphic_Vectorism.webp"
+  },
+  {
+    "name": "Celestial Graphic Noir",
+    "prompt": "graphic black silhouette, intricate gold line art, high-contrast illustration, celestial dark background, vintage cel-shaded aesthetic, ornate art nouveau details, muted jewel tone palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体图形黑色",
+    "thumbnail": "samples/Celestial_Graphic_Noir.webp"
+  },
+  {
+    "name": "Celestial Kinetic Anime",
+    "prompt": "90s anime aesthetic, cel-shaded energy explosion, vibrant cyan and deep blue palette, cosmic scale, cinematic lighting, volumetric clouds, mystical atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体动态动漫",
+    "thumbnail": "samples/Celestial_Kinetic_Anime.webp"
+  },
+  {
+    "name": "Cinematic Anime Nature",
+    "prompt": "high-quality 2D anime style, painterly background, expressive character art, cel-shaded, cinematic storytelling, lush natural environment, vibrant color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感动漫Nature",
+    "thumbnail": "samples/Cinematic_Anime_Nature.webp"
+  },
+  {
+    "name": "Cinematic Cyber-Noir Anime",
+    "prompt": "cinematic 90s anime style, high-contrast cel-shading, cyberpunk noir, moody desaturated palette, dramatic low-key lighting, sharp ink outlines, atmospheric depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感赛博黑色动漫",
+    "thumbnail": "samples/Cinematic_Cyber-Noir_Anime.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Anime",
+    "prompt": "cinematic retro anime style, nocturnal atmosphere, deep indigo and navy palette, high-contrast warm light, industrial silhouette, lo-fi melancholy, atmospheric twilight gradient, hand-drawn cel-shaded texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行动漫",
+    "thumbnail": "samples/Cinematic_Nocturnal_Anime.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Melancholy — Cel-Shaded Calm",
+    "prompt": "cinematic anime style, cool blue color palette, atmospheric lighting, desaturated tones, cel-shaded, melancholic mood, sharp line art, nocturnal cityscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行忧郁CelShaded平静",
+    "thumbnail": "samples/Cinematic_Nocturnal_Melancholy_—_Cel-Shaded_Calm.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Melancholy — Rainy Violet Anime",
+    "prompt": "melancholic anime style, cinematic urban nightscape, cool blue and purple tones, rain-soaked atmosphere, soft bokeh lighting, introspective emotional close-up, dramatic shadow play. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行忧郁Rainy紫罗兰动漫",
+    "thumbnail": "samples/Cinematic_Nocturnal_Melancholy_—_Rainy_Violet_Anime.webp"
+  },
+  {
+    "name": "Cinematic Retro Noir",
+    "prompt": "1990s anime cel style, dramatic chiaroscuro lighting, analog film grain, saturated retro palette, star lens flare, hand-drawn ink outlines, noir cinematic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感复古黑色",
+    "thumbnail": "samples/Cinematic_Retro_Noir.webp"
+  },
+  {
+    "name": "Classic Cel Animation",
+    "prompt": "1990s anime style, hand-drawn line art, cel animation, painterly gouache background, soft natural daylight, retro anime aesthetic, expressive character design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Classic Cel Animation",
+    "thumbnail": "samples/Classic_Cel_Animation.webp"
+  },
+  {
+    "name": "Cobalt Neon Pop",
+    "prompt": "vibrant anime illustration, cobalt blue palette, neon paint splatters, sharp cell-shading, graphic pop art, high contrast, expressive character portrait. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cobalt霓虹Pop",
+    "thumbnail": "samples/Cobalt_Neon_Pop.webp"
+  },
+  {
+    "name": "Distorted Graphic Pop",
+    "prompt": "extreme fisheye lens distortion, bold black ink outlines, textured risograph grain, dynamic spherical perspective, vibrant flat cell shading, nostalgic pop illustration, high-angle dramatic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted图形Pop",
+    "thumbnail": "samples/Distorted_Graphic_Pop.webp"
+  },
+  {
+    "name": "Dynamic Gritty Heroism",
+    "prompt": "character concept sheet, bold ink outlines, stylized digital illustration, dynamic heroic pose, high contrast lighting, cel-shaded textures, geometric anatomy, vibrant glowing accents. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态GrittyHeroism",
+    "thumbnail": "samples/Dynamic_Gritty_Heroism.webp"
+  },
+  {
+    "name": "Dynamic Stylized Character Design",
+    "prompt": "character concept art sheet, clean bold line art, flat cel-shaded, dynamic poses, stylized anatomy, minimalist neutral background, expressive character design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态风格化角色设计",
+    "thumbnail": "samples/Dynamic_Stylized_Character_Design.webp"
+  },
+  {
+    "name": "Ethereal Anime Vistas",
+    "prompt": "Studio Ghibli aesthetic, towering cumulus clouds, vibrant anime background, lush green landscape, hand-painted digital style, scenic panoramic vista, nostalgic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵动漫Vistas",
+    "thumbnail": "samples/Ethereal_Anime_Vistas.webp"
+  },
+  {
+    "name": "Ethereal Luminescent Fantasy",
+    "prompt": "bioluminescent glow, ethereal pastel fantasy, soft light diffusion, translucent glass-like textures, fluid organic shapes, dreamy digital illustration, iridescent watercolor gradients. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Luminescent幻想",
+    "thumbnail": "samples/Ethereal_Luminescent_Fantasy.webp"
+  },
+  {
+    "name": "Ethereal Pastel Anime — High-Key Mint",
+    "prompt": "soft painterly anime, pastel color palette, ethereal glowing light, wind-blown hair, delicate line art, dreamy atmosphere, sun-kissed lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Pastel Anime — High-Key Mint",
+    "thumbnail": "samples/Ethereal_Pastel_Anime_—_High-Key_Mint.webp"
+  },
+  {
+    "name": "Ethereal Pastel Anime — Woodblock Twilight",
+    "prompt": "anime aesthetic, pastel color palette, mirror water reflection, cumulus clouds, nostalgic solitude, twilight glow, clean line art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩动漫Woodblock暮光",
+    "thumbnail": "samples/Ethereal_Pastel_Anime_—_Woodblock_Twilight.webp"
+  },
+  {
+    "name": "Ethereal Pastel Dreamcore",
+    "prompt": "pastel dreamcore, ethereal whimsical fantasy, soft gradient sky, retro anime aesthetic, shimmering glitter overlay, delicate line art, magical realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩Dreamcore",
+    "thumbnail": "samples/Ethereal_Pastel_Dreamcore.webp"
+  },
+  {
+    "name": "Ethereal Pastel Dreamscape — Bubblegum Cel",
+    "prompt": "retro anime style, pastel pop art, whimsical surrealism, bold clean line art, dreamy color palette, cel-shaded illustration, nostalgic fantasy, soft gradient textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩DreamscapeBubblegumCel",
+    "thumbnail": "samples/Ethereal_Pastel_Dreamscape_—_Bubblegum_Cel.webp"
+  },
+  {
+    "name": "Ethereal Pastel Kawaii — Sparkling Lens Flare",
+    "prompt": "pastel anime style, ethereal high-key lighting, sparkling expressive eyes, cherry blossom background, clean digital line art, whimsical dreamlike atmosphere, soft focus lens flare. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩KawaiiSparklingLens光晕",
+    "thumbnail": "samples/Ethereal_Pastel_Kawaii_—_Sparkling_Lens_Flare.webp"
+  },
+  {
+    "name": "Ethereal Pastel Kawaii — Translucent Floral Glow",
+    "prompt": "kawaii anime illustration, pastel color palette, ethereal lighting, shimmering expressive eyes, whimsical dreamlike atmosphere, delicate line art, lolita fashion elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Pastel Kawaii — Translucent Floral Glow",
+    "thumbnail": "samples/Ethereal_Pastel_Kawaii_—_Translucent_Floral_Glow.webp"
+  },
+  {
+    "name": "Ethereal Pastel Melancholia",
+    "prompt": "ethereal dreamlike atmosphere, high-key overexposed lighting, delicate pencil and watercolor mix, cobalt and pastel color palette, soft glowing halo effect, nostalgic anime aesthetic, diffused iridescent glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩Melancholia",
+    "thumbnail": "samples/Ethereal_Pastel_Melancholia.webp"
+  },
+  {
+    "name": "Ethereal Pastel Surrealism — 90s Cel Ink",
+    "prompt": "lofi anime aesthetic, pastel color palette, surreal floating marine life, clean ink line art, nostalgic urban fantasy, magical realism, soft gradient lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩超现实90sCel墨",
+    "thumbnail": "samples/Ethereal_Pastel_Surrealism_—_90s_Cel_Ink.webp"
+  },
+  {
+    "name": "Ethereal Pastoral Dreamcore",
+    "prompt": "surreal pastoral landscape, painterly anime aesthetic, pastel golden hour lighting, colossal fluffy cumulus clouds, nostalgic dreamcore atmosphere, whimsical rolling green hills. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵PastoralDreamcore",
+    "thumbnail": "samples/Ethereal_Pastoral_Dreamcore.webp"
+  },
+  {
+    "name": "Ethereal Twilight Horizons",
+    "prompt": "Makoto Shinkai style, anime aesthetic, twilight sky gradient, glowing bokeh particles, cinematic landscape, pastel cloud formations, nostalgic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵暮光Horizons",
+    "thumbnail": "samples/Ethereal_Twilight_Horizons.webp"
+  },
+  {
+    "name": "Graphic Angular Urbanism",
+    "prompt": "cel-shaded, bold ink outlines, sharp angular proportions, vector art style, dynamic character design, high contrast graphic illustration, isolated on white background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形AngularUrbanism",
+    "thumbnail": "samples/Graphic_Angular_Urbanism.webp"
+  },
+  {
+    "name": "Graphic Melancholic Futurism",
+    "prompt": "ligne claire, retro anime aesthetic, bold ink outlines, high-contrast cel shading, minimalist composition, saturated crimson and blue, vast atmospheric landscapes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形忧郁Futurism",
+    "thumbnail": "samples/Graphic_Melancholic_Futurism.webp"
+  },
+  {
+    "name": "Graphic Melancholic Surrealism",
+    "prompt": "clean graphic outlines, flat cell-shaded aesthetic, stark color contrast, melancholic indie animation style, surreal minimalist composition, vibrant pop accents, expressive ink linework. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形忧郁超现实",
+    "thumbnail": "samples/Graphic_Melancholic_Surrealism.webp"
+  },
+  {
+    "name": "Graphic Minimalist Pop-Anime",
+    "prompt": "minimalist manga illustration, bold ink line art, solid vibrant background, flat color blocking, high contrast graphic art, slice of life anime, pop art aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形极简Pop动漫",
+    "thumbnail": "samples/Graphic_Minimalist_Pop-Anime.webp"
+  },
+  {
+    "name": "Graphic Neo-Anime Synthesis",
+    "prompt": "graphic anime illustration, bold line art, high-contrast flat shading, symmetrical composition, vibrant neon palette, mythological pop art, cyberpunk aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Neo动漫Synthesis",
+    "thumbnail": "samples/Graphic_Neo-Anime_Synthesis.webp"
+  },
+  {
+    "name": "Graphic Noir Anime",
+    "prompt": "vintage manga illustration, high contrast ink, fine-line hatching, muted cream background, gothic fashion portrait, cel-shaded noir, surreal ink art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形黑色动漫",
+    "thumbnail": "samples/Graphic_Noir_Anime.webp"
+  },
+  {
+    "name": "Graphic Pop Synthesis",
+    "prompt": "bold black outlines, flat color illustration, vibrant saturated palette, high-contrast graphic style, ligne claire influence, modern anime aesthetics, solid minimalist background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形PopSynthesis",
+    "thumbnail": "samples/Graphic_Pop_Synthesis.webp"
+  },
+  {
+    "name": "Graphic Retro Nostalgia",
+    "prompt": "cel-shaded illustration, bold ink outlines, sun-drenched lighting, vintage retro aesthetic, high-contrast shadows, nostalgic atmosphere, flat color blocks. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形复古Nostalgia",
+    "thumbnail": "samples/Graphic_Retro_Nostalgia.webp"
+  },
+  {
+    "name": "Graphic Risograph Pop",
+    "prompt": "risograph texture, bold graphic illustration, flat color blocking, retro anime style, high-contrast palette, minimalist vector art, halftone grain, sharp ink outlines. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形RisographPop",
+    "thumbnail": "samples/Graphic_Risograph_Pop.webp"
+  },
+  {
+    "name": "Graphic Surreal Pop — Cherry Mint Anime",
+    "prompt": "bold graphic illustration, saturated pop art palette, clean vector outlines, halftone and spiral textures, 90s retro anime influence, high-contrast color blocking, whimsical surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形超现实PopCherryMint动漫",
+    "thumbnail": "samples/Graphic_Surreal_Pop_—_Cherry_Mint_Anime.webp"
+  },
+  {
+    "name": "Graphic Surrealist Anime",
+    "prompt": "clean graphic line art, minimalist anime illustration, flat color vector style, surrealist dreamlike composition, vibrant high-contrast palette, melancholic serene atmosphere, cel-shaded digital aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形超现实动漫",
+    "thumbnail": "samples/Graphic_Surrealist_Anime.webp"
+  },
+  {
+    "name": "Iridescent Retro Futurist",
+    "prompt": "retro-futuristic airbrush art, iridescent holographic sheen, neon synthwave palette, starburst lens flares, chrome and metallic reflections, nostalgic 80s anime style, high-gloss cosmic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Iridescent复古未来主义",
+    "thumbnail": "samples/Iridescent_Retro_Futurist.webp"
+  },
+  {
+    "name": "Luminous Anime Fantasy",
+    "prompt": "vibrant anime style, sun-drenched lighting, ethereal lens flare, sky blue and white palette, wind-blown hair, whimsical fantasy elements, dreamy high-key aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮动漫幻想",
+    "thumbnail": "samples/Luminous_Anime_Fantasy.webp"
+  },
+  {
+    "name": "Luminous Anime Horizon — Painterly God-Rays",
+    "prompt": "anime aesthetic, towering cumulus clouds, painterly background, volumetric lighting, vibrant saturated landscape, Makoto Shinkai style, nostalgic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮动漫地平线绘画感GodRays",
+    "thumbnail": "samples/Luminous_Anime_Horizon_—_Painterly_God-Rays.webp"
+  },
+  {
+    "name": "Luminous Anime Horizon — Turquoise Cel Shading",
+    "prompt": "vibrant anime background, voluminous cumulus clouds, saturated color palette, high-altitude aerial perspective, cel-shaded digital illustration, lush green landscape, pristine turquoise water, painterly dreamlike aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮动漫地平线TurquoiseCelShading",
+    "thumbnail": "samples/Luminous_Anime_Horizon_—_Turquoise_Cel_Shading.webp"
+  },
+  {
+    "name": "Luminous Anime Pastoralism",
+    "prompt": "Studio Ghibli style, painterly anime background, lush pastoral landscape, dramatic cumulus clouds, sun-drenched backlighting, nostalgic summer atmosphere, vibrant color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮动漫Pastoralism",
+    "thumbnail": "samples/Luminous_Anime_Pastoralism.webp"
+  },
+  {
+    "name": "Luminous Aquatic Impressionism — Dappled Emerald Gold",
+    "prompt": "high-angle overhead view, shimmering turquoise emerald water, painterly anime aesthetic, dappled light reflections, fluid liquid distortion, ethereal surrealism, vibrant teal and gold palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮水生印象派Dappled翠绿金",
+    "thumbnail": "samples/Luminous_Aquatic_Impressionism_—_Dappled_Emerald_Gold.webp"
+  },
+  {
+    "name": "Luminous Azure Dreamscape",
+    "prompt": "luminous anime illustration, deep cobalt and indigo, bioluminescent highlights, surreal dreamlike atmosphere, ethereal soft glow, melancholic aquatic fantasy, high contrast dark background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮蔚蓝Dreamscape",
+    "thumbnail": "samples/Luminous_Azure_Dreamscape.webp"
+  },
+  {
+    "name": "Luminous Celestial Anime",
+    "prompt": "celestial anime fantasy, ethereal glowing highlights, deep space background, soft digital bloom, bioluminescent magical elements, vibrant neon rim light, clean digital line art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮天体动漫",
+    "thumbnail": "samples/Luminous_Celestial_Anime.webp"
+  },
+  {
+    "name": "Luminous Celestial Fantasy",
+    "prompt": "celestial fantasy anime, bioluminescent glow, deep indigo night sky, ethereal magical lighting, glowing crystalline elements, surreal cosmic dreamscape, vibrant high-contrast palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮天体幻想",
+    "thumbnail": "samples/Luminous_Celestial_Fantasy.webp"
+  },
+  {
+    "name": "Luminous Coastal Graphicism",
+    "prompt": "coastal impressionism, digital gouache painting, high-contrast sunlit landscape, saturated turquoise and earth tones, graphic cel-shaded illustration, visible painterly brushstrokes, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮海岸Graphicism",
+    "thumbnail": "samples/Luminous_Coastal_Graphicism.webp"
+  },
+  {
+    "name": "Luminous Cosmic Ethereal",
+    "prompt": "celestial anime aesthetic, glowing liquid elements, deep indigo and teal palette, painterly ethereal atmosphere, high-contrast starlight, surreal cosmic illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮宇宙空灵",
+    "thumbnail": "samples/Luminous_Cosmic_Ethereal.webp"
+  },
+  {
+    "name": "Luminous Crimson Arcana",
+    "prompt": "high-contrast dark fantasy, volumetric lighting, crimson and bioluminescent palette, cinematic anime illustration, intricate architectural detail, magical atmosphere, dramatic chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮绯红Arcana",
+    "thumbnail": "samples/Luminous_Crimson_Arcana.webp"
+  },
+  {
+    "name": "Luminous Dreamcore Anime",
+    "prompt": "painterly anime style, ethereal soft lighting, dreamy pastel palette, iridescent highlights, magical realism, intimate close-up portrait, whimsical fantasy elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Dreamcore动漫",
+    "thumbnail": "samples/Luminous_Dreamcore_Anime.webp"
+  },
+  {
+    "name": "Luminous Ethereal Pastel — Pink-Gold Sunset Anime",
+    "prompt": "dreamy pastel palette, shimmering light refraction, painterly anime style, ethereal soft-focus glow, luminous sunset hues, translucent iridescent textures, nostalgic summer mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Ethereal Pastel — Pink-Gold Sunset Anime",
+    "thumbnail": "samples/Luminous_Ethereal_Pastel_—_Pink-Gold_Sunset_Anime.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Dreamscapes — Cosmic Indigo Anime",
+    "prompt": "deep indigo and cobalt palette, ethereal celestial light, painterly brushstrokes, cinematic anime aesthetic, starlit nocturnal dreamscape, surreal cosmic scale, high contrast silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行Dreamscapes宇宙靛蓝动漫",
+    "thumbnail": "samples/Luminous_Nocturnal_Dreamscapes_—_Cosmic_Indigo_Anime.webp"
+  },
+  {
+    "name": "Luminous Nostalgic Anime — Crisp Cel Linework",
+    "prompt": "clean anime line art, slice of life, cinematic depth of field, soft natural lighting, nostalgic atmosphere, detailed background, vibrant cel-shaded. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Nostalgic Anime — Crisp Cel Linework",
+    "thumbnail": "samples/Luminous_Nostalgic_Anime_—_Crisp_Cel_Linework.webp"
+  },
+  {
+    "name": "Luminous Painterly Anime",
+    "prompt": "painterly digital art, expressive brushstrokes, cinematic lighting, vibrant saturated palette, sun-drenched atmosphere, dynamic anime style, nostalgic slice of life. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮绘画感动漫",
+    "thumbnail": "samples/Luminous_Painterly_Anime.webp"
+  },
+  {
+    "name": "Luminous Prismatic Dreamscape — Iridescent Caustic Bokeh",
+    "prompt": "prismatic light leaks, chromatic aberration, iridescent glass caustics, dreamlike ethereal atmosphere, vibrant saturated palette, soft-focus bokeh, digital anime aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮棱镜DreamscapeIridescentCausticBokeh",
+    "thumbnail": "samples/Luminous_Prismatic_Dreamscape_—_Iridescent_Caustic_Bokeh.webp"
+  },
+  {
+    "name": "Luminous Twilight Fantasy",
+    "prompt": "painterly anime style, twilight blue and warm orange, glowing lanterns, whimsical fantasy landscape, starlit night sky, cozy cottagecore, magical realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮暮光幻想",
+    "thumbnail": "samples/Luminous_Twilight_Fantasy.webp"
+  },
+  {
+    "name": "Luminous Twilight Nostalgia — Amber-Magenta Clouds",
+    "prompt": "painterly digital art, twilight color palette, volumetric sunset clouds, cinematic lighting, high contrast silhouettes, nostalgic anime aesthetic, vibrant indigo and orange. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Twilight Nostalgia — Amber-Magenta Clouds",
+    "thumbnail": "samples/Luminous_Twilight_Nostalgia_—_Amber-Magenta_Clouds.webp"
+  },
+  {
+    "name": "Luminous Twilight Nostalgia — Indigo-Orange Dusk",
+    "prompt": "anime background style, golden hour sunset, towering cumulonimbus clouds, painterly digital art, nostalgic twilight, vibrant dusk gradients, silhouette elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Twilight Nostalgia — Indigo-Orange Dusk",
+    "thumbnail": "samples/Luminous_Twilight_Nostalgia_—_Indigo-Orange_Dusk.webp"
+  },
+  {
+    "name": "Luminous Twilight Nostalgia — Retro Violet Anime",
+    "prompt": "golden hour glow, painterly digital illustration, twilight silhouette, soft dreamlike atmosphere, retro anime aesthetic, vibrant sunset gradient, textured brushstrokes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮暮光Nostalgia复古紫罗兰动漫",
+    "thumbnail": "samples/Luminous_Twilight_Nostalgia_—_Retro_Violet_Anime.webp"
+  },
+  {
+    "name": "Luminous Whimsical Nostalgia",
+    "prompt": "golden hour lighting, soft focus bokeh, nostalgic anime aesthetic, warm sun-drenched atmosphere, painterly digital illustration, whimsical storytelling, volumetric light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮WhimsicalNostalgia",
+    "thumbnail": "samples/Luminous_Whimsical_Nostalgia.webp"
+  },
+  {
+    "name": "Lush Arcane Cel-Animation",
+    "prompt": "90s fantasy anime style, cel-shaded illustration, hand-painted gouache background, dappled sunlight, glowing magic effects, lush forest atmosphere, sharp expressive line art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Lush Arcane Cel-Animation",
+    "thumbnail": "samples/Lush_Arcane_Cel-Animation.webp"
+  },
+  {
+    "name": "Melancholic Academic Realism",
+    "prompt": "detailed anime style, painterly textures, atmospheric lighting, muted earthy palette, melancholic introspection, intricate environmental storytelling. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "忧郁Academic写实",
+    "thumbnail": "samples/Melancholic_Academic_Realism.webp"
+  },
+  {
+    "name": "Midnight Cel Aesthetic",
+    "prompt": "1990s retro anime cel, hand-drawn ink linework, nocturnal moody color palette, cinematic atmospheric lighting, vintage OVA aesthetic, high contrast cell shading, nostalgic sci-fi design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "午夜Cel美学",
+    "thumbnail": "samples/Midnight_Cel_Aesthetic.webp"
+  },
+  {
+    "name": "Minimalist Pastel Anime",
+    "prompt": "minimalist anime illustration, clean line art, flat color blocks, pastel color palette, sharp graphic quality, surreal symbolic motifs, modern Japanese aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简粉彩动漫",
+    "thumbnail": "samples/Minimalist_Pastel_Anime.webp"
+  },
+  {
+    "name": "Monochromatic Blue Narrative",
+    "prompt": "monochromatic blue color palette, clean digital line art, lo-fi anime aesthetic, dreamy slice of life, soft airbrush shading, minimalist graphic composition, cozy bedroom interior. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色Blue叙事",
+    "thumbnail": "samples/Monochromatic_Blue_Narrative.webp"
+  },
+  {
+    "name": "Monumental Twilight Cloudscapes",
+    "prompt": "towering cumulus clouds, golden hour lighting, painterly anime style, deep indigo sky, surreal monumental scale, cinematic atmosphere, vibrant warm glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monumental Twilight Cloudscapes",
+    "thumbnail": "samples/Monumental_Twilight_Cloudscapes.webp"
+  },
+  {
+    "name": "Neon Cosmic Retro-Futurism",
+    "prompt": "retro-futuristic anime style, chromatic aberration, neon gradient lighting, chrome iridescence, cosmic surrealism, vintage 90s grain texture, synthwave color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹宇宙复古Futurism",
+    "thumbnail": "samples/Neon_Cosmic_Retro-Futurism.webp"
+  },
+  {
+    "name": "Neon Gritty Cyber-Graphic",
+    "prompt": "cyberpunk graphic illustration, neon noir palette, bold ink outlines, halftone dot texture, 90s anime aesthetic, high-contrast screenprint, retro-futuristic style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Gritty赛博图形",
+    "thumbnail": "samples/Neon_Gritty_Cyber-Graphic.webp"
+  },
+  {
+    "name": "Neon Nocturnal Illustrative",
+    "prompt": "vibrant neon palette, dreamy nocturnal atmosphere, retro illustrative style, high contrast lighting, grainy digital texture, cel-shaded graphic elements, surreal cosmic influence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹夜行Illustrative",
+    "thumbnail": "samples/Neon_Nocturnal_Illustrative.webp"
+  },
+  {
+    "name": "Neon Noir Retro-Futurism",
+    "prompt": "90s anime cel shading, retro neon noir, liquid chrome textures, high contrast moody lighting, vintage film grain, saturated cyberpunk palette, atmospheric airbrush art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹黑色复古Futurism",
+    "thumbnail": "samples/Neon_Noir_Retro-Futurism.webp"
+  },
+  {
+    "name": "Neon Noir VHS",
+    "prompt": "neon noir, lo-fi VHS aesthetic, chromatic aberration, 90s retro anime style, heavy analog film grain, cyberpunk atmosphere, saturated magenta and blue lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹黑色VHS",
+    "thumbnail": "samples/Neon_Noir_VHS.webp"
+  },
+  {
+    "name": "Neon Pastel Kawaii Core",
+    "prompt": "kawaii anime style, bold clean line art, pastel pop palette, vibrant neon accents, halftone textures, dreamy whimsical motifs, harajuku streetwear aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹粉彩Kawaii核心",
+    "thumbnail": "samples/Neon_Pastel_Kawaii_Core.webp"
+  },
+  {
+    "name": "Neon Psychedelic Retro-Noir",
+    "prompt": "1990s retro anime style, psychedelic airbrush gradients, glowing neon aura, solarized high contrast, hazy atmospheric glow, grainy analog texture, iridescent rim lighting, cosmic surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Psychedelic复古黑色",
+    "thumbnail": "samples/Neon_Psychedelic_Retro-Noir.webp"
+  },
+  {
+    "name": "Neon Punk Vectorism",
+    "prompt": "bold black vector outlines, vibrant neon lime and cyan, high-contrast cel-shading, sharp graphic design style, cyberpunk street-art influence, aggressive mascot aesthetic, clean digital vector art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹PunkVectorism",
+    "thumbnail": "samples/Neon_Punk_Vectorism.webp"
+  },
+  {
+    "name": "Neon Surreal Folklore",
+    "prompt": "bold black linework, psychedelic neon palette, Japanese folklore motifs, high-contrast anime aesthetic, surreal pop illustration, flat graphic composition, retro digital texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹超现实民俗",
+    "thumbnail": "samples/Neon_Surreal_Folklore.webp"
+  },
+  {
+    "name": "Neon Synthwave Graphic Noir",
+    "prompt": "cyberpunk graphic novel style, bold ink outlines, neon synthwave palette, high-contrast cel-shading, dynamic action lines, halftone textures, retro-futuristic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Synthwave图形黑色",
+    "thumbnail": "samples/Neon_Synthwave_Graphic_Noir.webp"
+  },
+  {
+    "name": "Nocturnal Glitch Surrealism",
+    "prompt": "vintage anime aesthetic, bioluminescent glow, CRT scanlines, surreal dreamlike atmosphere, indigo and amber palette, fine ink crosshatching, analog glitch artifacts. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行故障超现实",
+    "thumbnail": "samples/Nocturnal_Glitch_Surrealism.webp"
+  },
+  {
+    "name": "Nocturnal Graphic Cloudscapes",
+    "prompt": "stippled texture, indigo and cerulean palette, stylized cumulus clouds, woodblock print aesthetic, clean ink outlines, nocturnal atmosphere, cel-shaded graphic art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行图形Cloudscapes",
+    "thumbnail": "samples/Nocturnal_Graphic_Cloudscapes.webp"
+  },
+  {
+    "name": "Nocturnal Pastel Anime",
+    "prompt": "clean anime line art, high-contrast color palette, nocturnal atmosphere, pastel and neon fusion, surreal botanical elements, melancholic mood, 90s retro anime aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行粉彩动漫",
+    "thumbnail": "samples/Nocturnal_Pastel_Anime.webp"
+  },
+  {
+    "name": "Nocturnal Spectral Anime",
+    "prompt": "90s retro anime style, hand-painted watercolor background, deep indigo twilight, ethereal magenta bioluminescence, high-contrast moody lighting, gothic fantasy atmosphere, cel-shaded 2D illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行光谱动漫",
+    "thumbnail": "samples/Nocturnal_Spectral_Anime.webp"
+  },
+  {
+    "name": "Nostalgic Anime Blueprint",
+    "prompt": "90s anime style, character model sheet, cel animation, clean line art, flat color fills, retro aesthetic, hand-drawn charm, minimalist background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Anime Blueprint",
+    "thumbnail": "samples/Nostalgic_Anime_Blueprint.webp"
+  },
+  {
+    "name": "Nostalgic Anime Cloudscapes",
+    "prompt": "Studio Ghibli inspired background, towering cumulonimbus clouds, saturated cobalt blue sky, painterly gouache texture, nostalgic anime aesthetic, high-contrast silhouette, vast atmospheric scale. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Anime Cloudscapes",
+    "thumbnail": "samples/Nostalgic_Anime_Cloudscapes.webp"
+  },
+  {
+    "name": "Nostalgic Anime Still Life",
+    "prompt": "90s anime style, cel-shaded illustration, cozy domestic atmosphere, Studio Ghibli inspired, vibrant saturated palette, high-contrast lighting, hand-drawn digital art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic动漫静止生命",
+    "thumbnail": "samples/Nostalgic_Anime_Still_Life.webp"
+  },
+  {
+    "name": "Nostalgic Anime Summer",
+    "prompt": "studio ghibli background style, towering cumulonimbus clouds, vibrant cobalt blue sky, nostalgic anime aesthetic, painterly digital brushstrokes, high-contrast sunlit landscape, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic动漫夏",
+    "thumbnail": "samples/Nostalgic_Anime_Summer.webp"
+  },
+  {
+    "name": "Nostalgic Cel Animation — Gouache Screencap Softness",
+    "prompt": "90s anime cel style, hand-drawn aesthetic, soft diffused lighting, slice of life, nostalgic color palette, vintage anime screencap. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Cel Animation — Gouache Screencap Softness",
+    "thumbnail": "samples/Nostalgic_Cel_Animation_—_Gouache_Screencap_Softness.webp"
+  },
+  {
+    "name": "Nostalgic Cel Animation — Retro OVA Glow",
+    "prompt": "1990s anime aesthetic, vintage hand-drawn cel animation, soft-focus glow, painterly background, retro film grain, dramatic ambient lighting, nostalgic color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "NostalgicCelAnimation复古OVA发光",
+    "thumbnail": "samples/Nostalgic_Cel_Animation_—_Retro_OVA_Glow.webp"
+  },
+  {
+    "name": "Nostalgic Cel-Shaded Aviation",
+    "prompt": "1980s 1990s cel animation style, hand-painted gouache background, vintage aviation adventure, bold ink line art, nostalgic anime aesthetic, Studio Ghibli inspired, vibrant primary colors. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Cel-Shaded Aviation",
+    "thumbnail": "samples/Nostalgic_Cel-Shaded_Aviation.webp"
+  },
+  {
+    "name": "Nostalgic Cel-Shaded Storytelling",
+    "prompt": "retro anime aesthetic, clean ink line art, soft cel-shaded coloring, expressive character design, nostalgic cottagecore vibes, muted pastel palette, graphic indie comic style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Cel-Shaded Storytelling",
+    "thumbnail": "samples/Nostalgic_Cel-Shaded_Storytelling.webp"
+  },
+  {
+    "name": "Nostalgic Cinematic Anime",
+    "prompt": "classic 2D anime style, painterly backgrounds, golden hour rim lighting, dramatic sky palettes, cel-shaded characters, nostalgic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic电影感动漫",
+    "thumbnail": "samples/Nostalgic_Cinematic_Anime.webp"
+  },
+  {
+    "name": "Nostalgic Cobalt Surrealism",
+    "prompt": "cobalt blue sky, cumulonimbus clouds, painterly anime aesthetic, high-contrast shadows, nostalgic summer atmosphere, low-angle perspective, minimalist urban geometry, surreal illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "NostalgicCobalt超现实",
+    "thumbnail": "samples/Nostalgic_Cobalt_Surrealism.webp"
+  },
+  {
+    "name": "Nostalgic Cozy Illustration",
+    "prompt": "cozy retro anime style, warm golden hour lighting, soft textured brushwork, earthy color palette, nostalgic slice of life, detailed hand-drawn illustration, intimate domestic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "NostalgicCozy插画",
+    "thumbnail": "samples/Nostalgic_Cozy_Illustration.webp"
+  },
+  {
+    "name": "Nostalgic Forest Anime",
+    "prompt": "classic 2D anime style, painterly forest background, nostalgic cel-shaded aesthetic, soft dappled lighting, Studio Ghibli inspired, atmospheric fantasy scenery, organic earth tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic森林动漫",
+    "thumbnail": "samples/Nostalgic_Forest_Anime.webp"
+  },
+  {
+    "name": "Nostalgic Ghibli Pastoralism",
+    "prompt": "studio ghibli aesthetic, hand-drawn anime style, painterly background art, vibrant cel shading, nostalgic fantasy landscape, idyllic pastoral scenery, bright blue sky with fluffy clouds. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Ghibli Pastoralism",
+    "thumbnail": "samples/Nostalgic_Ghibli_Pastoralism.webp"
+  },
+  {
+    "name": "Nostalgic Ghibli Summer — Dappled Watercolor Gold",
+    "prompt": "studio ghibli style, dappled sunlight, painterly anime background, lush green foliage, nostalgic summer mood, hand-painted texture, pastoral countryside. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Ghibli Summer — Dappled Watercolor Gold",
+    "thumbnail": "samples/Nostalgic_Ghibli_Summer_—_Dappled_Watercolor_Gold.webp"
+  },
+  {
+    "name": "Nostalgic Ghibli Summer — Mediterranean Terracotta",
+    "prompt": "Studio Ghibli style, hand-painted anime background, vibrant Mediterranean summer, sun-drenched coastal town, dappled sunlight and shadows, saturated color palette, nostalgic whimsical atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Ghibli Summer — Mediterranean Terracotta",
+    "thumbnail": "samples/Nostalgic_Ghibli_Summer_—_Mediterranean_Terracotta.webp"
+  }
+]

@@ -1,0 +1,198 @@
+[
+  {
+    "name": "Spectral Kinetic Chiaroscuro",
+    "prompt": "long exposure photography, chiaroscuro lighting, motion blur, painterly film grain, dreamlike atmosphere, digital glitch, sepia and crimson tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱动态Chiaroscuro",
+    "thumbnail": "samples/Spectral_Kinetic_Chiaroscuro.webp"
+  },
+  {
+    "name": "Stippled Surrealist Canopy",
+    "prompt": "verdant pointillist texture, stylized dense foliage, chiaroscuro lighting, graphic organic composition, aerial naive perspective, magical realism oil painting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Stippled Surrealist Canopy",
+    "thumbnail": "samples/Stippled_Surrealist_Canopy.webp"
+  },
+  {
+    "name": "Structured Digital Pastoralism",
+    "prompt": "fragmented landscape, geometric grid overlay, digital glitch distortion, muted earthy tones, painterly texture, surreal collage, atmospheric hazy light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Structured Digital Pastoralism",
+    "thumbnail": "samples/Structured_Digital_Pastoralism.webp"
+  },
+  {
+    "name": "Sublime Apocalyptic Neoclassicism",
+    "prompt": "neoclassical architecture, dramatic chiaroscuro, fiery apocalyptic inferno, silhouetted human figures, sublime scale, expressive oil painting, thick impasto texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "崇高ApocalypticNeoclassicism",
+    "thumbnail": "samples/Sublime_Apocalyptic_Neoclassicism.webp"
+  },
+  {
+    "name": "Submerged Chiaroscuro Mysticism",
+    "prompt": "impasto oil painting, dripping paint, chiaroscuro lighting, aquatic atmosphere, deep teal and cerulean palette, gestural brushstrokes, ethereal mysticism, textured canvas. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Submerged Chiaroscuro Mysticism",
+    "thumbnail": "samples/Submerged_Chiaroscuro_Mysticism.webp"
+  },
+  {
+    "name": "Submerged Impasto Surrealism",
+    "prompt": "thick impasto oil painting, underwater caustic lighting, surreal submerged atmosphere, expressive visible brushstrokes, deep teal and emerald palette, refracted light patterns, dreamlike fluid motion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Submerged厚涂超现实",
+    "thumbnail": "samples/Submerged_Impasto_Surrealism.webp"
+  },
+  {
+    "name": "Surreal Nocturnal Cerulean",
+    "prompt": "monochromatic cerulean and indigo palette, thick impasto palette knife textures, surreal dreamlike atmosphere, high contrast chiaroscuro lighting, gouache and oil painting aesthetic, billowing cumulonimbus clouds, melancholic nocturnal mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实夜行Cerulean",
+    "thumbnail": "samples/Surreal_Nocturnal_Cerulean.webp"
+  },
+  {
+    "name": "Surrealist Horizon Landscapes",
+    "prompt": "magrittean surrealism, smooth oil painting texture, dreamlike symbolism, vast horizon landscape, uncanny juxtaposition, soft directional lighting, meticulous brushwork. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实地平线Landscapes",
+    "thumbnail": "samples/Surrealist_Horizon_Landscapes.webp"
+  },
+  {
+    "name": "Tactile Deconstructed Realism",
+    "prompt": "heavy impasto texture, sculptural oil paint, torn paper collage, deconstructed portraiture, tactile mixed media, muted earth tones, fine art oil painting, distorted realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉Deconstructed写实",
+    "thumbnail": "samples/Tactile_Deconstructed_Realism.webp"
+  },
+  {
+    "name": "Tactile Emerald Minimalism",
+    "prompt": "heavy impasto oil painting, tactile palette knife texture, monochromatic emerald green palette, high-angle bird's-eye perspective, sculptural brushstrokes, minimalist isolation, shimmering light caustics, surrealist atmospheric depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉翠绿极简主义",
+    "thumbnail": "samples/Tactile_Emerald_Minimalism.webp"
+  },
+  {
+    "name": "Tactile Fauvist Expressionism",
+    "prompt": "thick impasto oil painting, fauvist color palette, expressive brushstrokes, bold black outlines, naive art style, saturated color blocking, textured canvas grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉Fauvist表现主义",
+    "thumbnail": "samples/Tactile_Fauvist_Expressionism.webp"
+  },
+  {
+    "name": "Tactile Impasto Expressionism",
+    "prompt": "heavy impasto oil painting, sculptural palette knife texture, expressive gestural brushstrokes, high-contrast lighting, saturated pastel and primary palette, tactile paint layers, modern expressionist portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉厚涂表现主义",
+    "thumbnail": "samples/Tactile_Impasto_Expressionism.webp"
+  },
+  {
+    "name": "Tenebrist Botanical Melancholia",
+    "prompt": "chiaroscuro lighting, Dutch Golden Age style, tenebrism, moody dark background, classical oil painting texture, minimalist botanical, craquelure, atmospheric realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Tenebrist Botanical Melancholia",
+    "thumbnail": "samples/Tenebrist_Botanical_Melancholia.webp"
+  },
+  {
+    "name": "Tenebrous Baroque Melancholia",
+    "prompt": "chiaroscuro, tenebrous oil painting, somber atmosphere, craquelure texture, dramatic lowkey lighting, melancholic romanticism, earthy muted tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Tenebrous Baroque Melancholia",
+    "thumbnail": "samples/Tenebrous_Baroque_Melancholia.webp"
+  },
+  {
+    "name": "Tenebrous Ethereal Classicism",
+    "prompt": "chiaroscuro, tenebrism, painterly realism, ethereal lighting, sfumato, celestial glow, classical portraiture, high contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Tenebrous Ethereal Classicism",
+    "thumbnail": "samples/Tenebrous_Ethereal_Classicism.webp"
+  },
+  {
+    "name": "Textured Atmospheric Expressionism",
+    "prompt": "heavy impasto oil painting, sculptural palette knife texture, atmospheric moody lighting, swirling dynamic brushstrokes, muted teal and sage palette, chiaroscuro, expressive painterly style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理氛围表现主义",
+    "thumbnail": "samples/Textured_Atmospheric_Expressionism.webp"
+  },
+  {
+    "name": "Textured Cobalt Expressionism",
+    "prompt": "heavy impasto oil painting, monochromatic cobalt palette, thick palette knife texture, dramatic chiaroscuro lighting, sculptural paint layers, expressive brushwork, indigo and icy blue tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理Cobalt表现主义",
+    "thumbnail": "samples/Textured_Cobalt_Expressionism.webp"
+  },
+  {
+    "name": "Textured Impasto Landscapes",
+    "prompt": "impasto oil painting, thick palette knife texture, visible brushstrokes, expressive landscape, tactile canvas texture, vibrant color contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理厚涂Landscapes",
+    "thumbnail": "samples/Textured_Impasto_Landscapes.webp"
+  },
+  {
+    "name": "Textured Impressionist Atmosphere",
+    "prompt": "heavy impasto oil painting, thick palette knife texture, expressive brushstrokes, atmospheric chiaroscuro lighting, rich jewel tones, vibrant color contrast, painterly impressionism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理印象派Atmosphere",
+    "thumbnail": "samples/Textured_Impressionist_Atmosphere.webp"
+  },
+  {
+    "name": "Textured Luminous Impressionism",
+    "prompt": "heavy impasto oil painting, visible tactile brushstrokes, sun-drenched atmosphere, expressive figurative realism, textured canvas, chiaroscuro lighting, impressionist influence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理明亮印象派",
+    "thumbnail": "samples/Textured_Luminous_Impressionism.webp"
+  },
+  {
+    "name": "Textured Pastoral Realism",
+    "prompt": "impasto oil painting, visible brushstrokes, earthy color palette, chiaroscuro lighting, textured canvas, 19th century realism, atmospheric depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理Pastoral写实",
+    "thumbnail": "samples/Textured_Pastoral_Realism.webp"
+  },
+  {
+    "name": "Textured Verdant Impressionism",
+    "prompt": "thick impasto oil painting, lush verdant forest landscape, naive folk art style, painterly brushstrokes, dappled sunlight, solitary figure in nature, emerald and teal palette, tactile surface texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理翠绿印象派",
+    "thumbnail": "samples/Textured_Verdant_Impressionism.webp"
+  },
+  {
+    "name": "Uncanny Liminal Pastel",
+    "prompt": "liminal space, uncanny surrealism, pastel color palette, symmetrical composition, cinematic dreamcore, atmospheric lighting, retro-institutional, ornate baroque detailing. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Uncanny阈限粉彩",
+    "thumbnail": "samples/Uncanny_Liminal_Pastel.webp"
+  },
+  {
+    "name": "Velvet Surrealist Contrast",
+    "prompt": "cobalt blue background, tactile velvet texture, high-contrast surrealism, golden hour lighting, minimalist composition, vibrant primary palette, sharp dramatic shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天鹅绒超现实对比",
+    "thumbnail": "samples/Velvet_Surrealist_Contrast.webp"
+  },
+  {
+    "name": "Vibrant Impasto Expressionism",
+    "prompt": "thick impasto oil painting, palette knife texture, saturated color palette, expressive brushwork, dramatic natural light, vibrant post-impressionism, sculptural paint layers. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳厚涂表现主义",
+    "thumbnail": "samples/Vibrant_Impasto_Expressionism.webp"
+  },
+  {
+    "name": "Vintage Surrealist Dreamscapes",
+    "prompt": "Magrittean surrealism, vintage analog texture, floating everyday objects, clear blue sky, fluffy cumulus clouds, uncanny juxtaposition, sharp sunlight, mid-century aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古超现实Dreamscapes",
+    "thumbnail": "samples/Vintage_Surrealist_Dreamscapes.webp"
+  },
+  {
+    "name": "Visceral Baroque Realism",
+    "prompt": "chiaroscuro oil painting, heavy impasto texture, psychological realism, dramatic tenebrism, earthy color palette, baroque figurative style, raw canvas aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "内脏感巴洛克写实",
+    "thumbnail": "samples/Visceral_Baroque_Realism.webp"
+  },
+  {
+    "name": "Vivid Impasto Expressionism",
+    "prompt": "vivid impasto brushstrokes, saturated color palette, fauvism inspired, dynamic light and shadow, expressive oil painting style, stylized non-naturalistic colors, bold color blocking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "生动厚涂表现主义",
+    "thumbnail": "samples/Vivid_Impasto_Expressionism.webp"
+  }
+]

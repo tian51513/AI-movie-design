@@ -1,0 +1,51 @@
+[
+  {
+    "name": "Prismatic Digital Fragmentation — Crystalline Warm-Cold",
+    "prompt": "chromatic aberration, pixel sorting, digital glitch distortion, prismatic light refraction, fragmented crystalline textures, cinematic lighting, surreal digital decay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜数字碎片化Crystalline暖冷",
+    "thumbnail": "samples/Prismatic_Digital_Fragmentation_—_Crystalline_Warm-Cold.webp"
+  },
+  {
+    "name": "Raw Analog Intimacy",
+    "prompt": "extreme macro photography, 35mm film grain, raw skin texture, warm cinematic lighting, tactile detail, vintage analog aesthetic, intense emotional gaze. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "原始模拟Intimacy",
+    "thumbnail": "samples/Raw_Analog_Intimacy.webp"
+  },
+  {
+    "name": "Spectral Motion Noir — Blue-Grey Drift",
+    "prompt": "double exposure, motion blur, cool-toned color palette, analog film grain, spectral silhouettes, chromatic aberration, cinematic lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱运动黑色BlueGreyDrift",
+    "thumbnail": "samples/Spectral_Motion_Noir_—_Blue-Grey_Drift.webp"
+  },
+  {
+    "name": "Sublime Celestial Singularity",
+    "prompt": "gravitational lensing, golden accretion disk, cinematic deep space, event horizon, high-contrast plasma, cosmic scale, photorealistic sci-fi. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "崇高天体Singularity",
+    "thumbnail": "samples/Sublime_Celestial_Singularity.webp"
+  },
+  {
+    "name": "Submerged Twilight Surrealism",
+    "prompt": "split-level surrealism, nocturnal water reflection, cinematic chiaroscuro, dreamlike juxtaposition, deep blue and gold palette, sharp focus textures, magical realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Submerged暮光超现实",
+    "thumbnail": "samples/Submerged_Twilight_Surrealism.webp"
+  },
+  {
+    "name": "Vibrant Whimsical CGI",
+    "prompt": "3D animation style, vibrant saturated colors, expressive character design, cinematic lighting, extreme low-angle perspective, tactile fur and knit textures, whimsical pop surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳WhimsicalCGI",
+    "thumbnail": "samples/Vibrant_Whimsical_CGI.webp"
+  },
+  {
+    "name": "Visceral Bio-Mechanical Realism",
+    "prompt": "hyper-realistic creature, cinematic key lighting, tactile organic textures, gritty sci-fi design, shallow depth of field, biopunk aesthetic, intense macro detail. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "内脏感Bio机械写实",
+    "thumbnail": "samples/Visceral_Bio-Mechanical_Realism.webp"
+  }
+]

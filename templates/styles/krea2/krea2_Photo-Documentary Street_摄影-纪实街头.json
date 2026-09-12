@@ -1,0 +1,604 @@
+[
+  {
+    "name": "Analog Nostalgia Tech",
+    "prompt": "1970s analog film grain, warm kodachrome palette, vintage hifi aesthetic, retro CRT scanlines, moody amber lighting, tactile mechanical textures, nostalgic sci-fi atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟NostalgiaTech",
+    "thumbnail": "samples/Analog_Nostalgia_Tech.webp"
+  },
+  {
+    "name": "Candid Cinematic Atmosphere",
+    "prompt": "wind-swept hair, shallow depth of field, candid portraiture, cinematic film look, natural lighting, authentic emotion, atmospheric texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Candid Cinematic Atmosphere",
+    "thumbnail": "samples/Candid_Cinematic_Atmosphere.webp"
+  },
+  {
+    "name": "Cinematic Analog Isolation",
+    "prompt": "35mm film grain, cinematic desaturated palette, muted moody lighting, liminal atmosphere, retro analog texture, high contrast shadow play, candid observational composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感模拟Isolation",
+    "thumbnail": "samples/Cinematic_Analog_Isolation.webp"
+  },
+  {
+    "name": "Cinematic Atmospheric Grunge",
+    "prompt": "cinematic realism, desaturated cool palette, wind-swept hair, high-contrast shadows, gritty urban texture, candid portraiture, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感氛围Grunge",
+    "thumbnail": "samples/Cinematic_Atmospheric_Grunge.webp"
+  },
+  {
+    "name": "Cinematic Earthy Nostalgia",
+    "prompt": "cinematic realism, muted earthy tones, atmospheric fog, 35mm film grain, shallow depth of field, diffused natural lighting, overgrown wilderness. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感泥土色Nostalgia",
+    "thumbnail": "samples/Cinematic_Earthy_Nostalgia.webp"
+  },
+  {
+    "name": "Cinematic Forest Realism",
+    "prompt": "cinematic documentary style, dappled sunlight, lush forest canopy, low-angle perspective, earthy green palette, 35mm film aesthetic, candid portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感森林写实",
+    "thumbnail": "samples/Cinematic_Forest_Realism.webp"
+  },
+  {
+    "name": "Cinematic Institutional Realism",
+    "prompt": "cinematic realism, analog film grain, desaturated teal and grey palette, shallow depth of field, low-key moody lighting, documentary-style photography, sterile institutional environment. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Institutional写实",
+    "thumbnail": "samples/Cinematic_Institutional_Realism.webp"
+  },
+  {
+    "name": "Cinematic Liminal Noir — Sodium Flash",
+    "prompt": "cinematic 35mm film grain, liminal space atmosphere, nocturnal urban isolation, cool cyan and sodium yellow lighting, shallow depth of field, candid flash photography, moody high contrast shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感阈限黑色SodiumFlash",
+    "thumbnail": "samples/Cinematic_Liminal_Noir_—_Sodium_Flash.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Introspection — Silver Dusk",
+    "prompt": "cinematic 35mm film grain, low-key moody lighting, shallow depth of field, cool blue and slate tones, introspective candid portrait, urban nocturnal bokeh, atmospheric blur. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行Introspection银黄昏",
+    "thumbnail": "samples/Cinematic_Nocturnal_Introspection_—_Silver_Dusk.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Noir — Toxic Green Accent",
+    "prompt": "cinematic noir, high contrast chiaroscuro, nocturnal atmosphere, saturated dramatic lighting, moody twilight, deep shadows, atmospheric fog. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行黑色ToxicGreenAccent",
+    "thumbnail": "samples/Cinematic_Nocturnal_Noir_—_Toxic_Green_Accent.webp"
+  },
+  {
+    "name": "Cinematic Nostalgic Realism",
+    "prompt": "35mm film photography, muted desaturated color palette, cinematic film grain, soft naturalistic lighting, urban realism, nostalgic atmosphere, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Nostalgic写实",
+    "thumbnail": "samples/Cinematic_Nostalgic_Realism.webp"
+  },
+  {
+    "name": "Cinematic Overhead Realism",
+    "prompt": "high-angle overhead perspective, cinematic film aesthetic, muted earth and concrete tones, diffused natural lighting, raw candid realism, weathered surface textures, moody atmospheric composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Overhead写实",
+    "thumbnail": "samples/Cinematic_Overhead_Realism.webp"
+  },
+  {
+    "name": "Cinematic Urban Chiaroscuro — Documentary Concrete",
+    "prompt": "cinematic urban chiaroscuro, dramatic directional lighting, deep architectural shadows, gritty city textures, minimalist urban composition, high-contrast street photography, solitary human figures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Urban Chiaroscuro — Documentary Concrete",
+    "thumbnail": "samples/Cinematic_Urban_Chiaroscuro_—_Documentary_Concrete.webp"
+  },
+  {
+    "name": "Cinematic Urban Kineticism — Flash Burst Amber",
+    "prompt": "cinematic urban photography, motion blur, shallow depth of field, direct flash, film grain texture, teal and amber lighting, candid nightlife. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市KineticismFlashBurst琥珀",
+    "thumbnail": "samples/Cinematic_Urban_Kineticism_-_Flash_Burst_Amber.webp"
+  },
+  {
+    "name": "Cinematic Urban Low-Angle",
+    "prompt": "low-angle perspective, wide-angle lens distortion, streetwear fashion, cinematic urban lighting, sharp contrast, brutalist architectural background, worm's-eye view. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市Low角",
+    "thumbnail": "samples/Cinematic_Urban_Low-Angle.webp"
+  },
+  {
+    "name": "Cinematic Urban Melancholy — Overcast Grey",
+    "prompt": "cinematic street photography, muted desaturated palette, wet asphalt reflections, overcast atmospheric lighting, vintage urban architecture, candid narrative realism, shallow depth of field, grainy film aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市忧郁OvercastGrey",
+    "thumbnail": "samples/Cinematic_Urban_Melancholy_-_Overcast_Grey.webp"
+  },
+  {
+    "name": "Cinematic Urban Melancholy — Sodium Night Blur",
+    "prompt": "cinematic motion blur, moody cool color palette, urban isolation, film grain texture, shutter drag effect, liminal transit spaces, atmospheric low light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市忧郁Sodium夜模糊",
+    "thumbnail": "samples/Cinematic_Urban_Melancholy_—_Sodium_Night_Blur.webp"
+  },
+  {
+    "name": "Cinematic Urban Motion — Ghosted Long Exposure",
+    "prompt": "long exposure photography, motion blur, urban isolation, sharp central subject, cinematic film grain, surreal juxtaposition, high-angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Urban Motion — Ghosted Long Exposure",
+    "thumbnail": "samples/Cinematic_Urban_Motion_—_Ghosted_Long_Exposure.webp"
+  },
+  {
+    "name": "Cinematic Urban Motion — Sepia Shutter Drag",
+    "prompt": "motion blur street photography, cinematic shutter drag, intentional camera movement, muted sepia and amber tones, melancholic urban atmosphere, dreamy impressionistic light streaks, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市运动棕褐ShutterDrag",
+    "thumbnail": "samples/Cinematic_Urban_Motion_-_Sepia_Shutter_Drag.webp"
+  },
+  {
+    "name": "Cinematic Urban Nocturne — Golden Bokeh",
+    "prompt": "cinematic 35mm film grain, shallow depth of field, atmospheric urban bokeh, candid over-the-shoulder portrait, moody low-key lighting, nocturnal color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Urban Nocturne — Golden Bokeh",
+    "thumbnail": "samples/Cinematic_Urban_Nocturne_-_Golden_Bokeh.webp"
+  },
+  {
+    "name": "Cinematic Urban Nostalgia — Overcast Beige",
+    "prompt": "35mm film aesthetic, muted cinematic tones, shallow depth of field, diffused natural light, urban minimalism, candid street photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市NostalgiaOvercastBeige",
+    "thumbnail": "samples/Cinematic_Urban_Nostalgia_—_Overcast_Beige.webp"
+  },
+  {
+    "name": "Cinematic Urban Nostalgia — Tungsten Teal",
+    "prompt": "cinematic 35mm film aesthetic, teal and amber color grading, nostalgic liminal space, moody urban lighting, warm tungsten glow, retro urban transit, high-contrast shadows, analog grain texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市NostalgiaTungsten青蓝",
+    "thumbnail": "samples/Cinematic_Urban_Nostalgia_—_Tungsten_Teal.webp"
+  },
+  {
+    "name": "Cinematic Urban Youth",
+    "prompt": "low-angle perspective, overcast sky background, cinematic documentary style, muted desaturated tones, film grain texture, candid urban portraiture, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市Youth",
+    "thumbnail": "samples/Cinematic_Urban_Youth.webp"
+  },
+  {
+    "name": "Corrupted Digital Realism",
+    "prompt": "glitch art, pixel sorting, datamoshing, digital artifacting, analog-digital hybrid, corrupted realism, chromatic aberration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Corrupted数字写实",
+    "thumbnail": "samples/Corrupted_Digital_Realism.webp"
+  },
+  {
+    "name": "Distorted Urban Energy",
+    "prompt": "fisheye lens distortion, exaggerated forced perspective, vibrant saturated colors, dynamic streetwear photography, bright sunlight, Y2K aesthetic, wide-angle urban portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted都市能量",
+    "thumbnail": "samples/Distorted_Urban_Energy.webp"
+  },
+  {
+    "name": "Distorted Urban Grunge",
+    "prompt": "fisheye lens, extreme wide-angle, Y2K grunge aesthetic, distorted perspective, gritty urban setting, high-contrast photography, lo-fi street fashion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted Urban Grunge",
+    "thumbnail": "samples/Distorted_Urban_Grunge.webp"
+  },
+  {
+    "name": "Distorted Urban Nostalgia",
+    "prompt": "extreme fisheye lens distortion, wide-angle perspective, harsh on-camera flash, candid snapshot aesthetic, high-contrast lighting, retro color grading, lo-fi film grain, circular vignette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted Urban Nostalgia",
+    "thumbnail": "samples/Distorted_Urban_Nostalgia.webp"
+  },
+  {
+    "name": "Distorted Urban Perspective",
+    "prompt": "wide-angle lens distortion, low-angle perspective, streetwear, candid photography, diffused lighting, raw urban texture, fish-eye aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted都市透视",
+    "thumbnail": "samples/Distorted_Urban_Perspective.webp"
+  },
+  {
+    "name": "Dynamic Alpine Sun-Drenched",
+    "prompt": "fisheye lens distortion, low-angle wide perspective, bright direct sunlight, vibrant saturated colors, analog film grain, dynamic action freeze-frame, alpine environment. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dynamic Alpine Sun-Drenched",
+    "thumbnail": "samples/Dynamic_Alpine_Sun-Drenched.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Action — 90s Summer Flare",
+    "prompt": "fisheye lens distortion, extreme wide-angle, vibrant saturated colors, analog film grain, dynamic POV perspective, bright sunburst, high contrast summer lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼行动90s夏光晕",
+    "thumbnail": "samples/Dynamic_Fisheye_Action_—_90s_Summer_Flare.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Distortion",
+    "prompt": "fisheye lens, extreme wide-angle, curvilinear distortion, dynamic perspective, candid photography, Y2K skate aesthetic, bold saturated colors. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼Distortion",
+    "thumbnail": "samples/Dynamic_Fisheye_Distortion.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Nostalgia — Faded 70s Amber",
+    "prompt": "extreme fisheye lens distortion, analog film grain, low-angle candid photography, sun-drenched warm lighting, Y2K urban aesthetic, circular vignette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼NostalgiaFaded70s琥珀",
+    "thumbnail": "samples/Dynamic_Fisheye_Nostalgia_—_Faded_70s_Amber.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Nostalgia — Midday Primaries",
+    "prompt": "fisheye lens distortion, extreme low-angle perspective, 90s analog film aesthetic, vibrant sun-drenched lighting, candid street snapshot, dynamic wide-angle composition, saturated primary colors, curved horizon. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼NostalgiaMiddayPrimaries",
+    "thumbnail": "samples/Dynamic_Fisheye_Nostalgia_—_Midday_Primaries.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Pop",
+    "prompt": "fisheye lens distortion, low-angle dynamic shot, saturated retro colors, bright direct sunlight, Y2K streetwear style, forced perspective, vibrant urban aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼Pop",
+    "thumbnail": "samples/Dynamic_Fisheye_Pop.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Streetwear — 90s Documentary Grit",
+    "prompt": "extreme fisheye lens, low-angle perspective, 90s skate photography, vivid blue sky, wide-angle distortion, high-contrast sunlight, streetwear fashion, dynamic action shot. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dynamic Fisheye Streetwear — 90s Documentary Grit",
+    "thumbnail": "samples/Dynamic_Fisheye_Streetwear_—_90s_Documentary_Grit.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Streetwear — Studio White Pop",
+    "prompt": "fisheye lens distortion, high-contrast studio lighting, stark white background, dynamic low-angle perspective, 90s streetwear aesthetic, sharp focus portraiture, saturated color blocking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dynamic Fisheye Streetwear — Studio White Pop",
+    "thumbnail": "samples/Dynamic_Fisheye_Streetwear_—_Studio_White_Pop.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Streetwear — Vivid Hard Light",
+    "prompt": "fisheye lens, extreme low-angle, forced perspective, vibrant color saturation, streetwear aesthetic, harsh sunlight, high-energy urban portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼Streetwear生动硬浅",
+    "thumbnail": "samples/Dynamic_Fisheye_Streetwear_—_Vivid_Hard_Light.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Summer",
+    "prompt": "fisheye lens distortion, low angle POV, sun-drenched lighting, vibrant color palette, candid atmosphere, analog film grain, wide-angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼夏",
+    "thumbnail": "samples/Dynamic_Fisheye_Summer.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Surrealism",
+    "prompt": "extreme fisheye lens distortion, ultra-wide angle perspective, analog film grain, vibrant saturated colors, harsh midday sunlight, low angle dynamic composition, Y2K street-style aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼超现实",
+    "thumbnail": "samples/Dynamic_Fisheye_Surrealism.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Urbanism — Raw Contrast",
+    "prompt": "fisheye lens distortion, extreme low-angle perspective, urban streetwear fashion, wide-angle warp, candid youth culture, high-contrast aesthetic, dynamic architectural framing. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼Urbanism原始对比",
+    "thumbnail": "samples/Dynamic_Fisheye_Urbanism_—_Raw_Contrast.webp"
+  },
+  {
+    "name": "Dynamic Kinetic Minimalism",
+    "prompt": "intentional camera movement, motion blur, cinematic street photography, minimalist color palette, high-angle perspective, high-contrast shadows, dynamic energy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态动态极简主义",
+    "thumbnail": "samples/Dynamic_Kinetic_Minimalism.webp"
+  },
+  {
+    "name": "Dynamic Nostalgic Summer",
+    "prompt": "35mm film grain, fish-eye lens distortion, high-contrast sunlight, saturated summer palette, low-angle dynamic composition, nostalgic analog aesthetic, candid youthful energy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态Nostalgic夏",
+    "thumbnail": "samples/Dynamic_Nostalgic_Summer.webp"
+  },
+  {
+    "name": "Dynamic Retro Fisheye",
+    "prompt": "fisheye lens distortion, low-angle perspective, saturated retro colors, Y2K streetwear fashion, harsh direct sunlight, analog film grain, dynamic editorial composition, vibrant outdoor aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态复古鱼眼",
+    "thumbnail": "samples/Dynamic_Retro_Fisheye.webp"
+  },
+  {
+    "name": "Dynamic Retro Street Nostalgia",
+    "prompt": "extreme low angle shot, wide-angle lens distortion, analog film grain, vivid blue sky background, harsh sunlight, candid streetwear aesthetic, dynamic perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态复古街道Nostalgia",
+    "thumbnail": "samples/Dynamic_Retro_Street_Nostalgia.webp"
+  },
+  {
+    "name": "Dynamic Sunlit Streetwear",
+    "prompt": "low angle shot, worm's eye view, bright direct sunlight, vibrant saturated colors, clear blue sky, candid portraiture, streetwear aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态SunlitStreetwear",
+    "thumbnail": "samples/Dynamic_Sunlit_Streetwear.webp"
+  },
+  {
+    "name": "Dynamic Urban Fisheye — Gritty Analog Sun",
+    "prompt": "fisheye lens, extreme low-angle shot, urban street photography, dynamic perspective, vibrant blue sky, gritty film grain, streetwear aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态都市鱼眼Gritty模拟日",
+    "thumbnail": "samples/Dynamic_Urban_Fisheye_—_Gritty_Analog_Sun.webp"
+  },
+  {
+    "name": "Ethereal Verdant Perspectives",
+    "prompt": "high-angle drone perspective, lush forest canopy, dappled golden sunlight, mossy emerald palette, cinematic moody lighting, intricate natural textures, whimsical realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵翠绿视角",
+    "thumbnail": "samples/Ethereal_Verdant_Perspectives.webp"
+  },
+  {
+    "name": "Gritty Analog Snapshot",
+    "prompt": "harsh direct flash, analog film grain, lo-fi aesthetic, vintage snapshot, high contrast, candid photography, chemical degradation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Analog Snapshot",
+    "thumbnail": "samples/Gritty_Analog_Snapshot.webp"
+  },
+  {
+    "name": "Gritty Cinematic Brutalism",
+    "prompt": "fisheye lens distortion, analog film grain, low angle cinematic shot, desaturated moody tones, brutalist urban backdrop, harsh direct flash, raw youth culture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Cinematic Brutalism",
+    "thumbnail": "samples/Gritty_Cinematic_Brutalism.webp"
+  },
+  {
+    "name": "Gritty Cinematic Realism — Documentary Desaturation",
+    "prompt": "cinematic realism, shallow depth of field, moody natural lighting, desaturated color grading, candid close-up, tactile textures, gritty urban atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Cinematic Realism — Documentary Desaturation",
+    "thumbnail": "samples/Gritty_Cinematic_Realism_—_Documentary_Desaturation.webp"
+  },
+  {
+    "name": "Hyper-Perspective Urban Pop",
+    "prompt": "extreme low-angle perspective, wide-angle fisheye lens, monumental urban scale, vibrant high-contrast daylight, Y2K streetwear energy, sharp architectural lines, distorted urban geometry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper透视都市Pop",
+    "thumbnail": "samples/Hyper-Perspective_Urban_Pop.webp"
+  },
+  {
+    "name": "Hyper-Vivid Y2K Surrealism",
+    "prompt": "fisheye lens, Y2K aesthetic, saturated color palette, direct flash, dreamcore, nostalgic film grain, low-angle distortion, liminal space. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper生动Y2K超现实",
+    "thumbnail": "samples/Hyper-Vivid_Y2K_Surrealism.webp"
+  },
+  {
+    "name": "Intimate Cinematic Realism",
+    "prompt": "35mm film grain, shallow depth of field, cinematic close-up portrait, naturalistic lighting, analog texture, vulnerable candid aesthetic, muted color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "亲密电影感写实",
+    "thumbnail": "samples/Intimate_Cinematic_Realism.webp"
+  },
+  {
+    "name": "Kinetic Cyan Nocturne",
+    "prompt": "long exposure motion blur, cyan and indigo color grading, nocturnal urban atmosphere, cinematic light streaks, spectral silhouettes, dreamlike liminal space, analog film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态青色Nocturne",
+    "thumbnail": "samples/Kinetic_Cyan_Nocturne.webp"
+  },
+  {
+    "name": "Kinetic Dream Impressionism",
+    "prompt": "intentional motion blur, vintage film grain, dreamy impressionism, sun-drenched warm glow, kinetic candid movement, saturated retro palette, shutter speed streaks, painterly analog aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态梦印象派",
+    "thumbnail": "samples/Kinetic_Dream_Impressionism.webp"
+  },
+  {
+    "name": "Kinetic Ghost Minimalism — Editorial Selective Color",
+    "prompt": "intentional motion blur, shutter drag, minimalist editorial, ghostly kinetic trails, high contrast, long exposure portraiture, stark background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态幽灵极简主义编辑Selective颜色",
+    "thumbnail": "samples/Kinetic_Ghost_Minimalism_—_Editorial_Selective_Color.webp"
+  },
+  {
+    "name": "Kinetic Nocturnal Impressionism — Twilight Amber Trails",
+    "prompt": "intentional motion blur, analog film grain, twilight blue and amber palette, painterly light trails, dreamy long exposure, cinematic night atmosphere, ghostly silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态夜行印象派暮光琥珀Trails",
+    "thumbnail": "samples/Kinetic_Nocturnal_Impressionism_-_Twilight_Amber_Trails.webp"
+  },
+  {
+    "name": "Kinetic Sepia Melancholy",
+    "prompt": "motion blur, heavy film grain, warm terracotta palette, analog photography style, long exposure, low-key lighting, surreal urban atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态棕褐忧郁",
+    "thumbnail": "samples/Kinetic_Sepia_Melancholy.webp"
+  },
+  {
+    "name": "Kinetic Sun-Drenched Motion",
+    "prompt": "motion blur, panning shot, vintage film grain, sun-drenched lighting, kinetic energy, saturated primary colors, long exposure action. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态日Drenched运动",
+    "thumbnail": "samples/Kinetic_Sun-Drenched_Motion.webp"
+  },
+  {
+    "name": "Luminous Wildlife Intimacy",
+    "prompt": "intimate wildlife photography, shallow depth of field, creamy bokeh background, soft natural rim lighting, highly detailed fur texture, warm earthy color palette, candid animal expression. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮WildlifeIntimacy",
+    "thumbnail": "samples/Luminous_Wildlife_Intimacy.webp"
+  },
+  {
+    "name": "Melancholic Nature Reclamation",
+    "prompt": "muted earth tones, overcast natural light, nature reclaiming architecture, weathered industrial textures, documentary style realism, melancholic atmosphere, cinematic desaturation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "忧郁NatureReclamation",
+    "thumbnail": "samples/Melancholic_Nature_Reclamation.webp"
+  },
+  {
+    "name": "Nocturnal Analog Botanicals",
+    "prompt": "direct flash photography, analog film grain, stark black background, chiaroscuro lighting, vintage snapshot aesthetic, saturated warm tones, moody botanical. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行模拟Botanicals",
+    "thumbnail": "samples/Nocturnal_Analog_Botanicals.webp"
+  },
+  {
+    "name": "Nocturnal Analog Liminality",
+    "prompt": "heavy analog film grain, motion blur, nocturnal atmosphere, harsh on-camera flash, lo-fi texture, dreamlike haze, high contrast shadows, vintage surveillance aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行模拟Liminality",
+    "thumbnail": "samples/Nocturnal_Analog_Liminality.webp"
+  },
+  {
+    "name": "Nostalgic Cinematic Pastoral",
+    "prompt": "vintage film photography, rolling green hills, soft natural lighting, shallow depth of field, nostalgic pastoral, dreamy cinematic atmosphere, muted earth tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Cinematic Pastoral",
+    "thumbnail": "samples/Nostalgic_Cinematic_Pastoral.webp"
+  },
+  {
+    "name": "Nostalgic Urban Realism",
+    "prompt": "35mm film photography, muted desaturated color palette, soft overcast natural light, analog film grain, urban realism, melancholic mood, shallow depth of field, poetic candid moments. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic都市写实",
+    "thumbnail": "samples/Nostalgic_Urban_Realism.webp"
+  },
+  {
+    "name": "Nostalgic Wide-Angle Azure",
+    "prompt": "extreme low-angle shot, fisheye lens perspective, vibrant blue sky, 35mm film grain, high-contrast sunlight, nostalgic retro aesthetic, sharp architectural shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic宽角蔚蓝",
+    "thumbnail": "samples/Nostalgic_Wide-Angle_Azure.webp"
+  },
+  {
+    "name": "Radiant Low-Angle Vitality",
+    "prompt": "dramatic low-angle perspective, sun-drenched natural light, cinematic landscape scale, vibrant green foliage, candid joyful emotion, dappled sunlight flares, airy romantic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "RadiantLow角活力",
+    "thumbnail": "samples/Radiant_Low-Angle_Vitality.webp"
+  },
+  {
+    "name": "Raw Analog Cinematic",
+    "prompt": "analog 35mm film grain, candid snapshot aesthetic, cinematic motion blur, harsh flash photography, lo-fi retro texture, moody atmospheric lighting, vintage film color grading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "原始模拟电影感",
+    "thumbnail": "samples/Raw_Analog_Cinematic.webp"
+  },
+  {
+    "name": "Raw Flash Minimalism",
+    "prompt": "direct camera flash, sharp drop shadows, high-contrast photography, minimalist studio portrait, raw realistic texture, 90s fashion editorial, candid snapshot aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "原始Flash极简主义",
+    "thumbnail": "samples/Raw_Flash_Minimalism.webp"
+  },
+  {
+    "name": "Raw Retro Snapshot",
+    "prompt": "candid snapshot, 35mm film grain, fisheye lens distortion, high contrast, saturated retro colors, harsh direct sunlight, urban youth culture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "原始复古Snapshot",
+    "thumbnail": "samples/Raw_Retro_Snapshot.webp"
+  },
+  {
+    "name": "Saturated Analog Nostalgia",
+    "prompt": "35mm film photography, saturated primary colors, analog film grain, low-angle perspective, sun-drenched lighting, vintage 1970s aesthetic, high contrast, vivid cerulean sky. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "高饱和模拟Nostalgia",
+    "thumbnail": "samples/Saturated_Analog_Nostalgia.webp"
+  },
+  {
+    "name": "Saturated Fisheye Nostalgia",
+    "prompt": "fisheye lens, 90s retro aesthetic, ultra-wide angle distortion, highly saturated colors, harsh direct sunlight, candid snapshot photography, dynamic perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "高饱和鱼眼Nostalgia",
+    "thumbnail": "samples/Saturated_Fisheye_Nostalgia.webp"
+  },
+  {
+    "name": "Saturated Fisheye Street-Snapshot",
+    "prompt": "fisheye lens distortion, extreme low-angle perspective, saturated analog film style, harsh direct sunlight, vibrant street style, high-contrast candid snapshot, vivid blue sky. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "高饱和鱼眼街道Snapshot",
+    "thumbnail": "samples/Saturated_Fisheye_Street-Snapshot.webp"
+  },
+  {
+    "name": "Spectral Urban Stillness",
+    "prompt": "long exposure photography, motion blur, sharp focal point, desaturated urban color palette, melancholic atmosphere, ghostly crowd streaks, cinematic realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱都市静止",
+    "thumbnail": "samples/Spectral_Urban_Stillness.webp"
+  },
+  {
+    "name": "Sun-Drenched Fisheye Nostalgia",
+    "prompt": "extreme fisheye lens distortion, vibrant saturated colors, low-angle perspective, harsh direct sunlight, analog film grain, chromatic aberration, circular vignette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sun-Drenched Fisheye Nostalgia",
+    "thumbnail": "samples/Sun-Drenched_Fisheye_Nostalgia.webp"
+  },
+  {
+    "name": "Sun-Soaked Fisheye Adventure",
+    "prompt": "fisheye lens distortion, saturated sunlight, POV perspective, vibrant Y2K aesthetic, crystal-clear water, dynamic wide-angle, candid summer energy, high-contrast outdoor action. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sun-Soaked Fisheye Adventure",
+    "thumbnail": "samples/Sun-Soaked_Fisheye_Adventure.webp"
+  },
+  {
+    "name": "Surreal Geometric Urbanism",
+    "prompt": "deconstructed urban architecture, cubist perspective, fisheye lens distortion, fragmented photomontage, surreal spatial bending, geometric architectural collage, spherical horizon. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实几何Urbanism",
+    "thumbnail": "samples/Surreal_Geometric_Urbanism.webp"
+  },
+  {
+    "name": "Tactile Analog Intimacy",
+    "prompt": "35mm film grain, warm cinematic tones, tactile skin texture, shallow depth of field, crimson and amber palette, retro editorial lighting, intimate macro detail. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉模拟Intimacy",
+    "thumbnail": "samples/Tactile_Analog_Intimacy.webp"
+  },
+  {
+    "name": "Vibrant Adventure Gorpcore",
+    "prompt": "extreme wide-angle, vibrant saturated colors, harsh natural sunlight, gorpcore streetwear, dynamic active posing, low-angle perspective, outdoor adventure lifestyle. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳AdventureGorpcore",
+    "thumbnail": "samples/Vibrant_Adventure_Gorpcore.webp"
+  },
+  {
+    "name": "Vibrant Candid Youth",
+    "prompt": "candid action photography, wide-angle lens, bright direct sunlight, saturated color palette, motion blur, retro film aesthetic, low angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳CandidYouth",
+    "thumbnail": "samples/Vibrant_Candid_Youth.webp"
+  },
+  {
+    "name": "Vibrant Kinetic Realism",
+    "prompt": "vibrant high-contrast photography, crisp natural daylight, dynamic candid motion, saturated outdoor palette, surreal maximalist composition, sharp focus, wide-angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳动态写实",
+    "thumbnail": "samples/Vibrant_Kinetic_Realism.webp"
+  },
+  {
+    "name": "Vibrant Sunlit Optimism",
+    "prompt": "candid portrait, harsh direct sunlight, low-angle perspective, vibrant blue sky, saturated color palette, high-contrast aesthetic, tactile textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳Sunlit乐观",
+    "thumbnail": "samples/Vibrant_Sunlit_Optimism.webp"
+  },
+  {
+    "name": "Vintage Fisheye Nostalgia",
+    "prompt": "circular fisheye lens, extreme low angle shot, analog film aesthetic, vibrant saturated colors, sun-drenched lens flare, barrel distortion, candid snapshot, nostalgic vintage quality. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古鱼眼Nostalgia",
+    "thumbnail": "samples/Vintage_Fisheye_Nostalgia.webp"
+  },
+  {
+    "name": "Vivid Analog Skyward",
+    "prompt": "analog film grain, low-angle perspective, vibrant primary colors, harsh sunlight, 35mm photography, clear blue sky, dynamic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "生动模拟Skyward",
+    "thumbnail": "samples/Vivid_Analog_Skyward.webp"
+  },
+  {
+    "name": "Vivid Fisheye Nostalgia",
+    "prompt": "extreme fisheye lens, circular vignette, 90s retro aesthetic, vivid color saturation, low angle perspective, harsh sun-drenched lighting, analog film grain, chromatic aberration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "生动鱼眼Nostalgia",
+    "thumbnail": "samples/Vivid_Fisheye_Nostalgia.webp"
+  },
+  {
+    "name": "Vivid Summer Nostalgia",
+    "prompt": "vibrant high-saturation photography, bright direct midday sunlight, wide-angle candid perspective, sharp high-contrast shadows, summer lifestyle energy, clear blue sky backdrop, warm golden skin tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "生动夏Nostalgia",
+    "thumbnail": "samples/Vivid_Summer_Nostalgia.webp"
+  }
+]

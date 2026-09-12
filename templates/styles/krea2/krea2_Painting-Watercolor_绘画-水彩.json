@@ -1,0 +1,212 @@
+[
+  {
+    "name": "Analog CRT Glitchcore",
+    "prompt": "CRT monitor glow, analog VHS glitch, chromatic aberration, visible scanlines, retro-futuristic neon, lo-fi digital decay, phosphor texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟CRTGlitchcore",
+    "thumbnail": "samples/Analog_CRT_Glitchcore.webp"
+  },
+  {
+    "name": "Atmospheric Amber Minimalism",
+    "prompt": "amber gradient, atmospheric fog, minimalist silhouette, soft-focus haze, cinematic backlighting, liminal space, warm color field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围琥珀极简主义",
+    "thumbnail": "samples/Atmospheric_Amber_Minimalism.webp"
+  },
+  {
+    "name": "Biophilic Aerial Surrealism",
+    "prompt": "top-down drone perspective, biophilic surrealism, vibrant botanical abundance, golden hour lighting, dramatic long shadows, minimalist geometric composition, lush organic textures, futuristic nature integration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Biophilic空中超现实",
+    "thumbnail": "samples/Biophilic_Aerial_Surrealism.webp"
+  },
+  {
+    "name": "Chiaroscuro Pastoral Minimalism",
+    "prompt": "chiaroscuro landscape, minimalist composition, dramatic golden hour lighting, high-angle aerial perspective, long graphic shadows, vast textured topography, solitary focal point, velvety color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ChiaroscuroPastoral极简主义",
+    "thumbnail": "samples/Chiaroscuro_Pastoral_Minimalism.webp"
+  },
+  {
+    "name": "Chromatic Minimalist Expressionism",
+    "prompt": "amber and indigo contrast, minimalist papercut aesthetics, saturated chromatic gradients, painterly watercolor textures, high-contrast graphic composition, atmospheric color field, fine art paper grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色极简表现主义",
+    "thumbnail": "samples/Chromatic_Minimalist_Expressionism.webp"
+  },
+  {
+    "name": "Cinematic Cobalt Chiaroscuro",
+    "prompt": "chiaroscuro, volumetric lighting, deep cobalt and midnight blue, cinematic isolation, minimalist composition, dramatic spotlight, atmospheric fog, high contrast silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感CobaltChiaroscuro",
+    "thumbnail": "samples/Cinematic_Cobalt_Chiaroscuro.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Silhouette — Misty Watercolor",
+    "prompt": "backlit silhouette, atmospheric fog, cinematic lighting, teal and amber, volumetric glow, vintage film grain, nocturnal mystery. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行剪影薄雾水彩",
+    "thumbnail": "samples/Cinematic_Nocturnal_Silhouette_—_Misty_Watercolor.webp"
+  },
+  {
+    "name": "Cozy Whimsical Storybook — Crayon Warmth",
+    "prompt": "storybook illustration, kawaii character design, textured crayon and watercolor style, warm earthy color palette, minimalist white background, whimsical anthropomorphic animals, soft digital texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cozy Whimsical Storybook — Crayon Warmth",
+    "thumbnail": "samples/Cozy_Whimsical_Storybook_—_Crayon_Warmth.webp"
+  },
+  {
+    "name": "Cozy Whimsical Storybook — Pastel Watercolor",
+    "prompt": "children's book illustration, watercolor and crayon texture, whimsical anthropomorphic characters, soft pastel earth tones, hand-crafted aesthetic, isolated on white background, gentle storybook style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "CozyWhimsicalStorybook粉彩水彩",
+    "thumbnail": "samples/Cozy_Whimsical_Storybook_—_Pastel_Watercolor.webp"
+  },
+  {
+    "name": "Dark Whimsical Storybook Surrealism",
+    "prompt": "dark whimsical illustration, storybook aesthetic, lowbrow surrealism, painterly textures, stylized character design, muted earthy palette, expressive ink outlines, gothic fairytale atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "黑暗WhimsicalStorybook超现实",
+    "thumbnail": "samples/Dark_Whimsical_Storybook_Surrealism.webp"
+  },
+  {
+    "name": "Enchanted Subterranean Folklore",
+    "prompt": "storybook illustration, intricate ink linework, atmospheric watercolor wash, deep forest and grotto motifs, muted earthy palette, subtle bioluminescent lighting, cross-hatching textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "EnchantedSubterranean民俗",
+    "thumbnail": "samples/Enchanted_Subterranean_Folklore.webp"
+  },
+  {
+    "name": "Ethereal Analog Surrealism — Solarized Watercolor",
+    "prompt": "double exposure, analog film grain, ethereal light leaks, watercolor texture, solarized distortion, dreamy nostalgia, chromatic abstraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵模拟超现实Solarized水彩",
+    "thumbnail": "samples/Ethereal_Analog_Surrealism_—_Solarized_Watercolor.webp"
+  },
+  {
+    "name": "Ethereal Bio-Fluid Synthesis",
+    "prompt": "watercolor wash, fluid motion, teal and sage palette, surreal aquatic fantasy, biopunk solarpunk fusion, gestural brushstrokes, dreamy diffused lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Bio流动Synthesis",
+    "thumbnail": "samples/Ethereal_Bio-Fluid_Synthesis.webp"
+  },
+  {
+    "name": "Ethereal Botanical Cyanotypes",
+    "prompt": "cyanotype print, Prussian blue monochrome, botanical photogram, sun print, high-contrast silhouette, textured watercolor paper, analog photography process. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵BotanicalCyanotypes",
+    "thumbnail": "samples/Ethereal_Botanical_Cyanotypes.webp"
+  },
+  {
+    "name": "Ethereal Celestial Storybook",
+    "prompt": "storybook watercolor illustration, ethereal celestial motifs, soft textured brushwork, muted earthy color palette, glowing gold leaf accents, magical realism, dreamy atmospheric lighting, delicate ink linework. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵天体Storybook",
+    "thumbnail": "samples/Ethereal_Celestial_Storybook.webp"
+  },
+  {
+    "name": "Ethereal Cyanotype Botanical",
+    "prompt": "cyanotype print, Prussian blue monochrome, botanical photogram, textured watercolor paper, hand-brushed emulsion borders, spectral double exposure, komorebi light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵CyanotypeBotanical",
+    "thumbnail": "samples/Ethereal_Cyanotype_Botanical.webp"
+  },
+  {
+    "name": "Ethereal Kinetic Impressionism — Sage Watercolor Drift",
+    "prompt": "intentional camera movement, painterly motion blur, analog film grain, ethereal dreamscape, soft-focus haze, muted organic palette, nostalgic pictorialism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Kinetic Impressionism — Sage Watercolor Drift",
+    "thumbnail": "samples/Ethereal_Kinetic_Impressionism_—_Sage_Watercolor_Drift.webp"
+  },
+  {
+    "name": "Ethereal Noir Illustration",
+    "prompt": "expressive painterly portrait, ink and watercolor wash, high contrast composition, fluid graphic linework, gothic romanticism, minimalist fashion illustration, textured brushstrokes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵黑色插画",
+    "thumbnail": "samples/Ethereal_Noir_Illustration.webp"
+  },
+  {
+    "name": "Luminous Ethereal Pastel — Iridescent Watercolor",
+    "prompt": "ethereal pastel palette, luminous high-key lighting, soft-focus dreamscape, iridescent watercolor textures, delicate painterly brushwork, translucent glowing layers, whimsical nostalgic mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮空灵粉彩Iridescent水彩",
+    "thumbnail": "samples/Luminous_Ethereal_Pastel_—_Iridescent_Watercolor.webp"
+  },
+  {
+    "name": "Luminous Folk Storybook",
+    "prompt": "storybook illustration, folk art style, textured gouache, nocturnal forest, glowing magical light, whimsical nature, naive art, cozy fairytale aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮FolkStorybook",
+    "thumbnail": "samples/Luminous_Folk_Storybook.webp"
+  },
+  {
+    "name": "Luminous Impressionist Solitude",
+    "prompt": "sun-drenched impressionism, painterly brushstrokes, warm pastel palette, soft diffused sunlight, lush leafy foliage, dreamy atmospheric texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮印象派Solitude",
+    "thumbnail": "samples/Luminous_Impressionist_Solitude.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Dreamscape — Pastel Rim Sfumato",
+    "prompt": "ethereal nocturne, glowing silhouettes, grainy texture, deep indigo background, luminous pastel accents, soft-focus surrealism, dreamy sfumato. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Nocturnal Dreamscape — Pastel Rim Sfumato",
+    "thumbnail": "samples/Luminous_Nocturnal_Dreamscape_-_Pastel_Rim_Sfumato.webp"
+  },
+  {
+    "name": "Melancholic Folklore Animation",
+    "prompt": "vintage anime background, hand-painted watercolor style, gothic revival architecture, lush mossy forest, atmospheric mist, soft diffused lighting, folklore illustration, muted earth tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "忧郁民俗Animation",
+    "thumbnail": "samples/Melancholic_Folklore_Animation.webp"
+  },
+  {
+    "name": "Minimalist Verdant Surrealism — Aerial Gouache Charm",
+    "prompt": "high-angle aerial view, minimalist surrealism, lush green landscape, painterly gouache texture, dramatic graphic shadows, solitary subject, folk art influence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简翠绿超现实空中GouacheCharm",
+    "thumbnail": "samples/Minimalist_Verdant_Surrealism_—_Aerial_Gouache_Charm.webp"
+  },
+  {
+    "name": "Nostalgic Noir Nocturne",
+    "prompt": "vintage cel animation, atmospheric dark fantasy, hand-painted watercolor texture, nocturnal urban cityscape, high contrast chiaroscuro, retro ink-wash illustration, warm amber lantern light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Noir Nocturne",
+    "thumbnail": "samples/Nostalgic_Noir_Nocturne.webp"
+  },
+  {
+    "name": "Textured Silhouette Minimalism",
+    "prompt": "minimalist silhouette, high contrast, textured brushwork, ethereal light, expressive ink lines, vibrant color layering, painterly aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理剪影极简主义",
+    "thumbnail": "samples/Textured_Silhouette_Minimalism.webp"
+  },
+  {
+    "name": "Verdant Relic Odyssey",
+    "prompt": "high-angle aerial perspective, lush moss-covered textures, serene atmospheric landscape, nature reclaiming technology, hand-painted watercolor influence, vibrant emerald and turquoise palette, soft diffused natural light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "翠绿RelicOdyssey",
+    "thumbnail": "samples/Verdant_Relic_Odyssey.webp"
+  },
+  {
+    "name": "Whimsical Storybook Geometry",
+    "prompt": "whimsical storybook illustration, scratchy ink outlines, textured watercolor wash, crooked asymmetrical architecture, earthy ochre and terracotta palette, stylized angular character design, fairytale atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Whimsical Storybook Geometry",
+    "thumbnail": "samples/Whimsical_Storybook_Geometry.webp"
+  },
+  {
+    "name": "Whimsical Storybook Illustration",
+    "prompt": "storybook watercolor illustration, delicate ink outlines, muted earth tones, whimsical architectural details, cozy nostalgic atmosphere, hand-drawn texture, soft watercolor washes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "WhimsicalStorybook插画",
+    "thumbnail": "samples/Whimsical_Storybook_Illustration.webp"
+  },
+  {
+    "name": "Whimsical Verdant Pastoral",
+    "prompt": "gouache and watercolor illustration, high-angle aerial perspective, lush verdant green palette, whimsical pastoral landscape, textured painterly brushstrokes, minimalist figure, dramatic long shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Whimsical Verdant Pastoral",
+    "thumbnail": "samples/Whimsical_Verdant_Pastoral.webp"
+  }
+]

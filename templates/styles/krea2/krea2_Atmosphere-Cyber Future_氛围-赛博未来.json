@@ -1,0 +1,268 @@
+[
+  {
+    "name": "Atmospheric Industrial Dystopia — Teal Amber Fog",
+    "prompt": "atmospheric cyan fog, dystopian industrial architecture, teal and amber lighting, vertiginous scale, retro-futuristic sci-fi, cinematic urban gloom. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围工业Dystopia青蓝琥珀雾",
+    "thumbnail": "samples/Atmospheric_Industrial_Dystopia_—_Teal_Amber_Fog.webp"
+  },
+  {
+    "name": "Celestial Alchemical Opulence",
+    "prompt": "cosmic afrofuturism, emerald and gold palette, intricate filigree, mystical realism, starry background, high-gloss metallic sheen, dramatic chiaroscuro lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体AlchemicalOpulence",
+    "thumbnail": "samples/Celestial_Alchemical_Opulence.webp"
+  },
+  {
+    "name": "Celestial Solitude Landscapes",
+    "prompt": "painterly digital art, monolithic landscape, chiaroscuro lighting, twilight color palette, solitary traveler, retro-futurist atmosphere, warm glow against cool shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体SolitudeLandscapes",
+    "thumbnail": "samples/Celestial_Solitude_Landscapes.webp"
+  },
+  {
+    "name": "Cinematic Atmospheric Decay",
+    "prompt": "cinematic atmosphere, high contrast chiaroscuro, weathered industrial textures, volumetric lighting, monumental scale, muted teal and slate palette, misty environmental storytelling. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感氛围衰败",
+    "thumbnail": "samples/Cinematic_Atmospheric_Decay.webp"
+  },
+  {
+    "name": "Cinematic Brutalist Sol",
+    "prompt": "cinematic low-angle perspective, dramatic golden backlight, high-contrast chiaroscuro, brutalist architectural scale, intricate gritty textures, atmospheric crepuscular rays, epic silhouette composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感粗野主义Sol",
+    "thumbnail": "samples/Cinematic_Brutalist_Sol.webp"
+  },
+  {
+    "name": "Cinematic Megastructural Realism",
+    "prompt": "cinematic scale, megastructure, hard sci-fi realism, high-contrast lighting, intricate greeble textures, atmospheric perspective, monumental decay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Megastructural写实",
+    "thumbnail": "samples/Cinematic_Megastructural_Realism.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Minimalism — Sleek Shadow",
+    "prompt": "chiaroscuro, low-key lighting, cinematic noir, extreme close-up, monochromatic palette, high-contrast, clinical cool tones, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行极简主义Sleek影",
+    "thumbnail": "samples/Cinematic_Nocturnal_Minimalism_—_Sleek_Shadow.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Noir — Cold Grey Soft",
+    "prompt": "cinematic noir, low-key lighting, atmospheric rain, wet textures, desaturated cool tones, high contrast, introspective mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行黑色冷Grey柔和",
+    "thumbnail": "samples/Cinematic_Nocturnal_Noir_—_Cold_Grey_Soft.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Noir — Retro Green Glint",
+    "prompt": "cinematic noir, low-key chiaroscuro lighting, moody green and amber palette, shallow depth of field, tactile textures, gritty retro-futurism, intimate filmic portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行黑色复古GreenGlint",
+    "thumbnail": "samples/Cinematic_Nocturnal_Noir_—_Retro_Green_Glint.webp"
+  },
+  {
+    "name": "Clinical Avant-Garde Minimal",
+    "prompt": "high-key studio lighting, stark white background, deconstructed sportswear, minimalist fashion editorial, avant-garde silhouette, color blocking, clean surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Clinical Avant-Garde Minimal",
+    "thumbnail": "samples/Clinical_Avant-Garde_Minimal.webp"
+  },
+  {
+    "name": "Clinical Avant-Garde Techwear",
+    "prompt": "minimalist studio photography, tactical techwear, muted cool tones, high-contrast lighting, avant-garde tailoring, technical fabric textures, neutral gray backdrop. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Clinical Avant-Garde Techwear",
+    "thumbnail": "samples/Clinical_Avant-Garde_Techwear.webp"
+  },
+  {
+    "name": "Colossal Industrial Retro-Futurism",
+    "prompt": "industrial retro-futurism, colossal megastructures, weathered metal textures, atmospheric haze, hard surface engineering, painterly industrial detail, utilitarian sci-fi design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Colossal Industrial Retro-Futurism",
+    "thumbnail": "samples/Colossal_Industrial_Retro-Futurism.webp"
+  },
+  {
+    "name": "Crimson Chiaroscuro Noir",
+    "prompt": "chiaroscuro lighting, saturated crimson red, high-contrast portraiture, dramatic sharp shadows, cinematic noir, minimalist composition, editorial fashion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红Chiaroscuro黑色",
+    "thumbnail": "samples/Crimson_Chiaroscuro_Noir.webp"
+  },
+  {
+    "name": "Crimson Cyber Noir — Glossy Leather Studio",
+    "prompt": "high-contrast studio photography, vibrant crimson red background, sharp graphic shadows, cyberpunk editorial fashion, glossy leather and satin textures, avant-garde styling, hard direct lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红赛博黑色光泽皮革工作室",
+    "thumbnail": "samples/Crimson_Cyber_Noir_—_Glossy_Leather_Studio.webp"
+  },
+  {
+    "name": "Distorted Skyward Futurism",
+    "prompt": "extreme low-angle shot, fisheye lens distortion, deep blue sky background, liquid chrome textures, forced perspective, high-contrast sunlight, futuristic streetwear. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted Skyward Futurism",
+    "thumbnail": "samples/Distorted_Skyward_Futurism.webp"
+  },
+  {
+    "name": "Gilded Desert Surrealism",
+    "prompt": "retro-futurism, desert surrealism, polished chrome and gold, stark shadows, saturated azure sky, minimalist composition, high-contrast lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gilded沙漠超现实",
+    "thumbnail": "samples/Gilded_Desert_Surrealism.webp"
+  },
+  {
+    "name": "Graphic Ligne Claire",
+    "prompt": "ligne claire style, clean black outlines, flat color illustration, retro-futuristic, graphic comic art, whimsical storytelling, saturated pastel palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形LigneClaire",
+    "thumbnail": "samples/Graphic_Ligne_Claire.webp"
+  },
+  {
+    "name": "Hyper-Gloss Retro-Futurism",
+    "prompt": "1980s airbrush illustration, highly reflective chrome, retro-futurism, Hajime Sorayama style, prismatic lens flare, vibrant gradient background, metallic sheen. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper-Gloss Retro-Futurism",
+    "thumbnail": "samples/Hyper-Gloss_Retro-Futurism.webp"
+  },
+  {
+    "name": "Hyper-Vivid Chrome Pop",
+    "prompt": "fisheye lens distortion, hyper-saturated color palette, liquid chrome textures, extreme worm's-eye view, vibrant pop surrealism, crisp direct sunlight, iridescent reflections, futuristic street fashion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper生动铬Pop",
+    "thumbnail": "samples/Hyper-Vivid_Chrome_Pop.webp"
+  },
+  {
+    "name": "Iridescent Liquid Chrome",
+    "prompt": "liquid chrome, iridescent metallic, 3D fluid sculpture, holographic reflection, minimalist studio lighting, gradient background, futuristic design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "IridescentLiquid铬",
+    "thumbnail": "samples/Iridescent_Liquid_Chrome.webp"
+  },
+  {
+    "name": "Luminescent Ocular Surrealism",
+    "prompt": "extreme macro eye photography, bioluminescent iris, high-contrast moody lighting, cybernetic texture, shallow depth of field, surreal light projection, cinematic close-up. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "LuminescentOcular超现实",
+    "thumbnail": "samples/Luminescent_Ocular_Surrealism.webp"
+  },
+  {
+    "name": "Luminous Chromatic Minimalism — Iridescent 3D Gloss",
+    "prompt": "translucent 3D render, vibrant chromatic gradient, soft internal glow, minimalist composition, subsurface scattering, high-contrast dark background, iridescent glass texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮彩色极简主义Iridescent三维光泽",
+    "thumbnail": "samples/Luminous_Chromatic_Minimalism_—_Iridescent_3D_Gloss.webp"
+  },
+  {
+    "name": "Minimalist Noir Silhouette",
+    "prompt": "high-contrast silhouette, minimalist studio portrait, cool blue rim light, futuristic organic metal jewelry, dramatic chiaroscuro, sharp profile, sleek avant-garde aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简黑色剪影",
+    "thumbnail": "samples/Minimalist_Noir_Silhouette.webp"
+  },
+  {
+    "name": "Monolithic Cosmic Noir",
+    "prompt": "brutalist sci-fi, monolithic scale, indigo and amber lighting, vortex perspective, volumetric atmospheric haze, high-contrast cinematic composition, tiny human silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic宇宙黑色",
+    "thumbnail": "samples/Monolithic_Cosmic_Noir.webp"
+  },
+  {
+    "name": "Monolithic Industrial Futurism — Arctic Gray Gloom",
+    "prompt": "brutalist sci-fi megastructures, monolithic concrete architecture, atmospheric hazy environment, muted cold tones with warm accents, monumental industrial scale, dystopian cinematic realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic Industrial Futurism — Arctic Gray Gloom",
+    "thumbnail": "samples/Monolithic_Industrial_Futurism_—_Arctic_Gray_Gloom.webp"
+  },
+  {
+    "name": "Monolithic Overgrown Futurism",
+    "prompt": "monolithic industrial ruins, overgrown solarpunk, cinematic atmospheric scale, misty mountain megastructures, decaying futuristic architecture, high-angle vertical perspective, lush jungle reclamation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic Overgrown Futurism",
+    "thumbnail": "samples/Monolithic_Overgrown_Futurism.webp"
+  },
+  {
+    "name": "Nocturnal Bioluminescent Noir",
+    "prompt": "extreme close-up portrait, low-key chiaroscuro lighting, bioluminescent glowing eyes, monochromatic cobalt blue, glistening wet skin texture, cinematic noir atmosphere, high-contrast shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行Bioluminescent黑色",
+    "thumbnail": "samples/Nocturnal_Bioluminescent_Noir.webp"
+  },
+  {
+    "name": "Nocturnal Cyber Noir",
+    "prompt": "cinematic automotive photography, glowing LED light trails, sharp silhouette, moody atmospheric haze, deep teal and midnight blue palette, futuristic minimalist design, high-contrast low-key lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行赛博黑色",
+    "thumbnail": "samples/Nocturnal_Cyber_Noir.webp"
+  },
+  {
+    "name": "Prismatic Chrome Futurism",
+    "prompt": "liquid chrome, biomorphic 3D render, chromatic aberration, stark black background, starburst lens flare, iridescent metallic reflections, Y2K cyber aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜铬Futurism",
+    "thumbnail": "samples/Prismatic_Chrome_Futurism.webp"
+  },
+  {
+    "name": "Prismatic Crystalline Refraction",
+    "prompt": "prismatic chromatic dispersion, hyper-realistic glass refraction, stark black background, spectral rainbow caustics, biomechanical crystalline geometry, macro lens flare, glossy refractive surfaces. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜CrystallineRefraction",
+    "thumbnail": "samples/Prismatic_Crystalline_Refraction.webp"
+  },
+  {
+    "name": "Prismatic Refraction Futurism",
+    "prompt": "chromatic dispersion, spectral light refraction, minimalist 3D render, high-contrast reflective surfaces, iridescent liquid metal, sharp geometric glass, pitch black background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜RefractionFuturism",
+    "thumbnail": "samples/Prismatic_Refraction_Futurism.webp"
+  },
+  {
+    "name": "Prismatic Rhinestone Surrealism",
+    "prompt": "rhinestone-encrusted, glitter-texture, vibrant blue sky background, starburst lens flare, iridescent sheen, chromatic aberration, hyper-glossy surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜Rhinestone超现实",
+    "thumbnail": "samples/Prismatic_Rhinestone_Surrealism.webp"
+  },
+  {
+    "name": "Refractive Cobalt Minimalism",
+    "prompt": "3D digital render, translucent glass and matte clay textures, minimalist studio lighting, cobalt blue color palette, smooth rounded contours, soft refractive gradients, clean neutral background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "RefractiveCobalt极简主义",
+    "thumbnail": "samples/Refractive_Cobalt_Minimalism.webp"
+  },
+  {
+    "name": "Retro Desert Noir",
+    "prompt": "ligne claire, stark ink outlines, warm desert palette, retro-futuristic, high-contrast shadows, vintage comic style, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古沙漠黑色",
+    "thumbnail": "samples/Retro_Desert_Noir.webp"
+  },
+  {
+    "name": "Spectral Glass Minimalism",
+    "prompt": "chromatic dispersion, glass prism refraction, spectral rainbow light, stark black background, minimalist 3D glass render, caustic lighting, translucent crystalline geometry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱玻璃极简主义",
+    "thumbnail": "samples/Spectral_Glass_Minimalism.webp"
+  },
+  {
+    "name": "Surreal Hyper-Chromatic Fisheye",
+    "prompt": "fisheye lens distortion, vibrant primary color palette, high-contrast sunlight, saturated hyperpop aesthetic, surreal dreamlike composition, glossy texture, retro-futuristic editorial. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实Hyper彩色鱼眼",
+    "thumbnail": "samples/Surreal_Hyper-Chromatic_Fisheye.webp"
+  },
+  {
+    "name": "Surreal Terracotta Specimen",
+    "prompt": "terracotta color palette, sharp direct sunlight, refractive glass distortion, minimalist sculptural composition, retro-futuristic editorial, dramatic caustics, tactile textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实TerracottaSpecimen",
+    "thumbnail": "samples/Surreal_Terracotta_Specimen.webp"
+  },
+  {
+    "name": "Vibrant Chrome Cyber-Surrealism",
+    "prompt": "liquid chrome texture, high-contrast pop surrealism, saturated crimson red, retro-futuristic airbrush style, reflective metallic surfaces, cybernetic aesthetic, bold studio lighting, starburst lens flares. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳铬赛博超现实",
+    "thumbnail": "samples/Vibrant_Chrome_Cyber-Surrealism.webp"
+  }
+]

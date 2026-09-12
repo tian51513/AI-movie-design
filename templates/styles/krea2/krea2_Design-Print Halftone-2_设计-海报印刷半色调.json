@@ -1,0 +1,702 @@
+[
+  {
+    "name": "Gritty Crimson Noir",
+    "prompt": "high contrast graphic illustration, crimson red and black palette, distressed screenprint texture, halftone and stippling, gritty ink splatters, retro-futuristic noir, bold stencil linework. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty绯红黑色",
+    "thumbnail": "samples/Gritty_Crimson_Noir.webp"
+  },
+  {
+    "name": "Gritty Dithered Noir",
+    "prompt": "high-contrast duotone, stippled texture, dithered ink, halftone pattern, gritty printmaking, distressed stencil, 1-bit aesthetic, graphic silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "GrittyDithered黑色",
+    "thumbnail": "samples/Gritty_Dithered_Noir.webp"
+  },
+  {
+    "name": "Gritty Glitch Noir — Neon Xerox Zine",
+    "prompt": "high-contrast halftone, xerox texture, glitch art, distressed collage, monochrome with neon accents, lo-fi experimental printmaking, tactile digital decay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Glitch Noir — Neon Xerox Zine",
+    "thumbnail": "samples/Gritty_Glitch_Noir_—_Neon_Xerox_Zine.webp"
+  },
+  {
+    "name": "Gritty Glitch Noir — Violent Red Scanlines",
+    "prompt": "high-contrast noir, heavy film grain, analog glitch distortion, distressed halftone texture, intense red and black palette, lo-fi xerox aesthetic, ominous liminal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Glitch Noir — Violent Red Scanlines",
+    "thumbnail": "samples/Gritty_Glitch_Noir_—_Violent_Red_Scanlines.webp"
+  },
+  {
+    "name": "Gritty Graphic Underground",
+    "prompt": "high-contrast screenprint, gritty halftone texture, duotone posterization, xerox grain, distressed underground aesthetic, graphic shadow work, retro zine style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty图形地下",
+    "thumbnail": "samples/Gritty_Graphic_Underground.webp"
+  },
+  {
+    "name": "Gritty Halftone Collage",
+    "prompt": "halftone pattern, analog collage, high contrast, distressed paper texture, screenprint aesthetic, mixed media, pop art influence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty半色调拼贴",
+    "thumbnail": "samples/Gritty_Halftone_Collage.webp"
+  },
+  {
+    "name": "Gritty Halftone Noir — Coarse Archival Dots",
+    "prompt": "coarse halftone pattern, stark high contrast, gritty photocopy texture, vintage zine aesthetic, chiaroscuro lighting, distressed film grain, graphic black and white. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Halftone Noir — Coarse Archival Dots",
+    "thumbnail": "samples/Gritty_Halftone_Noir_—_Coarse_Archival_Dots.webp"
+  },
+  {
+    "name": "Gritty Halftone Noir — Punk Zine Stipple",
+    "prompt": "halftone pattern, high-contrast noir, stipple shading, vintage print texture, risograph aesthetic, graphic monochrome, distressed paper grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Halftone Noir — Punk Zine Stipple",
+    "thumbnail": "samples/Gritty_Halftone_Noir_—_Punk_Zine_Stipple.webp"
+  },
+  {
+    "name": "Gritty Halftone Printwork",
+    "prompt": "halftone dot pattern, high-contrast graphic, distressed print texture, stipple shading, vintage zine aesthetic, duotone screenprint, gritty ink overlays. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Halftone Printwork",
+    "thumbnail": "samples/Gritty_Halftone_Printwork.webp"
+  },
+  {
+    "name": "Gritty Halftone Zinecore",
+    "prompt": "high-contrast black and white, halftone dot pattern, gritty xerox texture, punk zine aesthetic, deconstructed collage, distressed ink grain, analog scanline distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Halftone Zinecore",
+    "thumbnail": "samples/Gritty_Halftone_Zinecore.webp"
+  },
+  {
+    "name": "Gritty Industrial Zinecore",
+    "prompt": "risograph print style, duotone crimson and cream, heavy halftone texture, gritty xerox aesthetic, industrial graphic design, punk zine art, high-contrast screenprint. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Industrial Zinecore",
+    "thumbnail": "samples/Gritty_Industrial_Zinecore.webp"
+  },
+  {
+    "name": "Gritty Kinetic Noir",
+    "prompt": "heavy film grain, high-contrast monochrome, kinetic motion blur, distressed halftone texture, stark chiaroscuro, lo-fi darkroom aesthetic, eroded industrial edges. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty动态黑色",
+    "thumbnail": "samples/Gritty_Kinetic_Noir.webp"
+  },
+  {
+    "name": "Gritty Minimalist Printmaking",
+    "prompt": "high-contrast monochrome, distressed linocut texture, gritty halftone, hand-carved graphic, raw ink aesthetic, minimalist folk occult, stark black and off-white. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Minimalist Printmaking",
+    "thumbnail": "samples/Gritty_Minimalist_Printmaking.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Brutalism",
+    "prompt": "high-contrast black and white, halftone dot texture, brutalist graphic design, vintage xerox grunge, stipple shading, retro print aesthetic, stark noir atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Brutalism",
+    "thumbnail": "samples/Gritty_Monochromatic_Brutalism.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Noir — Blurred Punk Bloom",
+    "prompt": "high-contrast monochrome, heavy film grain, halftone screenprint texture, stippled shading, gritty analog photocopy, soft-focus noir, chiaroscuro lighting, distressed print aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Noir — Blurred Punk Bloom",
+    "thumbnail": "samples/Gritty_Monochromatic_Noir_—_Blurred_Punk_Bloom.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Noir — Crushed Screenprint",
+    "prompt": "high-contrast black and white, heavy film grain, halftone and stippled texture, stark chiaroscuro lighting, gritty xerox aesthetic, graphic screenprint style, raw punk zine photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Noir — Crushed Screenprint",
+    "thumbnail": "samples/Gritty_Monochromatic_Noir_—_Crushed_Screenprint.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Noir — Cubist Dither",
+    "prompt": "high-contrast monochrome, heavy film grain, chiaroscuro lighting, photocopy texture, halftone dither, surreal noir, raw analogue distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Noir — Cubist Dither",
+    "thumbnail": "samples/Gritty_Monochromatic_Noir_—_Cubist_Dither.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Noir — Industrial Glitch Stipple",
+    "prompt": "high-contrast black and white, stipple and halftone texture, gritty analog horror, chiaroscuro lighting, distorted digital glitch, raw zine aesthetic, deep shadows, film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty单色黑色工业故障点彩",
+    "thumbnail": "samples/Gritty_Monochromatic_Noir_—_Industrial_Glitch_Stipple.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Noir — Ink Splatter Lithograph",
+    "prompt": "stark monochrome, high-contrast lithograph, halftone patterns, distressed paper texture, ink splatters, analog noir photography, industrial xerox aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Noir — Ink Splatter Lithograph",
+    "thumbnail": "samples/Gritty_Monochromatic_Noir_—_Ink_Splatter_Lithograph.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Noir — Post-Punk Halftone",
+    "prompt": "high-contrast black and white, stippled texture, halftone screen, xerox photocopy grain, gritty analog decay, chiaroscuro lighting, minimalist noir silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Noir — Post-Punk Halftone",
+    "thumbnail": "samples/Gritty_Monochromatic_Noir_—_Post-Punk_Halftone.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Noir — Silver Gelatin Glitch",
+    "prompt": "high-contrast monochrome, halftone dot pattern, photocopy texture, analog film grain, glitch art, gritty screenprint, surrealist collage, distressed paper. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Noir — Silver Gelatin Glitch",
+    "thumbnail": "samples/Gritty_Monochromatic_Noir_—_Silver_Gelatin_Glitch.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Noir — Spectral Zine Murk",
+    "prompt": "high-contrast monochrome, heavy film grain, stipple texture, halftone patterns, chiaroscuro lighting, distressed xerox aesthetic, nocturnal noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Noir — Spectral Zine Murk",
+    "thumbnail": "samples/Gritty_Monochromatic_Noir_—_Spectral_Zine_Murk.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Noir — Xerox Print Mystery",
+    "prompt": "high-contrast monochrome, heavy film grain, halftone dot pattern, distressed xerox texture, stark noir lighting, gritty analogue noise, raw zine aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Noir — Xerox Print Mystery",
+    "thumbnail": "samples/Gritty_Monochromatic_Noir_—_Xerox_Print_Mystery.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Punk",
+    "prompt": "high-contrast black and white, threshold effect, punk zine aesthetic, halftone pattern, xerox photocopy texture, graphic silhouette, stark monochrome. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Punk",
+    "thumbnail": "samples/Gritty_Monochromatic_Punk.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Punk Noir",
+    "prompt": "stark high-contrast black and white, vintage photocopy zine aesthetic, gritty halftone texture, chiaroscuro noir lighting, distressed screenprint effect, surrealist ink illustration, raw DIY graphic art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Punk Noir",
+    "thumbnail": "samples/Gritty_Monochromatic_Punk_Noir.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Surrealism",
+    "prompt": "high contrast black and white, heavy film grain, halftone photocopy texture, multiple exposure portrait, surrealist chiaroscuro, distressed zine aesthetic, glitch art distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty单色超现实",
+    "thumbnail": "samples/Gritty_Monochromatic_Surrealism.webp"
+  },
+  {
+    "name": "Gritty Monochromatic Zine",
+    "prompt": "high-contrast monochrome, halftone dithered texture, gritty xerox aesthetic, punk zine art, stark black-and-white, 1-bit graphic style, distressed screenprint. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Monochromatic Zine",
+    "thumbnail": "samples/Gritty_Monochromatic_Zine.webp"
+  },
+  {
+    "name": "Gritty Monochrome Analog",
+    "prompt": "high-contrast black and white, heavy film grain, halftone dot texture, chiaroscuro lighting, vintage photocopy aesthetic, gritty analog distortion, minimalist noir silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty单色模拟",
+    "thumbnail": "samples/Gritty_Monochrome_Analog.webp"
+  },
+  {
+    "name": "Gritty Neo-Noir Zine",
+    "prompt": "high-contrast noir, halftone print texture, bold red accents, gritty editorial photography, punk zine aesthetic, distressed retro grain, graphic typography overlay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Neo-Noir Zine",
+    "thumbnail": "samples/Gritty_Neo-Noir_Zine.webp"
+  },
+  {
+    "name": "Gritty Neon Noir",
+    "prompt": "high-contrast ink illustration, electric blue and orange palette, gritty risograph texture, nocturnal urban atmosphere, chiaroscuro lighting, expressive sketchy linework, pulp horror aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty霓虹黑色",
+    "thumbnail": "samples/Gritty_Neon_Noir.webp"
+  },
+  {
+    "name": "Gritty Neon Punk",
+    "prompt": "halftone print, neon magenta, punk zine aesthetic, gritty photocopy texture, street art stencil, risograph grain, high-contrast duotone, diy paper collage. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Neon Punk",
+    "thumbnail": "samples/Gritty_Neon_Punk.webp"
+  },
+  {
+    "name": "Gritty Noir Photocollage",
+    "prompt": "high-contrast black and white, photocopy texture, halftone dot pattern, distressed film grain, gritty zine aesthetic, torn paper collage, stark chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Noir Photocollage",
+    "thumbnail": "samples/Gritty_Noir_Photocollage.webp"
+  },
+  {
+    "name": "Gritty Photochemical Noir",
+    "prompt": "high contrast black and white, heavy film grain, halftone photocopy texture, glowing red thermal effect, brutalist graphic design, atmospheric noir, industrial editorial, spectral silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "GrittyPhotochemical黑色",
+    "thumbnail": "samples/Gritty_Photochemical_Noir.webp"
+  },
+  {
+    "name": "Gritty Punk Zine",
+    "prompt": "punk zine aesthetic, high-contrast halftone, distressed screenprint texture, xerox photocopy art, gritty collage, neon pink accents, raw paper texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Punk Zine",
+    "thumbnail": "samples/Gritty_Punk_Zine.webp"
+  },
+  {
+    "name": "Gritty Red Halftone",
+    "prompt": "halftone dot pattern, screen print texture, high contrast red and black, vintage ink illustration, distressed paper grain, punk zine aesthetic, stippling, graphic silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "GrittyRed半色调",
+    "thumbnail": "samples/Gritty_Red_Halftone.webp"
+  },
+  {
+    "name": "Gritty Spectral Noir — Velvety Void Glow",
+    "prompt": "high-contrast monochrome, stark chiaroscuro, halftone dot pattern, heavy analog grain, gothic surrealism, spectral luminescence, gritty photocopy texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Spectral Noir — Velvety Void Glow",
+    "thumbnail": "samples/Gritty_Spectral_Noir_—_Velvety_Void_Glow.webp"
+  },
+  {
+    "name": "Gritty Surrealist Collage",
+    "prompt": "vintage screenprint texture, surrealist paper collage, punk zine aesthetic, high-contrast halftone, saturated red and black, distressed ink overlay, graphic cutout art, dadaist montage. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty超现实拼贴",
+    "thumbnail": "samples/Gritty_Surrealist_Collage.webp"
+  },
+  {
+    "name": "High Contrast Monochromatic Graphic",
+    "prompt": "high contrast duotone, halftone grain texture, minimalist graphic composition, cobalt and cyan palette, risograph print aesthetic, dramatic chiaroscuro lighting, stippled texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "High对比单色图形",
+    "thumbnail": "samples/High_Contrast_Monochromatic_Graphic.webp"
+  },
+  {
+    "name": "High-Contrast Neon Noir",
+    "prompt": "high-contrast noir, electric duotone palette, heavy analog film grain, halftone screen print, stark rim lighting, psychedelic infrared glow, glitch art distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "High对比霓虹黑色",
+    "thumbnail": "samples/High-Contrast_Neon_Noir.webp"
+  },
+  {
+    "name": "Kinetic Crimson Noir",
+    "prompt": "risograph halftone texture, geometric moirÃ© patterns, high-contrast crimson and neutral, fine-line guilloche engraving, digital glitch distortion, minimalist graphic composition, kinetic motion silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态绯红黑色",
+    "thumbnail": "samples/Kinetic_Crimson_Noir.webp"
+  },
+  {
+    "name": "Kinetic Obsidian Glitch",
+    "prompt": "high-contrast monochrome, motion blur photography, gritty film grain, digital glitch distortion, stark chiaroscuro lighting, halftone texture, spectral silhouette, cinematic noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态黑曜故障",
+    "thumbnail": "samples/Kinetic_Obsidian_Glitch.webp"
+  },
+  {
+    "name": "Luminescent Noir Nocturne",
+    "prompt": "glowing white silhouette, ethereal light emission, analog film grain, high contrast noir, midnight blue and teal palette, surreal dreamlike atmosphere, lo-fi texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminescent Noir Nocturne",
+    "thumbnail": "samples/Luminescent_Noir_Nocturne.webp"
+  },
+  {
+    "name": "Luminous Chromatic Minimalism — Risograph Radial Aura",
+    "prompt": "chromatic aura, soft-focus radial gradient, minimalist abstraction, risograph film grain, atmospheric light halo, vibrant color bleeding, meditative geometry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮彩色极简主义RisographRadialAura",
+    "thumbnail": "samples/Luminous_Chromatic_Minimalism_—_Risograph_Radial_Aura.webp"
+  },
+  {
+    "name": "Luminous Glitch Impressionism",
+    "prompt": "digital glitch, pointillist texture, chromatic aberration, neon saturated palette, halftone distortion, frosted noise filter, thermal heat map aesthetics. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮故障印象派",
+    "thumbnail": "samples/Luminous_Glitch_Impressionism.webp"
+  },
+  {
+    "name": "Luminous Grainy Etherealism — Risograph Aura Blur",
+    "prompt": "heavy grain texture, soft focus aura, luminous gradient, risograph aesthetic, dreamy light bleed, minimalist surrealism, atmospheric blur. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮颗粒感EtherealismRisographAura模糊",
+    "thumbnail": "samples/Luminous_Grainy_Etherealism_—_Risograph_Aura_Blur.webp"
+  },
+  {
+    "name": "Luminous Noir Minimalism",
+    "prompt": "high-contrast monochrome, glowing silhouette, heavy film grain, stippled texture, ethereal spectral light, minimalist noir, photogram style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮黑色极简主义",
+    "thumbnail": "samples/Luminous_Noir_Minimalism.webp"
+  },
+  {
+    "name": "Luminous Retro Cosmic",
+    "prompt": "vintage 70s sci-fi aesthetic, teal and orange color grading, analog film grain, cosmic surrealism, halftone and airbrush texture, dreamlike cinematic lighting, distressed collage elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮复古宇宙",
+    "thumbnail": "samples/Luminous_Retro_Cosmic.webp"
+  },
+  {
+    "name": "Luminous Stippled Surrealism",
+    "prompt": "stippled texture, risograph print, chromatic diffusion, neon gradients, soft-focus pointillism, retro-futuristic airbrush, vibrant color bleed. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Stippled超现实",
+    "thumbnail": "samples/Luminous_Stippled_Surrealism.webp"
+  },
+  {
+    "name": "Luminous Thermal Surrealism",
+    "prompt": "extreme macro beauty photography, saturated thermal color palette, shimmering dewy skin textures, cinematic light leaks, prismatic lens flare, halftone grain, psychedelic bioluminescence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Thermal超现实",
+    "thumbnail": "samples/Luminous_Thermal_Surrealism.webp"
+  },
+  {
+    "name": "Midcentury Tactile Print",
+    "prompt": "mid-century print aesthetic, halftone dot texture, vintage lithograph style, tactile yarn embroidery, distressed paper patina, saturated retro palette, graphic screenprint illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Midcentury触觉印刷",
+    "thumbnail": "samples/Midcentury_Tactile_Print.webp"
+  },
+  {
+    "name": "Modern Retro Printmaker",
+    "prompt": "risograph texture, minimalist screenprint, halftone dots, retro color palette, vintage print aesthetic, bold graphic illustration, grainy paper texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "现代复古Printmaker",
+    "thumbnail": "samples/Modern_Retro_Printmaker.webp"
+  },
+  {
+    "name": "Monochromatic Analog Grime",
+    "prompt": "high-contrast black and white, coarse halftone pattern, distressed analog print texture, CRT scanlines, gritty lo-fi noise, stipple and grain, atmospheric dark noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色模拟Grime",
+    "thumbnail": "samples/Monochromatic_Analog_Grime.webp"
+  },
+  {
+    "name": "Monochromatic Cobalt Noir — Stencil Airbrush Bleed",
+    "prompt": "cyanotype print, cobalt and indigo, airbrush stencil, analog grain, high-contrast silhouette, distressed paper texture, halftone dot matrix, smoky ink bleed. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monochromatic Cobalt Noir — Stencil Airbrush Bleed",
+    "thumbnail": "samples/Monochromatic_Cobalt_Noir_—_Stencil_Airbrush_Bleed.webp"
+  },
+  {
+    "name": "Monochromatic Cosmic Grunge",
+    "prompt": "high-contrast monochrome, analog film grain, distressed xerox texture, cosmic desolation, geometric industrial silhouettes, halftone patterns, stark shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色宇宙Grunge",
+    "thumbnail": "samples/Monochromatic_Cosmic_Grunge.webp"
+  },
+  {
+    "name": "Monochromatic Digital Brutalism",
+    "prompt": "cobalt blue and white, duotone high contrast, dithered pixel art, halftone pattern, minimalist geometric, retro digital printmaking, stark graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色数字Brutalism",
+    "thumbnail": "samples/Monochromatic_Digital_Brutalism.webp"
+  },
+  {
+    "name": "Monochromatic Magenta Engraving",
+    "prompt": "monochromatic magenta, halftone engraving, stipple and cross-hatch, vintage print aesthetic, high-contrast graphic, woodcut illustration, dot matrix shading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色品红雕刻",
+    "thumbnail": "samples/Monochromatic_Magenta_Engraving.webp"
+  },
+  {
+    "name": "Monochromatic Surrealist Archive",
+    "prompt": "monochromatic high contrast, surrealist collage, tactile film grain, vintage halftone texture, stark noir lighting, fragmented perspective, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色超现实Archive",
+    "thumbnail": "samples/Monochromatic_Surrealist_Archive.webp"
+  },
+  {
+    "name": "Monochrome Analog Disturbance",
+    "prompt": "high-contrast monochrome, distressed xerox texture, analog halftone pattern, gritty film grain, stark silhouette, ink bleed, lo-fi darkroom distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色模拟Disturbance",
+    "thumbnail": "samples/Monochrome_Analog_Disturbance.webp"
+  },
+  {
+    "name": "Monochrome Brutalist Minimalism",
+    "prompt": "stark monochrome, high-contrast minimalism, brutalist graphic design, grainy paper texture, geometric abstraction, Swiss design style, chiaroscuro lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色粗野主义极简主义",
+    "thumbnail": "samples/Monochrome_Brutalist_Minimalism.webp"
+  },
+  {
+    "name": "Monochrome Geometric Abstraction",
+    "prompt": "high-contrast monochrome, geometric grid pattern, stark silhouette, halftone raster, minimalist op-art, brutalist structure, optical distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色几何Abstraction",
+    "thumbnail": "samples/Monochrome_Geometric_Abstraction.webp"
+  },
+  {
+    "name": "Monochrome Glitch Baroque",
+    "prompt": "chiaroscuro lighting, pixel sorting, monochrome halftone, digital glitch art, classical portraiture, heavy film grain, fragmented distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色故障巴洛克",
+    "thumbnail": "samples/Monochrome_Glitch_Baroque.webp"
+  },
+  {
+    "name": "Monochrome Glitch Decay",
+    "prompt": "monochrome glitch art, high contrast black and white, datamoshing, halftone texture, pixel sorting, scan lines, digital decay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色故障衰败",
+    "thumbnail": "samples/Monochrome_Glitch_Decay.webp"
+  },
+  {
+    "name": "Monochrome Glitch Noir — Double-Exposed Shadow",
+    "prompt": "high-contrast black and white, heavy film grain, analog glitch art, halftone texture, surreal double exposure, cinematic noir lighting, scanline distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色故障黑色双Exposed影",
+    "thumbnail": "samples/Monochrome_Glitch_Noir_—_Double-Exposed_Shadow.webp"
+  },
+  {
+    "name": "Monochrome Granular Noir",
+    "prompt": "stark monochrome, heavy film grain, stippled texture, high-contrast silhouette, minimalist ink wash, halftone patterns, smoky diffusion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色Granular黑色",
+    "thumbnail": "samples/Monochrome_Granular_Noir.webp"
+  },
+  {
+    "name": "Monochrome Halftone Graphic — Distressed Ink Silhouette",
+    "prompt": "high-contrast monochrome, halftone dot pattern, stipple spray texture, distressed ink print, minimalist graphic illustration, vintage screenprint style, chiaroscuro lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色半色调图形Distressed墨剪影",
+    "thumbnail": "samples/Monochrome_Halftone_Graphic_—_Distressed_Ink_Silhouette.webp"
+  },
+  {
+    "name": "Monochrome Halftone Graphic — Retro Risograph Press",
+    "prompt": "coarse halftone pattern, vintage risograph print, high-contrast black and white, stipple shading, dithered dot texture, minimalist graphic design, retro press effect. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色半色调图形复古RisographPress",
+    "thumbnail": "samples/Monochrome_Halftone_Graphic_—_Retro_Risograph_Press.webp"
+  },
+  {
+    "name": "Monochrome Lo-Fi Brutalism",
+    "prompt": "high-contrast monochrome, halftone pattern, distressed xerox texture, analog noise, lo-fi print aesthetic, stark black and white, dithered scanlines. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色LoFiBrutalism",
+    "thumbnail": "samples/Monochrome_Lo-Fi_Brutalism.webp"
+  },
+  {
+    "name": "Monochrome Print Noir",
+    "prompt": "high-contrast monochrome, distressed ink texture, halftone print aesthetic, linocut woodblock style, minimalist graphic illustration, vintage off-white paper, bold geometric silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色印刷黑色",
+    "thumbnail": "samples/Monochrome_Print_Noir.webp"
+  },
+  {
+    "name": "Monochrome Stipple Noir — Newsprint Pointillism",
+    "prompt": "meticulous stippling, halftone dotwork, high-contrast monochrome, vintage engraving style, ink pointillism, archival newsprint aesthetic, chiaroscuro lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色点彩黑色NewsprintPointillism",
+    "thumbnail": "samples/Monochrome_Stipple_Noir_—_Newsprint_Pointillism.webp"
+  },
+  {
+    "name": "Monochrome Surrealist Montage",
+    "prompt": "monochrome photomontage, surrealist collage, vintage silver gelatin texture, geometric fragmentation, chiaroscuro lighting, analog halftone aesthetic, dreamlike spatial distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色超现实Montage",
+    "thumbnail": "samples/Monochrome_Surrealist_Montage.webp"
+  },
+  {
+    "name": "Monochrome Surrealist Noir — Dadaist Halftone",
+    "prompt": "surrealist monochrome collage, high-contrast noir photography, grainy vintage texture, chiaroscuro lighting, dadaist photomontage, stark halftone effect, fragmented psychological symbolism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色超现实黑色Dadaist半色调",
+    "thumbnail": "samples/Monochrome_Surrealist_Noir_—_Dadaist_Halftone.webp"
+  },
+  {
+    "name": "Muted Pastoral Glitch",
+    "prompt": "muted pastoral landscape, analog film grain, surreal geometric intervention, desaturated earth tones, halftone print texture, minimalist composition, misty overcast atmosphere, digital glitch aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "柔和Pastoral故障",
+    "thumbnail": "samples/Muted_Pastoral_Glitch.webp"
+  },
+  {
+    "name": "Neo-Punk Collage Zine",
+    "prompt": "risograph print aesthetic, high-contrast halftone, punk zine collage, neon pink accents, tactile paper texture, surreal editorial layout, distressed street art, bold graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Neo-Punk Collage Zine",
+    "thumbnail": "samples/Neo-Punk_Collage_Zine.webp"
+  },
+  {
+    "name": "Neon Analog Halftone",
+    "prompt": "acidic neon palette, heavy film grain, halftone print texture, chromatic aberration, soft-focus dreamcore, duotone risograph aesthetic, lo-fi analog noise. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹模拟半色调",
+    "thumbnail": "samples/Neon_Analog_Halftone.webp"
+  },
+  {
+    "name": "Neon Crimson Surrealism",
+    "prompt": "high-contrast lighting, saturated crimson red, analog film grain, glossy texture, surreal pop art, retro risograph aesthetic, direct flash photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹绯红超现实",
+    "thumbnail": "samples/Neon_Crimson_Surrealism.webp"
+  },
+  {
+    "name": "Neon Dithered Graphic",
+    "prompt": "dithered stipple texture, risograph halftone pattern, high-contrast duotone portrait, retro-futuristic graphic, saturated neon palette, screen-printed aesthetic, ink-splattered shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Dithered图形",
+    "thumbnail": "samples/Neon_Dithered_Graphic.webp"
+  },
+  {
+    "name": "Neon Glitch Engraving",
+    "prompt": "vintage woodcut engraving, chromatic aberration, risograph halftone texture, anaglyph 3D effect, high-contrast cross-hatching, neon cyan and magenta, misaligned color registration, stark white background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹故障雕刻",
+    "thumbnail": "samples/Neon_Glitch_Engraving.webp"
+  },
+  {
+    "name": "Neon Glitch Risography",
+    "prompt": "risograph print style, chromatic aberration, neon glitch art, grainy tactile texture, saturated gradient, retro-futuristic collage, airbrushed geometry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹故障Risography",
+    "thumbnail": "samples/Neon_Glitch_Risography.webp"
+  },
+  {
+    "name": "Neon Glitch Thermalism",
+    "prompt": "neon thermal imaging, acid glitch art, halftone dot texture, high contrast posterization, chromatic aberration, xerox punk aesthetic, CRT scanlines. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹故障Thermalism",
+    "thumbnail": "samples/Neon_Glitch_Thermalism.webp"
+  },
+  {
+    "name": "Neon Grain Surrealism",
+    "prompt": "risograph print style, acid neon gradients, stipple grain texture, surreal dreamscape, halftone pointillism, vibrant high-contrast saturation, retro-futuristic silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹颗粒超现实",
+    "thumbnail": "samples/Neon_Grain_Surrealism.webp"
+  },
+  {
+    "name": "Neon Graphic Surrealism",
+    "prompt": "neon magenta accents, bold ink outlines, halftone texture, surreal pop art, high-contrast graphic style, risograph print aesthetic, punk zine grit. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹图形超现实",
+    "thumbnail": "samples/Neon_Graphic_Surrealism.webp"
+  },
+  {
+    "name": "Neon Nocturnal Lo-Fi",
+    "prompt": "duotone magenta and violet, heavy digital grain, halftone dot texture, high contrast silhouettes, retro lo-fi aesthetic, bioluminescent glow, chromatic aberration, synthwave color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹夜行LoFi",
+    "thumbnail": "samples/Neon_Nocturnal_Lo-Fi.webp"
+  },
+  {
+    "name": "Neon Noir Tactile",
+    "prompt": "neon noir, high-contrast chiaroscuro, electric blue and hot pink palette, heavy impasto texture, halftone screenprint effects, synthwave atmospheric lighting, gritty retro-futuristic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹黑色触觉",
+    "thumbnail": "samples/Neon_Noir_Tactile.webp"
+  },
+  {
+    "name": "Neon Risograph Noir",
+    "prompt": "risograph print texture, stippled airbrush gradient, neon pink and cyan glow, ochre and brown earth tones, retro-futuristic surrealism, minimalist dark silhouette, heavy tactile film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Risograph黑色",
+    "thumbnail": "samples/Neon_Risograph_Noir.webp"
+  },
+  {
+    "name": "Neon Surreal Noir",
+    "prompt": "high-contrast noir, saturated neon palette, retro film grain, surreal chiaroscuro, geometric color blocking, thermal imaging aesthetic, minimalist graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹超现实黑色",
+    "thumbnail": "samples/Neon_Surreal_Noir.webp"
+  },
+  {
+    "name": "Nocturnal Analog Glitch",
+    "prompt": "monochromatic cobalt blue, CRT scanline distortion, analog glitch art, heavy digital grain, chromatic aberration, high contrast silhouettes, phosphor glow, tactile halftone texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行模拟故障",
+    "thumbnail": "samples/Nocturnal_Analog_Glitch.webp"
+  },
+  {
+    "name": "Nocturnal Cobalt Liminality — Halftone Aberration Murk",
+    "prompt": "monochromatic cobalt blue, halftone grain texture, liminal space, high-contrast chiaroscuro, lo-fi digital noise, chromatic aberration, minimalist atmospheric void. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nocturnal Cobalt Liminality — Halftone Aberration Murk",
+    "thumbnail": "samples/Nocturnal_Cobalt_Liminality_—_Halftone_Aberration_Murk.webp"
+  },
+  {
+    "name": "Nocturnal Cyanotype Dreamscape",
+    "prompt": "Prussian blue monochrome, tactile film grain, halftone and stippling, liminal dreamscape, chiaroscuro lighting, vintage print aesthetic, atmospheric fog. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行CyanotypeDreamscape",
+    "thumbnail": "samples/Nocturnal_Cyanotype_Dreamscape.webp"
+  },
+  {
+    "name": "Nocturnal Graphic Minimalism",
+    "prompt": "stippled texture, high-contrast chiaroscuro, nocturnal indigo palette, minimalist graphic illustration, grainy airbrush gradients, risograph printing style, vector-like silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行图形极简主义",
+    "thumbnail": "samples/Nocturnal_Graphic_Minimalism.webp"
+  },
+  {
+    "name": "Nocturnal Liminal Surrealism — Indigo-Ochre Print",
+    "prompt": "chiaroscuro lighting, minimalist surrealism, grainy film texture, saturated indigo and orange, geometric composition, atmospheric dreamscape, retro-futuristic depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行阈限超现实靛蓝Ochre印刷",
+    "thumbnail": "samples/Nocturnal_Liminal_Surrealism_—_Indigo-Ochre_Print.webp"
+  },
+  {
+    "name": "Nostalgic Analog Archive",
+    "prompt": "vintage film grain, offset lithography texture, mid-century aesthetic, soft focus, halftone patterns, faded analog colors, nostalgic tactile finish. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Analog Archive",
+    "thumbnail": "samples/Nostalgic_Analog_Archive.webp"
+  },
+  {
+    "name": "Nostalgic Luminous Landscapes",
+    "prompt": "textured paper grain, soft gradient lighting, nostalgic color palette, stippled halftone texture, stylized landscape, fine ink contours, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Luminous Landscapes",
+    "thumbnail": "samples/Nostalgic_Luminous_Landscapes.webp"
+  },
+  {
+    "name": "Nostalgic Pop Collage",
+    "prompt": "mixed media collage, bold primary colors, halftone texture, retro graphic design, urban streetwear aesthetic, vintage pop art, torn paper edges, bold typography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "NostalgicPop拼贴",
+    "thumbnail": "samples/Nostalgic_Pop_Collage.webp"
+  },
+  {
+    "name": "Nostalgic Surrealist Collage — Sun-Faded Halftone",
+    "prompt": "analog paper collage, surrealist photomontage, vintage halftone texture, mid-century magazine aesthetic, sun-faded color palette, dreamy scale juxtaposition, retro print grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Surrealist Collage — Sun-Faded Halftone",
+    "thumbnail": "samples/Nostalgic_Surrealist_Collage_—_Sun-Faded_Halftone.webp"
+  },
+  {
+    "name": "Nostalgic Surrealist Collage — Torn Print Layers",
+    "prompt": "analog paper collage, vintage print texture, surreal juxtaposition, torn paper edges, halftone grain, mid-century aesthetic, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Surrealist Collage — Torn Print Layers",
+    "thumbnail": "samples/Nostalgic_Surrealist_Collage_—_Torn_Print_Layers.webp"
+  },
+  {
+    "name": "Playful Risograph Naivety",
+    "prompt": "risograph print texture, naive illustration style, bold flat color blocking, grainy hand-drawn texture, color registration offset, playful graphic design, vibrant saturated palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Playful Risograph Naivety",
+    "thumbnail": "samples/Playful_Risograph_Naivety.webp"
+  },
+  {
+    "name": "Psychedelic Thermal Grain",
+    "prompt": "psychedelic airbrush texture, thermal imaging color palette, heavy halftone grain, acid neon gradients, retro-futuristic surrealism, duotone screenprint aesthetic, glowing biomorphic forms. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "PsychedelicThermal颗粒",
+    "thumbnail": "samples/Psychedelic_Thermal_Grain.webp"
+  },
+  {
+    "name": "Radiant Thermographic Aura",
+    "prompt": "thermal imaging style, chromatic heat map gradient, analog grain texture, glowing blurred silhouette, psychedelic aura, risograph noise, soft-focus airbrush. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Radiant Thermographic Aura",
+    "thumbnail": "samples/Radiant_Thermographic_Aura.webp"
+  },
+  {
+    "name": "Raw Analog Collage",
+    "prompt": "mixed-media collage, torn paper texture, high-contrast monochrome, analog zine aesthetic, deconstructed portrait, halftone printing, distressed tactile layers. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "原始模拟拼贴",
+    "thumbnail": "samples/Raw_Analog_Collage.webp"
+  },
+  {
+    "name": "Raw Halftone Punk",
+    "prompt": "high-contrast black and white, halftone dot pattern, distressed risograph texture, punk zine aesthetic, dithered graphic, minimalist ink illustration, vintage photocopy grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "原始半色调Punk",
+    "thumbnail": "samples/Raw_Halftone_Punk.webp"
+  }
+]

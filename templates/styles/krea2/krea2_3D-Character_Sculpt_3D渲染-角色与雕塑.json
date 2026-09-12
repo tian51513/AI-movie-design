@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Ethereal Kawaii Whimsy",
+    "prompt": "3D digital render, pastel color palette, chibi character design, soft volumetric lighting, tactile plush textures, dreamy bokeh, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵KawaiiWhimsy",
+    "thumbnail": "samples/Ethereal_Kawaii_Whimsy.webp"
+  },
+  {
+    "name": "Glossy Urban Surrealism",
+    "prompt": "glossy 3D vinyl character, urban surrealism, inflated balloon aesthetic, hyper-realistic street photography, vibrant candy colors, whimsical juxtaposition, smooth plastic texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光泽都市超现实",
+    "thumbnail": "samples/Glossy_Urban_Surrealism.webp"
+  },
+  {
+    "name": "Organic Velvet Minimalism",
+    "prompt": "organic 3D sculpture, porous cellular texture, soft studio lighting, monochromatic violet palette, minimalist neutral background, tactile foam and clay, parametric bio-design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有机天鹅绒极简主义",
+    "thumbnail": "samples/Organic_Velvet_Minimalism.webp"
+  },
+  {
+    "name": "Tactile Surrealist Dreamscape",
+    "prompt": "tactile felt and glossy textures, saturated primary color palette, surrealist whimsical composition, oversized organic elements, vibrant blue sky background, high-contrast lighting, 3d sculptural aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉超现实Dreamscape",
+    "thumbnail": "samples/Tactile_Surrealist_Dreamscape.webp"
+  },
+  {
+    "name": "Whimsical Tactile 3D",
+    "prompt": "3D claymation style, tactile matte texture, chunky rounded geometries, soft studio lighting, vibrant minimalist background, cute vinyl toy aesthetic, whimsical character design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Whimsical触觉三维",
+    "thumbnail": "samples/Whimsical_Tactile_3D.webp"
+  }
+]

@@ -1,0 +1,702 @@
+[
+  {
+    "name": "Amber Nocturne Etherealism",
+    "prompt": "long exposure motion blur, chiaroscuro lighting, warm amber glow, cinematic haze, analog film grain, ethereal light trails, heavy shadow contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀NocturneEtherealism",
+    "thumbnail": "samples/Amber_Nocturne_Etherealism.webp"
+  },
+  {
+    "name": "Amber Noir Cinematic",
+    "prompt": "high-contrast silhouette, amber backlight, heavy film grain, cinematic noir, deep red glow, graphic shadow play, moody atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀黑色电影感",
+    "thumbnail": "samples/Amber_Noir_Cinematic.webp"
+  },
+  {
+    "name": "Amber Noir Motion",
+    "prompt": "analog film grain, amber light trails, high-contrast silhouette, long-exposure motion blur, fiery atmospheric haze, liminal noir, vintage cinematic texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀黑色运动",
+    "thumbnail": "samples/Amber_Noir_Motion.webp"
+  },
+  {
+    "name": "Amber Twilight Liminality",
+    "prompt": "analog film grain, amber and teal color grading, motion blur, high-contrast silhouette, retro-futurist airbrush, dreamy sunset haze, liminal space aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀暮光Liminality",
+    "thumbnail": "samples/Amber_Twilight_Liminality.webp"
+  },
+  {
+    "name": "Analog Abyssal Inferno",
+    "prompt": "vintage 35mm film grain, high contrast chiaroscuro, blinding fiery glow, backlit silhouette, analog halation, atmospheric dark noir, chromatic aberration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟深渊Inferno",
+    "thumbnail": "samples/Analog_Abyssal_Inferno.webp"
+  },
+  {
+    "name": "Analog Pixel Surrealism",
+    "prompt": "slit-scan effect, pixel sorting, analog film grain, muted vintage palette, digital distortion, chromatic aberration, surreal still life, VHS tape decay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟Pixel超现实",
+    "thumbnail": "samples/Analog_Pixel_Surrealism.webp"
+  },
+  {
+    "name": "Analog Spectral Surrealism",
+    "prompt": "retro sci-fi, analog film grain, motion blur silhouette, glowing aura, high-contrast backlighting, surreal light leaks, dark minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟光谱超现实",
+    "thumbnail": "samples/Analog_Spectral_Surrealism.webp"
+  },
+  {
+    "name": "Analog Technicolor Retro-Fantasy",
+    "prompt": "vintage 35mm film grain, saturated technicolor palette, theatrical studio lighting, atmospheric haze, practical special effects, retro-cinematic composition, tactile material textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟Technicolor复古幻想",
+    "thumbnail": "samples/Analog_Technicolor_Retro-Fantasy.webp"
+  },
+  {
+    "name": "Analog Thermal Distortion",
+    "prompt": "thermal imaging palette, analog film grain, chromatic aberration, fluid liquid distortion, retro-futuristic sci-fi, high contrast dark background, spectral gradient. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟ThermalDistortion",
+    "thumbnail": "samples/Analog_Thermal_Distortion.webp"
+  },
+  {
+    "name": "Atmospheric Midnight Noir",
+    "prompt": "cinematic noir, blue hour atmosphere, volumetric lighting, rain-slicked surfaces, mysterious silhouettes, high-contrast low-key, cinestill film aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围午夜黑色",
+    "thumbnail": "samples/Atmospheric_Midnight_Noir.webp"
+  },
+  {
+    "name": "Celestial Analog Dreamscape",
+    "prompt": "vintage 1970s fantasy illustration, analog film grain, glowing starburst lens flares, cosmic surrealism, soft-focus airbrush texture, mystical nocturnal atmosphere, prismatic stardust. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体模拟Dreamscape",
+    "thumbnail": "samples/Celestial_Analog_Dreamscape.webp"
+  },
+  {
+    "name": "Chromatic Dream Haze",
+    "prompt": "chromatic aberration, liquid metal textures, psychedelic gradients, analog film grain, ethereal aura, retro-futuristic surrealism, prismatic light leaks. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色梦Haze",
+    "thumbnail": "samples/Chromatic_Dream_Haze.webp"
+  },
+  {
+    "name": "Chromatic Ethereal Grain",
+    "prompt": "heavy film grain, chromatic aura, airbrush gradient, stippled texture, thermal imaging palette, ethereal silhouette, soft-focus glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色空灵颗粒",
+    "thumbnail": "samples/Chromatic_Ethereal_Grain.webp"
+  },
+  {
+    "name": "Chromatic Tactile Surrealism",
+    "prompt": "chromatic aberration, prismatic light refraction, digital glitch distortion, direct flash photography, tactile synthetic texture, ethereal motion blur, high contrast chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色触觉超现实",
+    "thumbnail": "samples/Chromatic_Tactile_Surrealism.webp"
+  },
+  {
+    "name": "Chromatic Thermal Dreamscape",
+    "prompt": "thermal imaging palette, soft-focus airbrush texture, chromatic gradient glow, heavy film grain, retro-futuristic heat map, diffuse light blooms, psychedelic aura. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色ThermalDreamscape",
+    "thumbnail": "samples/Chromatic_Thermal_Dreamscape.webp"
+  },
+  {
+    "name": "Chrome Synthwave Surrealism",
+    "prompt": "liquid chrome surrealism, 1980s airbrush aesthetic, cobalt blue luminescence, starburst lens flare, retro-futurist digital collage, high-contrast metallic reflection, analog grain texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "铬Synthwave超现实",
+    "thumbnail": "samples/Chrome_Synthwave_Surrealism.webp"
+  },
+  {
+    "name": "Cinematic Abyssal Noir — Volumetric Beam Grain",
+    "prompt": "cinematic chiaroscuro, volumetric backlighting, cyan and teal color grading, high contrast silhouettes, atmospheric film grain, mystical noir mood, ethereal light shafts. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感深渊黑色Volumetric梁颗粒",
+    "thumbnail": "samples/Cinematic_Abyssal_Noir_—_Volumetric_Beam_Grain.webp"
+  },
+  {
+    "name": "Cinematic Amber Chiaroscuro — Golden Silhouette",
+    "prompt": "cinematic chiaroscuro, dramatic rim lighting, low-key silhouette, warm amber glow, minimalist portraiture, high-contrast shadows, film grain texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感琥珀Chiaroscuro黄金剪影",
+    "thumbnail": "samples/Cinematic_Amber_Chiaroscuro_—_Golden_Silhouette.webp"
+  },
+  {
+    "name": "Cinematic Amber Noir — Teal Fog Grain",
+    "prompt": "cinematic chiaroscuro, teal and amber color grading, dense atmospheric fog, wet reflective surfaces, high-contrast low-key lighting, gritty 35mm film grain, melancholic isolation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感琥珀黑色青蓝雾颗粒",
+    "thumbnail": "samples/Cinematic_Amber_Noir_—_Teal_Fog_Grain.webp"
+  },
+  {
+    "name": "Cinematic Amber Noir — Vintage Gold Grain",
+    "prompt": "chiaroscuro lighting, golden amber glow, cinematic haze, dramatic rim lighting, surreal melancholic atmosphere, low-key warm contrast, textured film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感琥珀黑色复古金颗粒",
+    "thumbnail": "samples/Cinematic_Amber_Noir_—_Vintage_Gold_Grain.webp"
+  },
+  {
+    "name": "Cinematic Analog Liminality",
+    "prompt": "analog film grain, liminal space, cinematic nostalgia, expired film aesthetic, voyeuristic framing, low-light atmosphere, muted vintage palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感模拟Liminality",
+    "thumbnail": "samples/Cinematic_Analog_Liminality.webp"
+  },
+  {
+    "name": "Cinematic Analog Melancholy — Candlelit Warmth",
+    "prompt": "35mm film grain, low-key warm lighting, cinematic chiaroscuro, muted earthy tones, shallow depth of field, introspective portraiture, vintage nostalgic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感模拟忧郁CandlelitWarmth",
+    "thumbnail": "samples/Cinematic_Analog_Melancholy_—_Candlelit_Warmth.webp"
+  },
+  {
+    "name": "Cinematic Analog Melancholy — Cool Overcast Blue",
+    "prompt": "low angle cinematic perspective, analog film grain, desaturated color palette, overcast sky, vintage 35mm film aesthetic, somber contemplative mood, diffused natural light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感模拟忧郁冷OvercastBlue",
+    "thumbnail": "samples/Cinematic_Analog_Melancholy_—_Cool_Overcast_Blue.webp"
+  },
+  {
+    "name": "Cinematic Analog Noir — Blue-Gold Contrast",
+    "prompt": "35mm film grain, cinematic chiaroscuro, analog nostalgic aesthetic, high-contrast moody lighting, vintage lens flare, desaturated cool tones, tactile film texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感模拟黑色Blue金对比",
+    "thumbnail": "samples/Cinematic_Analog_Noir_—_Blue-Gold_Contrast.webp"
+  },
+  {
+    "name": "Cinematic Analog Noir — Red-Blue 90s",
+    "prompt": "heavy film grain, cinematic color grading, red and blue contrast, low-key moody lighting, analog photography aesthetic, shallow depth of field, vintage 90s editorial. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感模拟黑色RedBlue90s",
+    "thumbnail": "samples/Cinematic_Analog_Noir_—_Red-Blue_90s.webp"
+  },
+  {
+    "name": "Cinematic Atmospheric Gloom",
+    "prompt": "cinematic film grain, atmospheric haze and mist, low-key lighting, backlit silhouette, desaturated cool tones, muted earth palette, crepuscular rays. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感氛围Gloom",
+    "thumbnail": "samples/Cinematic_Atmospheric_Gloom.webp"
+  },
+  {
+    "name": "Cinematic Brutalist Bureaucracy",
+    "prompt": "brutalist architecture, liminal space, cinematic 35mm film grain, muted earth tones, harsh overhead lighting, symmetrical composition, retro-futurism, institutional melancholy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感粗野主义Bureaucracy",
+    "thumbnail": "samples/Cinematic_Brutalist_Bureaucracy.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Noir — Candle Smoke Indigo",
+    "prompt": "chiaroscuro lighting, cinematic atmosphere, analog film grain, dramatic shafts of light, high-contrast shadows, atmospheric dust motes, deep indigo and amber palette, tactile textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Chiaroscuro Noir — Candle Smoke Indigo",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Noir_—_Candle_Smoke_Indigo.webp"
+  },
+  {
+    "name": "Cinematic Crimson Nocturne — Ember Halo",
+    "prompt": "monochromatic crimson and amber palette, heavy analog film grain, high-contrast silhouette, long exposure motion blur, cinematic light halation, atmospheric haze, surreal chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感绯红NocturneEmberHalo",
+    "thumbnail": "samples/Cinematic_Crimson_Nocturne_-_Ember_Halo.webp"
+  },
+  {
+    "name": "Cinematic Crimson Nocturne — Smoke-Diffused Grain",
+    "prompt": "analog film grain, chiaroscuro lighting, low-key cinematic portrait, deep shadows, crimson and amber glow, atmospheric smoke haze, high contrast silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感绯红Nocturne烟漫射颗粒",
+    "thumbnail": "samples/Cinematic_Crimson_Nocturne_—_Smoke-Diffused_Grain.webp"
+  },
+  {
+    "name": "Cinematic Crimson Noir — Amber Heat",
+    "prompt": "high-contrast portraiture, saturated crimson background, chiaroscuro lighting, analog film grain, dramatic shadows, minimalist studio aesthetic, cinematic glow, sharp graphic silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感绯红黑色琥珀Heat",
+    "thumbnail": "samples/Cinematic_Crimson_Noir_-_Amber_Heat.webp"
+  },
+  {
+    "name": "Cinematic Crimson Noir — Indigo Beam Fog",
+    "prompt": "cinematic chiaroscuro, deep indigo and red contrast, atmospheric film grain, low-key noir lighting, sharp horizontal light beam, mysterious urban silhouette, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感绯红黑色靛蓝梁雾",
+    "thumbnail": "samples/Cinematic_Crimson_Noir_-_Indigo_Beam_Fog.webp"
+  },
+  {
+    "name": "Cinematic Crimson Noir — Punk Grain",
+    "prompt": "cinematic noir, saturated crimson, high-contrast lighting, heavy film grain, chiaroscuro, moody atmosphere, analog film aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感绯红黑色Punk颗粒",
+    "thumbnail": "samples/Cinematic_Crimson_Noir_—_Punk_Grain.webp"
+  },
+  {
+    "name": "Cinematic Crimson Noir — Red Gel Haze",
+    "prompt": "cinematic crimson noir, heavy analog film grain, chiaroscuro lighting, saturated red gel lighting, stark black silhouettes, darkly romantic atmosphere, vintage 35mm aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感绯红黑色RedGelHaze",
+    "thumbnail": "samples/Cinematic_Crimson_Noir_—_Red_Gel_Haze.webp"
+  },
+  {
+    "name": "Cinematic Crimson Silhouette",
+    "prompt": "high-contrast silhouette, analog film grain, crimson and teal palette, atmospheric cinematic noir, halation glow, graphic minimalism, textured paper aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感绯红剪影",
+    "thumbnail": "samples/Cinematic_Crimson_Silhouette.webp"
+  },
+  {
+    "name": "Cinematic Cyan Noir — Melancholic Backlight",
+    "prompt": "cinematic chiaroscuro, desaturated cyan palette, dramatic silhouette, atmospheric haze, heavy film grain, low-key lighting, soft-focus diffusion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感青色黑色忧郁Backlight",
+    "thumbnail": "samples/Cinematic_Cyan_Noir_—_Melancholic_Backlight.webp"
+  },
+  {
+    "name": "Cinematic Cybernetic Noir",
+    "prompt": "cybernetic portraiture, chiaroscuro lighting, futuristic eyewear, cinematic 35mm film grain, high contrast composition, minimalist cyberpunk, saturated amber and blue palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Cybernetic黑色",
+    "thumbnail": "samples/Cinematic_Cybernetic_Noir.webp"
+  },
+  {
+    "name": "Cinematic Glitch Noir",
+    "prompt": "cinematic glitch art, thermal color palette, analog film grain, motion smear, high-contrast chiaroscuro, digital distortion, horizontal scanlines, psychological thriller aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感故障黑色",
+    "thumbnail": "samples/Cinematic_Glitch_Noir.webp"
+  },
+  {
+    "name": "Cinematic Gritty Noir",
+    "prompt": "cinematic suspense, low-key lighting, desaturated cool tones, shallow depth of field, gritty realism, high contrast shadows, neo-noir aesthetic, 35mm film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Gritty黑色",
+    "thumbnail": "samples/Cinematic_Gritty_Noir.webp"
+  },
+  {
+    "name": "Cinematic Intimate Chiaroscuro",
+    "prompt": "low-key lighting, heavy film grain, chiaroscuro portrait, shallow depth of field, cinematic intimacy, tactile skin texture, warm amber tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感亲密Chiaroscuro",
+    "thumbnail": "samples/Cinematic_Intimate_Chiaroscuro.webp"
+  },
+  {
+    "name": "Cinematic Liminal Haze",
+    "prompt": "cinematic film grain, soft-focus haze, intentional motion blur, high-contrast backlight, deep teal and amber palette, liminal space, shimmering bokeh. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感阈限Haze",
+    "thumbnail": "samples/Cinematic_Liminal_Haze.webp"
+  },
+  {
+    "name": "Cinematic Liminal Noir — Frosted Glass Veil",
+    "prompt": "cinematic noir, frosted glass silhouette, desaturated teal and gray, liminal space, chiaroscuro lighting, voyeuristic framing, moody film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Liminal Noir — Frosted Glass Veil",
+    "thumbnail": "samples/Cinematic_Liminal_Noir_—_Frosted_Glass_Veil.webp"
+  },
+  {
+    "name": "Cinematic Liminal Noir — Olive Vintage Stock",
+    "prompt": "liminal space, 35mm film grain, fluorescent lighting, neo-noir aesthetic, high contrast shadows, analog color cast, urban isolation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Liminal Noir — Olive Vintage Stock",
+    "thumbnail": "samples/Cinematic_Liminal_Noir_—_Olive_Vintage_Stock.webp"
+  },
+  {
+    "name": "Cinematic Luminescent Nocturne",
+    "prompt": "starburst lens flare, bioluminescent glow, cinematic film grain, deep teal and red contrast, atmospheric moody lighting, ethereal dreamcore, shimmering reflective textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感LuminescentNocturne",
+    "thumbnail": "samples/Cinematic_Luminescent_Nocturne.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Blur — Veiled Light Leak",
+    "prompt": "cinematic chiaroscuro, motion blur, low-key lighting, deep blue shadows, film grain texture, selective focus, introspective atmosphere, cool color grading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行模糊Veiled浅漏光",
+    "thumbnail": "samples/Cinematic_Nocturnal_Blur_—_Veiled_Light_Leak.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Chiaroscuro — Teal Orange Grain",
+    "prompt": "cinematic chiaroscuro, volumetric lighting, high contrast silhouettes, analog film grain, mystical amber glow, nocturnal atmosphere, deep teal and orange palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Nocturnal Chiaroscuro — Teal Orange Grain",
+    "thumbnail": "samples/Cinematic_Nocturnal_Chiaroscuro_—_Teal_Orange_Grain.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Grain",
+    "prompt": "heavy film grain, anamorphic lens flare, deep indigo and cobalt, minimalist silhouette, lo-fi analog aesthetic, cinematic haze, retro-futuristic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行颗粒",
+    "thumbnail": "samples/Cinematic_Nocturnal_Grain.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Minimalism — Blue Gradient Horizon",
+    "prompt": "cinematic indigo noir, solitary silhouette, heavy 35mm film grain, ethereal light beam, atmospheric mist and fog, minimalist liminal space, high-contrast chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行极简主义Blue渐变地平线",
+    "thumbnail": "samples/Cinematic_Nocturnal_Minimalism_—_Blue_Gradient_Horizon.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Noir — Golden Wide Grain",
+    "prompt": "cinematic noir, dense night fog, cool cyan and deep blue palette, mysterious silhouette, film grain texture, wet reflective surfaces, low-key moody lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行黑色黄金宽颗粒",
+    "thumbnail": "samples/Cinematic_Nocturnal_Noir_-_Golden_Wide_Grain.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Realism",
+    "prompt": "35mm film grain, cinematic blue hour lighting, teal and amber color grading, shallow depth of field, voyeuristic framing, introspective mood, gritty film texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行写实",
+    "thumbnail": "samples/Cinematic_Nocturnal_Realism.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Reflections",
+    "prompt": "cinematic reflection, shot through glass, double exposure effect, analog 35mm film grain, warm urban bokeh, teal and orange grading, moody night portrait. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行Reflections",
+    "thumbnail": "samples/Cinematic_Nocturnal_Reflections.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Solitude — Indigo Gold Gradient",
+    "prompt": "cinematic twilight, indigo night sky, warm amber glow, isolated vehicle, moody atmospheric lighting, film grain texture, vast landscape, brutalist surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行Solitude靛蓝金渐变",
+    "thumbnail": "samples/Cinematic_Nocturnal_Solitude_—_Indigo_Gold_Gradient.webp"
+  },
+  {
+    "name": "Cinematic Noir Analog",
+    "prompt": "cinematic film grain, high-contrast silhouette, teal and amber color grading, moody atmospheric lighting, 35mm analog aesthetic, shallow depth of field, introspective portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感黑色模拟",
+    "thumbnail": "samples/Cinematic_Noir_Analog.webp"
+  },
+  {
+    "name": "Cinematic Noir Minimalism — Primary Accent",
+    "prompt": "cinematic film grain, shallow depth of field, moody atmospheric lighting, intimate close-up portrait, bold primary color accents, muted color palette, nocturnal noir aesthetic, tactile texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感黑色极简主义主要Accent",
+    "thumbnail": "samples/Cinematic_Noir_Minimalism_—_Primary_Accent.webp"
+  },
+  {
+    "name": "Cinematic Noir Realism — Asphalt Ochre",
+    "prompt": "cinematic noir, chiaroscuro lighting, analog film grain, voyeuristic framing, gritty urban texture, desaturated color palette, atmospheric tension. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感黑色写实AsphaltOchre",
+    "thumbnail": "samples/Cinematic_Noir_Realism_—_Asphalt_Ochre.webp"
+  },
+  {
+    "name": "Cinematic Noir Realism — Tobacco 70s Grain",
+    "prompt": "chiaroscuro lighting, low-key cinematic noir, heavy film grain, tactile realism, shallow depth of field, muted desaturated tones, intimate close-up. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感黑色写实Tobacco70s颗粒",
+    "thumbnail": "samples/Cinematic_Noir_Realism_-_Tobacco_70s_Grain.webp"
+  },
+  {
+    "name": "Cinematic Nordic Introspection",
+    "prompt": "cinematic still, nordic noir, desaturated cool tones, shallow depth of field, melancholic atmosphere, overcast natural lighting, 35mm film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感NordicIntrospection",
+    "thumbnail": "samples/Cinematic_Nordic_Introspection.webp"
+  },
+  {
+    "name": "Cinematic Obscured Melancholy",
+    "prompt": "cinematic voyeuristic perspective, condensation on glass, vintage analog film grain, shallow depth of field, muted desaturated tones, atmospheric urban bokeh, distressed textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Obscured忧郁",
+    "thumbnail": "samples/Cinematic_Obscured_Melancholy.webp"
+  },
+  {
+    "name": "Cinematic Retro Cosmic Noir",
+    "prompt": "analog film grain, anamorphic lens flare, high-contrast silhouette, crimson and amber glow, 1970s sci-fi aesthetic, chromatic aberration, surreal cosmic landscape, vintage light leaks. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感复古宇宙黑色",
+    "thumbnail": "samples/Cinematic_Retro_Cosmic_Noir.webp"
+  },
+  {
+    "name": "Cinematic Solar Noir",
+    "prompt": "extreme close-up portrait, harsh direct sunlight, analog film grain, high-contrast color blocking, ultramarine and terracotta palette, cinematic shadows, tactile skin texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Solar黑色",
+    "thumbnail": "samples/Cinematic_Solar_Noir.webp"
+  },
+  {
+    "name": "Cinematic Tactile Noir",
+    "prompt": "cinematic low-key lighting, shallow depth of field, muted earthy palette, tactile film grain, dramatic chiaroscuro, intimate character portrait, vintage 1970s aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感触觉黑色",
+    "thumbnail": "samples/Cinematic_Tactile_Noir.webp"
+  },
+  {
+    "name": "Cinematic Tenebrism Noir",
+    "prompt": "chiaroscuro lighting, low-key cinematography, deep ink-black voids, amber rim light, heavy film grain, minimalist composition, stark silhouette, atmospheric noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Tenebrism黑色",
+    "thumbnail": "samples/Cinematic_Tenebrism_Noir.webp"
+  },
+  {
+    "name": "Cinematic Twilight Melancholy — Gilded Horizon",
+    "prompt": "cinematic twilight, analog film grain, deep indigo and gold, stark silhouette, moody blue hour, soft airbrush texture, nostalgic low-key lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感暮光忧郁Gilded地平线",
+    "thumbnail": "samples/Cinematic_Twilight_Melancholy_—_Gilded_Horizon.webp"
+  },
+  {
+    "name": "Cinematic Twilight Noir — Crimson Flash Mist",
+    "prompt": "cinematic twilight, deep indigo blue hour, crimson light contrast, 35mm film grain, atmospheric noir, high-contrast silhouette, mysterious low light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感暮光黑色绯红Flash雾",
+    "thumbnail": "samples/Cinematic_Twilight_Noir_—_Crimson_Flash_Mist.webp"
+  },
+  {
+    "name": "Cinematic Twilight Noir — Stark Navy Silhouette",
+    "prompt": "cinematic blue hour, stark black silhouette, moody atmospheric grain, deep indigo palette, vintage noir aesthetic, low-key lighting, melancholic isolation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感暮光黑色StarkNavy剪影",
+    "thumbnail": "samples/Cinematic_Twilight_Noir_-_Stark_Navy_Silhouette.webp"
+  },
+  {
+    "name": "Cinematic Twilight Solitude — Amber Fog Beam",
+    "prompt": "cinematic blue hour, vintage car, misty atmospheric fog, warm headlight glow, 35mm film grain, melancholic solitude, minimalist landscape, moody color grading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感暮光Solitude琥珀雾梁",
+    "thumbnail": "samples/Cinematic_Twilight_Solitude_—_Amber_Fog_Beam.webp"
+  },
+  {
+    "name": "Cinematic Twilight Solitude — Soft Overcast Blue",
+    "prompt": "cinematic 35mm film, blue hour photography, muted desaturated tones, analog film grain, moody introspective atmosphere, soft bokeh, overcast diffused lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Twilight Solitude — Soft Overcast Blue",
+    "thumbnail": "samples/Cinematic_Twilight_Solitude_—_Soft_Overcast_Blue.webp"
+  },
+  {
+    "name": "Cinematic Twilight Surrealism — Ember Mist",
+    "prompt": "cinematic twilight, surrealism, warm fire glow, desaturated moody landscape, analog film grain, chiaroscuro lighting, misty atmosphere, solitary narrative composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感暮光超现实Ember雾",
+    "thumbnail": "samples/Cinematic_Twilight_Surrealism_—_Ember_Mist.webp"
+  },
+  {
+    "name": "Cinematic Twilight Surrealism — Jewel Diorama",
+    "prompt": "cinematic blue hour, stark silhouette, heavy film grain, surreal natural history, atmospheric twilight mist, vintage analog aesthetic, painterly jewel tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感暮光超现实JewelDiorama",
+    "thumbnail": "samples/Cinematic_Twilight_Surrealism_—_Jewel_Diorama.webp"
+  },
+  {
+    "name": "Cinematic Twilight Surrealism — Sunset Gradient Grain",
+    "prompt": "cinematic silhouette, analog film grain, twilight sky gradient, minimalist surrealism, dreamy atmosphere, glowing sunset palette, poetic solitude. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感暮光超现实Sunset渐变颗粒",
+    "thumbnail": "samples/Cinematic_Twilight_Surrealism_-_Sunset_Gradient_Grain.webp"
+  },
+  {
+    "name": "Cinematic Urban Liminality",
+    "prompt": "cinematic motion blur, heavy film grain, moody urban atmosphere, warm glow contrast, cool blue color palette, liminal space, brutalist architecture, diffused lens flare. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市Liminality",
+    "thumbnail": "samples/Cinematic_Urban_Liminality.webp"
+  },
+  {
+    "name": "Cosmic Retro-Surreal Glitz",
+    "prompt": "vintage airbrush aesthetic, deep cobalt blue background, prismatic light leaks, heavy film grain, starburst lens flares, surreal retro-futurism, glittering ethereal texture, 1970s sci-fi fantasy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "宇宙复古超现实Glitz",
+    "thumbnail": "samples/Cosmic_Retro-Surreal_Glitz.webp"
+  },
+  {
+    "name": "Crimson Analog Editorial",
+    "prompt": "saturated red backdrop, analog film grain, high-contrast editorial, direct flash photography, glossy textures, vintage aesthetic, graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红模拟编辑",
+    "thumbnail": "samples/Crimson_Analog_Editorial.webp"
+  },
+  {
+    "name": "Crimson Astral Surrealism",
+    "prompt": "deep crimson palette, bioluminescent glow, analog film grain, high-contrast silhouette, cosmic surrealism, ethereal bloom, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红Astral超现实",
+    "thumbnail": "samples/Crimson_Astral_Surrealism.webp"
+  },
+  {
+    "name": "Crimson Cosmic Noir",
+    "prompt": "cinematic noir, glowing crimson light, heavy film grain, surreal cosmic atmosphere, stark silhouettes, melancholic mystery, vintage textured print. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红宇宙黑色",
+    "thumbnail": "samples/Crimson_Cosmic_Noir.webp"
+  },
+  {
+    "name": "Crimson Dystopian Minimalism",
+    "prompt": "monochromatic crimson, atmospheric red haze, stark black silhouette, minimalist dystopian landscape, cinematic film grain, low-key lighting, surreal liminal space. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红Dystopian极简主义",
+    "thumbnail": "samples/Crimson_Dystopian_Minimalism.webp"
+  },
+  {
+    "name": "Crimson Grain Surrealism",
+    "prompt": "stippled texture, crimson and black palette, minimalist surrealism, heavy film grain, fuzzy tactile surface, liminal landscape, high contrast noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红颗粒超现实",
+    "thumbnail": "samples/Crimson_Grain_Surrealism.webp"
+  },
+  {
+    "name": "Crimson Kinetic Noir — Orange Ember Smear",
+    "prompt": "high-contrast silhouette, crimson and black duotone, intentional motion blur, analog film grain, cinematic thriller atmosphere, long exposure distortion, minimalist noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红动态黑色OrangeEmberSmear",
+    "thumbnail": "samples/Crimson_Kinetic_Noir_—_Orange_Ember_Smear.webp"
+  },
+  {
+    "name": "Crimson Nocturnal Liminality",
+    "prompt": "cinematic chiaroscuro, analog film grain, deep twilight blue, saturated red lighting, liminal space, suburban gothic, high contrast shadows, atmospheric fog. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红夜行Liminality",
+    "thumbnail": "samples/Crimson_Nocturnal_Liminality.webp"
+  },
+  {
+    "name": "Crimson Nocturnal Void",
+    "prompt": "infrared photography, monochromatic crimson glow, pitch black night sky, high contrast silhouettes, grainy analog film texture, eerie celestial landscape, liminal gothic horror. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红夜行Void",
+    "thumbnail": "samples/Crimson_Nocturnal_Void.webp"
+  },
+  {
+    "name": "Crimson Noir Chiaroscuro",
+    "prompt": "high-contrast noir, crimson red lighting, dramatic silhouette, rim lighting, cinematic film grain, chiaroscuro, minimalist editorial. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色Chiaroscuro",
+    "thumbnail": "samples/Crimson_Noir_Chiaroscuro.webp"
+  },
+  {
+    "name": "Crimson Noir Dreamscape",
+    "prompt": "saturated crimson glow, heavy analog film grain, high-contrast silhouette, soft-focus ethereal blur, infrared photography aesthetic, ominous gothic atmosphere, lo-fi darkroom texture, liminal dreamcore noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色Dreamscape",
+    "thumbnail": "samples/Crimson_Noir_Dreamscape.webp"
+  },
+  {
+    "name": "Crimson Noir Spectral",
+    "prompt": "intense crimson lighting, chiaroscuro noir, infrared film aesthetic, analog grain, spectral distortion, high contrast composition, cinematic melodrama. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色光谱",
+    "thumbnail": "samples/Crimson_Noir_Spectral.webp"
+  },
+  {
+    "name": "Crimson Solar Noir",
+    "prompt": "minimalist silhouette, glowing solar orb, crimson and black palette, heavy film grain, high-contrast backlighting, atmospheric hazy glow, symmetrical reflection. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红Solar黑色",
+    "thumbnail": "samples/Crimson_Solar_Noir.webp"
+  },
+  {
+    "name": "Crimson Spectral Noir — Infrared Trails",
+    "prompt": "infrared crimson and black, heavy analog film grain, motion blur shutter drag, surreal silhouette, eerie dreamlike atmosphere, long exposure light trails, high contrast noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红光谱黑色InfraredTrails",
+    "thumbnail": "samples/Crimson_Spectral_Noir_—_Infrared_Trails.webp"
+  },
+  {
+    "name": "Distorted Tech Noir",
+    "prompt": "fisheye lens distortion, desaturated teal and cool tones, gritty tech noir, industrial cyberpunk streetwear, analog film grain, harsh clinical lighting, wide-angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "DistortedTech黑色",
+    "thumbnail": "samples/Distorted_Tech_Noir.webp"
+  },
+  {
+    "name": "Distorted Urban Fisheye — 90s Video Grain",
+    "prompt": "extreme fisheye lens, wide-angle distortion, circular vignette, 90s skate aesthetic, high-contrast lighting, urban realism, analog film grain, dynamic perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted Urban Fisheye — 90s Video Grain",
+    "thumbnail": "samples/Distorted_Urban_Fisheye_—_90s_Video_Grain.webp"
+  },
+  {
+    "name": "Distressed Analog Occultism",
+    "prompt": "distressed analog film, chemical decay, gothic lithography, chromatic aberration, daguerreotype texture, high-contrast xerox art, distorted vintage media. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distressed Analog Occultism",
+    "thumbnail": "samples/Distressed_Analog_Occultism.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Urbanism — 90s Film Primaries",
+    "prompt": "fisheye lens distortion, extreme low angle, analog film grain, vivid primary colors, dynamic urban action, high contrast sunlight, 90s skate photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dynamic Fisheye Urbanism — 90s Film Primaries",
+    "thumbnail": "samples/Dynamic_Fisheye_Urbanism_—_90s_Film_Primaries.webp"
+  },
+  {
+    "name": "Dynamic Skyward Perspective — 35mm Film Warmth",
+    "prompt": "low-angle perspective, clear blue sky, wide-angle lens distortion, brutalist influence, 35mm film grain, minimalist composition, dynamic forced perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dynamic Skyward Perspective — 35mm Film Warmth",
+    "thumbnail": "samples/Dynamic_Skyward_Perspective_-_35mm_Film_Warmth.webp"
+  },
+  {
+    "name": "Electric Cobalt Noir — Halation Bloom",
+    "prompt": "electric cobalt blue lighting, heavy film grain, bioluminescent cyan glow, cinematic halation bloom, high-contrast chiaroscuro, ethereal spectral atmosphere, soft-focus texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric Cobalt Noir — Halation Bloom",
+    "thumbnail": "samples/Electric_Cobalt_Noir_—_Halation_Bloom.webp"
+  },
+  {
+    "name": "Electric Nocturnal Luminescence",
+    "prompt": "deep indigo nocturnal, anamorphic starburst flare, high contrast grain, lo-fi analog aesthetic, bioluminescent highlights, surreal electric atmosphere, cinematic nightscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric Nocturnal Luminescence",
+    "thumbnail": "samples/Electric_Nocturnal_Luminescence.webp"
+  },
+  {
+    "name": "Electric Noir Resonance",
+    "prompt": "high contrast monochromatic, cobalt blue luminescence, dense stipple texture, electric particle discharge, Kirlian photography style, heavy film grain, glowing energy silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric Noir Resonance",
+    "thumbnail": "samples/Electric_Noir_Resonance.webp"
+  },
+  {
+    "name": "Emerald Dystopian Noir",
+    "prompt": "emerald green monochromatic palette, gritty analog film grain, high-contrast chiaroscuro, dystopian brutalist architecture, atmospheric noir lighting, ominous silhouette, bioluminescent glow, chemical toxic aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "翠绿Dystopian黑色",
+    "thumbnail": "samples/Emerald_Dystopian_Noir.webp"
+  },
+  {
+    "name": "Ethereal Analog Decay — Expired Jewel Fade",
+    "prompt": "expired polaroid texture, dreamy double exposure, vintage film grain, soft light leaks, chemical burn artifacts, desaturated jewel tones, hazy motion blur. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵模拟衰败ExpiredJewelFade",
+    "thumbnail": "samples/Ethereal_Analog_Decay_—_Expired_Jewel_Fade.webp"
+  },
+  {
+    "name": "Ethereal Analog Dreamscape — Dappled Double Exposure",
+    "prompt": "double exposure, analog film grain, dappled light, cinematic light leaks, high contrast color palette, surreal nature blend, vintage film texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Analog Dreamscape — Dappled Double Exposure",
+    "thumbnail": "samples/Ethereal_Analog_Dreamscape_—_Dappled_Double_Exposure.webp"
+  },
+  {
+    "name": "Ethereal Analog Reverie",
+    "prompt": "analog film grain, soft-focus portraiture, dreamy haze, dappled komorebi light, prism lens flares, muted vintage palette, shallow depth of field, cinematic intimacy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵模拟Reverie",
+    "thumbnail": "samples/Ethereal_Analog_Reverie.webp"
+  },
+  {
+    "name": "Ethereal Bio-Luminescent Grain",
+    "prompt": "heavy film grain, soft-focus blur, bioluminescent glow, organic abstraction, acidic color gradients, airbrushed texture, dreamcore atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵BioLuminescent颗粒",
+    "thumbnail": "samples/Ethereal_Bio-Luminescent_Grain.webp"
+  },
+  {
+    "name": "Ethereal Bioluminescent Nocturne — Electric Cyan Void",
+    "prompt": "bioluminescent glow, electric cyan aura, pitch black background, analog film grain, soft-focus bloom, high-contrast chiaroscuro, spectral digital aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Bioluminescent Nocturne — Electric Cyan Void",
+    "thumbnail": "samples/Ethereal_Bioluminescent_Nocturne_—_Electric_Cyan_Void.webp"
+  },
+  {
+    "name": "Ethereal Bioluminescent Noir",
+    "prompt": "bioluminescent cyan glow, high-contrast noir, analog film grain, ethereal bloom effect, chiaroscuro, lo-fi aesthetic, surreal nocturnal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Bioluminescent黑色",
+    "thumbnail": "samples/Ethereal_Bioluminescent_Noir.webp"
+  }
+]

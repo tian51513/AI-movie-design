@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Minimalist Nocturnal Silhouettes",
+    "prompt": "stark black silhouette, deep twilight blue palette, minimalist composition, high-contrast lighting, nocturnal mood, vast negative space, cinematic solitude. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简夜行Silhouettes",
+    "thumbnail": "samples/Minimalist_Nocturnal_Silhouettes.webp"
+  },
+  {
+    "name": "Monochromatic Teal Void",
+    "prompt": "monochromatic teal, dense atmospheric fog, surreal solitude, minimalist composition, low-key lighting, cinematic wide shot, desolate landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色青蓝Void",
+    "thumbnail": "samples/Monochromatic_Teal_Void.webp"
+  },
+  {
+    "name": "Stark Minimalist Horizon",
+    "prompt": "hyper-minimalism, vast negative space, stark blue sky, sharp horizon line, color field abstraction, atmospheric gradient, pristine desolation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Stark极简地平线",
+    "thumbnail": "samples/Stark_Minimalist_Horizon.webp"
+  },
+  {
+    "name": "Textured Alpine Folklore",
+    "prompt": "stylized alpine landscape, woodblock print aesthetic, intricate textural detail, deep indigo and gold palette, graphic minimalist composition, pointillist stippling, folk art sensibility. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理Alpine民俗",
+    "thumbnail": "samples/Textured_Alpine_Folklore.webp"
+  }
+]

@@ -1,0 +1,324 @@
+[
+  {
+    "name": "Chiaroscuro Jungle Noir",
+    "prompt": "painterly digital illustration, dappled light, atmospheric chiaroscuro, sharp geometric accents, moody mossy palette, high-contrast silhouette, textured digital brushstrokes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ChiaroscuroJungle黑色",
+    "thumbnail": "samples/Chiaroscuro_Jungle_Noir.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Luminescence",
+    "prompt": "high-contrast lighting, saturated color palette, nocturnal atmosphere, cinematic composition, glowing bioluminescence, silhouette framing, surreal digital illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行Luminescence",
+    "thumbnail": "samples/Cinematic_Nocturnal_Luminescence.webp"
+  },
+  {
+    "name": "Cinematic Nocturnal Noir — Painterly Lamplight",
+    "prompt": "chiaroscuro lighting, textured digital illustration, nocturnal urban cityscape, high contrast color palette, cinematic atmosphere, warm amber glow, minimalist geometry, moody noir aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感夜行黑色绘画感Lamplight",
+    "thumbnail": "samples/Cinematic_Nocturnal_Noir_—_Painterly_Lamplight.webp"
+  },
+  {
+    "name": "Cozy Cinematic Noir",
+    "prompt": "stylized digital illustration, dramatic chiaroscuro lighting, warm amber glow, deep cool blue shadows, cinematic atmospheric storytelling, angular geometric composition, cozy nocturnal mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cozy电影感黑色",
+    "thumbnail": "samples/Cozy_Cinematic_Noir.webp"
+  },
+  {
+    "name": "Cozy Stylized Fantasy",
+    "prompt": "stylized digital illustration, chunky exaggerated proportions, painterly textures, cozy fantasy atmosphere, soft ambient lighting, earthy muted color palette, expressive character design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cozy风格化幻想",
+    "thumbnail": "samples/Cozy_Stylized_Fantasy.webp"
+  },
+  {
+    "name": "Cozy Twilight Whimsy",
+    "prompt": "stylized digital illustration, twilight color palette, warm glowing light, whimsical storybook art, cozy night atmosphere, soft textured shading, magical fantasy landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cozy Twilight Whimsy",
+    "thumbnail": "samples/Cozy_Twilight_Whimsy.webp"
+  },
+  {
+    "name": "Crimson Twilight Silhouette",
+    "prompt": "high-contrast silhouette, fiery sunset gradient, cinematic urban melancholy, bold graphic lighting, saturated orange and purple, stylized digital illustration, dramatic low-angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红暮光剪影",
+    "thumbnail": "samples/Crimson_Twilight_Silhouette.webp"
+  },
+  {
+    "name": "Enchanted Woodland Whimsy",
+    "prompt": "whimsical digital illustration, lush forest environment, painterly texture, soft volumetric lighting, cute stylized characters, dappled sunlight, storybook aesthetic, vibrant natural color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Enchanted Woodland Whimsy",
+    "thumbnail": "samples/Enchanted_Woodland_Whimsy.webp"
+  },
+  {
+    "name": "Ethereal Twilight Narratives",
+    "prompt": "painterly digital illustration, twilight atmosphere, soft glowing light, melancholic narrative, dreamy pastel accents, textured gouache overlay, surreal landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵暮光Narratives",
+    "thumbnail": "samples/Ethereal_Twilight_Narratives.webp"
+  },
+  {
+    "name": "Ethereal Verdant Surrealism — Dappled Emerald Light",
+    "prompt": "painterly digital illustration, lush verdant greens, textured brushstrokes, surreal fantasy elements, atmospheric lighting, moody pastoral landscape, dreamlike mystery. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵翠绿超现实Dappled翠绿浅",
+    "thumbnail": "samples/Ethereal_Verdant_Surrealism_—_Dappled_Emerald_Light.webp"
+  },
+  {
+    "name": "Geometric Impressionist Landscapes",
+    "prompt": "geometric vector landscape, stylized travel poster, sharp color blocking, atmospheric perspective, clean hard-edge shapes, gouache-inspired digital illustration, minimalist architectural forms. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "几何印象派Landscapes",
+    "thumbnail": "samples/Geometric_Impressionist_Landscapes.webp"
+  },
+  {
+    "name": "Gritty Cinematic Realism — Painterly Earth Gray",
+    "prompt": "cinematic digital painting, desaturated earth tones, weathered industrial texture, soft diffused lighting, painterly brushwork, gritty realistic aesthetic, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Cinematic Realism — Painterly Earth Gray",
+    "thumbnail": "samples/Gritty_Cinematic_Realism_—_Painterly_Earth_Gray.webp"
+  },
+  {
+    "name": "Hyper-Vivid Surreal Expressionism",
+    "prompt": "hyper-saturated color palette, expressive digital portraiture, high-contrast lighting, surreal character design, vibrant color blocking, bold painterly brushstrokes, dynamic stylized composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper生动超现实表现主义",
+    "thumbnail": "samples/Hyper-Vivid_Surreal_Expressionism.webp"
+  },
+  {
+    "name": "Luminous Celestial Dreamscape",
+    "prompt": "deep cobalt and ultramarine palette, glowing warm golden accents, dreamy painterly illustration, ethereal starlight flares, magical realism, bioluminescent textures, soft fluid brushstrokes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮天体Dreamscape",
+    "thumbnail": "samples/Luminous_Celestial_Dreamscape.webp"
+  },
+  {
+    "name": "Luminous Cosmic Dreamscape — Pink Stardust Shimmer",
+    "prompt": "vibrant digital illustration, surreal cosmic landscape, painterly fantasy style, glowing neon palette, ethereal stardust particles, swirling celestial atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮宇宙DreamscapePinkStardustShimmer",
+    "thumbnail": "samples/Luminous_Cosmic_Dreamscape_—_Pink_Stardust_Shimmer.webp"
+  },
+  {
+    "name": "Luminous Crimson Canopy",
+    "prompt": "stylized digital illustration, low-angle forest perspective, crimson and orange color palette, luminous crepuscular rays, birch forest canopy, dramatic sunset lighting, graphic art style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮绯红Canopy",
+    "thumbnail": "samples/Luminous_Crimson_Canopy.webp"
+  },
+  {
+    "name": "Luminous Crimson Woodland",
+    "prompt": "stylized digital illustration, vibrant crimson autumn, white birch forest, volumetric light rays, high-contrast landscape, painterly brushstrokes, anime background style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮绯红Woodland",
+    "thumbnail": "samples/Luminous_Crimson_Woodland.webp"
+  },
+  {
+    "name": "Luminous Mossy Wilderness",
+    "prompt": "painterly digital illustration, lush mossy forest, dappled sunlight, crepuscular rays, vibrant forest greens, ethereal atmosphere, overgrown ruins. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮MossyWilderness",
+    "thumbnail": "samples/Luminous_Mossy_Wilderness.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Folklore",
+    "prompt": "painterly digital illustration, warm amber glow, deep indigo twilight, soft impasto texture, nostalgic storybook style, cozy winter atmosphere, whimsical celestial elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行民俗",
+    "thumbnail": "samples/Luminous_Nocturnal_Folklore.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Solitude",
+    "prompt": "shin-hanga woodblock style, deep indigo and cobalt palette, glowing orange light contrast, minimalist nocturnal landscape, atmospheric chiaroscuro, painterly texture, solitary rustic architecture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行Solitude",
+    "thumbnail": "samples/Luminous_Nocturnal_Solitude.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Storytelling",
+    "prompt": "stylized digital illustration, nocturnal color palette, glowing warm light contrast, whimsical storytelling, textured painterly finish, retro-futuristic charm, cozy magical realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行Storytelling",
+    "thumbnail": "samples/Luminous_Nocturnal_Storytelling.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Whimsy — Indigo Gouache Warmth",
+    "prompt": "nocturnal digital illustration, high-contrast indigo and gold, glowing light sources, whimsical surrealism, textured painterly brushstrokes, atmospheric night scene, cozy fantasy narrative. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Nocturnal Whimsy — Indigo Gouache Warmth",
+    "thumbnail": "samples/Luminous_Nocturnal_Whimsy_—_Indigo_Gouache_Warmth.webp"
+  },
+  {
+    "name": "Luminous Oceanic Dreamscape",
+    "prompt": "bioluminescent water, deep cobalt and indigo palette, ethereal dreamscape, painterly digital brushstrokes, high-contrast light blooms, submerged fantasy, serene melancholic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮OceanicDreamscape",
+    "thumbnail": "samples/Luminous_Oceanic_Dreamscape.webp"
+  },
+  {
+    "name": "Luminous Organic Surrealism — Pastel Fractal Glow",
+    "prompt": "translucent organic textures, bioluminescent macro photography, ethereal diffused lighting, fractal nature, soft pastel palette, dreamlike shallow depth of field, biomorphic skeletal patterns. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮有机超现实粉彩Fractal发光",
+    "thumbnail": "samples/Luminous_Organic_Surrealism_—_Pastel_Fractal_Glow.webp"
+  },
+  {
+    "name": "Luminous Prismatic Dreamscape — Rainbow Flare Bloom",
+    "prompt": "chromatic aberration, rainbow lens flare, soft focus bloom, ethereal light leaks, dreamy bokeh, crystalline textures, high-key luminosity. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮棱镜DreamscapeRainbow光晕辉光",
+    "thumbnail": "samples/Luminous_Prismatic_Dreamscape_—_Rainbow_Flare_Bloom.webp"
+  },
+  {
+    "name": "Luminous Spectral Noir — Gothic Painterly Glow",
+    "prompt": "bioluminescent glow, dark fantasy illustration, chiaroscuro lighting, painterly digital texture, neon accent lighting, ethereal atmospheric depth, high-contrast noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮光谱黑色哥特绘画感发光",
+    "thumbnail": "samples/Luminous_Spectral_Noir_—_Gothic_Painterly_Glow.webp"
+  },
+  {
+    "name": "Melancholic Surrealist Minimalism",
+    "prompt": "surrealist illustration, muted blue color palette, isometric perspective, melancholic mood, tactile grainy texture, liminal space, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "忧郁超现实极简主义",
+    "thumbnail": "samples/Melancholic_Surrealist_Minimalism.webp"
+  },
+  {
+    "name": "Neon Frontier Surrealism",
+    "prompt": "painterly digital illustration, vibrant sunset color palette, high-contrast rim lighting, vast desert frontier, atmospheric solitude, neon orange and purple highlights, stylized landscapes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Frontier超现实",
+    "thumbnail": "samples/Neon_Frontier_Surrealism.webp"
+  },
+  {
+    "name": "Neon Lofi Maximalism",
+    "prompt": "lofi cyberpunk aesthetic, cluttered interior, neon ambient lighting, vibrant digital illustration, dramatic shadow contrast, lived-in storytelling, saturated neon palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹LofiMaximalism",
+    "thumbnail": "samples/Neon_Lofi_Maximalism.webp"
+  },
+  {
+    "name": "Neon Twilight Metropolis",
+    "prompt": "stylized urban cityscape, neon and amber lighting, twilight atmospheric gradient, retro-CGI aesthetic, geometric architectural forms, vibrant color contrast, digital art synthesis. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹暮光Metropolis",
+    "thumbnail": "samples/Neon_Twilight_Metropolis.webp"
+  },
+  {
+    "name": "Nocturnal Celestial Minimalism",
+    "prompt": "nocturnal landscape, minimalist composition, starry night sky, deep indigo and teal palette, stark silhouette, cosmic solitude, textured paper grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行天体极简主义",
+    "thumbnail": "samples/Nocturnal_Celestial_Minimalism.webp"
+  },
+  {
+    "name": "Nocturnal Whimsical Gothic",
+    "prompt": "nocturnal atmospheric illustration, chiaroscuro lighting, whimsical gothic fantasy, stylized digital art, deep blue and amber palette, bold ink outlines, hand-drawn texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行Whimsical哥特",
+    "thumbnail": "samples/Nocturnal_Whimsical_Gothic.webp"
+  },
+  {
+    "name": "Nostalgic Golden Storybook",
+    "prompt": "textured digital illustration, golden hour sunset, chalk pastel aesthetic, whimsical silhouettes, storybook art style, warm orange and deep purple palette, nostalgic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Golden Storybook",
+    "thumbnail": "samples/Nostalgic_Golden_Storybook.webp"
+  },
+  {
+    "name": "Oneiric Geometric Surrealism",
+    "prompt": "Magrittean surrealism, geometric botanical forms, liminal dreamscapes, floating architectural objects, golden hour lighting, vast expansive landscapes, crisp digital illustration, absurdist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Oneiric几何超现实",
+    "thumbnail": "samples/Oneiric_Geometric_Surrealism.webp"
+  },
+  {
+    "name": "Overgrown Industrial Solarpunk",
+    "prompt": "solarpunk, rustpunk, overgrown ruins, industrial decay, weathered metal textures, cinematic atmospheric haze, colossal scale, retrofuturism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Overgrown Industrial Solarpunk",
+    "thumbnail": "samples/Overgrown_Industrial_Solarpunk.webp"
+  },
+  {
+    "name": "Painterly Heroic Chiaroscuro",
+    "prompt": "painterly digital illustration, dramatic chiaroscuro lighting, visible impasto brushstrokes, rich earthy palette, heroic fantasy composition, textured industrial elements, cinematic storytelling. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绘画感HeroicChiaroscuro",
+    "thumbnail": "samples/Painterly_Heroic_Chiaroscuro.webp"
+  },
+  {
+    "name": "Surreal Liminal Pastoral — Crisp Daylight Clouds",
+    "prompt": "surreal minimalism, vivid blue sky, fluffy cumulus clouds, rolling green hills, liminal space aesthetic, dreamcore, crisp daylight rendering, magical realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Surreal Liminal Pastoral — Crisp Daylight Clouds",
+    "thumbnail": "samples/Surreal_Liminal_Pastoral_—_Crisp_Daylight_Clouds.webp"
+  },
+  {
+    "name": "Surrealist Portal Minimalism",
+    "prompt": "minimalist surrealism, geometric portal cutout, dreamlike sky landscape, sharp studio lighting, retro-modernist composition, textured paper aesthetic, Magritte inspired. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实Portal极简主义",
+    "thumbnail": "samples/Surrealist_Portal_Minimalism.webp"
+  },
+  {
+    "name": "Textured Painterly Vignettes",
+    "prompt": "digital gouache, painterly texture, warm sun-kissed lighting, slice of life, loose brushstrokes, expressive character vignette, earthy and vibrant palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理绘画感Vignettes",
+    "thumbnail": "samples/Textured_Painterly_Vignettes.webp"
+  },
+  {
+    "name": "Verdant Painterly Solitude",
+    "prompt": "painterly digital illustration, lush verdant meadow, high-angle landscape, thick impasto textures, solitary figure in nature, dreamlike atmosphere, expressive swirling brushstrokes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "翠绿绘画感Solitude",
+    "thumbnail": "samples/Verdant_Painterly_Solitude.webp"
+  },
+  {
+    "name": "Vibrant Expressionist Geometry",
+    "prompt": "expressive portraiture, saturated color palette, high-contrast lighting, geometric planar structure, bold impasto brushstrokes, vibrant color-blocking, visceral emotion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳表现主义Geometry",
+    "thumbnail": "samples/Vibrant_Expressionist_Geometry.webp"
+  },
+  {
+    "name": "Vibrant Impressionist Storytelling",
+    "prompt": "textured digital illustration, dappled sunlight, gouache-style brushwork, vibrant saturated palette, whimsical perspective, warm nostalgic atmosphere, stylized graphic shapes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳印象派Storytelling",
+    "thumbnail": "samples/Vibrant_Impressionist_Storytelling.webp"
+  },
+  {
+    "name": "Vibrant Solar Wilderness",
+    "prompt": "stylized digital painting, solarpunk aesthetic, vibrant color palette, lush overgrown nature, high-contrast lighting, painterly textures, atmospheric depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳SolarWilderness",
+    "thumbnail": "samples/Vibrant_Solar_Wilderness.webp"
+  },
+  {
+    "name": "Vibrant Sunlit Gouache",
+    "prompt": "digital gouache painting, vibrant color blocking, high-key sunlit lighting, expressive brushwork, graphic cast shadows, saturated citrus palette, modern impressionist illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳SunlitGouache",
+    "thumbnail": "samples/Vibrant_Sunlit_Gouache.webp"
+  },
+  {
+    "name": "Vibrant Urban Painterly",
+    "prompt": "painterly digital illustration, bold gestural brushstrokes, high-contrast dramatic lighting, saturated color palette, stylized urban landscape, sharp-edged geometric shadows, atmospheric city vignette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳都市绘画感",
+    "thumbnail": "samples/Vibrant_Urban_Painterly.webp"
+  },
+  {
+    "name": "Whimsical Folklore Illustration",
+    "prompt": "whimsical digital illustration, childrens book art style, painterly texture, dappled sunlight, magical glow, charming anthropomorphic characters, lush botanical background, soft grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Whimsical民俗插画",
+    "thumbnail": "samples/Whimsical_Folklore_Illustration.webp"
+  }
+]

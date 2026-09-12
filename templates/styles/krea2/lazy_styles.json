@@ -1,0 +1,18 @@
+[
+  {
+    "name": "四视图",
+    "name_cn": "四视图",
+    "channel": "quad_view",
+    "prompt": "Convert the character in the image to a Character Sheet showing a face close-up, front full body, side full body and back full body views. {prompt}",
+    "negative_prompt": "",
+    "thumbnail": "samples/quad_view.png"
+  },
+  {
+    "name": "扩图",
+    "name_cn": "扩图",
+    "channel": "outpaint",
+    "prompt": "Outpaint the image to fill the entire canvas. Replace all solid blue padded regions with coherent continuation of the scene. Keep the original subject and content unchanged outside the blue areas. {prompt}",
+    "negative_prompt": "",
+    "thumbnail": "samples/outpaint.jpg"
+  }
+]

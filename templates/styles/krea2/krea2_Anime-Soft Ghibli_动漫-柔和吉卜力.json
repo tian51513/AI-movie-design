@@ -1,0 +1,100 @@
+[
+  {
+    "name": "Luminous Nostalgic Anime — Dappled Pencil Warmth",
+    "prompt": "studio ghibli inspired, watercolor and colored pencil texture, dappled sunlight, lush green foliage, nostalgic slice of life, hand-drawn ink outlines, warm summer atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Nostalgic Anime — Dappled Pencil Warmth",
+    "thumbnail": "samples/Luminous_Nostalgic_Anime_—_Dappled_Pencil_Warmth.webp"
+  },
+  {
+    "name": "Luminous Pastoral Fantasy",
+    "prompt": "studio ghibli style, vibrant pastoral landscape, fluffy cumulus clouds, lush green hills, saturated watercolor aesthetic, nostalgic summer mood, sunny fantasy world. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Pastoral幻想",
+    "thumbnail": "samples/Luminous_Pastoral_Fantasy.webp"
+  },
+  {
+    "name": "Luminous Pastoral Impressionism",
+    "prompt": "painterly brushstrokes, vibrant gouache texture, high-contrast lighting, nostalgic atmosphere, Ghibli-esque, impasto techniques, golden hour glow, expansive landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Pastoral印象派",
+    "thumbnail": "samples/Luminous_Pastoral_Impressionism.webp"
+  },
+  {
+    "name": "Luminous Solarpunk Sanctuary",
+    "prompt": "Studio Ghibli aesthetic, dappled sunlight, lush emerald foliage, painterly textures, serene turquoise water, solarpunk atmosphere, warm cinematic lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮SolarpunkSanctuary",
+    "thumbnail": "samples/Luminous_Solarpunk_Sanctuary.webp"
+  },
+  {
+    "name": "Luminous Surreal Pastoral",
+    "prompt": "studio ghibli style, painterly landscape, vibrant green hills, atmospheric depth, surreal pastoral, dappled sunlight, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮超现实Pastoral",
+    "thumbnail": "samples/Luminous_Surreal_Pastoral.webp"
+  },
+  {
+    "name": "Nostalgic Ghibli Pastoral — Azure Storybook Warmth",
+    "prompt": "Ghibli-inspired, vibrant painterly landscape, nostalgic summer atmosphere, soft atmospheric lighting, lush green meadows, dreamy digital illustration, whimsical storybook aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Ghibli Pastoral — Azure Storybook Warmth",
+    "thumbnail": "samples/Nostalgic_Ghibli_Pastoral_—_Azure_Storybook_Warmth.webp"
+  },
+  {
+    "name": "Nostalgic Ghibli Pastoral — Cumulus Summer Light",
+    "prompt": "Studio Ghibli style, hand-painted anime background, lush green hills, towering cumulus clouds, nostalgic summer atmosphere, vibrant landscape painting, scenic pastoral vista. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "NostalgicGhibliPastoralCumulus夏浅",
+    "thumbnail": "samples/Nostalgic_Ghibli_Pastoral_—_Cumulus_Summer_Light.webp"
+  },
+  {
+    "name": "Nostalgic Ghibli Summer — Towering Gouache Clouds",
+    "prompt": "Studio Ghibli style, vibrant gouache painting, saturated summer colors, cumulonimbus clouds, painterly brushstrokes, nostalgic rural landscape, anime background art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Ghibli Summer — Towering Gouache Clouds",
+    "thumbnail": "samples/Nostalgic_Ghibli_Summer_—_Towering_Gouache_Clouds.webp"
+  },
+  {
+    "name": "Sun-Drenched Whimsical Nostalgia",
+    "prompt": "storybook illustration style, soft painterly gouache texture, sun-drenched golden light, whimsical nostalgic atmosphere, vibrant pastel color palette, gentle backlit glow, Ghibli-inspired landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "日DrenchedWhimsicalNostalgia",
+    "thumbnail": "samples/Sun-Drenched_Whimsical_Nostalgia.webp"
+  },
+  {
+    "name": "Surreal Pastoral Impressionism",
+    "prompt": "surreal pastoral landscape, vibrant saturated greens, painterly digital art, dramatic lighting, whimsical narrative elements, monumental natural forms, Ghibli-inspired atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实Pastoral印象派",
+    "thumbnail": "samples/Surreal_Pastoral_Impressionism.webp"
+  },
+  {
+    "name": "Vibrant Ghibli Fantasy",
+    "prompt": "Ghibli-inspired, vibrant digital painting, lush green landscape, fluffy cumulus clouds, majestic fantasy vista, bright daylight, stylized adventure art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳Ghibli幻想",
+    "thumbnail": "samples/Vibrant_Ghibli_Fantasy.webp"
+  },
+  {
+    "name": "Vibrant Skyward Perspective",
+    "prompt": "low angle shot, vivid blue sky, bright natural light, minimalist composition, airy atmosphere, crisp photography, wide angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳Skyward透视",
+    "thumbnail": "samples/Vibrant_Skyward_Perspective.webp"
+  },
+  {
+    "name": "Vibrant Whimsical Fantasy",
+    "prompt": "stylized digital painting, whimsical fantasy landscape, vibrant saturated pastel palette, studio ghibli inspired, fluffy volumetric clouds, storybook illustration style, cozy adventure atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳Whimsical幻想",
+    "thumbnail": "samples/Vibrant_Whimsical_Fantasy.webp"
+  },
+  {
+    "name": "Vibrant Whimsical Solarpunk",
+    "prompt": "vibrant vector art, Ghibli-inspired aesthetic, saturated landscape, bold outlines, sunny day, whimsical adventure, fluffy cumulus clouds, clean line art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳WhimsicalSolarpunk",
+    "thumbnail": "samples/Vibrant_Whimsical_Solarpunk.webp"
+  }
+]

@@ -599,3 +599,22 @@ def test_h3_redraw_duration_from_settings(tmp_path, monkeypatch):
         dur = next(n["inputs"]["value"] for n in wf.values()
                    if n["class_type"] == "PrimitiveFloat")
         assert dur == 1
+
+
+def test_krea_page_redraw_template():
+    """v8（2026-09-12）：Krea2 快道模板——Workbench 双图（图像1=场景/图像2=
+    主体）+ Generate 种子注入（中文 field 名）+ 引擎通用图像道零改动复用。"""
+    from pathlib import Path
+    from comic_studio.engine.workflows import registry
+    tmpl = registry.scan_templates(Path("templates/workflows"))["krea_page_redraw"]
+    assert tmpl.type == "i2i"
+    assert [i["slot"] for i in tmpl.inject_images] == ["base", "char1"]
+    assert tmpl.inject_params["seed"].field == "种子"
+    wf = tmpl.api_json()
+    wb = next(n for n in wf.values() if n["class_type"] == "LazyKreaWorkbench")
+    assert wb["inputs"]["图像1"] == ["23", 0]      # 原页=场景参考
+    assert wb["inputs"]["图像2"] == ["100", 0]     # 主图=主体参考
+    gen = next(n for n in wf.values() if n["class_type"] == "LazyKreaGenerate")
+    assert gen["inputs"]["Krea包"] == ["2000", 0]
+    assert gen["inputs"]["双图顺序"] == "图1场景+图2人物"
+    assert gen["inputs"]["步数"] == 10 and gen["inputs"]["CFG"] == 1.0

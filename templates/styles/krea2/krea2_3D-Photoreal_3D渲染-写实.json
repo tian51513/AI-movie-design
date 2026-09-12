@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Cinematic Stylized Fantasy",
+    "prompt": "stylized 3D character, cinematic lighting, octane render, subsurface scattering, rich tactile textures, expressive character design, fantasy atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感风格化幻想",
+    "thumbnail": "samples/Cinematic_Stylized_Fantasy.webp"
+  },
+  {
+    "name": "Ethereal Solarpunk Pastoral — Glossy 3D Utopia",
+    "prompt": "solarpunk, ethereal surrealism, vibrant saturated landscapes, high-gloss futuristic accents, whimsical pastoral, bright natural daylight, hyper-realistic 3D render. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Solarpunk Pastoral — Glossy 3D Utopia",
+    "thumbnail": "samples/Ethereal_Solarpunk_Pastoral_—_Glossy_3D_Utopia.webp"
+  },
+  {
+    "name": "Hyperreal Digital Dreamscapes",
+    "prompt": "hyperreal digital aesthetic, vibrant green and cobalt blue palette, surreal liminal landscape, clean 3D CGI render, miniature world diorama, nostalgic dreamscape, minimalist surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超写实数字Dreamscapes",
+    "thumbnail": "samples/Hyperreal_Digital_Dreamscapes.webp"
+  },
+  {
+    "name": "Luminous Porcelain Minimalism",
+    "prompt": "stylized 3D render, porcelain skin texture, soft subsurface scattering, minimalist composition, airbrushed makeup, vibrant rim lighting, matte clay aesthetic, octane render. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Porcelain极简主义",
+    "thumbnail": "samples/Luminous_Porcelain_Minimalism.webp"
+  },
+  {
+    "name": "Luminous Retro-Surrealist Landscapes",
+    "prompt": "one-point perspective, retro-futurist airbrush, liminal surrealism, vibrant high-contrast palette, glowing neon atmosphere, geometric architectural elements, dreamlike cinematic lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮复古超现实Landscapes",
+    "thumbnail": "samples/Luminous_Retro-Surrealist_Landscapes.webp"
+  },
+  {
+    "name": "Minimalist Surreal Liminality",
+    "prompt": "liminal space, surrealist minimalism, vibrant blue sky, stark geometric shadows, dreamcore aesthetic, vast empty landscape, hyper-realistic 3D render, uncanny isolation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简超现实Liminality",
+    "thumbnail": "samples/Minimalist_Surreal_Liminality.webp"
+  },
+  {
+    "name": "Surreal Liminal Pastoral — Early-CGI Smoothness",
+    "prompt": "dreamcore, liminal space, minimalist surrealism, saturated green hills, vibrant blue sky, nostalgic CGI aesthetic, solitary architectural elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实阈限PastoralEarlyCGISmoothness",
+    "thumbnail": "samples/Surreal_Liminal_Pastoral_—_Early-CGI_Smoothness.webp"
+  },
+  {
+    "name": "Surreal Minimalist Pastoral",
+    "prompt": "surreal minimalism, vibrant grassy hills, vast clear sky, clean CGI render, sharp graphic shadows, toy-like aesthetic, liminal pastoral landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实极简Pastoral",
+    "thumbnail": "samples/Surreal_Minimalist_Pastoral.webp"
+  }
+]

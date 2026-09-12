@@ -1,0 +1,387 @@
+[
+  {
+    "name": "Bold Graphic Neon Surrealism",
+    "prompt": "flat vector illustration, bold black outlines, saturated neon color palette, pop art surrealism, clean graphic design, high-contrast composition, modern character design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "大胆图形霓虹超现实",
+    "thumbnail": "samples/Bold_Graphic_Neon_Surrealism.webp"
+  },
+  {
+    "name": "Crimson Noir Graphic — Burnt Orange Vector",
+    "prompt": "high-contrast graphic illustration, crimson and black palette, bold silhouette, minimalist vector art, woodcut print aesthetic, dramatic noir lighting, stark graphic shapes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色图形BurntOrangeVector",
+    "thumbnail": "samples/Crimson_Noir_Graphic_—_Burnt_Orange_Vector.webp"
+  },
+  {
+    "name": "Dynamic Corporate Memphis",
+    "prompt": "flat vector illustration, Corporate Memphis, exaggerated proportions, bold color blocking, minimalist background, grainy texture gradient, dynamic motion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态CorporateMemphis",
+    "thumbnail": "samples/Dynamic_Corporate_Memphis.webp"
+  },
+  {
+    "name": "Geometric Adventure Landscapes",
+    "prompt": "stylized digital landscape, geometric vector illustration, vibrant saturated palette, cobalt blue and golden yellow, hard-edged shadows, minimalist graphic composition, whimsical adventure scale. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "几何AdventureLandscapes",
+    "thumbnail": "samples/Geometric_Adventure_Landscapes.webp"
+  },
+  {
+    "name": "Grainy Minimalist Folk",
+    "prompt": "minimalist vector illustration, grainy risograph texture, soft pastel color palette, mid-century folk influence, stippled shading, flat graphic shapes, whimsical botanical motifs. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "颗粒感极简Folk",
+    "thumbnail": "samples/Grainy_Minimalist_Folk.webp"
+  },
+  {
+    "name": "Grainy Retro Minimalist",
+    "prompt": "minimalist vector illustration, grainy paper texture, vibrant sunset gradient, bold geometric silhouettes, retro pop aesthetic, flat color planes, risograph printing style, lo-fi noise. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "颗粒感复古极简",
+    "thumbnail": "samples/Grainy_Retro_Minimalist.webp"
+  },
+  {
+    "name": "Graphic Brutalist Pop",
+    "prompt": "flat graphic design, high contrast composition, minimalist geometric shapes, bold black glyphs, saturated color fields, brutalist pop art, clean vector lines. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形粗野主义Pop",
+    "thumbnail": "samples/Graphic_Brutalist_Pop.webp"
+  },
+  {
+    "name": "Graphic Noir Minimalism",
+    "prompt": "minimalist vector illustration, high-contrast noir, geometric urban silhouette, flat color blocking, hard-edged shadows, coral and midnight blue palette, dramatic directional lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形黑色极简主义",
+    "thumbnail": "samples/Graphic_Noir_Minimalism.webp"
+  },
+  {
+    "name": "Graphic Noir Pop-Punk",
+    "prompt": "bold black ink outlines, high-contrast graphic illustration, minimalist vector art, retro screen-print texture, vibrant limited color palette, stylized monster motifs, halftone and noise overlay, flat graphic design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形黑色PopPunk",
+    "thumbnail": "samples/Graphic_Noir_Pop-Punk.webp"
+  },
+  {
+    "name": "Graphic Playful Pop",
+    "prompt": "bold vector outlines, flat 2D illustration, risograph texture, high-contrast vibrant palette, whimsical character design, minimalist graphic style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形PlayfulPop",
+    "thumbnail": "samples/Graphic_Playful_Pop.webp"
+  },
+  {
+    "name": "Graphic Pop Surrealism — Flat Vector Grain",
+    "prompt": "minimalist surrealism, flat vector illustration, bold color blocking, dreamlike atmosphere, graphic composition, saturated pop palette, clean hard-edged shapes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Pop超现实平坦Vector颗粒",
+    "thumbnail": "samples/Graphic_Pop_Surrealism_—_Flat_Vector_Grain.webp"
+  },
+  {
+    "name": "Graphic Surreal Pop — Bold Flat Color",
+    "prompt": "flat vector illustration, bold black outlines, minimalist pop art, surrealist composition, clean graphic style, saturated color blocking, no gradients. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形超现实Pop大胆平坦颜色",
+    "thumbnail": "samples/Graphic_Surreal_Pop_—_Bold_Flat_Color.webp"
+  },
+  {
+    "name": "Graphic Tropics Minimalism",
+    "prompt": "flat vector illustration, bold geometric minimalism, high contrast color blocking, sharp graphic shadows, saturated warm palette, mid-century modern graphic design, stylized tropical elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Tropics极简主义",
+    "thumbnail": "samples/Graphic_Tropics_Minimalism.webp"
+  },
+  {
+    "name": "Graphic Urban Surrealism",
+    "prompt": "high contrast composition, urban intervention, vector graphic overlay, surreal lighting effects, minimalist iconography, gritty industrial textures, ethereal light painting, architectural integration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形都市超现实",
+    "thumbnail": "samples/Graphic_Urban_Surrealism.webp"
+  },
+  {
+    "name": "High-Contrast Fluid Noir",
+    "prompt": "minimalist graphic design, high-contrast black and yellow, fluid organic silhouettes, negative space illustration, vector art style, liquid smoke motifs, bold flat graphic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "High对比流动黑色",
+    "thumbnail": "samples/High-Contrast_Fluid_Noir.webp"
+  },
+  {
+    "name": "Mid-Century Graphic Minimalism — Cream Screenprint",
+    "prompt": "mid-century modern graphic, flat vector illustration, biomorphic and geometric abstraction, matte screenprint texture, bold color blocking, minimalist composition, warm cream background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Mid-Century Graphic Minimalism — Cream Screenprint",
+    "thumbnail": "samples/Mid-Century_Graphic_Minimalism_—_Cream_Screenprint.webp"
+  },
+  {
+    "name": "Mid-Century Graphic Minimalism — Muted Vector Balance",
+    "prompt": "mid-century modern graphic design, minimalist flat vector illustration, geometric abstraction, retro muted color palette, clean sharp lines, organic shapes, negative space composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Mid-Century Graphic Minimalism — Muted Vector Balance",
+    "thumbnail": "samples/Mid-Century_Graphic_Minimalism_—_Muted_Vector_Balance.webp"
+  },
+  {
+    "name": "Mid-Century Vector Travelogue",
+    "prompt": "flat vector illustration, mid-century travel poster, bold color blocking, minimalist geometric shapes, sharp graphic shadows, vibrant summer palette, scenic coastal aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Mid-Century Vector Travelogue",
+    "thumbnail": "samples/Mid-Century_Vector_Travelogue.webp"
+  },
+  {
+    "name": "Modernist Paper Cutout",
+    "prompt": "flat vector illustration, mid-century modern graphic design, minimalist geometric shapes, Matisse cutout style, bold primary color palette, clean hard edges, cream background, graphic paper cutout style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Modernist Paper Cutout",
+    "thumbnail": "samples/Modernist_Paper_Cutout.webp"
+  },
+  {
+    "name": "Monochrome Glitch Brutalism — Vector Glyph Corruption",
+    "prompt": "high-contrast black and white, brutalist geometric glyphs, digital glitch distortion, minimalist vector art, datamoshing artifacts, sharp industrial iconography, stark chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色故障BrutalismVectorGlyphCorruption",
+    "thumbnail": "samples/Monochrome_Glitch_Brutalism_—_Vector_Glyph_Corruption.webp"
+  },
+  {
+    "name": "Monochrome Graphic Surrealism",
+    "prompt": "high-contrast monochrome photography, mixed-media collage, flat vector overlays, analog film grain, geometric graphic intervention, surreal pop art, cut-and-paste aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色图形超现实",
+    "thumbnail": "samples/Monochrome_Graphic_Surrealism.webp"
+  },
+  {
+    "name": "Neon Fauvist Pop",
+    "prompt": "neon pop art, fauvist brushwork, high-contrast color blocking, graphic black outlines, saturated neon palette, risograph grain texture, digital gouache painting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹FauvistPop",
+    "thumbnail": "samples/Neon_Fauvist_Pop.webp"
+  },
+  {
+    "name": "Neon Grunge Collage",
+    "prompt": "punk zine aesthetic, halftone grain, high-contrast black and white, hot pink neon accents, distressed collage, psychedelic gothic, raw ink illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Grunge拼贴",
+    "thumbnail": "samples/Neon_Grunge_Collage.webp"
+  },
+  {
+    "name": "Neon Nocturnal Vectorism",
+    "prompt": "vector illustration, nocturnal noir, high-contrast lighting, geometric minimalism, neon rim lighting, subtle grain texture, vibrant accent colors. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹夜行Vectorism",
+    "thumbnail": "samples/Neon_Nocturnal_Vectorism.webp"
+  },
+  {
+    "name": "Organic Earthy Minimalism",
+    "prompt": "minimalist organic abstraction, muted earthy color palette, matte paper texture, flat vector illustration, mid-century modern graphic, botanical silhouettes, serene geometric folk, soft tactile aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有机泥土色极简主义",
+    "thumbnail": "samples/Organic_Earthy_Minimalism.webp"
+  },
+  {
+    "name": "Playful Retro Pop",
+    "prompt": "rubberhose animation style, bold black ink outlines, minimalist vector illustration, vibrant pastel and saturated palette, whimsical anthropomorphic character, flat graphic design, retro 1930s cartoon aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Playful复古Pop",
+    "thumbnail": "samples/Playful_Retro_Pop.webp"
+  },
+  {
+    "name": "Psychedelic Neoclassical Pop",
+    "prompt": "neoclassical surrealism, psychedelic pop art, monochrome and neon contrast, vintage collage, bold black outlines, trippy vector elements, retro-futuristic surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Psychedelic Neoclassical Pop",
+    "thumbnail": "samples/Psychedelic_Neoclassical_Pop.webp"
+  },
+  {
+    "name": "Retro-Digital Graphic Synthesis",
+    "prompt": "geometric abstraction, halftone dot pattern, primary color palette, retro graphic design, minimalist vector art, digital glitch texture, risograph print effect. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古数字图形Synthesis",
+    "thumbnail": "samples/Retro-Digital_Graphic_Synthesis.webp"
+  },
+  {
+    "name": "Structural Geometric Cubism",
+    "prompt": "geometric cubism, faceted vector art, sharp angular planes, graphic halftone textures, interlocking polygon shapes, modernist abstraction, precisionist line work. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Structural Geometric Cubism",
+    "thumbnail": "samples/Structural_Geometric_Cubism.webp"
+  },
+  {
+    "name": "Structured Digital Brutalism",
+    "prompt": "modular geometric grid, bold flat vector shapes, digital glitch artifacts, high contrast composition, textured pixel mosaic, primary color palette, systematic algorithmic layout. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Structured Digital Brutalism",
+    "thumbnail": "samples/Structured_Digital_Brutalism.webp"
+  },
+  {
+    "name": "Structured Geometric Minimalism",
+    "prompt": "geometric abstraction, flat graphic design, hard-edge painting, minimalist vector art, bold primary colors, modular grid layout, clean digital aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Structured几何极简主义",
+    "thumbnail": "samples/Structured_Geometric_Minimalism.webp"
+  },
+  {
+    "name": "Surreal Graphic Minimalism",
+    "prompt": "ligne claire, flat vector illustration, bold black outlines, vibrant gradient background, paper grain texture, surrealist conceptual art, minimalist graphic design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实图形极简主义",
+    "thumbnail": "samples/Surreal_Graphic_Minimalism.webp"
+  },
+  {
+    "name": "Surreal Neo-Folk Gradient",
+    "prompt": "flat vector illustration, grainy airbrush gradient, neo-folk symbolism, vibrant saturated palette, minimalist surrealism, clean geometric composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实NeoFolk渐变",
+    "thumbnail": "samples/Surreal_Neo-Folk_Gradient.webp"
+  },
+  {
+    "name": "Surreal Retro Pop",
+    "prompt": "flat vector illustration, bold black outlines, whimsical surrealism, retro pop aesthetic, grainy paper texture, vibrant gradient background, minimalist graphic design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实复古Pop",
+    "thumbnail": "samples/Surreal_Retro_Pop.webp"
+  },
+  {
+    "name": "Surrealist Graphic Collage",
+    "prompt": "mixed media collage, vintage black and white portrait, surrealist juxtaposition, bold graphic overlays, high contrast pop art, hand-drawn textures, flat vector elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实图形拼贴",
+    "thumbnail": "samples/Surrealist_Graphic_Collage.webp"
+  },
+  {
+    "name": "Tactile Cobalt Minimalism",
+    "prompt": "risograph texture, cobalt blue and yellow duotone, minimalist geometric vector, grainy noise texture, high contrast graphic design, flat design, sharp vector lines. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉Cobalt极简主义",
+    "thumbnail": "samples/Tactile_Cobalt_Minimalism.webp"
+  },
+  {
+    "name": "Textured Corporate Memphis",
+    "prompt": "corporate memphis, grainy risograph texture, flat vector illustration, stippled noise overlay, stylized geometric figures, vibrant pastel palette, minimalist editorial design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理CorporateMemphis",
+    "thumbnail": "samples/Textured_Corporate_Memphis.webp"
+  },
+  {
+    "name": "Textured Folk Surrealism",
+    "prompt": "flat vector illustration, grainy stipple texture, folk surrealism, muted earthy palette, minimalist geometric shapes, risograph print aesthetic, whimsical pastoral scene. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理Folk超现实",
+    "thumbnail": "samples/Textured_Folk_Surrealism.webp"
+  },
+  {
+    "name": "Textured Geometric Minimalism — Gouache Paper Warmth",
+    "prompt": "minimalist illustration, textured gouache, flat design, geometric silhouettes, screenprint aesthetic, warm paper background, limited color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Textured Geometric Minimalism — Gouache Paper Warmth",
+    "thumbnail": "samples/Textured_Geometric_Minimalism_—_Gouache_Paper_Warmth.webp"
+  },
+  {
+    "name": "Textured Geometric Minimalism — Risograph Vector Stipple",
+    "prompt": "minimalist geometric vector, risograph grain texture, mid-century modern graphic, flat color blocking, stippled shading, bold stylized shapes, vibrant limited palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理几何极简主义RisographVector点彩",
+    "thumbnail": "samples/Textured_Geometric_Minimalism_—_Risograph_Vector_Stipple.webp"
+  },
+  {
+    "name": "Textured Graphic Whimsy",
+    "prompt": "flat vector illustration, grainy texture overlay, vibrant saturated colors, minimalist conceptual art, playful character design, editorial graphic style, bold geometric shapes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理图形Whimsy",
+    "thumbnail": "samples/Textured_Graphic_Whimsy.webp"
+  },
+  {
+    "name": "Textured Minimalist Pop — Coral-Cerulean Airbrush",
+    "prompt": "stippled texture, grainy gradient, minimalist graphic illustration, risograph print style, bold color blocking, retro vector art, high-contrast palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理极简PopCoralCeruleanAirbrush",
+    "thumbnail": "samples/Textured_Minimalist_Pop_—_Coral-Cerulean_Airbrush.webp"
+  },
+  {
+    "name": "Textured Minimalist Pop — Mid-Century Stipple",
+    "prompt": "flat vector illustration, stippled texture shading, minimalist graphic design, grainy gradient, mid-century modern influence, bold color blocking, high-contrast silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理极简PopMidCentury点彩",
+    "thumbnail": "samples/Textured_Minimalist_Pop_—_Mid-Century_Stipple.webp"
+  },
+  {
+    "name": "Textured Minimalist Printmaking",
+    "prompt": "linocut print style, risograph texture, minimalist graphic illustration, hand-carved woodblock aesthetic, high-contrast flat design, textured cream paper background, retro screenprint style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理极简Printmaking",
+    "thumbnail": "samples/Textured_Minimalist_Printmaking.webp"
+  },
+  {
+    "name": "Textured Modern Illustration",
+    "prompt": "stylized digital illustration, grainy texture, flat vector design, warm color palette, expressive character design, minimalist graphic art, cozy atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理现代插画",
+    "thumbnail": "samples/Textured_Modern_Illustration.webp"
+  },
+  {
+    "name": "Textured Neo-Graphic Pop",
+    "prompt": "risograph grain texture, flat vector illustration, bold primary color palette, geometric abstraction, Corporate Memphis style, high-contrast graphic design, whimsical stylized characters. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理Neo图形Pop",
+    "thumbnail": "samples/Textured_Neo-Graphic_Pop.webp"
+  },
+  {
+    "name": "Textured Retro Graphic Pop",
+    "prompt": "risograph print texture, halftone dot pattern, high-contrast screenprint, vintage graphic illustration, distressed ink grain, bold flat vector, retro zine aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理复古图形Pop",
+    "thumbnail": "samples/Textured_Retro_Graphic_Pop.webp"
+  },
+  {
+    "name": "Textured Whimsical Print",
+    "prompt": "flat vector illustration, stippled texture overlay, risograph print style, mid-century modern graphic, bold color blocking, whimsical folk art, grainy screenprint effect. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理Whimsical印刷",
+    "thumbnail": "samples/Textured_Whimsical_Print.webp"
+  },
+  {
+    "name": "Verdant Atmospheric Minimalism",
+    "prompt": "monochromatic green palette, high-angle bird's-eye perspective, stippled and grainy texture, dramatic graphic shadows, minimalist landscape illustration, analog film aesthetic, painterly impasto depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "翠绿氛围极简主义",
+    "thumbnail": "samples/Verdant_Atmospheric_Minimalism.webp"
+  },
+  {
+    "name": "Vibrant Corporate Geometry",
+    "prompt": "Corporate Memphis, flat vector illustration, exaggerated proportions, minimalist character design, vibrant color blocking, clean geometric shapes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳CorporateGeometry",
+    "thumbnail": "samples/Vibrant_Corporate_Geometry.webp"
+  },
+  {
+    "name": "Vibrant Neo-Cubist Vectorism",
+    "prompt": "neo-cubist vector illustration, bold geometric color blocking, saturated pop art palette, tactile grain texture, faceted portraiture, celestial graphic motifs, high-contrast flat design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳Neo立体主义Vectorism",
+    "thumbnail": "samples/Vibrant_Neo-Cubist_Vectorism.webp"
+  },
+  {
+    "name": "Vibrant Neo-Psychedelic Pop",
+    "prompt": "bold black outlines, flat vector illustration, psychedelic pop art, saturated color palette, surreal whimsical characters, retro 1970s aesthetic, high-contrast graphic design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳NeoPsychedelicPop",
+    "thumbnail": "samples/Vibrant_Neo-Psychedelic_Pop.webp"
+  },
+  {
+    "name": "Vibrant Risograph Minimalism",
+    "prompt": "flat vector illustration, grainy risograph texture, bold color blocking, modern folk art, high-contrast saturated palette, surreal organic motifs, airbrushed gradient shading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳Risograph极简主义",
+    "thumbnail": "samples/Vibrant_Risograph_Minimalism.webp"
+  },
+  {
+    "name": "Whimsical Dreamy Minimalism",
+    "prompt": "minimalist vector illustration, dreamy pastel palette, grainy texture, whimsical character design, risograph print aesthetic, soft rounded shapes, high-contrast color blocking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "WhimsicalDreamy极简主义",
+    "thumbnail": "samples/Whimsical_Dreamy_Minimalism.webp"
+  },
+  {
+    "name": "Whimsical Mediterranean Folk Narrative",
+    "prompt": "stylized vector illustration, naive folk art style, warm sun-drenched palette, risograph and marker texture, whimsical architectural landscape, flat perspective, fine decorative linework. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "WhimsicalMediterraneanFolk叙事",
+    "thumbnail": "samples/Whimsical_Mediterranean_Folk_Narrative.webp"
+  }
+]

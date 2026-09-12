@@ -1,0 +1,471 @@
+[
+  {
+    "name": "Atmospheric Swirling Impressionism",
+    "prompt": "swirling directional brushstrokes, atmospheric post-impressionism, nocturnal teal and deep blue palette, solitary silhouette, textured impasto style, mystical vortex composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围Swirling印象派",
+    "thumbnail": "samples/Atmospheric_Swirling_Impressionism.webp"
+  },
+  {
+    "name": "Chromatic Expressionist Portraits",
+    "prompt": "expressive brushwork, high-contrast lighting, saturated color blocking, profile view portrait, dramatic chiaroscuro, impasto texture, vibrant digital painting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色表现主义Portraits",
+    "thumbnail": "samples/Chromatic_Expressionist_Portraits.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Noir — Grainy Monochrome",
+    "prompt": "low-key black and white, chiaroscuro lighting, gritty cinematic realism, heavy film grain, high-contrast monochrome, extreme tactile texture, gothic noir atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Chiaroscuro黑色颗粒感单色",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Noir_—_Grainy_Monochrome.webp"
+  },
+  {
+    "name": "Cinematic Noir Distortion",
+    "prompt": "high contrast black and white, dramatic chiaroscuro lighting, extreme fisheye distortion, harsh vintage flash, film noir atmosphere, cinematic grain, raw documentary style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感黑色Distortion",
+    "thumbnail": "samples/Cinematic_Noir_Distortion.webp"
+  },
+  {
+    "name": "Cobalt Ethereal Minimalism",
+    "prompt": "cobalt blue background, minimalist composition, stippled chalk texture, ethereal soft focus, monochromatic atmosphere, high contrast, grainy pastel aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cobalt空灵极简主义",
+    "thumbnail": "samples/Cobalt_Ethereal_Minimalism.webp"
+  },
+  {
+    "name": "Crimson Noir Gothic",
+    "prompt": "deep crimson and black palette, stark high-contrast silhouettes, gothic noir atmosphere, heavy impasto texture, cinematic lighting, eerie glowing accents, film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色哥特",
+    "thumbnail": "samples/Crimson_Noir_Gothic.webp"
+  },
+  {
+    "name": "Digital Impasto Surrealism",
+    "prompt": "heavy impasto texture, vibrant candy color palette, digital glitch distortion, pixel-sorted surrealism, palette knife strokes, liquid drip effect, high-contrast lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "数字厚涂超现实",
+    "thumbnail": "samples/Digital_Impasto_Surrealism.webp"
+  },
+  {
+    "name": "Dynamic Kinetic Abstraction — Warm Ribbon Smear",
+    "prompt": "kinetic motion blur, abstract expressionism, high-speed photography, directional streaks, saturated warm contrast, fluid momentum, dynamic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dynamic Kinetic Abstraction — Warm Ribbon Smear",
+    "thumbnail": "samples/Dynamic_Kinetic_Abstraction_—_Warm_Ribbon_Smear.webp"
+  },
+  {
+    "name": "Ethereal Pastel Impressionism — Pointillist Impasto",
+    "prompt": "ethereal pastel palette, soft-focus atmosphere, dreamy impressionism, textured painterly layers, dappled light, magical realism, stippled and impasto techniques. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩印象派Pointillist厚涂",
+    "thumbnail": "samples/Ethereal_Pastel_Impressionism_—_Pointillist_Impasto.webp"
+  },
+  {
+    "name": "Ethereal Pastel Surrealism — Impasto Gradient",
+    "prompt": "surreal digital landscape, pastel color palette, dreamy atmospheric light, whimsical nature, minimalist composition, painterly texture, vibrant sky gradient. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩超现实厚涂渐变",
+    "thumbnail": "samples/Ethereal_Pastel_Surrealism_—_Impasto_Gradient.webp"
+  },
+  {
+    "name": "Ethereal Submerged Expressionism",
+    "prompt": "underwater expressionism, fluid liquid distortion, painterly brushwork, shimmering caustic light, deep teal and indigo palette, dreamlike ethereal atmosphere, rhythmic wavy patterns. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Submerged表现主义",
+    "thumbnail": "samples/Ethereal_Submerged_Expressionism.webp"
+  },
+  {
+    "name": "Ethereal Verdant Impressionism",
+    "prompt": "high-angle aerial view, painterly impasto texture, verdant rolling landscape, whimsical surrealism, swirling brushstrokes, vibrant emerald and teal palette, minimalist solitude. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵翠绿印象派",
+    "thumbnail": "samples/Ethereal_Verdant_Impressionism.webp"
+  },
+  {
+    "name": "Experimental Analog Noir",
+    "prompt": "high-contrast monochrome, analog film grain, vintage photogram, experimental darkroom, glowing silhouettes, distressed film texture, surreal light trails. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Experimental模拟黑色",
+    "thumbnail": "samples/Experimental_Analog_Noir.webp"
+  },
+  {
+    "name": "Expressive Neo-Fauvist Textures",
+    "prompt": "Neo-Fauvism, thick impasto texture, expressive hatchwork, saturated non-naturalistic color, creamy neutral background, gestural brushstrokes, mixed media aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Expressive Neo-Fauvist Textures",
+    "thumbnail": "samples/Expressive_Neo-Fauvist_Textures.webp"
+  },
+  {
+    "name": "Fiery Twilight Expressionism",
+    "prompt": "expressive digital painting, high-contrast twilight palette, fiery atmospheric sky, dramatic silhouette, textured impasto brushstrokes, melancholic landscape, glowing gradient lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fiery暮光表现主义",
+    "thumbnail": "samples/Fiery_Twilight_Expressionism.webp"
+  },
+  {
+    "name": "Geometric Digital Impressionism",
+    "prompt": "stylized digital landscape, geometric blocky brushstrokes, vibrant saturated palette, surreal digital pastoral, impasto texture, high-contrast lighting, sharp-edged terrain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "几何数字印象派",
+    "thumbnail": "samples/Geometric_Digital_Impressionism.webp"
+  },
+  {
+    "name": "Geometric Modernist Synthesis",
+    "prompt": "geometric abstraction, mid-century modernist, bold color blocking, cubist fragmentation, tactile impasto texture, hard-edge composition, stylized minimal form. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "几何ModernistSynthesis",
+    "thumbnail": "samples/Geometric_Modernist_Synthesis.webp"
+  },
+  {
+    "name": "Graphic Avant-Garde Minimalism — Porcelain Pigment",
+    "prompt": "avant-garde beauty, high-contrast editorial, graphic makeup, minimalist studio photography, visceral paint textures, theatrical pigment, sharp facial geometry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Graphic Avant-Garde Minimalism — Porcelain Pigment",
+    "thumbnail": "samples/Graphic_Avant-Garde_Minimalism_—_Porcelain_Pigment.webp"
+  },
+  {
+    "name": "Graphic Chiaroscuro Fauvism",
+    "prompt": "high-contrast chiaroscuro, bold color blocking, painterly impasto texture, vibrant saturated palette, graphic minimalist portrait, dramatic moody shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形ChiaroscuroFauvism",
+    "thumbnail": "samples/Graphic_Chiaroscuro_Fauvism.webp"
+  },
+  {
+    "name": "Graphic Fauvist Modernism",
+    "prompt": "flat graphic illustration, gouache painting texture, bold color blocking, minimalist geometric figuration, fauvist color palette, hard-edge modernism, matte paint finish. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形FauvistModernism",
+    "thumbnail": "samples/Graphic_Fauvist_Modernism.webp"
+  },
+  {
+    "name": "Graphic Fauvist Noir",
+    "prompt": "profile portrait, high-contrast lighting, graphic silhouette, fauvist color palette, bold impasto brushstrokes, minimalist background, chiaroscuro, modern expressionism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Fauvist黑色",
+    "thumbnail": "samples/Graphic_Fauvist_Noir.webp"
+  },
+  {
+    "name": "Gritty Chiaroscuro Noir — Scratched Film Wear",
+    "prompt": "high-contrast monochrome, heavy film grain, stark chiaroscuro, gritty analog texture, distressed vintage film, dramatic low-key lighting, cinematic noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Chiaroscuro Noir — Scratched Film Wear",
+    "thumbnail": "samples/Gritty_Chiaroscuro_Noir_—_Scratched_Film_Wear.webp"
+  },
+  {
+    "name": "Haunting Kinetic Monochrome — Painterly Blur Dissolve",
+    "prompt": "heavy analog film grain, extreme motion blur, high-contrast monochrome, chiaroscuro lighting, shutter drag, cinematic moody portraiture, abstract silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Haunting Kinetic Monochrome — Painterly Blur Dissolve",
+    "thumbnail": "samples/Haunting_Kinetic_Monochrome_—_Painterly_Blur_Dissolve.webp"
+  },
+  {
+    "name": "Hyper-Gloss Tactile Radiance",
+    "prompt": "extreme macro beauty photography, high-gloss wet-look skin, saturated neon pigments, translucent texture distortion, tactile impasto makeup, clinical studio lighting, hyper-detailed skin texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper-Gloss Tactile Radiance",
+    "thumbnail": "samples/Hyper-Gloss_Tactile_Radiance.webp"
+  },
+  {
+    "name": "Hyper-Tactile Surrealist Beauty",
+    "prompt": "avant-garde beauty portrait, hyper-detailed skin texture, surreal collage elements, vibrant jewel-toned palette, glossy wet-look finish, tactile impasto and metallic accents, dramatic studio lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper触觉超现实美",
+    "thumbnail": "samples/Hyper-Tactile_Surrealist_Beauty.webp"
+  },
+  {
+    "name": "Kinetic Amber Motion",
+    "prompt": "long exposure, motion blur, intentional camera movement, saturated amber palette, kinetic energy, dynamic light streaks, painterly motion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态琥珀运动",
+    "thumbnail": "samples/Kinetic_Amber_Motion.webp"
+  },
+  {
+    "name": "Kinetic Mixed-Media Expressionism",
+    "prompt": "mixed-media collage, thick impasto texture, gestural brushstrokes, vibrant primary colors, high-contrast photography, abstract expressionist overlay, minimalist off-white background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态MixedMedia表现主义",
+    "thumbnail": "samples/Kinetic_Mixed-Media_Expressionism.webp"
+  },
+  {
+    "name": "Kinetic Noir Grain",
+    "prompt": "high-contrast monochrome, heavy film grain, chiaroscuro lighting, motion blur, shutter drag, candid cinematic portraiture, low-key moody atmosphere, tactile texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态黑色颗粒",
+    "thumbnail": "samples/Kinetic_Noir_Grain.webp"
+  },
+  {
+    "name": "Kinetic Radiant Motion",
+    "prompt": "motion blur, intentional camera movement, saturated primary colors, shutter drag, painterly streaks, high contrast lighting, dynamic energy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态Radiant运动",
+    "thumbnail": "samples/Kinetic_Radiant_Motion.webp"
+  },
+  {
+    "name": "Luminous Abyssal Mysticism",
+    "prompt": "bioluminescent glow, impasto brushwork, nocturnal dreamscape, jewel-toned palette, pointillist texture, magical realism, ethereal chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮深渊Mysticism",
+    "thumbnail": "samples/Luminous_Abyssal_Mysticism.webp"
+  },
+  {
+    "name": "Luminous Celestial Impasto — Stained-Glass Divisionism",
+    "prompt": "heavy impasto texture, swirling celestial vortex, deep cobalt and indigo, radiant golden light, post-impressionist style, chiaroscuro silhouette, dreamlike nocturnal landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Celestial Impasto — Stained-Glass Divisionism",
+    "thumbnail": "samples/Luminous_Celestial_Impasto_—_Stained-Glass_Divisionism.webp"
+  },
+  {
+    "name": "Luminous Cosmic Nocturnes",
+    "prompt": "nocturnal surrealism, impasto texture, bioluminescent glow, cosmic dreamscape, painterly brushwork, twilight color palette, ethereal lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮宇宙Nocturnes",
+    "thumbnail": "samples/Luminous_Cosmic_Nocturnes.webp"
+  },
+  {
+    "name": "Luminous Cosmic Nostalgia",
+    "prompt": "bioluminescent glow, cosmic pointillism, shimmering stardust, vintage film grain, dreamy twilight atmosphere, retro-surrealist fantasy, high-contrast chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮宇宙Nostalgia",
+    "thumbnail": "samples/Luminous_Cosmic_Nostalgia.webp"
+  },
+  {
+    "name": "Luminous Emerald Chiaroscuro",
+    "prompt": "painterly digital art, high-contrast chiaroscuro, emerald and teal palette, expressive brushstrokes, ethereal light shafts, bioluminescent forest atmosphere, dramatic vertical perspective, textured oil pastel style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮翠绿Chiaroscuro",
+    "thumbnail": "samples/Luminous_Emerald_Chiaroscuro.webp"
+  },
+  {
+    "name": "Luminous Fauvist Nocturnes",
+    "prompt": "minimalist fauvism, cobalt and orange contrast, thick impasto texture, nocturnal atmospheric landscape, graphic silhouettes, high-contrast chiaroscuro, modernist brushwork. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮FauvistNocturnes",
+    "thumbnail": "samples/Luminous_Fauvist_Nocturnes.webp"
+  },
+  {
+    "name": "Luminous Mystical Narrative",
+    "prompt": "intricate hand-drawn textures, ethereal luminous glow, chiaroscuro lighting, storybook gothic, painterly impasto brushstrokes, vibrant mystical color palette, enchanted narrative landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Mystical叙事",
+    "thumbnail": "samples/Luminous_Mystical_Narrative.webp"
+  },
+  {
+    "name": "Luminous Neon Impressionism",
+    "prompt": "expressive impasto digital painting, neon saturated palette, wet street reflections, high-contrast cinematic lighting, dynamic light streaks, surreal urban impressionism, textured brushstrokes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮霓虹印象派",
+    "thumbnail": "samples/Luminous_Neon_Impressionism.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Impasto — Cozy Emerald Glow",
+    "prompt": "chiaroscuro lighting, thick impasto brushstrokes, glowing amber highlights, moody emerald and navy palette, tactile oil paint texture, whimsical magical realism, soft-focus atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行厚涂Cozy翠绿发光",
+    "thumbnail": "samples/Luminous_Nocturnal_Impasto_—_Cozy_Emerald_Glow.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Void",
+    "prompt": "deep indigo and cobalt palette, stark black void, surreal high-contrast lighting, ethereal glowing focal point, minimalist composition, tactile impasto texture, existential atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行Void",
+    "thumbnail": "samples/Luminous_Nocturnal_Void.webp"
+  },
+  {
+    "name": "Luminous Noir Expressionism",
+    "prompt": "chiaroscuro lighting, electric blue and neon accents, thick impasto textures, bioluminescent glow, expressive brushwork, ethereal silhouettes, high-contrast noir atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮黑色表现主义",
+    "thumbnail": "samples/Luminous_Noir_Expressionism.webp"
+  },
+  {
+    "name": "Melancholic Nocturnal Minimalism — Pointillist Impasto Violet",
+    "prompt": "nocturnal palette, minimalist composition, solitary figure, layered textural depth, dreamlike atmosphere, deep indigo and azure tones, post-impressionist influence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "忧郁夜行极简主义Pointillist厚涂紫罗兰",
+    "thumbnail": "samples/Melancholic_Nocturnal_Minimalism_—_Pointillist_Impasto_Violet.webp"
+  },
+  {
+    "name": "Monochromatic Verdant Surrealism — Bird's-Eye Long Shadows",
+    "prompt": "monochromatic green palette, bird's-eye view, dramatic long shadows, minimalist surrealism, tactile paint texture, isolated human figures, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monochromatic Verdant Surrealism — Bird's-Eye Long Shadows",
+    "thumbnail": "samples/Monochromatic_Verdant_Surrealism_—_Bird's-Eye_Long_Shadows.webp"
+  },
+  {
+    "name": "Monochromatic Verdant Surrealism — Raking Impasto Relief",
+    "prompt": "monochromatic green palette, heavy impasto texture, swirling organic patterns, surreal nature, tactile oil paint, minimalist isolation, directional lighting, verdant landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monochromatic Verdant Surrealism — Raking Impasto Relief",
+    "thumbnail": "samples/Monochromatic_Verdant_Surrealism_—_Raking_Impasto_Relief.webp"
+  },
+  {
+    "name": "Nocturnal Cyber-Gothic Expressionism",
+    "prompt": "chiaroscuro lighting, high-contrast illustration, scratchy expressive texture, glowing amber and indigo, dark surrealism, analog horror, lo-fi digital noise. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行赛博哥特表现主义",
+    "thumbnail": "samples/Nocturnal_Cyber-Gothic_Expressionism.webp"
+  },
+  {
+    "name": "Nocturnal Surrealist Chiaroscuro",
+    "prompt": "chiaroscuro lighting, deep twilight blue, glowing amber accents, surrealist dreamscape, painterly impasto texture, liminal isolation, melancholic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行超现实Chiaroscuro",
+    "thumbnail": "samples/Nocturnal_Surrealist_Chiaroscuro.webp"
+  },
+  {
+    "name": "Nocturnal Urban Melancholy",
+    "prompt": "nocturnal urban landscape, painterly impasto texture, glowing warm light, deep indigo shadows, wet street reflections, moody atmospheric perspective, historical architectural details. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行都市忧郁",
+    "thumbnail": "samples/Nocturnal_Urban_Melancholy.webp"
+  },
+  {
+    "name": "Raw Graphic Print Expressionism",
+    "prompt": "linocut print style, bold primary colors, textured paper background, neo-expressionist brushstrokes, high-contrast graphic art, hand-drawn ink texture, mid-century modern print. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "原始图形印刷表现主义",
+    "thumbnail": "samples/Raw_Graphic_Print_Expressionism.webp"
+  },
+  {
+    "name": "Romantic Academic Impasto",
+    "prompt": "academic realism, thick impasto oil, chiaroscuro lighting, romantic pastoral, pre-raphaelite influence, earthy color palette, painterly texture, melancholic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "浪漫Academic厚涂",
+    "thumbnail": "samples/Romantic_Academic_Impasto.webp"
+  },
+  {
+    "name": "Surreal Impasto Azure",
+    "prompt": "heavy impasto texture, ultramarine and cobalt palette, metaphysical surrealism, minimalist composition, painterly brushstrokes, stark high-contrast lighting, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实厚涂蔚蓝",
+    "thumbnail": "samples/Surreal_Impasto_Azure.webp"
+  },
+  {
+    "name": "Tactile Gloss Distortion",
+    "prompt": "extreme close-up portrait, glossy wet skin texture, high-contrast studio lighting, distorted barrier effect, vibrant pigment accents, macro beauty photography, tactile impasto finish. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉光泽Distortion",
+    "thumbnail": "samples/Tactile_Gloss_Distortion.webp"
+  },
+  {
+    "name": "Tactile Monochrome Noir",
+    "prompt": "heavy film grain, high-contrast monochrome, cinematic lighting, tactile texture, shallow depth of field, intimate composition, moody atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉单色黑色",
+    "thumbnail": "samples/Tactile_Monochrome_Noir.webp"
+  },
+  {
+    "name": "Tactile Naive Whimsy",
+    "prompt": "naive art style, heavy impasto texture, whimsical illustration, bold primary colors, tactile brushstrokes, folk art aesthetic, childlike simplicity. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉NaiveWhimsy",
+    "thumbnail": "samples/Tactile_Naive_Whimsy.webp"
+  },
+  {
+    "name": "Tactile Surrealist Minimalism — Impasto White Disruption",
+    "prompt": "tactile impasto texture, conceptual surrealist portraiture, minimalist studio lighting, vibrant neon paint overlay, high-fidelity skin detail, physical medium intervention, stark white background, avant-garde composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉超现实极简主义厚涂WhiteDisruption",
+    "thumbnail": "samples/Tactile_Surrealist_Minimalism_—_Impasto_White_Disruption.webp"
+  },
+  {
+    "name": "Tactile Verdant Surrealism",
+    "prompt": "monochromatic green palette, tactile impasto texture, surreal organic landscape, sculptural brushstrokes, minimalist figure isolation, undulating velvet moss, soft directional lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉翠绿超现实",
+    "thumbnail": "samples/Tactile_Verdant_Surrealism.webp"
+  },
+  {
+    "name": "Textured Geometric Futurism",
+    "prompt": "impasto digital painting, geometric fragmentation, bold stylized brushstrokes, high-contrast lighting, cyber expressionism, dynamic perspective, vibrant blue palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理几何Futurism",
+    "thumbnail": "samples/Textured_Geometric_Futurism.webp"
+  },
+  {
+    "name": "Textured Naive Folk",
+    "prompt": "naive art style, visible impasto brushstrokes, folk art aesthetic, bold black outlines, flat perspective, saturated color palette, textured acrylic painting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理NaiveFolk",
+    "thumbnail": "samples/Textured_Naive_Folk.webp"
+  },
+  {
+    "name": "Textured Naive Modernism",
+    "prompt": "naive folk modernism, impasto texture, high-contrast crimson and black, visible brushstrokes, graphic geometric patterns, flat perspective, gothic whimsy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理NaiveModernism",
+    "thumbnail": "samples/Textured_Naive_Modernism.webp"
+  },
+  {
+    "name": "Textured Whimsical Fauvism",
+    "prompt": "thick impasto texture, vibrant fauvist color palette, graphic black outlines, whimsical stylized figures, sculptural brushwork, naive folk art influence, saturated pop surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理WhimsicalFauvism",
+    "thumbnail": "samples/Textured_Whimsical_Fauvism.webp"
+  },
+  {
+    "name": "Vibrant Expressionist Portraiture",
+    "prompt": "expressive portraiture, bold impasto brushstrokes, high-contrast lighting, saturated neon color palette, textured painterly finish, raw emotional intensity, graphic color blocking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳表现主义肖像摄影",
+    "thumbnail": "samples/Vibrant_Expressionist_Portraiture.webp"
+  },
+  {
+    "name": "Vibrant Expressive Fauvism",
+    "prompt": "expressive gestural brushwork, vibrant color blocking, impasto texture, stark white background, chromatic fauvism, bold black ink outlines, saturated digital gouache. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳ExpressiveFauvism",
+    "thumbnail": "samples/Vibrant_Expressive_Fauvism.webp"
+  },
+  {
+    "name": "Vibrant Folk Fauvism",
+    "prompt": "gouache painting style, naive folk art illustration, vibrant saturated palette, visible impasto brushstrokes, maximalist tropical motif, flat graphic composition, whimsical stylized forms. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳FolkFauvism",
+    "thumbnail": "samples/Vibrant_Folk_Fauvism.webp"
+  },
+  {
+    "name": "Vibrant Naive Whimsy",
+    "prompt": "naive art style, tactile hand-painted texture, vibrant saturated palette, whimsical character design, bold simplified shapes, thick impasto or gouache medium, playful folk art influence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳NaiveWhimsy",
+    "thumbnail": "samples/Vibrant_Naive_Whimsy.webp"
+  },
+  {
+    "name": "Vibrant Painterly Horizons",
+    "prompt": "painterly digital art, expressive brushstrokes, saturated sunset palette, golden hour lighting, atmospheric landscape, thick impasto texture, grand scale vista. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳绘画感Horizons",
+    "thumbnail": "samples/Vibrant_Painterly_Horizons.webp"
+  },
+  {
+    "name": "Visceral Macro Expressionism",
+    "prompt": "macro beauty portrait, tactile impasto texture, glossy wet paint, glass overlay, vibrant saturated palette, high-contrast studio lighting, hyper-detailed skin. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "内脏感微距表现主义",
+    "thumbnail": "samples/Visceral_Macro_Expressionism.webp"
+  },
+  {
+    "name": "Viscous Viridian Gothic",
+    "prompt": "high-contrast green and black, viscous liquid texture, organic shrouded figures, ebru marbling, chiaroscuro lighting, impasto brushstrokes, acidic monochromatic palette, tactile sculptural forms. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ViscousViridian哥特",
+    "thumbnail": "samples/Viscous_Viridian_Gothic.webp"
+  },
+  {
+    "name": "Vivid Fauvist Impasto",
+    "prompt": "fauvism painting style, heavy impasto texture, vibrant saturated color palette, deep violet shadows, expressive brushstrokes, bold graphic lighting, modern tactile still life. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "生动Fauvist厚涂",
+    "thumbnail": "samples/Vivid_Fauvist_Impasto.webp"
+  },
+  {
+    "name": "Whimsical Impressionist Waterscapes",
+    "prompt": "impressionist impasto painting, visible brushstrokes, pastel aquatic landscape, whimsical storybook aesthetic, shimmering water reflections, thick oil texture, serene pond life, soft mint and lavender palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Whimsical Impressionist Waterscapes",
+    "thumbnail": "samples/Whimsical_Impressionist_Waterscapes.webp"
+  }
+]

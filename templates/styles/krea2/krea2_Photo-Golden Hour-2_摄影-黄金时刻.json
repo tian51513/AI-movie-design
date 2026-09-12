@@ -1,0 +1,128 @@
+[
+  {
+    "name": "Nostalgic Golden Transit",
+    "prompt": "golden hour lighting, cinematic transit perspective, frame-within-a-frame, warm amber glow, nostalgic travel photography, sun-drenched interior, scenic landscape vista. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Golden Transit",
+    "thumbnail": "samples/Nostalgic_Golden_Transit.webp"
+  },
+  {
+    "name": "Nostalgic Pastel Dreamcore",
+    "prompt": "vintage 35mm film grain, pastel dreamscape, faded teal and coral palette, soft focus bloom, sun-drenched light leak, surreal minimalism, nostalgic golden hour glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Pastel Dreamcore",
+    "thumbnail": "samples/Nostalgic_Pastel_Dreamcore.webp"
+  },
+  {
+    "name": "Nostalgic Pastoral Golden-Hour",
+    "prompt": "35mm film photography, golden hour lighting, nostalgic cinematic atmosphere, soft vintage grain, shallow depth of field, hazy pastoral landscape, warm amber color grading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "NostalgicPastoral黄金时刻",
+    "thumbnail": "samples/Nostalgic_Pastoral_Golden-Hour.webp"
+  },
+  {
+    "name": "Nostalgic Pixel Liminality",
+    "prompt": "retro pixel art, atmospheric lighting, chiaroscuro, liminal space, dithered textures, nostalgic mood, lo-fi aesthetic, 8-bit color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Pixel Liminality",
+    "thumbnail": "samples/Nostalgic_Pixel_Liminality.webp"
+  },
+  {
+    "name": "Nostalgic Sun-Drenched Analog — Coastal Bleached Bloom",
+    "prompt": "35mm analog film photography, heavy film grain, golden hour lighting, candid portraiture, soft focus bloom, muted pastel palette, motion blur, nostalgic vintage aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Sun-Drenched Analog — Coastal Bleached Bloom",
+    "thumbnail": "samples/Nostalgic_Sun-Drenched_Analog_—_Coastal_Bleached_Bloom.webp"
+  },
+  {
+    "name": "Nostalgic Sun-Drenched Analog — Olive Copper Flash",
+    "prompt": "35mm film aesthetic, golden hour light, dappled sunlight, olive and copper tones, analog film grain, shallow depth of field, candid portraiture, vintage mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Sun-Drenched Analog — Olive Copper Flash",
+    "thumbnail": "samples/Nostalgic_Sun-Drenched_Analog_—_Olive_Copper_Flash.webp"
+  },
+  {
+    "name": "Nostalgic Twilight Pixelscapes",
+    "prompt": "pixel art, atmospheric lighting, nostalgic retro style, dramatic chiaroscuro, golden hour gradient, cozy lofi vibe, high-contrast color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Twilight Pixelscapes",
+    "thumbnail": "samples/Nostalgic_Twilight_Pixelscapes.webp"
+  },
+  {
+    "name": "Nostalgic Twilight Reverie",
+    "prompt": "35mm analog film grain, golden hour twilight, soft-focus dreamy aesthetic, muted nostalgic color palette, silhouette in sunset, cinematic atmospheric lighting, vintage film photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Twilight Reverie",
+    "thumbnail": "samples/Nostalgic_Twilight_Reverie.webp"
+  },
+  {
+    "name": "Nostalgic Twilight Silhouettes",
+    "prompt": "high-contrast silhouette, vintage 35mm film grain, golden hour gradient sky, cinematic soft focus, dreamy motion blur, melancholic twilight mood, ethereal backlighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Twilight Silhouettes",
+    "thumbnail": "samples/Nostalgic_Twilight_Silhouettes.webp"
+  },
+  {
+    "name": "Nostalgic Twilight Solitude — Amber-Sage Grain",
+    "prompt": "vintage 35mm film grain, atmospheric twilight haze, minimalist silhouette, soft focus dreamcore, muted retro color palette, blue hour aesthetic, lo-fi analog photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Twilight Solitude — Amber-Sage Grain",
+    "thumbnail": "samples/Nostalgic_Twilight_Solitude_—_Amber-Sage_Grain.webp"
+  },
+  {
+    "name": "Nostalgic Twilight Surrealism — Magenta-Teal Rim",
+    "prompt": "dreamy retro-surrealism, analog film grain texture, twilight color gradient, saturated magenta and indigo, minimalist silhouette, lo-fi nostalgic aesthetic, soft golden hour lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic暮光超现实品红青蓝边缘光",
+    "thumbnail": "samples/Nostalgic_Twilight_Surrealism_—_Magenta-Teal_Rim.webp"
+  },
+  {
+    "name": "Nostalgic Urban Cinematic",
+    "prompt": "cinematic 35mm film grain, fisheye lens distortion, low-angle street perspective, golden hour lighting, vintage retro color palette, sharp geometric shadows, urban concrete aesthetic, candid narrative realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic都市电影感",
+    "thumbnail": "samples/Nostalgic_Urban_Cinematic.webp"
+  },
+  {
+    "name": "Prismatic Sunlit Nostalgia",
+    "prompt": "starburst lens flare, prismatic light refraction, dreamy analog film grain, sun-drenched water caustics, nostalgic golden hour, soft-focus ethereal glow, vintage 35mm aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜SunlitNostalgia",
+    "thumbnail": "samples/Prismatic_Sunlit_Nostalgia.webp"
+  },
+  {
+    "name": "Sculptural Verdant Landscapes",
+    "prompt": "aerial landscape photography, golden hour lighting, sculptural topography, undulating grassy textures, rhythmic organic patterns, deep directional shadows, vibrant chartreuse and forest green. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sculptural Verdant Landscapes",
+    "thumbnail": "samples/Sculptural_Verdant_Landscapes.webp"
+  },
+  {
+    "name": "Solar Retro-Organic Modernism",
+    "prompt": "mid-century modern architecture, organic retro-futurism, golden hour lighting, circular portal windows, warm ochre palette, analog film grain, textured plaster surfaces, sunken conversation pits. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Solar Retro-Organic Modernism",
+    "thumbnail": "samples/Solar_Retro-Organic_Modernism.webp"
+  },
+  {
+    "name": "Sun-Drenched Analog Nostalgia",
+    "prompt": "golden hour backlighting, analog film grain, dramatic lens flare, nostalgic summer haze, cinematic motion blur, warm vintage color grading, dreamy light leaks. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sun-Drenched Analog Nostalgia",
+    "thumbnail": "samples/Sun-Drenched_Analog_Nostalgia.webp"
+  },
+  {
+    "name": "Surreal Fisheye Floral",
+    "prompt": "extreme low-angle fisheye, worms-eye view, circular floral framing, bright blue sky backdrop, vibrant orange and pink color palette, dramatic lens distortion, golden hour backlighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实鱼眼Floral",
+    "thumbnail": "samples/Surreal_Fisheye_Floral.webp"
+  },
+  {
+    "name": "Whimsical Isometric Diorama",
+    "prompt": "isometric miniature diorama, whimsical magical realism, soft golden hour lighting, fuzzy organic textures, pastel and emerald palette, tilt-shift photography style, surreal toy-like aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Whimsical Isometric Diorama",
+    "thumbnail": "samples/Whimsical_Isometric_Diorama.webp"
+  }
+]

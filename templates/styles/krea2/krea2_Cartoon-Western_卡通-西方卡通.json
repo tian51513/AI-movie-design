@@ -1,0 +1,51 @@
+[
+  {
+    "name": "Graphic Cartoon Expressionism",
+    "prompt": "character model sheet, bold black linework, expressive cartoon style, flat digital color, indie animation aesthetic, exaggerated proportions, minimalist solid background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Cartoon表现主义",
+    "thumbnail": "samples/Graphic_Cartoon_Expressionism.webp"
+  },
+  {
+    "name": "Playful Rubber-Hose Pop",
+    "prompt": "rubber hose animation, bold black outlines, kawaii mascot design, vibrant flat colors, die-cut sticker style, pie-eyed character, retro cartoon aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Playful Rubber-Hose Pop",
+    "thumbnail": "samples/Playful_Rubber-Hose_Pop.webp"
+  },
+  {
+    "name": "Sharp Geometric Retro-Futurism",
+    "prompt": "sharp angular vector art, exaggerated heroic proportions, minimalist geometric character design, high-contrast solid background, retro-futuristic cartoon style, clean digital line work, bold flat colors. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "锐利几何复古Futurism",
+    "thumbnail": "samples/Sharp_Geometric_Retro-Futurism.webp"
+  },
+  {
+    "name": "Vibrant Vector Pop",
+    "prompt": "flat vector illustration, bold black outlines, rubber hose aesthetic, exaggerated character proportions, saturated color palette, minimalist graphic design, playful cartoon style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳VectorPop",
+    "thumbnail": "samples/Vibrant_Vector_Pop.webp"
+  },
+  {
+    "name": "Vintage Graphic Mascotry",
+    "prompt": "rubber hose animation style, bold ink outlines, vintage print texture, halftone shading, mid-century commercial art, minimalist graphic illustration, risograph aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古图形Mascotry",
+    "thumbnail": "samples/Vintage_Graphic_Mascotry.webp"
+  },
+  {
+    "name": "Vintage Rubber Hose Revival",
+    "prompt": "rubber hose animation style, vintage mascot illustration, bold black outlines, mid-century cartoon aesthetic, limited flat color palette, retro screen print texture, pie-cut eyes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古RubberHoseRevival",
+    "thumbnail": "samples/Vintage_Rubber_Hose_Revival.webp"
+  },
+  {
+    "name": "Whimsical Crayon Narrative",
+    "prompt": "crayon texture, naive illustration, childrens book aesthetic, hand-drawn strokes, soft pastel palette, minimalist white background, vintage cartoon style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "WhimsicalCrayon叙事",
+    "thumbnail": "samples/Whimsical_Crayon_Narrative.webp"
+  }
+]

@@ -1,0 +1,177 @@
+[
+  {
+    "name": "Architectural Voxel Synthesis",
+    "prompt": "voxelized brutalism, aerial geometric architecture, miniature diorama style, overgrown ancient ruins, tilt-shift perspective, terracotta and sandstone palette, surreal digital decay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Architectural Voxel Synthesis",
+    "thumbnail": "samples/Architectural_Voxel_Synthesis.webp"
+  },
+  {
+    "name": "Charming Isometric Voxelworlds",
+    "prompt": "isometric voxel diorama, low-poly miniature world, stylized 3D block art, cozy warm lighting, clean studio background, magicavoxel aesthetic, tactile toy-like render. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Charming Isometric Voxelworlds",
+    "thumbnail": "samples/Charming_Isometric_Voxelworlds.webp"
+  },
+  {
+    "name": "Cinematic Voxel Dioramas",
+    "prompt": "voxel art, isometric diorama, cinematic lighting, tilt-shift photography, warm atmospheric bloom, blocky geometry, soft volumetric shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感VoxelDioramas",
+    "thumbnail": "samples/Cinematic_Voxel_Dioramas.webp"
+  },
+  {
+    "name": "Cobalt Digital Noir",
+    "prompt": "cobalt blue and black, high-contrast wireframe, dithered stipple texture, retro digital glitch, cinematic noir lighting, voxel topography, minimalist graphic silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cobalt数字黑色",
+    "thumbnail": "samples/Cobalt_Digital_Noir.webp"
+  },
+  {
+    "name": "Cozy Isometric Miniatures",
+    "prompt": "isometric perspective, miniature diorama, cozy fantasy atmosphere, vibrant earthy tones, soft ambient lighting, stylized world-building, charming retro aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cozy Isometric Miniatures",
+    "thumbnail": "samples/Cozy_Isometric_Miniatures.webp"
+  },
+  {
+    "name": "Cozy Isometric Voxel",
+    "prompt": "isometric voxel diorama, low-poly blocky style, soft directional lighting, cozy miniature aesthetic, warm earthy color palette, clean solid background, MagicaVoxel render. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cozy Isometric Voxel",
+    "thumbnail": "samples/Cozy_Isometric_Voxel.webp"
+  },
+  {
+    "name": "Cozy Pastel Voxel",
+    "prompt": "voxel art, pastel color scheme, isometric 3D diorama, miniature toy aesthetic, soft volumetric lighting, cute blocky design, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cozy Pastel Voxel",
+    "thumbnail": "samples/Cozy_Pastel_Voxel.webp"
+  },
+  {
+    "name": "Digital Chlorophyll Glitch",
+    "prompt": "monochromatic green, pixel sorting, organic glitch art, datamoshing, hyper-detailed foliage, digital disintegration, voxel extrusion, surreal nature. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "数字Chlorophyll故障",
+    "thumbnail": "samples/Digital_Chlorophyll_Glitch.webp"
+  },
+  {
+    "name": "Dreamy Pastel Futurism",
+    "prompt": "pastel color palette, retro-futurism, whimsical illustration, soft studio lighting, clean line art, dreamy surrealism, designer toy aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dreamy Pastel Futurism",
+    "thumbnail": "samples/Dreamy_Pastel_Futurism.webp"
+  },
+  {
+    "name": "Ethereal Glitch Synthesis",
+    "prompt": "vertical pixel sorting, digital decay, emerald and neon palette, glitched organic landscapes, liquid motion blur, high-contrast data corruption, dithered textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵故障Synthesis",
+    "thumbnail": "samples/Ethereal_Glitch_Synthesis.webp"
+  },
+  {
+    "name": "Ethereal Gothic Nocturne",
+    "prompt": "gothic fantasy, chiaroscuro lighting, moonlit atmosphere, warm lantern glow, misty landscape, dark romanticism, stylized digital illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵哥特Nocturne",
+    "thumbnail": "samples/Ethereal_Gothic_Nocturne.webp"
+  },
+  {
+    "name": "Glossy Isometric Voxel",
+    "prompt": "voxel art, isometric 3D render, minimalist blocky design, soft studio lighting, low-poly cubic aesthetic, toy-like glossy texture, clean solid background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光泽等距Voxel",
+    "thumbnail": "samples/Glossy_Isometric_Voxel.webp"
+  },
+  {
+    "name": "Isometric Miniature Worlds",
+    "prompt": "voxel art, isometric diorama, tilt-shift photography, shallow depth of field, miniature model, soft global illumination, blocky 3D render. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "等距MiniatureWorlds",
+    "thumbnail": "samples/Isometric_Miniature_Worlds.webp"
+  },
+  {
+    "name": "Isometric Voxel Narratives",
+    "prompt": "isometric 3D voxel art, low poly blocky style, soft studio lighting, diorama composition, minimalist geometry, atmospheric shadow rendering, solid dark background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "等距VoxelNarratives",
+    "thumbnail": "samples/Isometric_Voxel_Narratives.webp"
+  },
+  {
+    "name": "Luminous Dollhouse Animation",
+    "prompt": "stylized digital portrait, soft-focus glow, porcelain skin texture, glossy highlights, warm radiant lighting, expressive oversized eyes, airbrushed digital painting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮DollhouseAnimation",
+    "thumbnail": "samples/Luminous_Dollhouse_Animation.webp"
+  },
+  {
+    "name": "Nostalgic Low-Poly Digital",
+    "prompt": "low-poly 3D, retro game graphics, flat shading, pixelated textures, 90s CGI aesthetic, sharp faceted geometry, vibrant saturated colors, nostalgic digital render. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "NostalgicLowPoly数字",
+    "thumbnail": "samples/Nostalgic_Low-Poly_Digital.webp"
+  },
+  {
+    "name": "Plush Whimsical 3D",
+    "prompt": "3D character render, tactile plush texture, knitted wool, soft studio lighting, saturated pastel palette, claymation aesthetic, rounded organic forms. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "PlushWhimsical三维",
+    "thumbnail": "samples/Plush_Whimsical_3D.webp"
+  },
+  {
+    "name": "Recursive Voxel Surrealism",
+    "prompt": "voxelized extrusion, recursive droste spiral, digital glitch surrealism, pixelated mosaic landscape, atmospheric pastel gradients, chromatic aberration, parametric geometric fragmentation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "RecursiveVoxel超现实",
+    "thumbnail": "samples/Recursive_Voxel_Surrealism.webp"
+  },
+  {
+    "name": "Retro Digital Diorama",
+    "prompt": "isometric pixel art, dithered texture, 90s retro computing, low-poly 3D render, 16-bit aesthetic, high contrast digital palette, voxel diorama. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古数字Diorama",
+    "thumbnail": "samples/Retro_Digital_Diorama.webp"
+  },
+  {
+    "name": "Retro Voxel Sunset",
+    "prompt": "low-poly 3D, voxel art style, golden hour sunset, nostalgic retro game graphics, volumetric lighting, pixelated textures, soft depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古VoxelSunset",
+    "thumbnail": "samples/Retro_Voxel_Sunset.webp"
+  },
+  {
+    "name": "Surreal Pastoral Dreamscapes",
+    "prompt": "floating grassy island, vibrant blue sky, surreal dreamscape, painterly cumulus clouds, nostalgic summer atmosphere, minimalist surrealism, voxel-inspired geometry, anime-influenced serenity. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实PastoralDreamscapes",
+    "thumbnail": "samples/Surreal_Pastoral_Dreamscapes.webp"
+  },
+  {
+    "name": "Tactile Clay Minimalist",
+    "prompt": "3D clay render, matte texture, minimalist rounded geometry, soft studio lighting, playful design, clean solid background, tactile digital sculpture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉Clay极简",
+    "thumbnail": "samples/Tactile_Clay_Minimalist.webp"
+  },
+  {
+    "name": "Tactile Voxel Whimsy",
+    "prompt": "tactile 3D render, voxel geometry, felt and clay textures, vibrant studio lighting, miniature diorama style, high-fidelity surface detail, playful toy aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉VoxelWhimsy",
+    "thumbnail": "samples/Tactile_Voxel_Whimsy.webp"
+  },
+  {
+    "name": "Tactile Whimsy World",
+    "prompt": "3D claymation style, tactile toy aesthetic, soft pastel palette, matte and plush textures, chibi proportion, vibrant whimsical render, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉Whimsy世界",
+    "thumbnail": "samples/Tactile_Whimsy_World.webp"
+  },
+  {
+    "name": "Vibrant Stylized Fantasy",
+    "prompt": "stylized 3D digital art, painterly textures, vibrant high-fantasy landscape, warm inviting daylight, cozy rustic architecture, clean vector-like shapes, whimsical adventure atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳风格化幻想",
+    "thumbnail": "samples/Vibrant_Stylized_Fantasy.webp"
+  }
+]

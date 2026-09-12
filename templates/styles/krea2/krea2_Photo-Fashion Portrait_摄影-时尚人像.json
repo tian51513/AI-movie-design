@@ -1,0 +1,156 @@
+[
+  {
+    "name": "Atmospheric Minimalist Noir",
+    "prompt": "high contrast silhouette, atmospheric fog, cool blue color palette, minimalist composition, rim lighting, 35mm film grain, cinematic mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围极简黑色",
+    "thumbnail": "samples/Atmospheric_Minimalist_Noir.webp"
+  },
+  {
+    "name": "Celestial Prismatic Macro",
+    "prompt": "extreme macro beauty photography, iridescent glitter makeup, galaxy iris, rainbow prism lens flare, ethereal cosmic glow, soft bokeh background, celestial starburst lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体棱镜微距",
+    "thumbnail": "samples/Celestial_Prismatic_Macro.webp"
+  },
+  {
+    "name": "Cinematic Gritty Realism — Soft Naturalism",
+    "prompt": "cinematic realism, desaturated color palette, raw skin texture, shallow depth of field, moody atmospheric lighting, editorial portraiture, high-detail photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Gritty Realism — Soft Naturalism",
+    "thumbnail": "samples/Cinematic_Gritty_Realism_—_Soft_Naturalism.webp"
+  },
+  {
+    "name": "Cinematic Technical Realism",
+    "prompt": "hyper-realistic portraiture, high-contrast lighting, intimate close-up, sharp focus, metallic lens reflections, rich skin texture, cinematic drama. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Technical写实",
+    "thumbnail": "samples/Cinematic_Technical_Realism.webp"
+  },
+  {
+    "name": "Clinical Cobalt Cyberism",
+    "prompt": "cobalt blue background, clinical studio lighting, futuristic minimalism, high-contrast editorial portrait, sharp metallic accents, sleek Y2K eyewear, flawless skin texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Clinical Cobalt Cyberism",
+    "thumbnail": "samples/Clinical_Cobalt_Cyberism.webp"
+  },
+  {
+    "name": "Clinical Cyber Realism",
+    "prompt": "clinical studio lighting, stark white background, hyper-detailed skin texture, cyber minimalist, cool ice-blue tones, high-contrast editorial, avant-garde technical wear, wet-look glossy aesthetics. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Clinical赛博写实",
+    "thumbnail": "samples/Clinical_Cyber_Realism.webp"
+  },
+  {
+    "name": "Clinical Minimalist Editorial",
+    "prompt": "minimalist high-fashion editorial, cool-toned neutral palette, sharp structured clothing, high-key studio lighting, dewy skin texture, clinical backstage atmosphere, modern editorial portraiture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Clinical极简编辑",
+    "thumbnail": "samples/Clinical_Minimalist_Editorial.webp"
+  },
+  {
+    "name": "Cobalt Noir Minimalist",
+    "prompt": "deep cobalt blue and black palette, stark high-contrast silhouette, dramatic chiaroscuro lighting, minimalist editorial fashion, metallic and glossy textures, cool mysterious atmosphere, symmetrical studio composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cobalt黑色极简",
+    "thumbnail": "samples/Cobalt_Noir_Minimalist.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Streetwear — Analog Fabric Grain",
+    "prompt": "extreme low angle shot, fisheye lens distortion, vibrant blue sky, dynamic foreshortening, sharp high-contrast lighting, analog film grain, streetwear fashion photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dynamic Fisheye Streetwear — Analog Fabric Grain",
+    "thumbnail": "samples/Dynamic_Fisheye_Streetwear_—_Analog_Fabric_Grain.webp"
+  },
+  {
+    "name": "Graphic Avant-Garde Minimalism — Glossy Primary Blocking",
+    "prompt": "editorial beauty photography, saturated primary colors, graphic makeup art, stark studio lighting, minimalist composition, high-contrast color blocking, wet-look hair, surreal fashion portrait. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Graphic Avant-Garde Minimalism — Glossy Primary Blocking",
+    "thumbnail": "samples/Graphic_Avant-Garde_Minimalism_—_Glossy_Primary_Blocking.webp"
+  },
+  {
+    "name": "Graphic Chiaroscuro Noir",
+    "prompt": "high-contrast chiaroscuro, saturated gelled lighting, minimalist editorial portraiture, dramatic graphic shadows, sculptural lighting, vibrant red and blue palette, cinematic noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Chiaroscuro黑色",
+    "thumbnail": "samples/Graphic_Chiaroscuro_Noir.webp"
+  },
+  {
+    "name": "Hyper-Gloss Cyber Noir",
+    "prompt": "high-contrast editorial portrait, saturated color palette, glossy wet skin texture, avant-garde makeup, cyber noir aesthetic, sharp studio lighting, surreal digital airbrushing. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper光泽赛博黑色",
+    "thumbnail": "samples/Hyper-Gloss_Cyber_Noir.webp"
+  },
+  {
+    "name": "Hyper-Glossy Surreal Editorial",
+    "prompt": "hyper-saturated primary colors, glossy wet texture, harsh direct lighting, high-contrast editorial, cobalt blue and scarlet red, macro beauty photography, surreal avant-garde, dramatic deep shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Hyper光泽超现实编辑",
+    "thumbnail": "samples/Hyper-Glossy_Surreal_Editorial.webp"
+  },
+  {
+    "name": "Kinetic Ethereal Motion — Molten Glow Ribbons",
+    "prompt": "intentional camera movement, shutter drag, long exposure, kinetic motion blur, painterly light streaks, dreamlike editorial, warm glowing atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Kinetic Ethereal Motion — Molten Glow Ribbons",
+    "thumbnail": "samples/Kinetic_Ethereal_Motion_—_Molten_Glow_Ribbons.webp"
+  },
+  {
+    "name": "Minimalist Glitch Avant-Garde",
+    "prompt": "pixel-sorting, minimalist studio photography, digital glitch distortion, high-contrast editorial, slit-scan effect, deconstructed portraiture, sharp shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简故障AvantGarde",
+    "thumbnail": "samples/Minimalist_Glitch_Avant-Garde.webp"
+  },
+  {
+    "name": "Prismatic Ethereal Glamour",
+    "prompt": "prismatic light refraction, hyper-glossy skin texture, ethereal beauty portrait, macro editorial photography, rainbow lens flare, high-contrast chiaroscuro, glitter makeup, vibrant light projection. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜空灵Glamour",
+    "thumbnail": "samples/Prismatic_Ethereal_Glamour.webp"
+  },
+  {
+    "name": "Prismatic Tactile Glamour",
+    "prompt": "macro beauty portrait, prismatic light refraction, wet-look skin texture, iridescent glitter makeup, low-key dramatic lighting, high-contrast editorial, ethereal spectral flares. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜触觉Glamour",
+    "thumbnail": "samples/Prismatic_Tactile_Glamour.webp"
+  },
+  {
+    "name": "Raw Nostalgic Editorial",
+    "prompt": "fisheye lens distortion, direct flash photography, minimalist editorial, cool-toned color palette, 90s nostalgic aesthetic, raw studio setting, oversized tailoring. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "原始Nostalgic编辑",
+    "thumbnail": "samples/Raw_Nostalgic_Editorial.webp"
+  },
+  {
+    "name": "Spectral Kinetic Noir — High-Key Prismatic Fringe",
+    "prompt": "high-contrast silhouette, intentional motion blur, chromatic aberration, stark white background, spectral digital distortion, avant-garde fashion photography, prismatic light fringing. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Spectral Kinetic Noir — High-Key Prismatic Fringe",
+    "thumbnail": "samples/Spectral_Kinetic_Noir_—_High-Key_Prismatic_Fringe.webp"
+  },
+  {
+    "name": "Surreal Tactical Botanics",
+    "prompt": "surreal fashion photography, tactical avant-garde, botanical humanoids, minimalist studio lighting, high-fashion survivalism, stark contrast, industrial and organic texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实TacticalBotanics",
+    "thumbnail": "samples/Surreal_Tactical_Botanics.webp"
+  },
+  {
+    "name": "Vibrant Zenith Pop",
+    "prompt": "extreme low-angle perspective, saturated color-blocking, vibrant cobalt blue sky, sharp high-contrast sunlight, editorial fashion photography, vivid orange and electric pink, worm's-eye view. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳ZenithPop",
+    "thumbnail": "samples/Vibrant_Zenith_Pop.webp"
+  },
+  {
+    "name": "Visceral Minimalist Editorial",
+    "prompt": "direct flash photography, visceral skin texture, editorial macro detail, avant-garde styling, high-contrast lighting, wet-look finish, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "内脏感极简编辑",
+    "thumbnail": "samples/Visceral_Minimalist_Editorial.webp"
+  }
+]

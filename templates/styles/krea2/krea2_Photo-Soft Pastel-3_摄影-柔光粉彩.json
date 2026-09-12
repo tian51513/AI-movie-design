@@ -1,0 +1,450 @@
+[
+  {
+    "name": "Nocturnal Cyanotype Melancholy",
+    "prompt": "monochromatic cyan and cobalt blue, heavy film grain, lo-fi analog aesthetic, soft focus dreamlike blur, nocturnal cinematic shadows, CRT scanline distortion, melancholic urban isolation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行Cyanotype忧郁",
+    "thumbnail": "samples/Nocturnal_Cyanotype_Melancholy.webp"
+  },
+  {
+    "name": "Nocturnal Cyanotype Noir",
+    "prompt": "cyanotype inspired, nocturnal atmosphere, dense volumetric fog, heavy film grain, deep indigo and teal, high contrast silhouettes, cinematic noir lighting, diffused hazy glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行Cyanotype黑色",
+    "thumbnail": "samples/Nocturnal_Cyanotype_Noir.webp"
+  },
+  {
+    "name": "Nocturnal Kinetic Nostalgia",
+    "prompt": "cinematic motion blur, analog film grain, twilight atmospheric lighting, lo-fi flash aesthetic, intentional camera movement, dreamy soft focus, nocturnal nostalgia. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行动态Nostalgia",
+    "thumbnail": "samples/Nocturnal_Kinetic_Nostalgia.webp"
+  },
+  {
+    "name": "Nocturnal Lo-Fi Pictorialism",
+    "prompt": "heavy film grain, soft focus blur, distressed texture, atmospheric noir, pictorialism, low-fidelity nostalgia, liminal space, dreamlike chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行LoFiPictorialism",
+    "thumbnail": "samples/Nocturnal_Lo-Fi_Pictorialism.webp"
+  },
+  {
+    "name": "Nocturnal Motion Haze",
+    "prompt": "intentional motion blur, nocturnal long exposure, cinematic light bloom, lo-fi film grain, high contrast chiaroscuro, liminal night photography, warm golden glow, ethereal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行运动Haze",
+    "thumbnail": "samples/Nocturnal_Motion_Haze.webp"
+  },
+  {
+    "name": "Nocturnal Silhouette Noir",
+    "prompt": "backlit silhouette, heavy film grain, atmospheric halo glow, nocturnal teal and indigo palette, soft focus dreamscape, minimalist noir, textured paper aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行剪影黑色",
+    "thumbnail": "samples/Nocturnal_Silhouette_Noir.webp"
+  },
+  {
+    "name": "Nocturnal Twilight Impressionism",
+    "prompt": "heavy analog film grain, soft-focus silhouette, nocturnal twilight gradient, atmospheric haze, painterly texture, deep indigo and fiery orange, dreamy impressionistic lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行暮光印象派",
+    "thumbnail": "samples/Nocturnal_Twilight_Impressionism.webp"
+  },
+  {
+    "name": "Nocturnal Twilight Melancholy — Muted Teal Diffusion",
+    "prompt": "cinematic 35mm film, twilight blue hour, muted teal and indigo, introspective candid portrait, soft analog film grain, dreamlike shallow depth, nocturnal liminal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行暮光忧郁柔和青蓝Diffusion",
+    "thumbnail": "samples/Nocturnal_Twilight_Melancholy_—_Muted_Teal_Diffusion.webp"
+  },
+  {
+    "name": "Nocturnal Twilight Melancholy — Warm Bokeh Stillness",
+    "prompt": "blue hour photography, analog film grain, indigo night sky, soft focus, lo-fi aesthetic, chromatic aberration, warm bokeh highlights. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行暮光忧郁暖Bokeh静止",
+    "thumbnail": "samples/Nocturnal_Twilight_Melancholy_—_Warm_Bokeh_Stillness.webp"
+  },
+  {
+    "name": "Nocturnal Woodblock Noir — Stippled Shin-Hanga",
+    "prompt": "shin-hanga style, indigo and cobalt nocturne, traditional woodblock texture, atmospheric noir lighting, warm glowing contrast, grainy stippled illustration, serene twilight landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nocturnal Woodblock Noir — Stippled Shin-Hanga",
+    "thumbnail": "samples/Nocturnal_Woodblock_Noir_—_Stippled_Shin-Hanga.webp"
+  },
+  {
+    "name": "Nostalgic Analog Haze",
+    "prompt": "analog film grain, warm amber lighting, soft focus bloom, vintage nostalgic haze, lo-fi digital texture, candid snapshot aesthetic, retro light leaks. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Analog Haze",
+    "thumbnail": "samples/Nostalgic_Analog_Haze.webp"
+  },
+  {
+    "name": "Nostalgic Botanical Archive",
+    "prompt": "vintage botanical illustration, aged parchment texture, muted pastel palette, autochrome film grain, soft diffused lighting, scientific lithograph style, nostalgic analog aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Botanical Archive",
+    "thumbnail": "samples/Nostalgic_Botanical_Archive.webp"
+  },
+  {
+    "name": "Nostalgic Botanical Surrealism — Crimson-Teal Grain",
+    "prompt": "heavy 35mm film grain, vintage analogue color grading, moody high-contrast palette, soft-focus botanical surrealism, distressed tactile texture, saturated crimson and teal accents, nostalgic dreamscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "NostalgicBotanical超现实绯红青蓝颗粒",
+    "thumbnail": "samples/Nostalgic_Botanical_Surrealism_—_Crimson-Teal_Grain.webp"
+  },
+  {
+    "name": "Nostalgic Ethereal Impressionism",
+    "prompt": "dreamy soft focus, painterly motion blur, nostalgic film grain, minimalist composition, atmospheric light, impressionistic aesthetic, warm amber and teal palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic空灵印象派",
+    "thumbnail": "samples/Nostalgic_Ethereal_Impressionism.webp"
+  },
+  {
+    "name": "Nostalgic Liminal Glitch",
+    "prompt": "heavy analog film grain, chromatic aberration, dreamcore aesthetic, ethereal light leaks, lo-fi soft focus, surreal liminal atmosphere, muted pastel palette, VHS glitch distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic阈限故障",
+    "thumbnail": "samples/Nostalgic_Liminal_Glitch.webp"
+  },
+  {
+    "name": "Nostalgic Liminal Impressionism",
+    "prompt": "analog film grain, soft focus, liminal space, desaturated vintage tones, dreamy haze, minimalist composition, polaroid aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic阈限印象派",
+    "thumbnail": "samples/Nostalgic_Liminal_Impressionism.webp"
+  },
+  {
+    "name": "Nostalgic Pastoral Dreamscape",
+    "prompt": "vintage analog film, soft focus, sun-drenched, dreamy atmosphere, muted pastel palette, natural grain, pastoral aesthetic, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Pastoral Dreamscape",
+    "thumbnail": "samples/Nostalgic_Pastoral_Dreamscape.webp"
+  },
+  {
+    "name": "Nostalgic Surreal Solitude",
+    "prompt": "surreal minimalism, heavy analog film grain, muted pastel color palette, dreamy soft focus, nostalgic atmospheric lighting, solitary existential compositions, painterly textured aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Surreal Solitude",
+    "thumbnail": "samples/Nostalgic_Surreal_Solitude.webp"
+  },
+  {
+    "name": "Nostalgic Twilight Cinema",
+    "prompt": "analog film grain, 90s cinema aesthetic, twilight color palette, soft focus, lo-fi texture, hazy atmospheric lighting, nostalgic melancholy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Twilight Cinema",
+    "thumbnail": "samples/Nostalgic_Twilight_Cinema.webp"
+  },
+  {
+    "name": "Oneiric Atmospheric Silhouette",
+    "prompt": "pictorialism, heavy film grain, soft focus haze, high contrast silhouette, ethereal atmospheric fog, dreamlike color gradients, distorted memory aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Oneiric氛围剪影",
+    "thumbnail": "samples/Oneiric_Atmospheric_Silhouette.webp"
+  },
+  {
+    "name": "Polished Minimalist Editorial",
+    "prompt": "high-end studio portrait, minimalist background, sharp focus, avant-garde fashion, symmetrical composition, high-contrast lighting, clean editorial style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "精致极简编辑",
+    "thumbnail": "samples/Polished_Minimalist_Editorial.webp"
+  },
+  {
+    "name": "Primeval Earth Textures",
+    "prompt": "macro texture, weathered stone, moss-covered detail, diffused natural light, earthy desaturated palette, rugged geological patterns, organic forest floor. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Primeval Earth Textures",
+    "thumbnail": "samples/Primeval_Earth_Textures.webp"
+  },
+  {
+    "name": "Recursive Glitch Surrealism",
+    "prompt": "recursive Droste effect, digital glitch art, chromatic aberration, volumetric clouds, pixel sorting, surreal dreamscape, holographic light leaks, infinite feedback loop. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Recursive故障超现实",
+    "thumbnail": "samples/Recursive_Glitch_Surrealism.webp"
+  },
+  {
+    "name": "Refined Earthy Minimalism",
+    "prompt": "minimalist editorial fashion photography, warm earthy color palette, soft diffused studio lighting, tactile fabric textures, sophisticated neutral tones, high-end portraiture, clean monochromatic background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "精炼泥土色极简主义",
+    "thumbnail": "samples/Refined_Earthy_Minimalism.webp"
+  },
+  {
+    "name": "Refined Editorial Portraiture",
+    "prompt": "editorial portrait, soft diffused lighting, shallow depth of field, sharp focus, minimalist aesthetic, neutral color palette, high-definition skin texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "精炼编辑肖像摄影",
+    "thumbnail": "samples/Refined_Editorial_Portraiture.webp"
+  },
+  {
+    "name": "Refined Minimalist Pastel",
+    "prompt": "minimalist studio portraiture, soft diffused lighting, pastel color palette, seamless backdrop, high-end lookbook aesthetic, sharp focus, clean geometric composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "精炼极简粉彩",
+    "thumbnail": "samples/Refined_Minimalist_Pastel.webp"
+  },
+  {
+    "name": "Refined Minimalist Portraiture",
+    "prompt": "minimalist fashion photography, soft diffused studio lighting, high-definition skin texture, neutral earthy color palette, seamless white background, structured utilitarian tailoring, sharp focus editorial. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "精炼极简肖像摄影",
+    "thumbnail": "samples/Refined_Minimalist_Portraiture.webp"
+  },
+  {
+    "name": "Refractive Emerald Surrealism",
+    "prompt": "glass block distortion, refractive liquid texture, monochromatic emerald palette, warm amber backlighting, surreal warped perspective, volumetric light rays, translucent glossy finish, dreamy soft focus. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Refractive翠绿超现实",
+    "thumbnail": "samples/Refractive_Emerald_Surrealism.webp"
+  },
+  {
+    "name": "Refractive Glass Abstraction",
+    "prompt": "textured glass distortion, fluted glass overlay, refracted light, soft diffused bokeh, obscured silhouette, tactile glass texture, dreamy abstraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Refractive Glass Abstraction",
+    "thumbnail": "samples/Refractive_Glass_Abstraction.webp"
+  },
+  {
+    "name": "Retro Cosmic Airbrush",
+    "prompt": "1980s airbrush illustration, retro-futuristic cosmic art, starburst lens flare, chrome iridescence, nebula gradient background, vintage sci-fi aesthetic, soft focus glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古宇宙Airbrush",
+    "thumbnail": "samples/Retro_Cosmic_Airbrush.webp"
+  },
+  {
+    "name": "Retro Cosmic Nostalgia",
+    "prompt": "1970s airbrush illustration, heavy film grain, starburst lens flare, chromatic aberration, cosmic fantasy, soft focus bloom, retro analog texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古宇宙Nostalgia",
+    "thumbnail": "samples/Retro_Cosmic_Nostalgia.webp"
+  },
+  {
+    "name": "Sculptural Luminous Minimalism",
+    "prompt": "sculptural avant-garde fashion, hyper-detailed rendering, soft diffused studio lighting, minimalist neutral palette, metallic specular highlights, volumetric rim lighting, pristine satin textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sculptural明亮极简主义",
+    "thumbnail": "samples/Sculptural_Luminous_Minimalism.webp"
+  },
+  {
+    "name": "Sculptural Neutral Minimalism",
+    "prompt": "sculptural fashion, monochromatic neutral palette, minimalist studio editorial, avant-garde drapery, soft diffused lighting, high-fashion photography, organic texture contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Sculptural中性极简主义",
+    "thumbnail": "samples/Sculptural_Neutral_Minimalism.webp"
+  },
+  {
+    "name": "Serene Earthy Minimalism",
+    "prompt": "minimalist aesthetic, warm beige palette, soft diffused studio lighting, tactile textures, clean composition, understated elegance, high-end lookbook style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "宁静泥土色极简主义",
+    "thumbnail": "samples/Serene_Earthy_Minimalism.webp"
+  },
+  {
+    "name": "Spectral Analog Blur",
+    "prompt": "heavy analog film grain, soft-focus silhouette, teal and orange color palette, ethereal light leaks, motion blur, dreamlike haze, painterly airbrush texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱模拟模糊",
+    "thumbnail": "samples/Spectral_Analog_Blur.webp"
+  },
+  {
+    "name": "Spectral Analog Glitch — Cool Pictorialist Drift",
+    "prompt": "heavy analog film grain, dreamlike motion blur, chromatic aberration, moody cool tones, spectral silhouette, VHS glitch artifacts, soft focus pictorialism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱模拟故障冷PictorialistDrift",
+    "thumbnail": "samples/Spectral_Analog_Glitch_—_Cool_Pictorialist_Drift.webp"
+  },
+  {
+    "name": "Spectral Analog Noir — Crimson Halation Gloom",
+    "prompt": "analog film grain, crimson and black palette, thermal imaging aesthetic, soft focus blur, glowing light halation, lo-fi vintage texture, high-contrast noir, chromatic aberration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱模拟黑色绯红HalationGloom",
+    "thumbnail": "samples/Spectral_Analog_Noir_-_Crimson_Halation_Gloom.webp"
+  },
+  {
+    "name": "Spectral Cobalt Motion — Melancholic Teal Ghosting",
+    "prompt": "motion blur, cobalt and deep teal palette, ethereal ghosting effects, heavy film grain, shutter drag, cinematic melancholia, long exposure photography, soft focus silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Spectral Cobalt Motion — Melancholic Teal Ghosting",
+    "thumbnail": "samples/Spectral_Cobalt_Motion_—_Melancholic_Teal_Ghosting.webp"
+  },
+  {
+    "name": "Spectral Cobalt Nocturne",
+    "prompt": "heavy film grain, ethereal cyan glow, soft focus silhouette, monochromatic cobalt palette, dreamlike atmospheric haze, high-contrast noir lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱CobaltNocturne",
+    "thumbnail": "samples/Spectral_Cobalt_Nocturne.webp"
+  },
+  {
+    "name": "Spectral Luminal Surrealism",
+    "prompt": "analog film grain, ethereal light trails, high contrast silhouettes, teal and orange palette, dreamlike motion blur, volumetric light leaks, surreal double exposure, cinematic soft focus. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱Luminal超现实",
+    "thumbnail": "samples/Spectral_Luminal_Surrealism.webp"
+  },
+  {
+    "name": "Spectral Nocturnal Luminescence",
+    "prompt": "heavy film grain, electric blue glow, liminal space, high contrast silhouette, ethereal luminescence, pitch black background, uncanny atmosphere, soft focus blur. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱夜行Luminescence",
+    "thumbnail": "samples/Spectral_Nocturnal_Luminescence.webp"
+  },
+  {
+    "name": "Spectral Nocturnal Motion — Translucent Neon Trails",
+    "prompt": "long exposure motion blur, spectral light trails, deep indigo and neon contrast, ghostly translucent forms, chiaroscuro lighting, ethereal soft focus glow, nocturnal atmospheric mystery. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱夜行运动半透明霓虹Trails",
+    "thumbnail": "samples/Spectral_Nocturnal_Motion_—_Translucent_Neon_Trails.webp"
+  },
+  {
+    "name": "Spectral Prismatic Etherealism",
+    "prompt": "chromatic aberration, prismatic light leaks, ethereal soft glow, glitter and stardust, high-contrast deep black background, vintage film texture, iridescent luminescence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱棱镜Etherealism",
+    "thumbnail": "samples/Spectral_Prismatic_Etherealism.webp"
+  },
+  {
+    "name": "Spectral Thermal Noir — Teal-Orange Blur",
+    "prompt": "long exposure motion blur, heavy film grain, teal and orange contrast, spectral silhouette, ethereal light streaks, atmospheric noir, thermal glow, dreamy soft focus. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Spectral Thermal Noir — Teal-Orange Blur",
+    "thumbnail": "samples/Spectral_Thermal_Noir_—_Teal-Orange_Blur.webp"
+  },
+  {
+    "name": "Surreal Airbrush Dreamscape",
+    "prompt": "airbrush illustration, stippled texture, vibrant neon gradient, dreamy soft focus, high-contrast color blocking, minimalist surrealism, lo-fi film grain, retro speculative fiction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实AirbrushDreamscape",
+    "thumbnail": "samples/Surreal_Airbrush_Dreamscape.webp"
+  },
+  {
+    "name": "Surreal Fisheye Liminality",
+    "prompt": "fisheye lens distortion, liminal space, anime inspired illustration, fluorescent lighting, 90s retro nostalgia, vibrant acidic palette, wide-angle perspective, slice of life. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实鱼眼Liminality",
+    "thumbnail": "samples/Surreal_Fisheye_Liminality.webp"
+  },
+  {
+    "name": "Surreal Glitch Etherea",
+    "prompt": "analog glitch art, ethereal motion blur, chromatic aberration, surreal distortion, soft focus glow, fleshy rose and crimson palette, temporal warp. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实故障Etherea",
+    "thumbnail": "samples/Surreal_Glitch_Etherea.webp"
+  },
+  {
+    "name": "Surreal Liminal Nostalgia — Flash-Lit Fever",
+    "prompt": "liminal space, uncanny valley, weirdcore, flash photography, vintage film grain, fever dream, surreal horror. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实阈限NostalgiaFlashLitFever",
+    "thumbnail": "samples/Surreal_Liminal_Nostalgia_-_Flash-Lit_Fever.webp"
+  },
+  {
+    "name": "Surreal Pastoral Technicolor",
+    "prompt": "surreal dreamscape, bright blue sky, fluffy clouds, tactile textures, whimsical realism, soft focus, vibrant pastoral, 3d rendered aesthetics. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实PastoralTechnicolor",
+    "thumbnail": "samples/Surreal_Pastoral_Technicolor.webp"
+  },
+  {
+    "name": "Surreal Verdant Minimalism — Nordic Overcast Melancholy",
+    "prompt": "undulating green hills, soft diffused lighting, minimalist landscape photography, melancholic atmosphere, surreal organic textures, solitary figures, muted earthy greens, overcast sky. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实翠绿极简主义NordicOvercast忧郁",
+    "thumbnail": "samples/Surreal_Verdant_Minimalism_—_Nordic_Overcast_Melancholy.webp"
+  },
+  {
+    "name": "Synthetic Organic Minimalism",
+    "prompt": "minimalist studio photography, translucent plastic texture, soft diffused lighting, muted apricot and peach palette, organic-synthetic contrast, clean editorial composition, glossy reflective surfaces. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "合成有机极简主义",
+    "thumbnail": "samples/Synthetic_Organic_Minimalism.webp"
+  },
+  {
+    "name": "Tactile Botanical Minimalism",
+    "prompt": "macro photography, shallow depth of field, botanical detail, soft diffused lighting, biomorphic geometry, tactile texture, minimalist nature. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉Botanical极简主义",
+    "thumbnail": "samples/Tactile_Botanical_Minimalism.webp"
+  },
+  {
+    "name": "Tactile Ethereal Decay",
+    "prompt": "tactile braille texture, soft focus airbrush, hazy sepia atmosphere, biomorphic surrealism, shallow depth of field, muted organic decay, misty diffusion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉空灵衰败",
+    "thumbnail": "samples/Tactile_Ethereal_Decay.webp"
+  },
+  {
+    "name": "Tactile Ethereal Noise",
+    "prompt": "grainy gradient, tactile noise texture, soft focus blur, chromatic aura, dreamy pastel palette, analog film grain, ethereal light leak. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉空灵噪点",
+    "thumbnail": "samples/Tactile_Ethereal_Noise.webp"
+  },
+  {
+    "name": "Tactile Ethereal Solitude",
+    "prompt": "blurred silhouette, tactile texture, frosted glass, ethereal glow, low-key lighting, warm sepia tones, soft focus, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉空灵Solitude",
+    "thumbnail": "samples/Tactile_Ethereal_Solitude.webp"
+  },
+  {
+    "name": "Tactile Refractive Obscurity",
+    "prompt": "textured glass refraction, soft diffused lighting, tactile barrier distortion, dreamlike atmosphere, abstracted silhouette, grainy film aesthetic, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉RefractiveObscurity",
+    "thumbnail": "samples/Tactile_Refractive_Obscurity.webp"
+  },
+  {
+    "name": "Tactile Surreal Topography",
+    "prompt": "tactile landscape sculpture, muted earth-tone palette, soft diffused studio lighting, minimalist surrealism, fiber art texture, sculpted topography, solid color background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉超现实Topography",
+    "thumbnail": "samples/Tactile_Surreal_Topography.webp"
+  },
+  {
+    "name": "Thermal Aura Surrealism",
+    "prompt": "thermal imaging gradient, airbrushed soft focus, glowing aura, chromatic aberration, silhouetted form, grainy analog texture, surreal neon palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ThermalAura超现实",
+    "thumbnail": "samples/Thermal_Aura_Surrealism.webp"
+  },
+  {
+    "name": "Thermal Grain Chromaticism",
+    "prompt": "high-contrast silhouette, thermal gradient aura, analog film grain, chromatic aberration, textured paper background, distorted light leaks, lo-fi screenprint aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Thermal Grain Chromaticism",
+    "thumbnail": "samples/Thermal_Grain_Chromaticism.webp"
+  },
+  {
+    "name": "Translucent Bio-Luminary Etherealism",
+    "prompt": "translucent textures, icy blue and pearlescent palette, soft diffused backlighting, biomorphic minimalism, ethereal high-fashion, rim-lit silhouettes, sculptural elegance. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "半透明BioLuminaryEtherealism",
+    "thumbnail": "samples/Translucent_Bio-Luminary_Etherealism.webp"
+  },
+  {
+    "name": "Velvet Minimalist Landscapes",
+    "prompt": "rolling velvet hills, minimalist landscape, undulating topography, dreamlike atmosphere, chiaroscuro lighting, liminal solitude, emerald and moss palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天鹅绒极简Landscapes",
+    "thumbnail": "samples/Velvet_Minimalist_Landscapes.webp"
+  },
+  {
+    "name": "Verdant Mythic Tapestry",
+    "prompt": "verdant botanical tapestry, painterly texture, dense layered foliage, diffused atmospheric light, emerald and moss palette, whimsical folk art influence, intricate natural patterns. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "翠绿MythicTapestry",
+    "thumbnail": "samples/Verdant_Mythic_Tapestry.webp"
+  },
+  {
+    "name": "Visceral Ethereal Melancholy",
+    "prompt": "cinematic realism, soft diffused lighting, cool color palette, introspective mood, hyper-detailed textures, wet skin, ethereal melancholy, submerged surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "内脏感空灵忧郁",
+    "thumbnail": "samples/Visceral_Ethereal_Melancholy.webp"
+  },
+  {
+    "name": "Visceral Prismatic Macro",
+    "prompt": "extreme macro photography, chromatic aberration, prismatic light leaks, tactile skin texture, dreamy soft focus, analog film grain, iridescent spectral glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "内脏感棱镜微距",
+    "thumbnail": "samples/Visceral_Prismatic_Macro.webp"
+  }
+]

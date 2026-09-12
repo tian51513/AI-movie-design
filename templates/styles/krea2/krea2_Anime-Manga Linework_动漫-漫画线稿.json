@@ -1,0 +1,79 @@
+[
+  {
+    "name": "Cinematic Monochrome Noir — Inked Lineart",
+    "prompt": "high-contrast monochrome manga, dramatic ink wash, chiaroscuro lighting, expressive line art, screentone textures, gritty noir atmosphere, detailed hatching. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感单色黑色InkedLineart",
+    "thumbnail": "samples/Cinematic_Monochrome_Noir_—_Inked_Lineart.webp"
+  },
+  {
+    "name": "Cinematic Monochrome Noir — Manga Ink Hatch",
+    "prompt": "high-contrast manga ink, dramatic noir shadows, sharp cross-hatching, monochrome graphic novel, expressive brushwork, chiaroscuro lighting, seinen aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感单色黑色漫画墨Hatch",
+    "thumbnail": "samples/Cinematic_Monochrome_Noir_—_Manga_Ink_Hatch.webp"
+  },
+  {
+    "name": "Cyber-Gothic Noir Manga",
+    "prompt": "high contrast manga illustration, sharp ink linework, chiaroscuro lighting, gothic cyberpunk fusion, screentone and halftone textures, moody atmospheric composition, edgy character design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "赛博哥特黑色漫画",
+    "thumbnail": "samples/Cyber-Gothic_Noir_Manga.webp"
+  },
+  {
+    "name": "Graphic Monochrome Narrative",
+    "prompt": "manga screentone, high-contrast ink illustration, detailed cross-hatching, dynamic perspective, monochrome graphic style, slice of life atmosphere, cyanotype blue palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形单色叙事",
+    "thumbnail": "samples/Graphic_Monochrome_Narrative.webp"
+  },
+  {
+    "name": "Gritty Analog Halftone",
+    "prompt": "halftone dot matrix, high-contrast monochrome, distressed analog print, grungy screentone, vintage zine texture, photocopy artifact, stark chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty模拟半色调",
+    "thumbnail": "samples/Gritty_Analog_Halftone.webp"
+  },
+  {
+    "name": "Gritty Chiaroscuro Noir — Kinetic Crosshatch Ink",
+    "prompt": "high-contrast monochrome, stippling and cross-hatching, halftone screentone texture, chiaroscuro lighting, gritty ink illustration, distressed graphic aesthetic, low-key noir mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Chiaroscuro Noir — Kinetic Crosshatch Ink",
+    "thumbnail": "samples/Gritty_Chiaroscuro_Noir_—_Kinetic_Crosshatch_Ink.webp"
+  },
+  {
+    "name": "Gritty Graphic Macabre",
+    "prompt": "heavy ink outlines, dark fantasy graphic novel, high-contrast chiaroscuro, screentone and stipple texture, gritty pulp horror, saturated neon accents, aggressive linework. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty图形恐怖怪诞",
+    "thumbnail": "samples/Gritty_Graphic_Macabre.webp"
+  },
+  {
+    "name": "Gritty Xerox Punk",
+    "prompt": "high contrast black and white, xerox photocopy texture, punk zine aesthetic, halftone screentone, distressed collage, toner grain, gritty analog print. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Xerox Punk",
+    "thumbnail": "samples/Gritty_Xerox_Punk.webp"
+  },
+  {
+    "name": "High-Contrast Ink Expressionism",
+    "prompt": "high-contrast ink illustration, expressive cross-hatching, bold graphic linework, screentone textures, chiaroscuro shading, stark negative space, monochrome manga aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "High对比墨表现主义",
+    "thumbnail": "samples/High-Contrast_Ink_Expressionism.webp"
+  },
+  {
+    "name": "Monochrome Manga Noir",
+    "prompt": "high contrast monochrome, manga ink linework, screentone texture, halftone print, dramatic shadows, graphic novel aesthetic, stippling, retro manga style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色漫画黑色",
+    "thumbnail": "samples/Monochrome_Manga_Noir.webp"
+  },
+  {
+    "name": "Visceral Ink Manga",
+    "prompt": "monochrome manga, high contrast ink, expressive linework, gritty cross-hatching, dynamic action pose, dark fantasy aesthetic, screentone textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "内脏感墨漫画",
+    "thumbnail": "samples/Visceral_Ink_Manga.webp"
+  }
+]

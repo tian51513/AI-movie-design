@@ -1,0 +1,86 @@
+[
+  {
+    "name": "Analog Cobalt Nocturne",
+    "prompt": "cobalt blue palette, analog VHS aesthetic, CRT scanlines, minimalist composition, lo-fi grain, dreamcore atmosphere, nocturnal surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟CobaltNocturne",
+    "thumbnail": "samples/Analog_Cobalt_Nocturne.webp"
+  },
+  {
+    "name": "Analog Digital Liminality",
+    "prompt": "CRT scanline effect, dithered shading, low-poly aesthetic, pixelated texture, retro computer graphics, liminal atmosphere, 90s software render. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟数字Liminality",
+    "thumbnail": "samples/Analog_Digital_Liminality.webp"
+  },
+  {
+    "name": "Analytical Cybernetic Surveillance",
+    "prompt": "cyan HUD overlay, CRT scanlines, cybernetic surveillance, holographic telemetry, monochromatic blue-green, pixelated digital interface, high-contrast security footage. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Analytical Cybernetic Surveillance",
+    "thumbnail": "samples/Analytical_Cybernetic_Surveillance.webp"
+  },
+  {
+    "name": "Chromatic Retro Surrealism",
+    "prompt": "airbrush grain texture, vibrant color gradients, retro surrealism, minimalist composition, prismatic light leak, volumetric shading, vintage sci-fi atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色复古超现实",
+    "thumbnail": "samples/Chromatic_Retro_Surrealism.webp"
+  },
+  {
+    "name": "Ethereal Spectral Dusk",
+    "prompt": "ethereal double exposure, spectral light leaks, dreamy motion blur, twilight gradient background, soft-focus silhouette, prismatic chromatic aberration, mystical hazy atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵光谱黄昏",
+    "thumbnail": "samples/Ethereal_Spectral_Dusk.webp"
+  },
+  {
+    "name": "Luminescent Cosmic Surrealism",
+    "prompt": "cosmic surrealism, chromatic aberration, iridescent stardust, retro-digital aesthetic, prismatic light leaks, dreamlike atmosphere, starry void, glitter texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminescent宇宙超现实",
+    "thumbnail": "samples/Luminescent_Cosmic_Surrealism.webp"
+  },
+  {
+    "name": "Luminous Prismatic Solarpunk",
+    "prompt": "solarpunk, macro photography, iridescent glass, chromatic aberration, glowing bokeh, lush greenery, prismatic light reflections, ethereal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮棱镜Solarpunk",
+    "thumbnail": "samples/Luminous_Prismatic_Solarpunk.webp"
+  },
+  {
+    "name": "Luminous Temporal Abstraction",
+    "prompt": "ethereal chromatic gradient, glowing ambient aura, slit-scan motion blur, vibrant thermal color palette, soft-focus digital abstraction, temporal distortion, luminous light leak. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮TemporalAbstraction",
+    "thumbnail": "samples/Luminous_Temporal_Abstraction.webp"
+  },
+  {
+    "name": "Nocturnal Digital Noir",
+    "prompt": "deep indigo and cyan palette, high-contrast silhouettes, heavy digital grain, CRT scanline texture, liminal space, lo-fi retro-futurism, motion-blurred abstraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行数字黑色",
+    "thumbnail": "samples/Nocturnal_Digital_Noir.webp"
+  },
+  {
+    "name": "Nostalgic Digital Phosphor",
+    "prompt": "retro computer aesthetic, pixel art, CRT scanlines, dithered shading, phosphor glow, low-resolution graphics, 1-bit minimalist style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Digital Phosphor",
+    "thumbnail": "samples/Nostalgic_Digital_Phosphor.webp"
+  },
+  {
+    "name": "Retro Cursor Surrealism",
+    "prompt": "retro cursor art, CRT monitor texture, pixelated mosaic, vintage OS aesthetic, digital surrealism, blue screen background, net art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古Cursor超现实",
+    "thumbnail": "samples/Retro_Cursor_Surrealism.webp"
+  },
+  {
+    "name": "Spectral Digital Lume",
+    "prompt": "bioluminescent point cloud, electric blue glow, analog CRT scanlines, fluted glass distortion, high-contrast black void, digital spectral silhouette, cybernetic lidar aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱数字Lume",
+    "thumbnail": "samples/Spectral_Digital_Lume.webp"
+  }
+]

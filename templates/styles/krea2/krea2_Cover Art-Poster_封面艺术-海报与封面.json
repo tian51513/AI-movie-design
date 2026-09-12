@@ -1,0 +1,51 @@
+[
+  {
+    "name": "Bold Graphic Printcraft",
+    "prompt": "linocut print style, halftone dot shading, high contrast graphic illustration, heavy black ink outlines, screenprint aesthetic, minimalist poster art, textured organic edges. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "大胆图形Printcraft",
+    "thumbnail": "samples/Bold_Graphic_Printcraft.webp"
+  },
+  {
+    "name": "Ethereal Topographic Surrealism",
+    "prompt": "topographic contour lines, surrealist linocut texture, glowing energy aura, high-contrast duotone, psychedelic wave patterns, mythic silhouette, vintage print grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Topographic超现实",
+    "thumbnail": "samples/Ethereal_Topographic_Surrealism.webp"
+  },
+  {
+    "name": "Neon Psychedelic Pop",
+    "prompt": "psychedelic pop art, bold black outlines, vibrant neon palette, surreal vector illustration, retro 70s aesthetic, metaphysical iconography, grainy paper texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹PsychedelicPop",
+    "thumbnail": "samples/Neon_Psychedelic_Pop.webp"
+  },
+  {
+    "name": "Neon Stippled Noir",
+    "prompt": "high-contrast silhouette, stippled grain texture, airbrushed gradient, minimalist surrealism, saturated neon palette, graphic poster art, synthetic humanoid form. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Stippled黑色",
+    "thumbnail": "samples/Neon_Stippled_Noir.webp"
+  },
+  {
+    "name": "Prismatic Cosmic Retro-Surrealism",
+    "prompt": "1970s sci-fi book cover art, prismatic light leaks, surreal scale juxtaposition, analog film grain, cosmic airbrush illustration, dramatic silhouette, psychedelic retro-futurism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜宇宙复古超现实",
+    "thumbnail": "samples/Prismatic_Cosmic_Retro-Surrealism.webp"
+  },
+  {
+    "name": "Prismatic Retro Cosmicism",
+    "prompt": "vintage airbrush texture, prismatic lens flare, retro-futuristic surrealism, twilight color gradient, analog film grain, mystical starburst glow, 70s sci-fi aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜复古Cosmicism",
+    "thumbnail": "samples/Prismatic_Retro_Cosmicism.webp"
+  },
+  {
+    "name": "Vintage Cosmic Surrealism — Pulp Ink Stipple",
+    "prompt": "vintage sci-fi book cover, Moebius style, halftone print texture, retro-futuristic illustration, surreal cosmic landscape, volumetric clouds, stippling and cross-hatching. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古宇宙超现实Pulp墨点彩",
+    "thumbnail": "samples/Vintage_Cosmic_Surrealism_—_Pulp_Ink_Stipple.webp"
+  }
+]

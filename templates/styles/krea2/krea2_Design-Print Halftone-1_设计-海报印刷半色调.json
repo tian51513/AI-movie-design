@@ -1,0 +1,702 @@
+[
+  {
+    "name": "Acid Glitch Punk",
+    "prompt": "digital glitch distortion, halftone dither pattern, acid green monochrome, high-contrast black and white, risograph texture, cyberpunk editorial, pixel sorting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Acid Glitch Punk",
+    "thumbnail": "samples/Acid_Glitch_Punk.webp"
+  },
+  {
+    "name": "Acid Grime Halftone",
+    "prompt": "heavy halftone pattern, high contrast duotone, distressed photocopy texture, acid green and black, gritty screenprint aesthetic, minimalist graphic noir, risograph grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "AcidGrime半色调",
+    "thumbnail": "samples/Acid_Grime_Halftone.webp"
+  },
+  {
+    "name": "Acidic Cyber-Zine Punk",
+    "prompt": "acid green and hot pink, halftone print texture, glitch art, high contrast duotone, cyberpunk zine aesthetic, thermal solarization, distorted digital graphics. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Acidic Cyber-Zine Punk",
+    "thumbnail": "samples/Acidic_Cyber-Zine_Punk.webp"
+  },
+  {
+    "name": "Acidic Liminal Printivism",
+    "prompt": "risograph print aesthetic, acid yellow and neon accents, high-contrast halftone patterns, liminal landscape photography, analog film grain, brutalist graphic design, glitch art texture, nostalgic lo-fi atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Acidic Liminal Printivism",
+    "thumbnail": "samples/Acidic_Liminal_Printivism.webp"
+  },
+  {
+    "name": "Amber Glitch Decay",
+    "prompt": "pixel sorting, digital decay, amber and crimson palette, glitch art, high-contrast silhouette, textured data corruption, surreal distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀故障衰败",
+    "thumbnail": "samples/Amber_Glitch_Decay.webp"
+  },
+  {
+    "name": "Analog Cosmic Surrealism — Dusty Pastel",
+    "prompt": "analog paper collage, halftone print texture, surrealist photomontage, mid-century ephemera, vintage 70s retrofuturism, torn paper edges, uncanny juxtaposition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟宇宙超现实Dusty粉彩",
+    "thumbnail": "samples/Analog_Cosmic_Surrealism_—_Dusty_Pastel.webp"
+  },
+  {
+    "name": "Analog Glitch Noir — Monochrome Grain",
+    "prompt": "high-contrast monochrome, analog scanlines, digital glitch artifacts, ribbed glass distortion, liminal noir, gritty low-fidelity texture, cinematic chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟故障黑色单色颗粒",
+    "thumbnail": "samples/Analog_Glitch_Noir_—_Monochrome_Grain.webp"
+  },
+  {
+    "name": "Analog Glitch Noir — Xerox Halftone",
+    "prompt": "high-contrast monochrome, analog glitch art, photocopy texture, CRT scanlines, halftone pattern, lo-fi noir, data corruption, spectral silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟故障黑色Xerox半色调",
+    "thumbnail": "samples/Analog_Glitch_Noir_—_Xerox_Halftone.webp"
+  },
+  {
+    "name": "Analog Glitch Nostalgia — Amber CRT Haze",
+    "prompt": "retro-futurism, bayer dithering, halftone pattern, pixel sorting, lo-fi digital, warm amber and teal palette, vintage computer aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Analog Glitch Nostalgia — Amber CRT Haze",
+    "thumbnail": "samples/Analog_Glitch_Nostalgia_—_Amber_CRT_Haze.webp"
+  },
+  {
+    "name": "Analog Gritty Noir",
+    "prompt": "high-contrast monochrome, halftone print texture, analog CRT scanlines, grungy photocopy noise, chiaroscuro lighting, distressed film grain, dystopian noir atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟Gritty黑色",
+    "thumbnail": "samples/Analog_Gritty_Noir.webp"
+  },
+  {
+    "name": "Analog Noir Glitch",
+    "prompt": "analog glitch art, halftone screen texture, chromatic aberration, CRT scanlines, retro-futuristic noir, high-contrast chiaroscuro, digital surveillance aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟黑色故障",
+    "thumbnail": "samples/Analog_Noir_Glitch.webp"
+  },
+  {
+    "name": "Analog Surrealist Collage — Halftone Paper Cut",
+    "prompt": "vintage mixed media collage, surrealist paper cutout, analog halftone texture, monochrome portraiture, anachronistic color pops, uncanny dreamlike composition, retro print aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟超现实拼贴半色调纸Cut",
+    "thumbnail": "samples/Analog_Surrealist_Collage_—_Halftone_Paper_Cut.webp"
+  },
+  {
+    "name": "Analog Surrealist Collage — Painted Pastel",
+    "prompt": "analog paper collage, torn paper edges, vintage halftone texture, surreal juxtaposition, mid-century print aesthetic, dreamlike portal effect. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟超现实拼贴Painted粉彩",
+    "thumbnail": "samples/Analog_Surrealist_Collage_—_Painted_Pastel.webp"
+  },
+  {
+    "name": "Analog Zine Collage",
+    "prompt": "analog paper collage, torn paper edges, halftone dot pattern, vintage magazine clippings, punk zine aesthetic, mixed-media texture, lo-fi print scan. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟Zine拼贴",
+    "thumbnail": "samples/Analog_Zine_Collage.webp"
+  },
+  {
+    "name": "Apocalyptic Thermal Noir",
+    "prompt": "thermal imaging aesthetic, heavy analog film grain, fiery crimson and orange palette, stark black silhouette, retro-apocalyptic atmosphere, halftone screenprint texture, high-contrast light bloom. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ApocalypticThermal黑色",
+    "thumbnail": "samples/Apocalyptic_Thermal_Noir.webp"
+  },
+  {
+    "name": "Avant-Garde Darkroom Noir",
+    "prompt": "high-contrast monochrome, experimental darkroom technique, analog film grain, sharp geometric shadows, abstract photogram, chiaroscuro lighting, halftone texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "AvantGardeDarkroom黑色",
+    "thumbnail": "samples/Avant-Garde_Darkroom_Noir.webp"
+  },
+  {
+    "name": "Chromatic Analog Glitch",
+    "prompt": "risograph print texture, CMYK color separation, chromatic aberration, halftone dot pattern, analog film grain, digital glitch distortion, bold geometric silhouettes, misregistered color layers. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色模拟故障",
+    "thumbnail": "samples/Chromatic_Analog_Glitch.webp"
+  },
+  {
+    "name": "Chromatic Cosmic Surrealism",
+    "prompt": "prismatic light effect, grainy analog texture, minimalist surrealism, high-contrast chiaroscuro, vintage airbrush style, chromatic gradient, stark black backdrop. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色宇宙超现实",
+    "thumbnail": "samples/Chromatic_Cosmic_Surrealism.webp"
+  },
+  {
+    "name": "Chromatic Glitch Synthesis",
+    "prompt": "chromatic aberration, digital glitch distortion, VHS scanline texture, RGB subpixel grid, halftone noise, neon saturated palette, reeded glass refraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色故障Synthesis",
+    "thumbnail": "samples/Chromatic_Glitch_Synthesis.webp"
+  },
+  {
+    "name": "Chromatic Grain Dreamscape",
+    "prompt": "heavy film grain, chromatic aberration, thermal color gradient, stippled texture, dreamy soft focus, saturated sunset palette, analog glitch, surreal silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色颗粒Dreamscape",
+    "thumbnail": "samples/Chromatic_Grain_Dreamscape.webp"
+  },
+  {
+    "name": "Chromatic Grain Minimalism",
+    "prompt": "grainy gradient texture, vibrant chromatic abstraction, minimalist organic silhouette, risograph inspired, soft noise, thermal color palette, tactile digital art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色颗粒极简主义",
+    "thumbnail": "samples/Chromatic_Grain_Minimalism.webp"
+  },
+  {
+    "name": "Cinematic Monochrome Noir — Theatrical Softness",
+    "prompt": "high-contrast black and white, chiaroscuro lighting, vintage film grain, theatrical gothic portraiture, stark shadows, halftone and xerox texture, melancholic noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感单色黑色TheatricalSoftness",
+    "thumbnail": "samples/Cinematic_Monochrome_Noir_—_Theatrical_Softness.webp"
+  },
+  {
+    "name": "Cinematic Noir Duotone",
+    "prompt": "chiaroscuro lighting, analog film grain, duotone color palette, stark silhouette, noir atmosphere, risograph texture, dramatic rim light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感黑色双色调",
+    "thumbnail": "samples/Cinematic_Noir_Duotone.webp"
+  },
+  {
+    "name": "Cobalt Pixel Op-Art — Dithered Halftone",
+    "prompt": "cobalt blue and off-white, op-art geometric patterns, pixelated halftone, glitch art aesthetic, dithered textures, minimalist silhouettes, retro-futuristic graphic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cobalt Pixel Op-Art — Dithered Halftone",
+    "thumbnail": "samples/Cobalt_Pixel_Op-Art_—_Dithered_Halftone.webp"
+  },
+  {
+    "name": "Cobalt Pixel Op-Art — Risograph Weave",
+    "prompt": "cobalt blue and cream, op-art geometric grid, pixelation glitch, risograph texture, minimalist duotone, scanline pattern, digital tapestry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cobalt Pixel Op-Art — Risograph Weave",
+    "thumbnail": "samples/Cobalt_Pixel_Op-Art_—_Risograph_Weave.webp"
+  },
+  {
+    "name": "Cobalt Surreal Minimalism",
+    "prompt": "minimalist surrealism, saturated cobalt blue background, high contrast composition, sharp hard-edged shadows, grainy paper texture, geometric isolation, glowing yellow accents. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cobalt超现实极简主义",
+    "thumbnail": "samples/Cobalt_Surreal_Minimalism.webp"
+  },
+  {
+    "name": "Constructivist Punk Collage",
+    "prompt": "mixed media collage, high-contrast graphic design, bold geometric overlays, tactile paper texture, constructivist punk aesthetic, vibrant color blocking, halftone grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "构成主义Punk拼贴",
+    "thumbnail": "samples/Constructivist_Punk_Collage.webp"
+  },
+  {
+    "name": "Constructivist Surrealist Collage",
+    "prompt": "constructivist collage, bold red geometric framing, torn paper elements, surrealist mixed media, high contrast composition, minimalist editorial design, trompe l'oeil perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "构成主义超现实拼贴",
+    "thumbnail": "samples/Constructivist_Surrealist_Collage.webp"
+  },
+  {
+    "name": "Cosmic Paper Surrealism",
+    "prompt": "analog paper collage, torn paper edges, cosmic surrealism, vintage print texture, juxtaposed realities, mid-century aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "宇宙纸超现实",
+    "thumbnail": "samples/Cosmic_Paper_Surrealism.webp"
+  },
+  {
+    "name": "Cozy Risograph Folk",
+    "prompt": "risograph print style, hand-drawn ink outlines, mustard yellow color palette, textured paper grain, whimsical folk illustration, minimalist composition, vintage book art aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cozy Risograph Folk",
+    "thumbnail": "samples/Cozy_Risograph_Folk.webp"
+  },
+  {
+    "name": "Crimson Analog Noir — Halftone Screenprint",
+    "prompt": "duotone red and black, heavy analog film grain, halftone screenprint texture, chromatic aberration, chiaroscuro lighting, lo-fi dreamscape, soft-focus blur. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红模拟黑色半色调Screenprint",
+    "thumbnail": "samples/Crimson_Analog_Noir_—_Halftone_Screenprint.webp"
+  },
+  {
+    "name": "Crimson Kinetic Surrealism",
+    "prompt": "duotone red and orange, shutter drag, analog film grain, high contrast silhouette, risograph texture, motion blur, surrealist cinematography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红动态超现实",
+    "thumbnail": "samples/Crimson_Kinetic_Surrealism.webp"
+  },
+  {
+    "name": "Crimson Noir Graphic — Linocut Ink",
+    "prompt": "high-contrast graphic illustration, stark black silhouette, saturated crimson background, linocut print texture, minimalist surrealism, distressed ink grain, screenprint aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色图形麻胶版墨",
+    "thumbnail": "samples/Crimson_Noir_Graphic_—_Linocut_Ink.webp"
+  },
+  {
+    "name": "Crimson Noir Minimalism — Halftone Stipple",
+    "prompt": "stark black silhouette, crimson red background, high-contrast noir, grainy halftone texture, dramatic chiaroscuro, minimalist geometry, surrealist atmosphere, vintage screenprint aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色极简主义半色调点彩",
+    "thumbnail": "samples/Crimson_Noir_Minimalism_—_Halftone_Stipple.webp"
+  },
+  {
+    "name": "Crimson Tactile Minimalism",
+    "prompt": "crimson red accents, textured off-white paper, minimalist collage, analog film grain, tactile organic shapes, high contrast editorial, vintage print aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红触觉极简主义",
+    "thumbnail": "samples/Crimson_Tactile_Minimalism.webp"
+  },
+  {
+    "name": "Deconstructed Analog Montage",
+    "prompt": "deconstructed grid collage, analog paper texture, fragmented photomontage, vintage halftone print, tactile modular composition, retro surrealism, sepia and desaturated tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Deconstructed Analog Montage",
+    "thumbnail": "samples/Deconstructed_Analog_Montage.webp"
+  },
+  {
+    "name": "Deconstructed Analog Surrealism — Sliced Paper Strips",
+    "prompt": "analog paper collage, sliced vintage photograph, fragmented composition, halftone print texture, hand-cut paper edges, surreal juxtaposition, retro color palette, tactile matte ephemera. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Deconstructed Analog Surrealism — Sliced Paper Strips",
+    "thumbnail": "samples/Deconstructed_Analog_Surrealism_—_Sliced_Paper_Strips.webp"
+  },
+  {
+    "name": "Deconstructed Monochrome Collage",
+    "prompt": "high-contrast monochrome, deconstructed portrait collage, analog film grain, chiaroscuro lighting, torn paper texture, halftone patterns, surreal fragmented composition, noir glitch art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Deconstructed单色拼贴",
+    "thumbnail": "samples/Deconstructed_Monochrome_Collage.webp"
+  },
+  {
+    "name": "Deconstructed Monochrome Surrealism — Xerox Montage",
+    "prompt": "high contrast black and white, analog photomontage, halftone grain texture, deconstructed surrealism, chiaroscuro lighting, xerox aesthetic, fragmented composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Deconstructed Monochrome Surrealism — Xerox Montage",
+    "thumbnail": "samples/Deconstructed_Monochrome_Surrealism_—_Xerox_Montage.webp"
+  },
+  {
+    "name": "Digital Modernist Collage",
+    "prompt": "pixelated collage, Swiss modernist layout, halftone textures, papercut window effect, muted earthy palette, minimalist negative space, lo-fi digital artifacts. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "数字Modernist拼贴",
+    "thumbnail": "samples/Digital_Modernist_Collage.webp"
+  },
+  {
+    "name": "Digital Nostalgic Surrealism",
+    "prompt": "lo-fi digital aesthetic, typographic silhouette, halftone dither texture, surreal dreamlike atmosphere, vintage print grain, minimalist pixel art, soft focus etherealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "数字Nostalgic超现实",
+    "thumbnail": "samples/Digital_Nostalgic_Surrealism.webp"
+  },
+  {
+    "name": "Digital Risograph Minimalism",
+    "prompt": "duotone blue and cream, risograph print texture, digital halftone dithering, geometric grid fragmentation, vertical barcode scanlines, minimalist glitch abstraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "数字Risograph极简主义",
+    "thumbnail": "samples/Digital_Risograph_Minimalism.webp"
+  },
+  {
+    "name": "Disintegrated Monochrome Glitch",
+    "prompt": "monochrome glitch art, pixel sorting, data corruption, halftone xerox texture, motion blur, high contrast, digital disintegration, chromatic aberration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Disintegrated单色故障",
+    "thumbnail": "samples/Disintegrated_Monochrome_Glitch.webp"
+  },
+  {
+    "name": "Disruptive Analog Grunge",
+    "prompt": "analog glitch corruption, high-contrast xerox aesthetic, distressed paper texture, chromatic aberration, punk zine collage, halftone dot pattern, digital decay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Disruptive Analog Grunge",
+    "thumbnail": "samples/Disruptive_Analog_Grunge.webp"
+  },
+  {
+    "name": "Distorted Analog Noir",
+    "prompt": "analog glitch art, high-contrast screenprint texture, chromatic aberration, distressed grainy xerox, neon magenta and cyan accents, dark synthwave noir, posterized duotone, distorted analog signal. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted模拟黑色",
+    "thumbnail": "samples/Distorted_Analog_Noir.webp"
+  },
+  {
+    "name": "Distressed Digital Brutalism",
+    "prompt": "halftone dot pattern, mixed media collage, distressed print texture, retro-digital glitch, high contrast composition, brutalist graphic design, duotone color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distressed Digital Brutalism",
+    "thumbnail": "samples/Distressed_Digital_Brutalism.webp"
+  },
+  {
+    "name": "Distressed Retro Printwork",
+    "prompt": "risograph print texture, halftone pattern, high-contrast graphic style, CMYK color separation, distressed paper texture, retro pop art, lo-fi digital glitch. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distressed Retro Printwork",
+    "thumbnail": "samples/Distressed_Retro_Printwork.webp"
+  },
+  {
+    "name": "Dithered Digital Noir",
+    "prompt": "1-bit dithered texture, high-contrast monochrome, pixelated halftone, retro-computing aesthetic, digital glitch, CRT monitor effect, generative pixel art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dithered数字黑色",
+    "thumbnail": "samples/Dithered_Digital_Noir.webp"
+  },
+  {
+    "name": "Dithered Noir Alpine",
+    "prompt": "coarse halftone pattern, dithered texture, vintage screenprint aesthetic, high contrast noir, limited indigo palette, retro print distortion, lo-fi graphic rendering. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dithered Noir Alpine",
+    "thumbnail": "samples/Dithered_Noir_Alpine.webp"
+  },
+  {
+    "name": "Dynamic Retro Pop",
+    "prompt": "bold graphic illustration, risograph texture, dynamic low-angle perspective, saturated color blocking, stylized cartoon character, 90s anime influence, clean thick linework, playful whimsical mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态复古Pop",
+    "thumbnail": "samples/Dynamic_Retro_Pop.webp"
+  },
+  {
+    "name": "Electric Analog Thermalism",
+    "prompt": "risograph print texture, cobalt blue and thermal orange, heavy analog film grain, high contrast graphic silhouette, vibrant halftone patterns, sun-drenched tactile warmth, retro-futuristic aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric Analog Thermalism",
+    "thumbnail": "samples/Electric_Analog_Thermalism.webp"
+  },
+  {
+    "name": "Electric Cobalt Minimalist",
+    "prompt": "cobalt blue and white, high-contrast graphic, minimalist silhouette, airbrush stipple texture, glowing white sparkles, sharp vector lines, duotone print style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ElectricCobalt极简",
+    "thumbnail": "samples/Electric_Cobalt_Minimalist.webp"
+  },
+  {
+    "name": "Electric Nocturnal Stippling",
+    "prompt": "electric blue and indigo palette, heavy stipple and halftone texture, dramatic chiaroscuro lighting, high-contrast silhouette, nocturnal bioluminescent glow, analog film grain, gritty retro-digital print. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric Nocturnal Stippling",
+    "thumbnail": "samples/Electric_Nocturnal_Stippling.webp"
+  },
+  {
+    "name": "Electric Nocturnal Surrealism — Cyan Beam Grain",
+    "prompt": "deep cobalt and cyan palette, heavy film grain, nocturnal atmosphere, glowing ethereal highlights, distressed texture, motion blur, retro sci-fi aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric夜行超现实青色梁颗粒",
+    "thumbnail": "samples/Electric_Nocturnal_Surrealism_—_Cyan_Beam_Grain.webp"
+  },
+  {
+    "name": "Electric Noir Dither",
+    "prompt": "monochromatic cobalt blue, high-contrast chiaroscuro, heavy film grain, retro-futuristic halftone, neon noir lighting, cinematic motion blur, dithered digital textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric Noir Dither",
+    "thumbnail": "samples/Electric_Noir_Dither.webp"
+  },
+  {
+    "name": "Electric Noir Glitch",
+    "prompt": "high-contrast noir, electric cyan glow, digital noise texture, chromatic aberration, CRT scanlines, halftone dither, stark chiaroscuro, lo-fi glitch. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric黑色故障",
+    "thumbnail": "samples/Electric_Noir_Glitch.webp"
+  },
+  {
+    "name": "Electric Print Minimalism",
+    "prompt": "risograph print, duotone color palette, halftone dithering, grainy texture, high-contrast graphic, retro-digital aesthetic, stipple shading, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric印刷极简主义",
+    "thumbnail": "samples/Electric_Print_Minimalism.webp"
+  },
+  {
+    "name": "Electric Punk Collage",
+    "prompt": "mixed-media collage, neon punk aesthetic, torn paper edges, halftone texture, vibrant color blocking, gritty analog xerox, graphic zine style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ElectricPunk拼贴",
+    "thumbnail": "samples/Electric_Punk_Collage.webp"
+  },
+  {
+    "name": "Ethereal Alpine Lithography",
+    "prompt": "vintage lithograph style, cyanotype grain, alpine landscape, halftone textures, minimalist silhouette, mid-century printmaking, atmospheric indigo palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵AlpineLithography",
+    "thumbnail": "samples/Ethereal_Alpine_Lithography.webp"
+  },
+  {
+    "name": "Ethereal Analog Nostalgia — Warm Color Spill",
+    "prompt": "heavy analog film grain, dreamy soft focus, cinematic motion blur, chromatic aberration, vintage halftone texture, warm nostalgic atmosphere, low-fidelity aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Analog Nostalgia — Warm Color Spill",
+    "thumbnail": "samples/Ethereal_Analog_Nostalgia_—_Warm_Color_Spill.webp"
+  },
+  {
+    "name": "Ethereal Cobalt Grain",
+    "prompt": "monochromatic cobalt blue, soft-focus ethereal silhouette, heavy film grain texture, cyanotype print aesthetic, diffused halo lighting, stippled airbrush effect, minimalist dreamscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Cobalt颗粒",
+    "thumbnail": "samples/Ethereal_Cobalt_Grain.webp"
+  },
+  {
+    "name": "Ethereal Cyanotype Dreamscape — Stippled Risograph",
+    "prompt": "cyanotype print aesthetic, monochromatic indigo and white, airbrushed soft glow, stippled grain texture, ethereal dreamscape, minimalist silhouettes, nocturnal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵CyanotypeDreamscapeStippledRisograph",
+    "thumbnail": "samples/Ethereal_Cyanotype_Dreamscape_—_Stippled_Risograph.webp"
+  },
+  {
+    "name": "Ethereal Glitch Minimalist",
+    "prompt": "chromatic aberration, motion blur silhouette, digital grain, minimalist graphic design, high contrast, cybernetic distortion, stipple texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵故障极简",
+    "thumbnail": "samples/Ethereal_Glitch_Minimalist.webp"
+  },
+  {
+    "name": "Ethereal Grain Aura — Dusky Halo",
+    "prompt": "soft-focus silhouette, heavy analog grain, glowing atmospheric aura, risograph texture, diffuse airbrushed light, ethereal dreamscape, muted gradient background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵颗粒AuraDuskyHalo",
+    "thumbnail": "samples/Ethereal_Grain_Aura_—_Dusky_Halo.webp"
+  },
+  {
+    "name": "Ethereal Grain Aura — Peach Watercolor Bleed",
+    "prompt": "ethereal aura gradient, soft-focus blur, tactile noise grain, organic color bleed, minimalist abstract silhouette, dreamy hazy atmosphere, risograph print texture, meditative light glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Grain Aura — Peach Watercolor Bleed",
+    "thumbnail": "samples/Ethereal_Grain_Aura_—_Peach_Watercolor_Bleed.webp"
+  },
+  {
+    "name": "Ethereal Grain Minimalism",
+    "prompt": "heavy grain texture, soft-focus gradient, monochromatic atmosphere, ethereal silhouettes, diffused atmospheric light, tactile paper aesthetic, minimalist dreamscape, lo-fi retro print. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵颗粒极简主义",
+    "thumbnail": "samples/Ethereal_Grain_Minimalism.webp"
+  },
+  {
+    "name": "Ethereal Grain Surrealism",
+    "prompt": "high-contrast silhouette, grainy film texture, liminal surrealism, retro-futuristic lighting, risograph halftone, motion blur, luminescent gradients. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵颗粒超现实",
+    "thumbnail": "samples/Ethereal_Grain_Surrealism.webp"
+  },
+  {
+    "name": "Ethereal Luminous Distortion",
+    "prompt": "soft-focus ethereal glow, heavy film grain texture, chromatic thermal gradient, dissolving silhouette, dreamy motion blur, risograph airbrush aesthetic, moody indigo and peach. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵明亮Distortion",
+    "thumbnail": "samples/Ethereal_Luminous_Distortion.webp"
+  },
+  {
+    "name": "Ethereal Noir Grain — Overexposed Flare",
+    "prompt": "high-contrast black and white, heavy film grain, analog texture, chiaroscuro lighting, overexposed highlights, motion blur, halftone pattern, ethereal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵黑色颗粒Overexposed光晕",
+    "thumbnail": "samples/Ethereal_Noir_Grain_—_Overexposed_Flare.webp"
+  },
+  {
+    "name": "Ethereal Noir Grain — Stippled Halftone",
+    "prompt": "heavy film grain, high-contrast monochrome, ethereal motion blur, chiaroscuro lighting, ghostly silhouettes, stippled halftone texture, dark atmospheric noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵黑色颗粒Stippled半色调",
+    "thumbnail": "samples/Ethereal_Noir_Grain_—_Stippled_Halftone.webp"
+  },
+  {
+    "name": "Ethereal Noir Texture",
+    "prompt": "monochrome, high contrast, film grain, halftone dots, chiaroscuro, ethereal haze, stippled texture, minimalist noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵黑色纹理",
+    "thumbnail": "samples/Ethereal_Noir_Texture.webp"
+  },
+  {
+    "name": "Ethereal Retro-Chromatic Surrealism",
+    "prompt": "heavy film grain, risograph stipple texture, duotone color palette, double exposure, ethereal surrealism, retro-futuristic gradient, botanical silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵复古彩色超现实",
+    "thumbnail": "samples/Ethereal_Retro-Chromatic_Surrealism.webp"
+  },
+  {
+    "name": "Ethereal Twilight Printwork",
+    "prompt": "cross-hatching, fine line ink illustration, twilight color palette, surreal melancholic mood, vintage woodblock texture, glowing gradients, risograph grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵暮光Printwork",
+    "thumbnail": "samples/Ethereal_Twilight_Printwork.webp"
+  },
+  {
+    "name": "Fragmented Analog Noir",
+    "prompt": "high-contrast monochrome, torn paper collage, analog film grain, glitch art artifacts, surrealist portraiture, halftone texture, chiaroscuro lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fragmented模拟黑色",
+    "thumbnail": "samples/Fragmented_Analog_Noir.webp"
+  },
+  {
+    "name": "Fragmented Analog Surrealism — Torn Halftone Warmth",
+    "prompt": "analog mixed media collage, torn paper texture, surrealist portrait, vintage halftone grain, chiaroscuro lighting, fragmented facial features, layered paper aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fragmented Analog Surrealism — Torn Halftone Warmth",
+    "thumbnail": "samples/Fragmented_Analog_Surrealism_—_Torn_Halftone_Warmth.webp"
+  },
+  {
+    "name": "Fragmented Monochromatic Noir",
+    "prompt": "high-contrast black and white, minimalist avant-garde portraiture, digital glitch distortion, analog photocopy texture, stark dramatic lighting, sculptural kinetic silhouettes, halftone degradation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fragmented单色黑色",
+    "thumbnail": "samples/Fragmented_Monochromatic_Noir.webp"
+  },
+  {
+    "name": "Fragmented Monochrome Geometry",
+    "prompt": "monochrome slit-scan distortion, fragmented cubist portraiture, analog paper collage texture, high-contrast chiaroscuro, minimalist vertical segmentation, tactile halftone print, surreal geometric reconstruction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Fragmented Monochrome Geometry",
+    "thumbnail": "samples/Fragmented_Monochrome_Geometry.webp"
+  },
+  {
+    "name": "Glitch-Textured Urban Mosaic",
+    "prompt": "risograph halftone texture, digital glitch artifacts, high-angle isometric composition, chroma key blue accents, dithered pixel pointillism, sharp geometric shadows, retro-tech aesthetic, grainy paper overlay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "故障有纹理都市Mosaic",
+    "thumbnail": "samples/Glitch-Textured_Urban_Mosaic.webp"
+  },
+  {
+    "name": "Golden Retro Illustrative",
+    "prompt": "golden hour lighting, warm amber and ochre palette, tactile grain and halftone texture, shallow depth of field, retro screenprint aesthetic, organic and architectural harmony. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "黄金复古Illustrative",
+    "thumbnail": "samples/Golden_Retro_Illustrative.webp"
+  },
+  {
+    "name": "Graphic Acid Printmaking",
+    "prompt": "high-contrast linocut, acid green and black, hand-carved texture, graphic silhouette, halftone and dithered, punk zine aesthetic, organic printmaking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形AcidPrintmaking",
+    "thumbnail": "samples/Graphic_Acid_Printmaking.webp"
+  },
+  {
+    "name": "Graphic Duotone Halftone",
+    "prompt": "halftone patterns, stipple texture, duotone color palette, screen print aesthetic, high-contrast graphic, retro printmaking, grainy ink texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形双色调半色调",
+    "thumbnail": "samples/Graphic_Duotone_Halftone.webp"
+  },
+  {
+    "name": "Graphic Glitch Modernism",
+    "prompt": "high-contrast graphic design, digital glitch distortion, vintage halftone texture, geometric abstraction, minimalist vector composition, retro-futurist, sharp serrated edges. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形故障Modernism",
+    "thumbnail": "samples/Graphic_Glitch_Modernism.webp"
+  },
+  {
+    "name": "Graphic Halftone Brutalism",
+    "prompt": "halftone pattern, high contrast monochrome, geometric abstraction, vintage print texture, minimalist graphic design, stippling, CMYK color layers. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形半色调Brutalism",
+    "thumbnail": "samples/Graphic_Halftone_Brutalism.webp"
+  },
+  {
+    "name": "Graphic Halftone Synthesis",
+    "prompt": "halftone pattern, risograph texture, high-contrast duotone, retro screen-print aesthetic, dot matrix graphics, minimalist graphic design, rasterized gradients. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形半色调Synthesis",
+    "thumbnail": "samples/Graphic_Halftone_Synthesis.webp"
+  },
+  {
+    "name": "Graphic Mid-Century Whimsy",
+    "prompt": "mid-century graphic illustration, bold red black and cream palette, minimalist ink linework, flat 2D vector style, risograph and linocut texture, retro editorial aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形MidCenturyWhimsy",
+    "thumbnail": "samples/Graphic_Mid-Century_Whimsy.webp"
+  },
+  {
+    "name": "Graphic Minimalist Serigraph",
+    "prompt": "minimalist graphic illustration, screenprint texture, bold flat color blocks, high contrast silhouette, risograph grain, stark cast shadows, retro-modern graphic style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形极简Serigraph",
+    "thumbnail": "samples/Graphic_Minimalist_Serigraph.webp"
+  },
+  {
+    "name": "Graphic Monochromatic Printwork",
+    "prompt": "monochromatic ink illustration, stippled dotwork, coarse halftone screen, newsprint texture, high-contrast engraving, distressed analog print, vintage zine aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形单色Printwork",
+    "thumbnail": "samples/Graphic_Monochromatic_Printwork.webp"
+  },
+  {
+    "name": "Graphic Monochrome Collage",
+    "prompt": "monochrome photography, high-contrast film grain, mixed media collage, geometric color overlays, halftone texture, paper cutout aesthetic, vibrant neon accents, raw zine editorial. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形单色拼贴",
+    "thumbnail": "samples/Graphic_Monochrome_Collage.webp"
+  },
+  {
+    "name": "Graphic Print Noir",
+    "prompt": "high-contrast, halftone grain, distressed screenprint, graphic cutout, duotone palette, minimalist composition, analog photocopy texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形印刷黑色",
+    "thumbnail": "samples/Graphic_Print_Noir.webp"
+  },
+  {
+    "name": "Graphic Printmaker Pop",
+    "prompt": "risograph print, halftone texture, high contrast screenprint, saturated primary colors, graphic zine aesthetic, distressed ink, pop art illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形PrintmakerPop",
+    "thumbnail": "samples/Graphic_Printmaker_Pop.webp"
+  },
+  {
+    "name": "Graphic Serigraph Nostalgia",
+    "prompt": "risograph print style, stippled grain texture, high contrast color fields, retro anime background, minimalist architectural composition, saturated graphic illustration, dramatic sunlight shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形SerigraphNostalgia",
+    "thumbnail": "samples/Graphic_Serigraph_Nostalgia.webp"
+  },
+  {
+    "name": "Graphic Stippled Noir",
+    "prompt": "stipple texture, halftone dots, high-contrast monochrome, retro print aesthetic, graphic ink illustration, vintage zine style, bold silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Stippled黑色",
+    "thumbnail": "samples/Graphic_Stippled_Noir.webp"
+  },
+  {
+    "name": "Graphic Surrealist Collage",
+    "prompt": "surreal collage, risograph texture, geometric pop art, halftone stipple, vibrant color blocking, tactile paper cutout, absurdist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形超现实拼贴",
+    "thumbnail": "samples/Graphic_Surrealist_Collage.webp"
+  },
+  {
+    "name": "Gritty Acid Noir",
+    "prompt": "high-contrast black and white, heavy film grain, halftone print texture, acid yellow accents, gritty analog aesthetic, chiaroscuro lighting, punk zine style, raw cinematic realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "GrittyAcid黑色",
+    "thumbnail": "samples/Gritty_Acid_Noir.webp"
+  },
+  {
+    "name": "Gritty Alpine Noir",
+    "prompt": "high-contrast monochrome, heavy film grain, analog distortion, chiaroscuro lighting, halftone dither, minimalist silhouette, CRT scanlines, liminal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "GrittyAlpine黑色",
+    "thumbnail": "samples/Gritty_Alpine_Noir.webp"
+  },
+  {
+    "name": "Gritty Analog Noir — Risograph Duotone",
+    "prompt": "halftone grain, risograph texture, high contrast monochrome, glitch distortion, lo-fi punk aesthetic, duotone airbrush, vintage photocopy style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Analog Noir — Risograph Duotone",
+    "thumbnail": "samples/Gritty_Analog_Noir_—_Risograph_Duotone.webp"
+  },
+  {
+    "name": "Gritty Analog Noir — Xerox Halftone Crush",
+    "prompt": "high-contrast black and white, halftone grain, analog film degradation, xerox photocopy texture, chiaroscuro lighting, distorted vintage aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Analog Noir — Xerox Halftone Crush",
+    "thumbnail": "samples/Gritty_Analog_Noir_—_Xerox_Halftone_Crush.webp"
+  },
+  {
+    "name": "Gritty Avant-Garde Collage",
+    "prompt": "analog collage, halftone print texture, geometric constructivism, high-contrast monochrome, xerox zine style, torn paper edges, surrealist assemblage. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "GrittyAvantGarde拼贴",
+    "thumbnail": "samples/Gritty_Avant-Garde_Collage.webp"
+  },
+  {
+    "name": "Gritty Chiaroscuro Noir — Distressed Textile Grain",
+    "prompt": "high-contrast monochrome, heavy film grain, chiaroscuro lighting, distressed texture, lo-fi noir photography, spectral blur, halftone aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Chiaroscuro Noir — Distressed Textile Grain",
+    "thumbnail": "samples/Gritty_Chiaroscuro_Noir_—_Distressed_Textile_Grain.webp"
+  },
+  {
+    "name": "Gritty Chiaroscuro Noir — Nocturnal Xerox Halftone",
+    "prompt": "high-contrast black and white, heavy film grain, stippled texture, stark chiaroscuro, lo-fi xerox aesthetic, minimalist silhouette, halftone noise, atmospheric noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gritty Chiaroscuro Noir — Nocturnal Xerox Halftone",
+    "thumbnail": "samples/Gritty_Chiaroscuro_Noir_—_Nocturnal_Xerox_Halftone.webp"
+  }
+]

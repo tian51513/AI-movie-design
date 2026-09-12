@@ -1237,9 +1237,18 @@
                <option>短剧PV</option><option>文艺</option><option>科幻</option>
                <option>古风</option><option>未来科技</option><option>悬疑</option>
                <option>喜剧</option><option>舞台剧</option></optgroup>
-             <option value="自定义">自定义…</option></select>
+             <option value="自定义">自定义…</option>
+             <option value="Krea2库">Krea2 风格库…</option></select>
              <span v-if="newMode==='comic'" class="muted" style="font-size:12px">（画风转换目标：
                与漫画原画不一致时自动加转换描述，参考图同画风生成）</span></p>
+          <p v-if="newStyleKey==='Krea2库'">
+            库<select v-model="kreaLib" style="max-width:200px">
+              <option v-for="(styles, lib) in kreaLibs" :key="lib" :value="lib">{{ lib }}</option>
+            </select>
+            风格<select v-model="kreaName" style="max-width:220px">
+              <option v-for="s in (kreaLibs[kreaLib] || [])" :key="s.name" :value="s.name">{{ s.name }}</option>
+            </select>
+            <span class="muted" style="font-size:12px">（73 库成品风格，来自 Lazy_Krea2 工作台）</span></p>
           <p v-if="newStyleKey==='自定义'"><input v-model="newStyleText" placeholder="自定义画风描述" style="width:90%"></p>
         </template>
         <p v-else-if="newMode==='comic'" class="muted" style="font-size:12px">

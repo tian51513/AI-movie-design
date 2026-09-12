@@ -1,0 +1,702 @@
+[
+  {
+    "name": "Amber Atmospheric Solitude",
+    "prompt": "amber monochromatic haze, cinematic backlit silhouette, atmospheric dust fog, minimalist desolate landscape, golden hour glow, existential scale, high contrast composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀氛围Solitude",
+    "thumbnail": "samples/Amber_Atmospheric_Solitude.webp"
+  },
+  {
+    "name": "Amber Chiaroscuro Komorebi",
+    "prompt": "golden hour lighting, dappled leaf shadows, analog film grain, chiaroscuro portraiture, shallow depth of field, warm earthy tones, cinematic intimacy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀ChiaroscuroKomorebi",
+    "thumbnail": "samples/Amber_Chiaroscuro_Komorebi.webp"
+  },
+  {
+    "name": "Amber Chiaroscuro Minimalism — Cool Blue Grain",
+    "prompt": "chiaroscuro lighting, golden hour glow, dramatic long shadows, minimalist interior, amber and obsidian palette, textured surfaces, cinematic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Amber Chiaroscuro Minimalism — Cool Blue Grain",
+    "thumbnail": "samples/Amber_Chiaroscuro_Minimalism_—_Cool_Blue_Grain.webp"
+  },
+  {
+    "name": "Amber Chiaroscuro Minimalism — Golden Hour Stone",
+    "prompt": "golden hour sunlight, dramatic chiaroscuro, minimalist silhouette, textured surface projection, amber and ochre palette, cinematic shadowplay, nostalgic mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀Chiaroscuro极简主义黄金时刻石头",
+    "thumbnail": "samples/Amber_Chiaroscuro_Minimalism_-_Golden_Hour_Stone.webp"
+  },
+  {
+    "name": "Amber Chiaroscuro Portraiture",
+    "prompt": "macro portrait photography, golden hour lighting, chiaroscuro, tactile skin texture, warm amber tones, shallow depth of field, analog film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀Chiaroscuro肖像摄影",
+    "thumbnail": "samples/Amber_Chiaroscuro_Portraiture.webp"
+  },
+  {
+    "name": "Amber Cinematic Shadowplay",
+    "prompt": "golden hour lighting, chiaroscuro shadowplay, warm amber tones, cinematic atmosphere, minimalist domestic interior, analog film grain, dramatic silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀电影感Shadowplay",
+    "thumbnail": "samples/Amber_Cinematic_Shadowplay.webp"
+  },
+  {
+    "name": "Amber Kinetic Nostalgia",
+    "prompt": "motion blur, shutter drag, analog film grain, amber sunset gradient, dreamlike silhouette, ethereal light leaks, cinematic haze, golden hour glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀动态Nostalgia",
+    "thumbnail": "samples/Amber_Kinetic_Nostalgia.webp"
+  },
+  {
+    "name": "Amber Nocturne Pictorialism",
+    "prompt": "analog film grain, amber and teal color grading, soft-focus pictorialism, cinematic motion blur, golden hour light leaks, moody chiaroscuro, dreamy liminal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀NocturnePictorialism",
+    "thumbnail": "samples/Amber_Nocturne_Pictorialism.webp"
+  },
+  {
+    "name": "Amber Nostalgic Transit",
+    "prompt": "golden hour lighting, analog film grain, amber color palette, nostalgic atmosphere, cinematic street photography, sun-drenched warmth, vintage retro aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀NostalgicTransit",
+    "thumbnail": "samples/Amber_Nostalgic_Transit.webp"
+  },
+  {
+    "name": "Atmospheric Cinematic Twilight",
+    "prompt": "cinematic twilight, teal and amber color grading, atmospheric haze, dreamy golden hour, film grain texture, soft bloom lighting, moody urban landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围电影感暮光",
+    "thumbnail": "samples/Atmospheric_Cinematic_Twilight.webp"
+  },
+  {
+    "name": "Azure Horizon Minimalism",
+    "prompt": "low-angle portrait, vibrant blue sky backdrop, high-contrast lighting, minimalist composition, tactile fabric texture, fashion editorial photography, bold color saturation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "蔚蓝地平线极简主义",
+    "thumbnail": "samples/Azure_Horizon_Minimalism.webp"
+  },
+  {
+    "name": "Celestial Ethereal Surrealism",
+    "prompt": "celestial surrealism, golden hour lighting, ethereal dreamscape, levitating elements, iridescent energy trails, soft focus, divine atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天体空灵超现实",
+    "thumbnail": "samples/Celestial_Ethereal_Surrealism.webp"
+  },
+  {
+    "name": "Cinematic Amber Chiaroscuro — Gritty 35mm",
+    "prompt": "chiaroscuro lighting, golden hour glow, 35mm film grain, low-key portraiture, shallow depth of field, amber color palette, cinematic suspense. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感琥珀ChiaroscuroGritty35mm",
+    "thumbnail": "samples/Cinematic_Amber_Chiaroscuro_—_Gritty_35mm.webp"
+  },
+  {
+    "name": "Cinematic Amber Noir — Golden Hour Shadow",
+    "prompt": "cinematic chiaroscuro, golden hour lighting, deep amber tones, dramatic shadows, volumetric light shafts, 1970s film grain, liminal atmosphere, intimate interior. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感琥珀黑色黄金时刻影",
+    "thumbnail": "samples/Cinematic_Amber_Noir_—_Golden_Hour_Shadow.webp"
+  },
+  {
+    "name": "Cinematic Amber Noir — Oil Paint Warmth",
+    "prompt": "chiaroscuro lighting, dramatic shadow patterns, golden hour amber glow, cinematic noir portrait, high contrast, intimate close-up, fiery red and warm orange palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感琥珀黑色油画颜料Warmth",
+    "thumbnail": "samples/Cinematic_Amber_Noir_-_Oil_Paint_Warmth.webp"
+  },
+  {
+    "name": "Cinematic Amber Twilight",
+    "prompt": "cinematic chiaroscuro, analog film grain, warm amber and cool indigo, golden hour lighting, intimate mood lighting, retro 35mm aesthetic, dramatic shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感琥珀暮光",
+    "thumbnail": "samples/Cinematic_Amber_Twilight.webp"
+  },
+  {
+    "name": "Cinematic Analog Nostalgia",
+    "prompt": "35mm film photograph, candid cinematic composition, visible film grain, golden hour lighting, muted earth tones, high-contrast shadows, nostalgic analog texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感模拟Nostalgia",
+    "thumbnail": "samples/Cinematic_Analog_Nostalgia.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Realism",
+    "prompt": "chiaroscuro lighting, rim lighting, high contrast, tactile textures, cinematic film look, golden hour, shallow depth of field, moody atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Chiaroscuro写实",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Realism.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Solace",
+    "prompt": "chiaroscuro lighting, golden hour sunbeams, dramatic high contrast, cinematic film grain, rustic natural textures, caustic light reflections. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感ChiaroscuroSolace",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Solace.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Solitude — Architectural Backlight",
+    "prompt": "cinematic chiaroscuro, backlit silhouette, golden hour lighting, moody atmospheric haze, 35mm film grain, architectural framing, high contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Chiaroscuro Solitude — Architectural Backlight",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Solitude_—_Architectural_Backlight.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Solitude — Golden Hour Canvas",
+    "prompt": "chiaroscuro lighting, cinematic solitude, deep forest greens, dramatic shadow play, high contrast, golden hour glow, filmic texture, voyeuristic framing. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感ChiaroscuroSolitude黄金时刻画布",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Solitude_-_Golden_Hour_Canvas.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Solitude — Golden Shaft 35mm",
+    "prompt": "chiaroscuro lighting, dramatic shadows, analog film grain, muted earth tones, golden hour shafts, cinematic solitude, soft focus, introspective atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Chiaroscuro Solitude — Golden Shaft 35mm",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Solitude_—_Golden_Shaft_35mm.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Solitude — Verdant Velvet Glow",
+    "prompt": "chiaroscuro landscape, rolling green hills, dramatic spotlighting, minimalist composition, cinematic shadow, surreal solitude, golden hour highlights, moody atmospheric depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感ChiaroscuroSolitude翠绿天鹅绒发光",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Solitude_—_Verdant_Velvet_Glow.webp"
+  },
+  {
+    "name": "Cinematic Chiaroscuro Sunlight",
+    "prompt": "cinematic chiaroscuro lighting, golden hour sunbeam, analog film grain, dappled light and shadow, intimate portrait, warm amber and teal palette, prismatic lens flare. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感ChiaroscuroSunlight",
+    "thumbnail": "samples/Cinematic_Chiaroscuro_Sunlight.webp"
+  },
+  {
+    "name": "Cinematic Highland Solitude",
+    "prompt": "moody atmospheric landscape, cinematic scale, low-hanging mist, deep emerald and mossy tones, dramatic chiaroscuro lighting, isolated architectural structure, overcast storm clouds, vast mountainous terrain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感HighlandSolitude",
+    "thumbnail": "samples/Cinematic_Highland_Solitude.webp"
+  },
+  {
+    "name": "Cinematic Macro Realism",
+    "prompt": "extreme macro portraiture, hyper-realistic skin texture, chiaroscuro lighting, golden hour tones, shallow depth of field, cinematic film grain, intimate high-contrast lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感微距写实",
+    "thumbnail": "samples/Cinematic_Macro_Realism.webp"
+  },
+  {
+    "name": "Cinematic Urban Nostalgia — Golden 90s Wide",
+    "prompt": "low-angle cinematic perspective, golden hour lighting, 90s streetwear influence, fisheye lens distortion, vibrant blue sky, high-contrast photography, youthful urban nostalgia. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感都市Nostalgia黄金90s宽",
+    "thumbnail": "samples/Cinematic_Urban_Nostalgia_—_Golden_90s_Wide.webp"
+  },
+  {
+    "name": "Cinematic Volumetric Chiaroscuro",
+    "prompt": "cinematic chiaroscuro, volumetric golden light, crepuscular rays, dusty atmospheric haze, dramatic silhouette, high-contrast lighting, amber backlighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感VolumetricChiaroscuro",
+    "thumbnail": "samples/Cinematic_Volumetric_Chiaroscuro.webp"
+  },
+  {
+    "name": "Distorted Chromatic Dreamscape",
+    "prompt": "extreme fisheye lens, barrel distortion, vibrant saturated colors, chromatic aberration, dynamic low-angle perspective, lo-fi analogue aesthetic, high-contrast sunlight. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Distorted Chromatic Dreamscape",
+    "thumbnail": "samples/Distorted_Chromatic_Dreamscape.webp"
+  },
+  {
+    "name": "Dreamy Amber Retro",
+    "prompt": "vintage 35mm film, warm amber color cast, heavy analog grain, soft focus haze, golden hour lighting, retro light leaks, faded polaroid aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dreamy琥珀复古",
+    "thumbnail": "samples/Dreamy_Amber_Retro.webp"
+  },
+  {
+    "name": "Dreamy Analog Nostalgia",
+    "prompt": "vintage 35mm film, soft focus, dreamy lens glow, warm golden hour lighting, analog film grain, shallow depth of field, muted earth tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dreamy Analog Nostalgia",
+    "thumbnail": "samples/Dreamy_Analog_Nostalgia.webp"
+  },
+  {
+    "name": "Dynamic Fisheye Nostalgia — Golden Hour Grain",
+    "prompt": "fisheye lens distortion, extreme close-up portrait, golden hour lighting, vintage film aesthetic, candid street photography, warm color grading, energetic youth culture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态鱼眼Nostalgia黄金时刻颗粒",
+    "thumbnail": "samples/Dynamic_Fisheye_Nostalgia_—_Golden_Hour_Grain.webp"
+  },
+  {
+    "name": "Dynamic Low-Angle Perspective",
+    "prompt": "low-angle shot, worm's-eye view, wide-angle lens, clear blue sky, dynamic composition, natural daylight, vibrant urban and natural scenes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态Low角透视",
+    "thumbnail": "samples/Dynamic_Low-Angle_Perspective.webp"
+  },
+  {
+    "name": "Dynamic Urban Golden Hour",
+    "prompt": "fisheye lens distortion, low-angle perspective, golden hour lighting, candid youth culture, urban street fashion, dynamic foreshortening, vibrant natural sunlight. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态都市黄金时刻",
+    "thumbnail": "samples/Dynamic_Urban_Golden_Hour.webp"
+  },
+  {
+    "name": "Dynamic Urban Perspective",
+    "prompt": "worm's-eye view, extreme low-angle shot, wide-angle lens distortion, streetwear fashion, clear blue sky, dynamic perspective, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态都市透视",
+    "thumbnail": "samples/Dynamic_Urban_Perspective.webp"
+  },
+  {
+    "name": "Ethereal Alpine Stillness",
+    "prompt": "alpenglow, mirror reflection, glassy alpine lake, low-hanging mist, symmetrical landscape composition, golden hour lighting, serene wilderness, high-contrast mountain photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Alpine静止",
+    "thumbnail": "samples/Ethereal_Alpine_Stillness.webp"
+  },
+  {
+    "name": "Ethereal Amber Nostalgia",
+    "prompt": "golden hour backlighting, amber haze, vintage film grain, dust motes in light, dreamy soft focus, cinematic rim lighting, nostalgic warm tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵琥珀Nostalgia",
+    "thumbnail": "samples/Ethereal_Amber_Nostalgia.webp"
+  },
+  {
+    "name": "Ethereal Amber Radiance — Droplet Shimmer",
+    "prompt": "golden hour monochromatic palette, ethereal backlit particles, shimmering water droplets, dramatic silhouette, dreamlike bokeh haze, amber light diffusion, nostalgic romanticism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵琥珀RadianceDropletShimmer",
+    "thumbnail": "samples/Ethereal_Amber_Radiance_—_Droplet_Shimmer.webp"
+  },
+  {
+    "name": "Ethereal Analog Nostalgia — Amber Purple Gradient",
+    "prompt": "analog film grain, golden hour haze, dreamy motion blur, soft focus, light leaks, ethereal silhouettes, vintage film halation, warm amber and purple gradients. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Analog Nostalgia — Amber Purple Gradient",
+    "thumbnail": "samples/Ethereal_Analog_Nostalgia_-_Amber_Purple_Gradient.webp"
+  },
+  {
+    "name": "Ethereal Analog Nostalgia — Candid Light Bloom",
+    "prompt": "vintage 35mm film grain, ethereal light bloom, dreamy soft focus, golden hour glow, analog halation, muted nostalgic color palette, intimate candid atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵模拟NostalgiaCandid浅辉光",
+    "thumbnail": "samples/Ethereal_Analog_Nostalgia_-_Candid_Light_Bloom.webp"
+  },
+  {
+    "name": "Ethereal Analog Nostalgia — Double Exposure Gold",
+    "prompt": "double exposure, analog film photography, dreamy nostalgia, soft focus, golden hour light leak, muted vintage tones, ethereal nature overlay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Analog Nostalgia — Double Exposure Gold",
+    "thumbnail": "samples/Ethereal_Analog_Nostalgia_-_Double_Exposure_Gold.webp"
+  },
+  {
+    "name": "Ethereal Analog Nostalgia — Honeyed Halation",
+    "prompt": "analog film grain, soft focus bloom, diffused natural light, warm amber color palette, dreamy hazy atmosphere, shallow depth of field, introspective mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵模拟NostalgiaHoneyedHalation",
+    "thumbnail": "samples/Ethereal_Analog_Nostalgia_—_Honeyed_Halation.webp"
+  },
+  {
+    "name": "Ethereal Autumnal Warmth",
+    "prompt": "golden hour backlighting, shallow depth of field, dreamy soft focus, amber and crimson palette, creamy bokeh, ethereal haze, painterly atmosphere, intimate nature photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵AutumnalWarmth",
+    "thumbnail": "samples/Ethereal_Autumnal_Warmth.webp"
+  },
+  {
+    "name": "Ethereal Cinematic Intimacy",
+    "prompt": "analog film photography, soft focus, chiaroscuro lighting, dreamy haze, intimate portraiture, golden hour glow, cinematic grain, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵电影感Intimacy",
+    "thumbnail": "samples/Ethereal_Cinematic_Intimacy.webp"
+  },
+  {
+    "name": "Ethereal Cinematic Nostalgia — Mauve Dusk Bokeh",
+    "prompt": "35mm film grain, dreamy soft focus, hazy golden hour light, cinematic nostalgia, muted pastel palette, painterly bokeh, analog texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Cinematic Nostalgia — Mauve Dusk Bokeh",
+    "thumbnail": "samples/Ethereal_Cinematic_Nostalgia_-_Mauve_Dusk_Bokeh.webp"
+  },
+  {
+    "name": "Ethereal Cinematic Nostalgia — Prism Flare",
+    "prompt": "prism lens flare, cinematic film grain, golden hour glow, chromatic aberration, dreamy soft focus, warm amber lighting, ethereal light leaks, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵电影感NostalgiaPrism光晕",
+    "thumbnail": "samples/Ethereal_Cinematic_Nostalgia_—_Prism_Flare.webp"
+  },
+  {
+    "name": "Ethereal Desert Futurism",
+    "prompt": "cinematic golden hour lighting, atmospheric dust and haze, geometric futurism, sharp metallic silhouettes, minimalist landscape photography, warm desert earth tones, ethereal mist, epic scale. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵沙漠Futurism",
+    "thumbnail": "samples/Ethereal_Desert_Futurism.webp"
+  },
+  {
+    "name": "Ethereal Golden Dew",
+    "prompt": "macro photography, golden hour backlighting, glistening dew drops, ethereal bokeh, soft focus, shimmering light particles, translucent organic textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵黄金Dew",
+    "thumbnail": "samples/Ethereal_Golden_Dew.webp"
+  },
+  {
+    "name": "Ethereal Golden Nostalgia",
+    "prompt": "vintage film grain, golden hour backlighting, heavy lens flare, dreamy soft focus, hazy analog aesthetic, warm amber tones, shallow depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵黄金Nostalgia",
+    "thumbnail": "samples/Ethereal_Golden_Nostalgia.webp"
+  },
+  {
+    "name": "Ethereal Golden Wildlife",
+    "prompt": "golden hour wildlife photography, shallow depth of field, rim lighting, atmospheric haze, warm amber tones, telephoto lens, magical realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵黄金Wildlife",
+    "thumbnail": "samples/Ethereal_Golden_Wildlife.webp"
+  },
+  {
+    "name": "Ethereal Kinetic Impressionism — Golden Moss Streak",
+    "prompt": "intentional camera movement, painterly motion blur, ethereal light streaks, impressionistic landscape, dreamy soft focus, organic color palette, kinetic abstraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵动态印象派黄金MossStreak",
+    "thumbnail": "samples/Ethereal_Kinetic_Impressionism_—_Golden_Moss_Streak.webp"
+  },
+  {
+    "name": "Ethereal Layered Introspection",
+    "prompt": "double exposure photography, surreal macro textures, ethereal light refraction, introspective mood, fluid liquid distortion, warm golden hour palette, organic element overlay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵LayeredIntrospection",
+    "thumbnail": "samples/Ethereal_Layered_Introspection.webp"
+  },
+  {
+    "name": "Ethereal Low-Angle Wonder",
+    "prompt": "extreme low-angle perspective, golden hour sun-drenched lighting, vibrant blue sky backdrop, dreamy lens flare, shallow depth of field, surreal floral framing, pastel color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Low角Wonder",
+    "thumbnail": "samples/Ethereal_Low-Angle_Wonder.webp"
+  },
+  {
+    "name": "Ethereal Macro Microcosm",
+    "prompt": "extreme macro photography, shallow depth of field, dreamy bokeh, luminous diffused lighting, intricate botanical texture, glistening water droplets, ethereal nature atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵微距Microcosm",
+    "thumbnail": "samples/Ethereal_Macro_Microcosm.webp"
+  },
+  {
+    "name": "Ethereal Mirror Surrealism",
+    "prompt": "surreal minimalism, glass-like perfect reflection, ethereal dreamscape, soft pastel gradients, symmetrical composition, vast horizon, diffused golden hour light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Mirror超现实",
+    "thumbnail": "samples/Ethereal_Mirror_Surrealism.webp"
+  },
+  {
+    "name": "Ethereal Nostalgic Double-Exposure",
+    "prompt": "double exposure photography, golden hour lighting, silhouette blend, nostalgic dreamscape, warm amber glow, cinematic film grain, ethereal lens flare. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Nostalgic Double-Exposure",
+    "thumbnail": "samples/Ethereal_Nostalgic_Double-Exposure.webp"
+  },
+  {
+    "name": "Ethereal Nostalgic Haze — Terracotta Bloom",
+    "prompt": "analog film grain, soft-focus blur, dreamlike haze, warm golden hour lighting, painterly texture, nostalgic color grading, ethereal bloom. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵NostalgicHazeTerracotta辉光",
+    "thumbnail": "samples/Ethereal_Nostalgic_Haze_—_Terracotta_Bloom.webp"
+  },
+  {
+    "name": "Ethereal Nostalgic Realism",
+    "prompt": "35mm film grain, dreamlike levitation, soft vintage color palette, minimalist expansive composition, sun-drenched golden hour, candid cinematic realism, low-angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Nostalgic写实",
+    "thumbnail": "samples/Ethereal_Nostalgic_Realism.webp"
+  },
+  {
+    "name": "Ethereal Pastel Surrealism — Cotton-Candy Symmetry",
+    "prompt": "pastel surrealism, fluffy cumulus clouds, ethereal lighting, minimalist dreamscape, symmetrical composition, cinematic isolation, soft golden hour. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩超现实棉Candy对称",
+    "thumbnail": "samples/Ethereal_Pastel_Surrealism_-_Cotton-Candy_Symmetry.webp"
+  },
+  {
+    "name": "Ethereal Pastel Surrealism — Mirrored Golden Haze",
+    "prompt": "ethereal atmospheric lighting, muted pastel color palette, dreamlike surrealism, soft painterly texture, minimalist composition, golden hour glow, reflective mirror water, vintage film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Pastel Surrealism — Mirrored Golden Haze",
+    "thumbnail": "samples/Ethereal_Pastel_Surrealism_-_Mirrored_Golden_Haze.webp"
+  },
+  {
+    "name": "Ethereal Pastoral Impressionism",
+    "prompt": "impressionistic blur, heavy film grain, dreamy soft focus, muted earthy palette, pastoral atmosphere, tactile noise texture, dissolving edges, hazy golden hour light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵Pastoral印象派",
+    "thumbnail": "samples/Ethereal_Pastoral_Impressionism.webp"
+  },
+  {
+    "name": "Ethereal Pastoral Nostalgia — Golden Flare Sweep",
+    "prompt": "golden hour lighting, pastoral surrealism, wide-angle cinematic perspective, muted vintage color palette, expansive grassy landscapes, dreamy nostalgic atmosphere, soft natural glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Pastoral Nostalgia — Golden Flare Sweep",
+    "thumbnail": "samples/Ethereal_Pastoral_Nostalgia_—_Golden_Flare_Sweep.webp"
+  },
+  {
+    "name": "Ethereal Pastoral Nostalgia — Sage 35mm Blur",
+    "prompt": "vintage 35mm film grain, dreamy soft focus, golden hour pastel palette, ethereal motion blur, pastoral wildflower meadow, muted earth tones, shallow depth of field, nostalgic atmospheric lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵PastoralNostalgiaSage35mm模糊",
+    "thumbnail": "samples/Ethereal_Pastoral_Nostalgia_—_Sage_35mm_Blur.webp"
+  },
+  {
+    "name": "Ethereal Pastoral Nostalgia — Sheer Backlit Blush",
+    "prompt": "ethereal natural light, dreamy soft focus, wind-swept sheer fabric, low angle perspective, muted pastel palette, golden hour glow, shallow depth of field, nostalgic analog aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Pastoral Nostalgia — Sheer Backlit Blush",
+    "thumbnail": "samples/Ethereal_Pastoral_Nostalgia_—_Sheer_Backlit_Blush.webp"
+  },
+  {
+    "name": "Ethereal Pictorialist Haze — Golden Leak Bokeh",
+    "prompt": "extreme soft focus, pictorialist film grain, dreamlike bokeh, diffused golden hour, hazy silhouette, vintage light leaks, painterly atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Pictorialist Haze — Golden Leak Bokeh",
+    "thumbnail": "samples/Ethereal_Pictorialist_Haze_—_Golden_Leak_Bokeh.webp"
+  },
+  {
+    "name": "Ethereal Prismatic Refraction",
+    "prompt": "prismatic light refraction, ethereal soft focus, chromatic aberration, golden hour glow, dreamy lens flare, analog film grain, shimmering bokeh. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵棱镜Refraction",
+    "thumbnail": "samples/Ethereal_Prismatic_Refraction.webp"
+  },
+  {
+    "name": "Ethereal Solarpunk Dreamscapes",
+    "prompt": "aerial landscape, golden hour lighting, biophilic architecture, vibrant flower fields, surreal utopian landscape, atmospheric haze, solarpunk aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵SolarpunkDreamscapes",
+    "thumbnail": "samples/Ethereal_Solarpunk_Dreamscapes.webp"
+  },
+  {
+    "name": "Hazy Amber Nostalgia",
+    "prompt": "35mm vintage film grain, golden hour amber glow, soft focus dreamlike haze, nostalgic analog aesthetic, minimalist coastal silhouettes, low-contrast sepia tones, ethereal atmospheric depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "朦胧琥珀Nostalgia",
+    "thumbnail": "samples/Hazy_Amber_Nostalgia.webp"
+  },
+  {
+    "name": "Luminous Amber Botanical",
+    "prompt": "extreme macro photography, amber and terracotta palette, backlit botanical, chiaroscuro lighting, shallow depth of field, translucent petal texture, golden hour glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮琥珀Botanical",
+    "thumbnail": "samples/Luminous_Amber_Botanical.webp"
+  },
+  {
+    "name": "Luminous Amber Macro",
+    "prompt": "extreme macro photography, golden hour lighting, hyper-realistic skin texture, glistening liquid droplets, amber color palette, shallow depth of field, sensual cinematic mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮琥珀微距",
+    "thumbnail": "samples/Luminous_Amber_Macro.webp"
+  },
+  {
+    "name": "Luminous Amber Silhouette — Golden Duotone Grain",
+    "prompt": "amber backlighting, stark silhouette, golden hour glow, high contrast, analog film grain, soft-focus atmosphere, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮琥珀剪影黄金双色调颗粒",
+    "thumbnail": "samples/Luminous_Amber_Silhouette_—_Golden_Duotone_Grain.webp"
+  },
+  {
+    "name": "Luminous Analog Nostalgia",
+    "prompt": "vintage 35mm film grain, golden hour backlighting, dreamy lens flares, hazy atmospheric light, retro analog photography, soft focus texture, cinematic nostalgic mood. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮模拟Nostalgia",
+    "thumbnail": "samples/Luminous_Analog_Nostalgia.webp"
+  },
+  {
+    "name": "Luminous Coastal Macro",
+    "prompt": "extreme macro beauty photography, dewy sun-kissed skin, golden hour backlighting, high-contrast specular highlights, organic skin texture, shallow depth of field, coastal naturalism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮海岸微距",
+    "thumbnail": "samples/Luminous_Coastal_Macro.webp"
+  },
+  {
+    "name": "Luminous Cobalt Dreamscape",
+    "prompt": "cobalt and cyan palette, shimmering water textures, vintage film grain, golden hour light refraction, ethereal macro photography, sparkling holographic elements, starburst lens flares. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮CobaltDreamscape",
+    "thumbnail": "samples/Luminous_Cobalt_Dreamscape.webp"
+  },
+  {
+    "name": "Luminous Ethereal Impressionism — Golden Flare Bokeh",
+    "prompt": "dreamy soft focus, sun-drenched golden hour, ethereal bokeh, painterly motion blur, nostalgic film aesthetic, lens flare, double exposure. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮空灵印象派黄金光晕Bokeh",
+    "thumbnail": "samples/Luminous_Ethereal_Impressionism_—_Golden_Flare_Bokeh.webp"
+  },
+  {
+    "name": "Luminous Geometric Brutalism",
+    "prompt": "architectural abstraction, geometric grid facade, golden hour lighting, high-contrast reflections, monumental skyscraper, minimalist urbanism, teal and amber color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮几何Brutalism",
+    "thumbnail": "samples/Luminous_Geometric_Brutalism.webp"
+  },
+  {
+    "name": "Luminous Geometric Surrealism",
+    "prompt": "golden hour lighting, painterly oil texture, geometric surrealism, warm amber palette, tactile fabric textures, chiaroscuro shadows, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮几何超现实",
+    "thumbnail": "samples/Luminous_Geometric_Surrealism.webp"
+  },
+  {
+    "name": "Luminous Gilded Dreamscape",
+    "prompt": "golden hour lighting, ethereal amber glow, extreme macro detail, shimmering iridescent textures, cinematic soft focus, radiant lens flare, dreamlike bokeh. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮GildedDreamscape",
+    "thumbnail": "samples/Luminous_Gilded_Dreamscape.webp"
+  },
+  {
+    "name": "Luminous Hyper-Intimate Portraiture",
+    "prompt": "extreme macro portrait, dewy skin texture, golden hour lighting, hyperrealistic detail, soft-focus background, tactile natural beauty, sharp directional light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Hyper亲密肖像摄影",
+    "thumbnail": "samples/Luminous_Hyper-Intimate_Portraiture.webp"
+  },
+  {
+    "name": "Luminous Impressionist Pastoral — Dreamcore Golden Dapple",
+    "prompt": "dappled sunlight, painterly digital brushstrokes, lush meadow landscape, high-angle perspective, golden hour glow, vibrant nature palette, nostalgic dreamcore. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Impressionist Pastoral — Dreamcore Golden Dapple",
+    "thumbnail": "samples/Luminous_Impressionist_Pastoral_—_Dreamcore_Golden_Dapple.webp"
+  },
+  {
+    "name": "Luminous Metallic Surrealism",
+    "prompt": "golden hour lighting, cinematic depth, specular highlights, reflective metallic textures, surreal juxtaposition, warm amber glow, organic contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮金属超现实",
+    "thumbnail": "samples/Luminous_Metallic_Surrealism.webp"
+  },
+  {
+    "name": "Luminous Natural Transcendence",
+    "prompt": "golden hour, ethereal light rays, intense lens flare, high contrast nature photography, backlit foliage, dreamy soft focus, shimmering reflections. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮自然Transcendence",
+    "thumbnail": "samples/Luminous_Natural_Transcendence.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Fluidity",
+    "prompt": "nocturnal atmospheric lighting, liquid light refraction, deep blue and amber palette, painterly motion blur, shimmering golden hour reflections, cinematic soft focus, abstract fluid textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行Fluidity",
+    "thumbnail": "samples/Luminous_Nocturnal_Fluidity.webp"
+  },
+  {
+    "name": "Luminous Twilight Dreamscapes",
+    "prompt": "volumetric cumulus clouds, deep indigo and fiery orange gradient, golden hour twilight, painterly texture, high contrast silhouettes, cinematic atmospheric lighting, sublime skyscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮暮光Dreamscapes",
+    "thumbnail": "samples/Luminous_Twilight_Dreamscapes.webp"
+  },
+  {
+    "name": "Luminous Velvet Landscapes",
+    "prompt": "golden hour lighting, tactile fur-like grass, winding river patterns, surreal aerial landscape, monochromatic gold and moss, soft velvet texture, organic flowing forms. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮天鹅绒Landscapes",
+    "thumbnail": "samples/Luminous_Velvet_Landscapes.webp"
+  },
+  {
+    "name": "Minimalist Pastoral Chiaroscuro",
+    "prompt": "minimalist landscape photography, chiaroscuro lighting, rolling green hills, dramatic shadows, geometric natural composition, golden hour light, aerial perspective, serene pastoral atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简PastoralChiaroscuro",
+    "thumbnail": "samples/Minimalist_Pastoral_Chiaroscuro.webp"
+  },
+  {
+    "name": "Monolithic Mythic Horizons",
+    "prompt": "monumental fantasy scale, overgrown ancient ruins, atmospheric golden hour light, volumetric mist and haze, vertiginous cliffside architecture, epic mythic landscape, earthy stone color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic Mythic Horizons",
+    "thumbnail": "samples/Monolithic_Mythic_Horizons.webp"
+  },
+  {
+    "name": "Monumental Atmospheric Architecture",
+    "prompt": "cinematic high-angle perspective, monumental scale architecture, dramatic chiaroscuro lighting, atmospheric environmental storytelling, textured stone and industrial materials, golden hour illumination, complex geometric composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monumental氛围建筑",
+    "thumbnail": "samples/Monumental_Atmospheric_Architecture.webp"
+  },
+  {
+    "name": "Monumental Industrial Golden Haze",
+    "prompt": "cinematic megastructure, golden hour atmosphere, weathered industrial texture, colossal scale, hazy atmospheric perspective, dieselpunk ruins, dramatic low-angle composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monumental Industrial Golden Haze",
+    "thumbnail": "samples/Monumental_Industrial_Golden_Haze.webp"
+  },
+  {
+    "name": "Mystical Folklore Dreamscape",
+    "prompt": "ethereal soft focus, vintage film grain, misty forest atmosphere, muted earth tones, dreamy backlighting, folklore aesthetic, golden hour haze. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Mystical Folklore Dreamscape",
+    "thumbnail": "samples/Mystical_Folklore_Dreamscape.webp"
+  },
+  {
+    "name": "Nostalgic Amber Cinematic",
+    "prompt": "cinematic golden hour, analog film grain, high-contrast silhouette, warm amber lighting, moody atmospheric haze, low-angle composition, nostalgic depth of field. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic琥珀电影感",
+    "thumbnail": "samples/Nostalgic_Amber_Cinematic.webp"
+  },
+  {
+    "name": "Nostalgic Amber Haze",
+    "prompt": "analog film grain, golden hour haze, soft focus silhouette, warm sunset palette, dreamlike motion blur, vintage 35mm aesthetic, light leak, nostalgic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Amber Haze",
+    "thumbnail": "samples/Nostalgic_Amber_Haze.webp"
+  },
+  {
+    "name": "Nostalgic Analog Dreamscape — Golden Double Exposure",
+    "prompt": "analog film grain, golden hour glow, dreamy soft focus, vintage light leaks, nostalgic double exposure, warm amber palette, cinematic hazy atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Analog Dreamscape — Golden Double Exposure",
+    "thumbnail": "samples/Nostalgic_Analog_Dreamscape_—_Golden_Double_Exposure.webp"
+  },
+  {
+    "name": "Nostalgic Analog Earth",
+    "prompt": "35mm analog film grain, nostalgic vintage aesthetic, warm golden hour lighting, tactile earthy textures, soft focus vignette, saturated retro color palette, macro nature photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic模拟土",
+    "thumbnail": "samples/Nostalgic_Analog_Earth.webp"
+  },
+  {
+    "name": "Nostalgic Analog Introspection",
+    "prompt": "35mm analog film grain, golden hour lighting, cinematic intimacy, soft focus nostalgia, low-key moody shadows, warm amber color palette, dreamlike suburban twilight. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Analog Introspection",
+    "thumbnail": "samples/Nostalgic_Analog_Introspection.webp"
+  },
+  {
+    "name": "Nostalgic Analog Wilderness",
+    "prompt": "vintage analog film, hazy golden hour, atmospheric forest mist, 35mm film grain, muted earth tones, natural lens flare, fisheye lens distortion, retro cinematic texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Analog Wilderness",
+    "thumbnail": "samples/Nostalgic_Analog_Wilderness.webp"
+  },
+  {
+    "name": "Nostalgic Cinematic Melancholy",
+    "prompt": "analog film grain, cinematic low-key lighting, golden hour lens flare, brutalist architecture, silhouetted figure, vintage 35mm aesthetic, hazy atmospheric depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic电影感忧郁",
+    "thumbnail": "samples/Nostalgic_Cinematic_Melancholy.webp"
+  },
+  {
+    "name": "Nostalgic Cinematic Solitude — Earthen Twilight Glow",
+    "prompt": "analog film grain, golden hour lighting, shallow depth of field, muted earth tones, introspective mood, cinematic atmosphere, soft focus. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Cinematic Solitude — Earthen Twilight Glow",
+    "thumbnail": "samples/Nostalgic_Cinematic_Solitude_-_Earthen_Twilight_Glow.webp"
+  },
+  {
+    "name": "Nostalgic Golden Autumn",
+    "prompt": "golden hour lighting, autumnal color palette, nostalgic atmosphere, cozy forest pathway, backlit canopy, painterly digital texture, retro pixel art influence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic黄金秋",
+    "thumbnail": "samples/Nostalgic_Golden_Autumn.webp"
+  },
+  {
+    "name": "Nostalgic Golden Haze",
+    "prompt": "golden hour backlighting, dreamy soft-focus haze, vintage 35mm film aesthetic, diffused sheer curtain light, warm amber color palette, ethereal lens flare, nostalgic motion blur. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic Golden Haze",
+    "thumbnail": "samples/Nostalgic_Golden_Haze.webp"
+  }
+]

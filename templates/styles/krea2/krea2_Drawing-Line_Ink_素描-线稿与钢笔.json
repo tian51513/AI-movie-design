@@ -1,0 +1,611 @@
+[
+  {
+    "name": "Amber Chiaroscuro Minimalism — Crimson Studio Glow",
+    "prompt": "minimalist silhouette portrait, dramatic amber backlighting, high-contrast chiaroscuro, saturated warm gradient, sculptural form, cinematic rim lighting, graphic studio composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀Chiaroscuro极简主义绯红工作室发光",
+    "thumbnail": "samples/Amber_Chiaroscuro_Minimalism_—_Crimson_Studio_Glow.webp"
+  },
+  {
+    "name": "Analog Glitch Fantasy",
+    "prompt": "low-poly 3D, PS1 graphics style, CRT scanlines, pixel art, dithering, chromatic aberration, retro computer UI, surreal dark fantasy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟故障幻想",
+    "thumbnail": "samples/Analog_Glitch_Fantasy.webp"
+  },
+  {
+    "name": "Analog Glitch Nostalgia — Split-Tone Warmth",
+    "prompt": "analog glitch aesthetic, vintage film grain, CRT scanlines, dreamy soft focus, chromatic aberration, warm orange and cyan grading, low-resolution texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Analog Glitch Nostalgia — Split-Tone Warmth",
+    "thumbnail": "samples/Analog_Glitch_Nostalgia_—_Split-Tone_Warmth.webp"
+  },
+  {
+    "name": "Atmospheric Brutalist Minimalism",
+    "prompt": "chiaroscuro lighting, low-key moody atmosphere, tactile brutalist textures, minimalist geometric composition, cinematic grainy finish, surrealist floating elements, muted cool-toned palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围粗野主义极简主义",
+    "thumbnail": "samples/Atmospheric_Brutalist_Minimalism.webp"
+  },
+  {
+    "name": "Atmospheric Ink Minimalism",
+    "prompt": "Sumi-e ink wash, monochrome watercolor, atmospheric mist, minimalist landscape, negative space, fluid brushstrokes, charcoal graphite texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围墨极简主义",
+    "thumbnail": "samples/Atmospheric_Ink_Minimalism.webp"
+  },
+  {
+    "name": "Atmospheric Shin-Hanga Nocturnes",
+    "prompt": "shin-hanga style, japanese woodblock print, nocturnal landscape, indigo and prussian blue palette, washi paper texture, hasui kawase inspired, atmospheric twilight. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围ShinHangaNocturnes",
+    "thumbnail": "samples/Atmospheric_Shin-Hanga_Nocturnes.webp"
+  },
+  {
+    "name": "Avant-Garde Crimson Noir",
+    "prompt": "high-fashion editorial, stark chiaroscuro lighting, deep crimson and black palette, avant-garde portraiture, glossy latex and matte textures, minimalist graphic composition, surreal gothic elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "AvantGarde绯红黑色",
+    "thumbnail": "samples/Avant-Garde_Crimson_Noir.webp"
+  },
+  {
+    "name": "Bio-Synthetic Tactical Specimen",
+    "prompt": "bio-synthetic, translucent resin, glowing green HUD, cybernetic anatomy, stark black background, clinical studio lighting, intricate circuitry. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Bio合成TacticalSpecimen",
+    "thumbnail": "samples/Bio-Synthetic_Tactical_Specimen.webp"
+  },
+  {
+    "name": "Bioluminescent Nocturnal Noir",
+    "prompt": "bioluminescent glow, stark black background, intricate fine line art, high-contrast noir, neon teal and magenta, nocturnal fantasy, surreal silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Bioluminescent夜行黑色",
+    "thumbnail": "samples/Bioluminescent_Nocturnal_Noir.webp"
+  },
+  {
+    "name": "Bioluminescent Techno-Organic Synthesis",
+    "prompt": "translucent resin sculpture, bioluminescent circuitry, techno-organic anatomy, stark black background, fiber optic wiring, macro studio photography, refractive glass textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Bioluminescent Techno-Organic Synthesis",
+    "thumbnail": "samples/Bioluminescent_Techno-Organic_Synthesis.webp"
+  },
+  {
+    "name": "Bold Expressive Illustration",
+    "prompt": "stylized digital illustration, high-contrast lighting, bold outlines, expressive brushstrokes, vibrant color palette, contemporary graphic style, dynamic rim lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "大胆Expressive插画",
+    "thumbnail": "samples/Bold_Expressive_Illustration.webp"
+  },
+  {
+    "name": "Bold Graphic Vector Pop",
+    "prompt": "flat vector illustration, bold graphic style, saturated color blocking, minimalist clean lines, geometric character design, contemporary editorial art, high contrast pop aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "大胆图形VectorPop",
+    "thumbnail": "samples/Bold_Graphic_Vector_Pop.webp"
+  },
+  {
+    "name": "Botanical Surrealist Minimalism",
+    "prompt": "surrealist portraiture, botanical integration, minimalist editorial, muted sage green palette, soft diffused lighting, symmetrical composition, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Botanical超现实极简主义",
+    "thumbnail": "samples/Botanical_Surrealist_Minimalism.webp"
+  },
+  {
+    "name": "Brutalist Glitch Noir",
+    "prompt": "high-contrast black and white, brutalist geometric forms, pixel sorting glitch, digital decay, stark chiaroscuro, cyberpunk gothic, scanline artifacts. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "粗野主义故障黑色",
+    "thumbnail": "samples/Brutalist_Glitch_Noir.webp"
+  },
+  {
+    "name": "Chromatic Glitch Etherea",
+    "prompt": "chromatic aberration, prismatic light leak, digital glitch distortion, ethereal dreamlike atmosphere, high-contrast dark aesthetic, pixel sorting, vhs scanline artifacts. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色故障Etherea",
+    "thumbnail": "samples/Chromatic_Glitch_Etherea.webp"
+  },
+  {
+    "name": "Chromatic Surrealist Portraits",
+    "prompt": "monochromatic portraiture, selective color saturation, surreal symbolism, high-contrast graphic elements, intricate line work, digital painting, vibrant neon and crimson accents. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "彩色超现实Portraits",
+    "thumbnail": "samples/Chromatic_Surrealist_Portraits.webp"
+  },
+  {
+    "name": "Cinematic Geometric Chiaroscuro",
+    "prompt": "high-contrast chiaroscuro, dramatic golden hour shadows, minimalist geometric composition, cinematic urban isolation, aerial perspective, stark silhouette, desaturated color grading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感几何Chiaroscuro",
+    "thumbnail": "samples/Cinematic_Geometric_Chiaroscuro.webp"
+  },
+  {
+    "name": "Clinical Ethereal Minimalism — Icy Porcelain",
+    "prompt": "clinical studio lighting, icy blue and white palette, high-fashion editorial portrait, ethereal minimalism, soft doll-like aesthetic, translucent fabric textures, desaturated cool tones, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Clinical Ethereal Minimalism — Icy Porcelain",
+    "thumbnail": "samples/Clinical_Ethereal_Minimalism_—_Icy_Porcelain.webp"
+  },
+  {
+    "name": "Clinical Surreal Minimalism",
+    "prompt": "high-key minimalism, sterile white environment, diffused soft lighting, architectural geometric forms, editorial surrealism, shallow depth of field, clean crisp textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Clinical超现实极简主义",
+    "thumbnail": "samples/Clinical_Surreal_Minimalism.webp"
+  },
+  {
+    "name": "Crimson Ink Macabre",
+    "prompt": "dark fantasy, ink wash, crimson accents, high-contrast engraving, gothic surrealism, skeletal motifs, textured parchment, intricate line art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红墨恐怖怪诞",
+    "thumbnail": "samples/Crimson_Ink_Macabre.webp"
+  },
+  {
+    "name": "Dynamic Electric Vectorism",
+    "prompt": "flat vector illustration, bold saturated color palette, extreme low-angle perspective, clean black vector linework, dynamic athletic motion, mid-century graphic style, minimalist shading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态ElectricVectorism",
+    "thumbnail": "samples/Dynamic_Electric_Vectorism.webp"
+  },
+  {
+    "name": "Earthy Mystical Nouveau",
+    "prompt": "intricate ink line art, Art Nouveau aesthetic, muted earth tones, surreal folklore, woodcut texture, melancholic whimsy, organic patterns. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "泥土色Mystical新艺术",
+    "thumbnail": "samples/Earthy_Mystical_Nouveau.webp"
+  },
+  {
+    "name": "Electric Geometric Vector",
+    "prompt": "vector illustration, sharp geometric shapes, high contrast color palette, minimalist graphic design, clean digital lines, flat design with gradients, electric blue and neon accents. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric Geometric Vector",
+    "thumbnail": "samples/Electric_Geometric_Vector.webp"
+  },
+  {
+    "name": "Electric Noir Futurism",
+    "prompt": "cyberpunk noir, high-contrast silhouette, neon rim lighting, duotone lighting, saturated electric color palette, futuristic cinematic portrait, minimalist graphic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Electric Noir Futurism",
+    "thumbnail": "samples/Electric_Noir_Futurism.webp"
+  },
+  {
+    "name": "Ethereal Pastel Surrealism — Naive Watercolor",
+    "prompt": "naive surrealism, pastel color palette, biomorphic shapes, soft textured illustration, dreamy whimsical atmosphere, botanical line art, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵粉彩超现实Naive水彩",
+    "thumbnail": "samples/Ethereal_Pastel_Surrealism_—_Naive_Watercolor.webp"
+  },
+  {
+    "name": "Ethereal Pointillist Storybook",
+    "prompt": "pointillism, stippled texture, muted pastel palette, Art Nouveau influence, soft dappled light, folkloric aesthetic, dreamy atmosphere, fine-line illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵PointillistStorybook",
+    "thumbnail": "samples/Ethereal_Pointillist_Storybook.webp"
+  },
+  {
+    "name": "Ethereal Surrealist Minimalism — Indigo Vapor",
+    "prompt": "surrealist minimalism, volumetric white elements, deep indigo background, magical realism, dramatic chiaroscuro, trompe l'oeil, clean architectural composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵超现实极简主义靛蓝Vapor",
+    "thumbnail": "samples/Ethereal_Surrealist_Minimalism_—_Indigo_Vapor.webp"
+  },
+  {
+    "name": "Expressive Fauvist Sketchbook",
+    "prompt": "Fauvist color palette, oil pastel texture, expressive gestural brushstrokes, naive folk art influence, wax crayon aesthetic, minimalist line art, non-naturalistic color blocking, cream background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Expressive Fauvist Sketchbook",
+    "thumbnail": "samples/Expressive_Fauvist_Sketchbook.webp"
+  },
+  {
+    "name": "Expressive Graphic Ink",
+    "prompt": "hand-drawn ink illustration, minimalist line art, high-contrast graphics, expressive character design, stark white background, clean vector style, playful graphic aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Expressive图形墨",
+    "thumbnail": "samples/Expressive_Graphic_Ink.webp"
+  },
+  {
+    "name": "Geometric Neo-Modernist Synthesis",
+    "prompt": "flat vector illustration, geometric minimalism, stylized symmetry, warm earth and electric contrasts, modern folk art, clean line work, minimalist graphic design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "几何NeoModernistSynthesis",
+    "thumbnail": "samples/Geometric_Neo-Modernist_Synthesis.webp"
+  },
+  {
+    "name": "Geometric Urban Minimalism",
+    "prompt": "architectural minimalism, geometric grid facade, symmetrical urban composition, high contrast, brutalist influence, color blocking, repetitive patterns. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "几何都市极简主义",
+    "thumbnail": "samples/Geometric_Urban_Minimalism.webp"
+  },
+  {
+    "name": "Graphic Cobalt Minimalism",
+    "prompt": "cobalt blue and white, minimalist line art, hand-drawn aesthetic, graphic vector style, monochromatic ink illustration, clean negative space, architectural sketch influence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Cobalt极简主义",
+    "thumbnail": "samples/Graphic_Cobalt_Minimalism.webp"
+  },
+  {
+    "name": "Graphic Crimson Minimalism — Art Deco Vector",
+    "prompt": "minimalist graphic illustration, stark black silhouette, high-contrast crimson background, Art Deco line art, vector design, geometric framing, sensual minimalist noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形绯红极简主义艺术装饰Vector",
+    "thumbnail": "samples/Graphic_Crimson_Minimalism_—_Art_Deco_Vector.webp"
+  },
+  {
+    "name": "Graphic Maximalist Illustration",
+    "prompt": "intricate line work, maximalist pattern layering, vibrant saturated palette, graphic black ink outlines, stylized architectural detail, high-contrast shadow play. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Maximalist插画",
+    "thumbnail": "samples/Graphic_Maximalist_Illustration.webp"
+  },
+  {
+    "name": "Graphic Monoline Minimalism",
+    "prompt": "minimalist vector illustration, bold monoline art, flat graphic design, high-contrast color palette, geometric simplification, clean white silhouettes, modernist icon design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Monoline极简主义",
+    "thumbnail": "samples/Graphic_Monoline_Minimalism.webp"
+  },
+  {
+    "name": "Graphic Red Minimalism",
+    "prompt": "bold red brushstrokes, minimalist line art, naive illustration, high-contrast palette, textured paper grain, graphic shapes, expressive ink work. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Red极简主义",
+    "thumbnail": "samples/Graphic_Red_Minimalism.webp"
+  },
+  {
+    "name": "Graphic Retro Minimalist",
+    "prompt": "vintage fashion illustration, minimalist line art, bold ink strokes, limited color palette, retro graphic style, high-contrast composition, textured paper background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形复古极简",
+    "thumbnail": "samples/Graphic_Retro_Minimalist.webp"
+  },
+  {
+    "name": "Graphic Retro Printmaker",
+    "prompt": "bold black outlines, risograph print aesthetic, saturated color blocking, linocut texture, mid-century graphic design, stipple shading, minimalist editorial illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形复古Printmaker",
+    "thumbnail": "samples/Graphic_Retro_Printmaker.webp"
+  },
+  {
+    "name": "Graphic Surrealist Mosaic",
+    "prompt": "graphic illustration, intricate line art, surrealist composition, textured stippling, bold color palette, flat geometric perspective, stylized architecture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形超现实Mosaic",
+    "thumbnail": "samples/Graphic_Surrealist_Mosaic.webp"
+  },
+  {
+    "name": "Graphic Ukiyo-e Modernism",
+    "prompt": "graphic illustration, mid-century modern architecture, ukiyo-e woodblock style, stipple texture, fine line work, high-contrast palette, minimalist landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形UkiyoeModernism",
+    "thumbnail": "samples/Graphic_Ukiyo-e_Modernism.webp"
+  },
+  {
+    "name": "High-Contrast Graphic Minimalist",
+    "prompt": "minimalist vector illustration, bold flat silhouettes, duotone orange and black, high-contrast graphic art, mid-century screenprint aesthetic, clean vector line art, vibrant flat color fields. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "High对比图形极简",
+    "thumbnail": "samples/High-Contrast_Graphic_Minimalist.webp"
+  },
+  {
+    "name": "Iridescent Digital Distortion",
+    "prompt": "chromatic aberration, holographic iridescent texture, digital glitch distortion, neon spectrum gradients, CRT scanline artifacts, liquid metallic sheen, pixel sorted patterns. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Iridescent Digital Distortion",
+    "thumbnail": "samples/Iridescent_Digital_Distortion.webp"
+  },
+  {
+    "name": "Kinetic Monochrome Noir — Graphic Line Streaks",
+    "prompt": "high contrast monochrome, motion blur portrait, dramatic chiaroscuro lighting, cinematic film grain, graphic line art fusion, long exposure streaks, psychological noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "动态单色黑色图形线Streaks",
+    "thumbnail": "samples/Kinetic_Monochrome_Noir_—_Graphic_Line_Streaks.webp"
+  },
+  {
+    "name": "Luminescent Sky Minimalism",
+    "prompt": "minimalist line art, glowing white doodles, twilight blue hour, high contrast silhouettes, ethereal light painting, graphic negative space, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminescent天空极简主义",
+    "thumbnail": "samples/Luminescent_Sky_Minimalism.webp"
+  },
+  {
+    "name": "Luminous Cobalt Noir — Geometric Shadow Play",
+    "prompt": "high-contrast silhouette, cool blue backlighting, minimalist graphic composition, cobalt and cyan palette, dramatic rim lighting, cinematic noir, textured material definition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Cobalt Noir — Geometric Shadow Play",
+    "thumbnail": "samples/Luminous_Cobalt_Noir_—_Geometric_Shadow_Play.webp"
+  },
+  {
+    "name": "Luminous Gothic Maximalism",
+    "prompt": "maximalist botanical tapestry, bioluminescent color palette, dark moody background, psychedelic gothic illustration, intricate line art, saturated jewel tones, surreal organic patterns. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮哥特Maximalism",
+    "thumbnail": "samples/Luminous_Gothic_Maximalism.webp"
+  },
+  {
+    "name": "Luminous Impasto Chiaroscuro",
+    "prompt": "chiaroscuro lighting, thick impasto oil texture, glowing amber highlights, high contrast composition, visceral organic forms, fine gold line art, dramatic moody shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮厚涂Chiaroscuro",
+    "thumbnail": "samples/Luminous_Impasto_Chiaroscuro.webp"
+  },
+  {
+    "name": "Luminous Topographic Surrealism",
+    "prompt": "topographic contour lines, high-contrast noir, biomorphic abstraction, glowing magma veins, minimalist line art, textured void, fluid organic patterns. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Topographic超现实",
+    "thumbnail": "samples/Luminous_Topographic_Surrealism.webp"
+  },
+  {
+    "name": "Midcentury Mod Surrealist",
+    "prompt": "mid-century modern illustration, bold ink outlines, flat color blocking, vintage fashion aesthetic, whimsical surrealism, paper grain texture, minimalist graphic design. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "MidcenturyMod超现实",
+    "thumbnail": "samples/Midcentury_Mod_Surrealist.webp"
+  },
+  {
+    "name": "Minimalist Aerial Surrealism",
+    "prompt": "top-down aerial perspective, minimalist composition, stark negative space, high-key lighting, geometric architectural abstraction, crisp clean shadows, saturated turquoise accents. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简空中超现实",
+    "thumbnail": "samples/Minimalist_Aerial_Surrealism.webp"
+  },
+  {
+    "name": "Minimalist Blue Nostalgia",
+    "prompt": "minimalist line art, bold ink outlines, high contrast, flat color fields, nostalgic atmosphere, limited color palette, dreamlike composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简BlueNostalgia",
+    "thumbnail": "samples/Minimalist_Blue_Nostalgia.webp"
+  },
+  {
+    "name": "Minimalist Esoteric Geometry",
+    "prompt": "minimalist vector art, high contrast composition, etched line art, dark charcoal background, esoteric symbolism, geometric wireframe, textured print aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简EsotericGeometry",
+    "thumbnail": "samples/Minimalist_Esoteric_Geometry.webp"
+  },
+  {
+    "name": "Minimalist Ligne Claire",
+    "prompt": "clean line art, flat color fills, minimalist composition, ligne claire, muted pastel palette, graphic silhouette, digital illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简LigneClaire",
+    "thumbnail": "samples/Minimalist_Ligne_Claire.webp"
+  },
+  {
+    "name": "Minimalist Red Ink Whimsy",
+    "prompt": "minimalist line art, vibrant red and black ink, risograph texture, whimsical hand-drawn style, high-contrast graphic illustration, naive art influence, off-white background, expressive brushstrokes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简Red墨Whimsy",
+    "thumbnail": "samples/Minimalist_Red_Ink_Whimsy.webp"
+  },
+  {
+    "name": "Minimalist Retro Vector",
+    "prompt": "flat vector illustration, minimalist graphic style, hard-edged shadows, sun-drenched color palette, clean line art, retro-modern, nostalgic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简复古Vector",
+    "thumbnail": "samples/Minimalist_Retro_Vector.webp"
+  },
+  {
+    "name": "Minimalist Whimsical Ink",
+    "prompt": "minimalist ink illustration, watercolor and gouache wash, expressive fine line art, negative space composition, muted and vibrant color blocking, stylized graphic silhouettes, tactile paint texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简Whimsical墨",
+    "thumbnail": "samples/Minimalist_Whimsical_Ink.webp"
+  },
+  {
+    "name": "Monochromatic Blue Minimalism",
+    "prompt": "monochromatic blue palette, minimalist composition, stipple texture, grainy atmospheric depth, negative space, high contrast silhouette, volumetric lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色Blue极简主义",
+    "thumbnail": "samples/Monochromatic_Blue_Minimalism.webp"
+  },
+  {
+    "name": "Monochromatic Cyan Nocturne",
+    "prompt": "cobalt blue, stark silhouette, rim lighting, chiaroscuro, minimalist composition, cinematic lighting, cyan color palette, high contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色青色Nocturne",
+    "thumbnail": "samples/Monochromatic_Cyan_Nocturne.webp"
+  },
+  {
+    "name": "Monochromatic Indigo Cartography",
+    "prompt": "monochromatic indigo ink, vintage engraving style, topographic contour lines, warm cream paper texture, cross-hatching and stippling, minimalist graphic composition, surreal atmospheric linework. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色靛蓝Cartography",
+    "thumbnail": "samples/Monochromatic_Indigo_Cartography.webp"
+  },
+  {
+    "name": "Monochromatic Negative Space",
+    "prompt": "negative space silhouette, ultramarine blue ink, textured cream paper, stippled and cross-hatched, minimalist monochromatic, hand-drawn tactile aesthetic, cyanotype inspired. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色消极空间",
+    "thumbnail": "samples/Monochromatic_Negative_Space.webp"
+  },
+  {
+    "name": "Monochrome Algorithmic Precision",
+    "prompt": "generative minimalism, high-contrast monochrome, vector line art, geometric abstraction, mathematical grid, topographic wireframe, optical illusion, technical ink drafting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色算法Precision",
+    "thumbnail": "samples/Monochrome_Algorithmic_Precision.webp"
+  },
+  {
+    "name": "Monochrome Architectural Noir",
+    "prompt": "black and white architectural photography, high-contrast chiaroscuro lighting, brutalist concrete geometry, extreme perspective, geometric repetition, cinematic noir atmosphere, minimalist structural depth. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色Architectural黑色",
+    "thumbnail": "samples/Monochrome_Architectural_Noir.webp"
+  },
+  {
+    "name": "Monochrome Glitch Brutalism — Op-Art Slitscan",
+    "prompt": "high-contrast monochrome, scanline glitch, op-art distortion, halftone patterns, dithered bitmap, minimalist brutalism, analogue screen artifact. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monochrome Glitch Brutalism — Op-Art Slitscan",
+    "thumbnail": "samples/Monochrome_Glitch_Brutalism_—_Op-Art_Slitscan.webp"
+  },
+  {
+    "name": "Monochrome Glitch Topography",
+    "prompt": "high-contrast monochrome, topographic line art, glitch art distortion, moire pattern, chromatic aberration, optical illusion, digital signal degradation, psychedelic wave. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色故障Topography",
+    "thumbnail": "samples/Monochrome_Glitch_Topography.webp"
+  },
+  {
+    "name": "Monochrome Graphic Grids",
+    "prompt": "high-contrast black and white, geometric grid overlay, stark silhouette, halftone line art, graphic minimalism, backlit composition, op-art influence. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色图形Grids",
+    "thumbnail": "samples/Monochrome_Graphic_Grids.webp"
+  },
+  {
+    "name": "Monolithic Brutalist Noir — Greeble-Dense Ink",
+    "prompt": "monochrome high-contrast, brutalist megastructures, industrial greeble, dystopian atmosphere, stark chiaroscuro lighting, retro-futuristic geometry, ink-style line art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic Brutalist Noir — Greeble-Dense Ink",
+    "thumbnail": "samples/Monolithic_Brutalist_Noir_—_Greeble-Dense_Ink.webp"
+  },
+  {
+    "name": "Monolithic Neon Minimalism",
+    "prompt": "minimalist cyberpunk, monolithic brutalism, glowing neon light, high-contrast chiaroscuro, cinematic atmospheric fog, geometric silhouettes, deep black voids, scale contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic霓虹极简主义",
+    "thumbnail": "samples/Monolithic_Neon_Minimalism.webp"
+  },
+  {
+    "name": "Monolithic Solar Minimalism",
+    "prompt": "monolithic brutalism, warm earth-toned concrete, sharp architectural shadows, minimalist geometric composition, stark sunlight, textural plaster, serene desert atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "MonolithicSolar极简主义",
+    "thumbnail": "samples/Monolithic_Solar_Minimalism.webp"
+  },
+  {
+    "name": "Neon Botanical Minimalism",
+    "prompt": "minimalist botanical photography, vibrant color gradient background, neon duotone lighting, sculptural flora, high-contrast macro, saturated color theory, studio portrait. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Botanical极简主义",
+    "thumbnail": "samples/Neon_Botanical_Minimalism.webp"
+  },
+  {
+    "name": "Nocturnal Topographic Glitch",
+    "prompt": "topographic line art, glowing gradients, stark black background, vintage grain texture, digital glitch distortion, minimalist surrealism, high-contrast noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行Topographic故障",
+    "thumbnail": "samples/Nocturnal_Topographic_Glitch.webp"
+  },
+  {
+    "name": "Nostalgic Painterly Minimalism",
+    "prompt": "gouache illustration, mid-century modern, impasto texture, teal and mint palette, minimalist composition, painterly aesthetic, retro nostalgia. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic绘画感极简主义",
+    "thumbnail": "samples/Nostalgic_Painterly_Minimalism.webp"
+  },
+  {
+    "name": "Nostalgic Retro-Futurist Minimalism",
+    "prompt": "symmetrical composition, mid-century modern, retro-futurism, soft cinematic lighting, liminal space, analog film grain, muted pastel palette, vintage corporate aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Nostalgic复古未来主义极简主义",
+    "thumbnail": "samples/Nostalgic_Retro-Futurist_Minimalism.webp"
+  },
+  {
+    "name": "Playful Minimalist Ink",
+    "prompt": "black and white ink drawing, minimalist character design, whimsical line art, quirky doodle style, clean bold outlines, naive hand-drawn aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Playful极简墨",
+    "thumbnail": "samples/Playful_Minimalist_Ink.webp"
+  },
+  {
+    "name": "Raw Monochrome Sketchwork",
+    "prompt": "monochrome ink illustration, expressive cross-hatching, hand-drawn aesthetic, high-contrast pen work, gestural line art, sketchbook style, textured graphite shading. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "原始单色Sketchwork",
+    "thumbnail": "samples/Raw_Monochrome_Sketchwork.webp"
+  },
+  {
+    "name": "Retro Cursor Glitchcore",
+    "prompt": "vintage mouse cursor patterns, Windows 95 blue interface, CRT monitor scanline texture, digital glitch art, aliased pixel geometry, early internet nostalgia, computational surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "复古CursorGlitchcore",
+    "thumbnail": "samples/Retro_Cursor_Glitchcore.webp"
+  },
+  {
+    "name": "Saturated Graphic Botany",
+    "prompt": "hyper-saturated, high-contrast color blocking, crisp studio lighting, minimalist botanical, vivid primary colors, sharp focus, graphic texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "高饱和图形Botany",
+    "thumbnail": "samples/Saturated_Graphic_Botany.webp"
+  },
+  {
+    "name": "Soft Minimalist Organic",
+    "prompt": "minimalist vector illustration, continuous line art, muted earth tone palette, organic abstract shapes, flat graphic design, gentle feminine contours, soft pastel backgrounds. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "柔和极简有机",
+    "thumbnail": "samples/Soft_Minimalist_Organic.webp"
+  },
+  {
+    "name": "Stark Cyber Minimalist Noir",
+    "prompt": "stark studio lighting, minimalist editorial, high-contrast silhouette, cool-toned palette, futuristic tailoring, sleek noir aesthetic, clinical composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Stark赛博极简黑色",
+    "thumbnail": "samples/Stark_Cyber_Minimalist_Noir.webp"
+  },
+  {
+    "name": "Structured Earthy Minimalism",
+    "prompt": "symmetrical composition, muted earth tones, soft diffused lighting, 35mm film aesthetic, minimalist architectural lines, deadpan observational mood, analog grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Structured泥土色极简主义",
+    "thumbnail": "samples/Structured_Earthy_Minimalism.webp"
+  },
+  {
+    "name": "Tactile Pastel Minimalism",
+    "prompt": "minimalist vector illustration, soft grain noise texture, stipple shading, rounded stylized forms, vibrant pastel color palette, bold color blocking, whimsical editorial style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉粉彩极简主义",
+    "thumbnail": "samples/Tactile_Pastel_Minimalism.webp"
+  },
+  {
+    "name": "Textured Dramatic Realism",
+    "prompt": "painterly digital brushstrokes, chiaroscuro lighting, expressive sketchy line art, high-contrast shadows, textured impasto style, dramatic concept art, earthy muted palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理戏剧性写实",
+    "thumbnail": "samples/Textured_Dramatic_Realism.webp"
+  },
+  {
+    "name": "Textured Vibrant Fauvism",
+    "prompt": "neo-expressionist, mixed-media collage, vibrant saturated palette, oil pastel texture, screen-print grain, bold geometric shapes, graphic minimalist illustration, raw expressive line art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "有纹理鲜艳Fauvism",
+    "thumbnail": "samples/Textured_Vibrant_Fauvism.webp"
+  },
+  {
+    "name": "Topographic Engraving Portraiture",
+    "prompt": "topographic engraving, concentric line art, high-contrast monochrome, woodcut etching style, intaglio print aesthetic, optical contour portrait, cross-hatching. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Topographic雕刻肖像摄影",
+    "thumbnail": "samples/Topographic_Engraving_Portraiture.webp"
+  },
+  {
+    "name": "Vibrant Geometric Vectorism",
+    "prompt": "flat vector illustration, geometric abstraction, high-contrast neon palette, minimalist graphic design, bold color blocking, smooth gradient accents, stylized silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳几何Vectorism",
+    "thumbnail": "samples/Vibrant_Geometric_Vectorism.webp"
+  },
+  {
+    "name": "Vibrant Grainy Geometry",
+    "prompt": "flat vector illustration, fine grain noise texture, bold geometric abstraction, saturated color palette, risograph print style, minimalist graphic design, stippled gradient. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳颗粒感Geometry",
+    "thumbnail": "samples/Vibrant_Grainy_Geometry.webp"
+  },
+  {
+    "name": "Vibrant Minimalist Botanica",
+    "prompt": "minimalist composition, high contrast, saturated color palette, sharp focus, studio lighting, graphic botanical, clean negative space. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳极简Botanica",
+    "thumbnail": "samples/Vibrant_Minimalist_Botanica.webp"
+  },
+  {
+    "name": "Vibrant Organic Vectorism",
+    "prompt": "flat vector illustration, bold graphic shapes, vibrant saturated palette, organic biomorphic curves, minimalist character design, playful modern art style, clean vector art. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳有机Vectorism",
+    "thumbnail": "samples/Vibrant_Organic_Vectorism.webp"
+  }
+]

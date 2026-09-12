@@ -1,0 +1,387 @@
+[
+  {
+    "name": "Luminous Kinetic Microcosm",
+    "prompt": "bioluminescent glow, stark black background, vibrant neon gradients, microscopic organic texture, high-speed fluid dynamics, radial symmetry, intense chromatic contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮动态Microcosm",
+    "thumbnail": "samples/Luminous_Kinetic_Microcosm.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Botany",
+    "prompt": "bioluminescent botanical, deep indigo atmosphere, translucent floral textures, sharp rim lighting, minimalist macro photography, electric violet highlights, nocturnal elegance, gradient studio background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行Botany",
+    "thumbnail": "samples/Luminous_Nocturnal_Botany.webp"
+  },
+  {
+    "name": "Luminous Noir Synth",
+    "prompt": "monochromatic neon green, pitch black background, heavy film grain, glowing aura, retro-futuristic scanlines, high-contrast chiaroscuro, bioluminescent light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮黑色Synth",
+    "thumbnail": "samples/Luminous_Noir_Synth.webp"
+  },
+  {
+    "name": "Luminous Psychedelic Depth",
+    "prompt": "psychedelic op-art, glowing neon gradients, concentric wave patterns, hypnotic void depth, fluid liquid dynamics, chromatic iridescence, high-contrast luminosity. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Psychedelic深度",
+    "thumbnail": "samples/Luminous_Psychedelic_Depth.webp"
+  },
+  {
+    "name": "Luminous Retro Disco",
+    "prompt": "shimmering sequins, dramatic stage lighting, metallic textures, vibrant neon accents, high-contrast chiaroscuro, retro-futuristic glamour, dynamic light trails. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮复古Disco",
+    "thumbnail": "samples/Luminous_Retro_Disco.webp"
+  },
+  {
+    "name": "Luminous Retro Pixel",
+    "prompt": "pixel art, 8-bit aesthetic, dithered shading, high contrast, retro game graphics, neon glow, isometric composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮复古Pixel",
+    "thumbnail": "samples/Luminous_Retro_Pixel.webp"
+  },
+  {
+    "name": "Luminous Thermal Noir",
+    "prompt": "thermographic imaging, glowing heat signature, high-contrast gradient, grainy film texture, surveillance noir, electric blue and neon palette, digital sensor artifacts. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Thermal黑色",
+    "thumbnail": "samples/Luminous_Thermal_Noir.webp"
+  },
+  {
+    "name": "Luminous Thermal Pointillism",
+    "prompt": "stippled texture, thermal heat map palette, chiaroscuro lighting, chromatic grain, high-contrast illustration, soft-focus blur, glowing neon gradients. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮ThermalPointillism",
+    "thumbnail": "samples/Luminous_Thermal_Pointillism.webp"
+  },
+  {
+    "name": "Melancholic Cybernetic Nocturne",
+    "prompt": "cinematic cyber-noir, atmospheric urban fog, high-angle cityscape, desaturated teal and blue, glowing neon contrast, dystopian isolation, wet reflective surfaces. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "忧郁CyberneticNocturne",
+    "thumbnail": "samples/Melancholic_Cybernetic_Nocturne.webp"
+  },
+  {
+    "name": "Minimalist Abyssal Neon",
+    "prompt": "minimalist void, stark chiaroscuro, neon cyan glow, reflective wet surfaces, existential silhouette, high-contrast atmosphere, cinematic scale. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简深渊霓虹",
+    "thumbnail": "samples/Minimalist_Abyssal_Neon.webp"
+  },
+  {
+    "name": "Monolithic Cinematic Noir",
+    "prompt": "monumental scale, cinematic atmosphere, anamorphic lens flare, volumetric fog, low-key chiaroscuro, desaturated dark palette, brutalist sci-fi, mysterious silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic电影感黑色",
+    "thumbnail": "samples/Monolithic_Cinematic_Noir.webp"
+  },
+  {
+    "name": "Neon Abyssal Organics",
+    "prompt": "bioluminescent glow, macro organic textures, pitch-black abyss, neon saturated gradients, translucent marine life, fractal coral structures, high-contrast lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹深渊Organics",
+    "thumbnail": "samples/Neon_Abyssal_Organics.webp"
+  },
+  {
+    "name": "Neon Astral Retro-Futurism",
+    "prompt": "1980s airbrush illustration, cosmic nebula silhouette, electric blue rim lighting, starburst lens flare, translucent astral projection, retro-futuristic neon glow, ethereal sci-fi portrait. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Neon Astral Retro-Futurism",
+    "thumbnail": "samples/Neon_Astral_Retro-Futurism.webp"
+  },
+  {
+    "name": "Neon Aura Surrealism",
+    "prompt": "chromatic aura, neon airbrush, soft radial gradient, grainy paper texture, stark black silhouette, psychedelic dreamscape, retro-futuristic illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹Aura超现实",
+    "thumbnail": "samples/Neon_Aura_Surrealism.webp"
+  },
+  {
+    "name": "Neon Fisheye Dreamscape",
+    "prompt": "extreme fisheye lens, chromatic aberration, neon saturated palette, vintage film grain, prismatic light leaks, psychedelic distortion, dreamy bloom effect. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹鱼眼Dreamscape",
+    "thumbnail": "samples/Neon_Fisheye_Dreamscape.webp"
+  },
+  {
+    "name": "Neon Retro Pixel-Cosmos",
+    "prompt": "pixel art, dithering, retro gaming aesthetic, high-contrast palette, cosmic space background, CRT glow effect, 16-bit graphics. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹复古PixelCosmos",
+    "thumbnail": "samples/Neon_Retro_Pixel-Cosmos.webp"
+  },
+  {
+    "name": "Neon Whimsical Pop",
+    "prompt": "vibrant neon palette, naive hand-drawn style, bold black outlines, whimsical character design, saturated marker texture, playful graphic illustration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "霓虹WhimsicalPop",
+    "thumbnail": "samples/Neon_Whimsical_Pop.webp"
+  },
+  {
+    "name": "Nocturnal Avant-Garde Flash",
+    "prompt": "direct flash photography, deep twilight blue palette, sharp chiaroscuro shadows, cinematic urban realism, ethereal motion blur, high-contrast editorial lighting, metallic sheen textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行AvantGardeFlash",
+    "thumbnail": "samples/Nocturnal_Avant-Garde_Flash.webp"
+  },
+  {
+    "name": "Nocturnal Crimson Noir — Cobalt Neon Glitch",
+    "prompt": "bichromatic color palette, deep cobalt and crimson, chiaroscuro lighting, nocturnal urban atmosphere, cinematic liminal space, glowing neon accents, painterly digital texture, high contrast silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行绯红黑色Cobalt霓虹故障",
+    "thumbnail": "samples/Nocturnal_Crimson_Noir_—_Cobalt_Neon_Glitch.webp"
+  },
+  {
+    "name": "Nocturnal Glitch Glamour",
+    "prompt": "direct flash photography, heavy film grain, starburst lens flare, chromatic aberration, midnight palette, shimmering textures, retro-futuristic glitch, high-contrast noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行故障Glamour",
+    "thumbnail": "samples/Nocturnal_Glitch_Glamour.webp"
+  },
+  {
+    "name": "Nocturnal Glitch Melancholy",
+    "prompt": "deep indigo and neon palette, atmospheric motion blur, analog glitch textures, mysterious silhouettes, dreamy blue hour, lo-fi film grain, chromatic aberration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行故障忧郁",
+    "thumbnail": "samples/Nocturnal_Glitch_Melancholy.webp"
+  },
+  {
+    "name": "Nocturnal Kinetic Blur",
+    "prompt": "motion blur, long exposure, nocturnal blue palette, shutter drag, kinetic light trails, high contrast, ethereal silhouettes, cinematic haze. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行动态模糊",
+    "thumbnail": "samples/Nocturnal_Kinetic_Blur.webp"
+  },
+  {
+    "name": "Nocturnal Kinetic Ember",
+    "prompt": "cinematic silhouette, fiery motion blur, heavy film grain, stark contrast, amber light trails, nocturnal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行动态Ember",
+    "thumbnail": "samples/Nocturnal_Kinetic_Ember.webp"
+  },
+  {
+    "name": "Nocturnal Prismatic Cinematic",
+    "prompt": "nocturnal cinematic film, intense starburst lens flare, chromatic aberration, vintage analog grain, high contrast night photography, rainbow light leaks, ethereal glowing bloom. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行棱镜电影感",
+    "thumbnail": "samples/Nocturnal_Prismatic_Cinematic.webp"
+  },
+  {
+    "name": "Nocturnal Retro-Surreal Cosmicism",
+    "prompt": "retro-surrealism, grainy airbrush texture, neon light leaks, low-angle cosmic perspective, 1980s sci-fi illustration, chromatic aberration, dreamcore, glowing lens flares. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行复古超现实Cosmicism",
+    "thumbnail": "samples/Nocturnal_Retro-Surreal_Cosmicism.webp"
+  },
+  {
+    "name": "Nocturnal Spectral Blur",
+    "prompt": "extreme film grain, heavy motion blur, chiaroscuro lighting, spectral blue glow, low-fidelity aesthetic, liminal atmosphere, shutter drag. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行光谱模糊",
+    "thumbnail": "samples/Nocturnal_Spectral_Blur.webp"
+  },
+  {
+    "name": "Nocturnal Urban Geometry",
+    "prompt": "high-angle aerial photography, nocturnal urban grid, chiaroscuro lighting, geometric architectural composition, amber light trails, vertiginous perspective, metropolitan scale. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行都市Geometry",
+    "thumbnail": "samples/Nocturnal_Urban_Geometry.webp"
+  },
+  {
+    "name": "Prismatic Avant-Garde Beauty",
+    "prompt": "macro beauty portrait, avant-garde editorial, saturated neon palette, tactile texture overlay, prismatic light refraction, glossy makeup finish, experimental photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜AvantGarde美",
+    "thumbnail": "samples/Prismatic_Avant-Garde_Beauty.webp"
+  },
+  {
+    "name": "Prismatic Chrome Retro-Futurism",
+    "prompt": "1980s airbrush illustration, liquid chrome texture, starburst lens flare, retro-futurism, chromatic aberration, neon gradient background, specular metallic highlights. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜铬复古Futurism",
+    "thumbnail": "samples/Prismatic_Chrome_Retro-Futurism.webp"
+  },
+  {
+    "name": "Prismatic Retro-Futurist Airbrush",
+    "prompt": "1980s airbrush illustration, chromatic aberration, liquid chrome metallic finish, vibrant neon gradients, starburst lens flare, retro-futuristic sci-fi, smooth airbrushed texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "棱镜复古未来主义Airbrush",
+    "thumbnail": "samples/Prismatic_Retro-Futurist_Airbrush.webp"
+  },
+  {
+    "name": "Radioactive Minimalist Blur",
+    "prompt": "blurred silhouette, acid green neon aura, heavy film grain, stark white background, airbrush spray paint effect, minimalist surrealism, high contrast composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Radioactive极简模糊",
+    "thumbnail": "samples/Radioactive_Minimalist_Blur.webp"
+  },
+  {
+    "name": "Radioactive Noir Surrealism",
+    "prompt": "high contrast silhouette, acid neon aura, airbrush gradient, thermal imaging style, ink bleed effect, gritty stencil texture, surreal liquid forms. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Radioactive黑色超现实",
+    "thumbnail": "samples/Radioactive_Noir_Surrealism.webp"
+  },
+  {
+    "name": "Spectral Analog Glitch — Iridescent Holographic Neon",
+    "prompt": "CRT scanlines, chromatic aberration, digital glitch art, iridescent holographic glow, analog video degradation, high contrast dark background, spectral neon light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱模拟故障IridescentHolographic霓虹",
+    "thumbnail": "samples/Spectral_Analog_Glitch_—_Iridescent_Holographic_Neon.webp"
+  },
+  {
+    "name": "Spectral Cosmic Dreamscape",
+    "prompt": "fisheye lens distortion, chromatic aberration, vintage film grain, prismatic light dispersion, cosmic silhouette, volumetric light rays, ethereal atmosphere, retro-futuristic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱宇宙Dreamscape",
+    "thumbnail": "samples/Spectral_Cosmic_Dreamscape.webp"
+  },
+  {
+    "name": "Spectral Glitch Surrealism — Bioluminescent Prism Noise",
+    "prompt": "chromatic aberration, spectral light dispersion, stark black void, bioluminescent textures, digital glitch artifacts, neon gradient halos, prismatic refraction. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱故障超现实BioluminescentPrism噪点",
+    "thumbnail": "samples/Spectral_Glitch_Surrealism_—_Bioluminescent_Prism_Noise.webp"
+  },
+  {
+    "name": "Spectral Kinetic Motion — Iridescent Neon Smear",
+    "prompt": "long exposure photography, spectral light trails, chromatic aberration, kinetic motion blur, high contrast silhouettes, neon light refraction, dreamy analog grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Spectral Kinetic Motion — Iridescent Neon Smear",
+    "thumbnail": "samples/Spectral_Kinetic_Motion_—_Iridescent_Neon_Smear.webp"
+  },
+  {
+    "name": "Spectral Neon Glitch",
+    "prompt": "electric blue glow, analog CRT glitch, ethereal silhouette, horizontal scanlines, motion blur, pixelated noise, dark cybercore, VHS tape texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱霓虹故障",
+    "thumbnail": "samples/Spectral_Neon_Glitch.webp"
+  },
+  {
+    "name": "Spectral Neon Luminescence",
+    "prompt": "spectral aura, intense halation glow, heavy film grain, chromatic aberration, high-contrast silhouette, pitch-black background, luminous bloom, thermal neon energy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱霓虹Luminescence",
+    "thumbnail": "samples/Spectral_Neon_Luminescence.webp"
+  },
+  {
+    "name": "Spectral Neon Noir",
+    "prompt": "cyan neon glow, analog film grain, pitch black background, spectral motion blur, CRT scanline glitch, high contrast silhouettes, long exposure light trails, ethereal cyber noir. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱霓虹黑色",
+    "thumbnail": "samples/Spectral_Neon_Noir.webp"
+  },
+  {
+    "name": "Spectral Nocturnal Noir",
+    "prompt": "harsh flash photography, overexposed glowing silhouette, deep nocturnal void, vintage film grain, ethereal light bloom, high contrast chiaroscuro, spectral halation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱夜行黑色",
+    "thumbnail": "samples/Spectral_Nocturnal_Noir.webp"
+  },
+  {
+    "name": "Spectral Thermal Aura",
+    "prompt": "thermal gradient aura, airbrush glow, high-contrast silhouette, grainy film texture, soft-focus diffusion, surreal spectral portrait, saturated neon bleed. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱ThermalAura",
+    "thumbnail": "samples/Spectral_Thermal_Aura.webp"
+  },
+  {
+    "name": "Spectral Thermal Minimalism — Neon Lime Halos",
+    "prompt": "blurry silhouette, neon lime-green aura, thermal imaging effect, grainy film texture, soft-focus diffusion, minimalist composition, airbrushed gradient. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Spectral Thermal Minimalism — Neon Lime Halos",
+    "thumbnail": "samples/Spectral_Thermal_Minimalism_—_Neon_Lime_Halos.webp"
+  },
+  {
+    "name": "Spectral Thermal Noir — Feverish Liquid Glow",
+    "prompt": "spectral crimson glow, heavy analog film grain, thermal imaging aesthetic, high contrast noir, liquid light distortion, lo-fi horror atmosphere, blooming neon aura. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Spectral Thermal Noir — Feverish Liquid Glow",
+    "thumbnail": "samples/Spectral_Thermal_Noir_—_Feverish_Liquid_Glow.webp"
+  },
+  {
+    "name": "Spectral Twilight Noir — Neon Volumetric Beams",
+    "prompt": "cinematic chiaroscuro, spectral neon glow, liminal twilight atmosphere, volumetric light rays, surreal dreamcore, retro grain texture, high contrast silhouettes. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱暮光黑色霓虹VolumetricBeams",
+    "thumbnail": "samples/Spectral_Twilight_Noir_—_Neon_Volumetric_Beams.webp"
+  },
+  {
+    "name": "Stark Graphic Minimalism",
+    "prompt": "high-contrast studio photography, stark white background, bold graphic silhouette, avant-garde composition, sharp chiaroscuro, editorial fashion aesthetic, minimalist structural form. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Stark图形极简主义",
+    "thumbnail": "samples/Stark_Graphic_Minimalism.webp"
+  },
+  {
+    "name": "Surreal Chromatic Glitch",
+    "prompt": "double exposure, chromatic aberration, surreal digital collage, neon color split, glitch art, translucent layering, psychedelic dreamcore. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实彩色故障",
+    "thumbnail": "samples/Surreal_Chromatic_Glitch.webp"
+  },
+  {
+    "name": "Surreal Neon Melancholy",
+    "prompt": "high-contrast surrealism, glowing neon liquid, desaturated moody landscape, atmospheric dark tones, minimalist 3D render, vibrant color bleed, overcast misty environment. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实霓虹忧郁",
+    "thumbnail": "samples/Surreal_Neon_Melancholy.webp"
+  },
+  {
+    "name": "Surreal Pastel Dreamcore",
+    "prompt": "whimsical 3D digital art, saturated pastel gradients, soft bloom lighting, fluffy cloud motifs, surreal claymation aesthetic, cute pop-art influence, tactile fuzzy textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实粉彩Dreamcore",
+    "thumbnail": "samples/Surreal_Pastel_Dreamcore.webp"
+  },
+  {
+    "name": "Surreal Psychedelic Fluidity",
+    "prompt": "psychedelic surrealism, biomorphic forms, vibrant saturated palette, fluid liquid distortion, retro cartoon influence, textured paper aesthetic, airbrushed gradients, whimsical organic lines. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实PsychedelicFluidity",
+    "thumbnail": "samples/Surreal_Psychedelic_Fluidity.webp"
+  },
+  {
+    "name": "Synthetic Glitch Core",
+    "prompt": "chromatic aberration, pixel sorting, digital glitch art, high-contrast neon, scanlines, data bending, textural distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "合成故障核心",
+    "thumbnail": "samples/Synthetic_Glitch_Core.webp"
+  },
+  {
+    "name": "Tactile Neon Macro",
+    "prompt": "extreme macro beauty photography, scratched glass overlay, vibrant magenta and pink palette, tactile skin texture, distorted light refraction, glossy cosmetic editorial, surreal high-contrast lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉霓虹微距",
+    "thumbnail": "samples/Tactile_Neon_Macro.webp"
+  },
+  {
+    "name": "Thermal Acid Glitch",
+    "prompt": "thermal imaging palette, psychedelic liquid distortion, analog grain texture, neon chromatic aberration, retro-futuristic glitch art, melting silhouette, high-contrast airbrush glow. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "ThermalAcid故障",
+    "thumbnail": "samples/Thermal_Acid_Glitch.webp"
+  },
+  {
+    "name": "Thermal Grain Surrealism",
+    "prompt": "thermal gradient lighting, airbrushed texture, heavy film grain, ethereal silhouettes, surreal neon aura, high-contrast shadows, chromatic light leaks, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Thermal颗粒超现实",
+    "thumbnail": "samples/Thermal_Grain_Surrealism.webp"
+  },
+  {
+    "name": "Vibrant Surreal Maximalism",
+    "prompt": "hyper-saturated color palette, tactile fur and porcelain textures, vibrant neon accents, surreal maximalist composition, shallow depth of field, crisp studio lighting, whimsical avant-garde energy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳超现实Maximalism",
+    "thumbnail": "samples/Vibrant_Surreal_Maximalism.webp"
+  },
+  {
+    "name": "Whimsical Grotesque Pop",
+    "prompt": "whimsical digital painting, pop surrealism, stylized character design, painterly textures, vibrant neon palette, playful grotesque, expressive proportions. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Whimsical Grotesque Pop",
+    "thumbnail": "samples/Whimsical_Grotesque_Pop.webp"
+  }
+]

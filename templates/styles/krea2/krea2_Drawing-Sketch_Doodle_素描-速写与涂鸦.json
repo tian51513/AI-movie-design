@@ -1,0 +1,86 @@
+[
+  {
+    "name": "Analog Glitch Collage",
+    "prompt": "mixed media collage, analog film grain, digital glitch distortion, hand-drawn scribbles, flash photography, scrapbook aesthetic, chromatic aberration, retro indie zine. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "模拟故障拼贴",
+    "thumbnail": "samples/Analog_Glitch_Collage.webp"
+  },
+  {
+    "name": "Cozy Whimsical Sketchbook",
+    "prompt": "hand-drawn aesthetic, soft pastel color palette, textured line work, minimalist slice of life, warm cream paper texture, whimsical sketch style, gentle watercolor wash. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cozy Whimsical Sketchbook",
+    "thumbnail": "samples/Cozy_Whimsical_Sketchbook.webp"
+  },
+  {
+    "name": "Expressive Folk Scribble",
+    "prompt": "hand-carved linocut texture, expressive gouache strokes, vibrant retro color palette, naive marker doodles, high-contrast graphic shapes, organic paper texture, gestural oil pastel marks. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Expressive Folk Scribble",
+    "thumbnail": "samples/Expressive_Folk_Scribble.webp"
+  },
+  {
+    "name": "Expressive Hand-Drawn Sketchbook",
+    "prompt": "expressive sketchbook illustration, textured paper grain, hand-drawn linework, mixed media aesthetic, fauvist color palette, dreamy impressionistic style, intimate character portrait. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Expressive Hand-Drawn Sketchbook",
+    "thumbnail": "samples/Expressive_Hand-Drawn_Sketchbook.webp"
+  },
+  {
+    "name": "Graphic Pop Collage",
+    "prompt": "mixed media collage, saturated pop art, graphic doodle overlay, high-key studio photography, vibrant neon accents, bold geometric patterns, playful surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "图形Pop拼贴",
+    "thumbnail": "samples/Graphic_Pop_Collage.webp"
+  },
+  {
+    "name": "Luminous Electric Expressionism",
+    "prompt": "vibrant impasto texture, saturated neon palette, expressive mark-making, surreal landscape, luminous color transitions, tactile sketchbook style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮Electric表现主义",
+    "thumbnail": "samples/Luminous_Electric_Expressionism.webp"
+  },
+  {
+    "name": "Maximalist Neon Pop-Surrealism",
+    "prompt": "maximalist pop surrealism, neon saturated palette, mixed media collage, vibrant street art elements, hand-drawn doodle overlays, high-contrast digital art, expressive paint splatters. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Maximalist霓虹Pop超现实",
+    "thumbnail": "samples/Maximalist_Neon_Pop-Surrealism.webp"
+  },
+  {
+    "name": "Minimalist Mint Whimsy",
+    "prompt": "minimalist vector illustration, mint green background, thick bold outlines, cute whimsical character, flat design, naive art style, pastel color palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "极简MintWhimsy",
+    "thumbnail": "samples/Minimalist_Mint_Whimsy.webp"
+  },
+  {
+    "name": "Vibrant Mixed-Media Collage",
+    "prompt": "mixed-media collage, high-contrast photography, impasto texture, hand-drawn doodle overlay, vibrant color blocking, punk zine aesthetic, paper cutout style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳MixedMedia拼贴",
+    "thumbnail": "samples/Vibrant_Mixed-Media_Collage.webp"
+  },
+  {
+    "name": "Vibrant Naive Sketchbook",
+    "prompt": "naive art style, textured paper grain, expressive colored pencil hatching, vibrant wax pastel aesthetic, hand-drawn sketchbook illustration, saturated fauvist landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳NaiveSketchbook",
+    "thumbnail": "samples/Vibrant_Naive_Sketchbook.webp"
+  },
+  {
+    "name": "Vibrant Neo-Pop Collage",
+    "prompt": "digital collage, bold black outlines, hyper-saturated neon colors, vector doodle overlay, mixed-media portraiture, pop art editorial, playful sticker motifs. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳NeoPop拼贴",
+    "thumbnail": "samples/Vibrant_Neo-Pop_Collage.webp"
+  },
+  {
+    "name": "Vibrant Prismatic Sketchbook",
+    "prompt": "colored pencil illustration, dense crosshatching, vibrant prismatic palette, textured paper grain, expressive hand-drawn linework, saturated color blocking, tactile sketchbook style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳棱镜Sketchbook",
+    "thumbnail": "samples/Vibrant_Prismatic_Sketchbook.webp"
+  }
+]

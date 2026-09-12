@@ -1,0 +1,303 @@
+[
+  {
+    "name": "Abyssal Gothic Surrealism",
+    "prompt": "gothic romanticism, deep teal and indigo, painterly oil texture, liminal surrealism, chiaroscuro lighting, atmospheric dread, solitary silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "深渊哥特超现实",
+    "thumbnail": "samples/Abyssal_Gothic_Surrealism.webp"
+  },
+  {
+    "name": "Amber Chiaroscuro Cinematic",
+    "prompt": "chiaroscuro, dramatic long shadows, amber and teal color palette, cinematic urban silhouette, high contrast lighting, atmospheric haze, minimalist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "琥珀Chiaroscuro电影感",
+    "thumbnail": "samples/Amber_Chiaroscuro_Cinematic.webp"
+  },
+  {
+    "name": "Atmospheric Gothic Noir",
+    "prompt": "cinematic noir, chiaroscuro lighting, rain-slicked atmosphere, gothic architecture, deep blue and amber palette, moody urban mystery, dramatic silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围哥特黑色",
+    "thumbnail": "samples/Atmospheric_Gothic_Noir.webp"
+  },
+  {
+    "name": "Atmospheric Somber Realism",
+    "prompt": "atmospheric digital painting, desaturated color palette, low-key moody lighting, textured brushwork, melancholic solitude, weathered surfaces, gothic surrealism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "氛围Somber写实",
+    "thumbnail": "samples/Atmospheric_Somber_Realism.webp"
+  },
+  {
+    "name": "Bioluminescent Abyssal Resonance",
+    "prompt": "bioluminescent abyss, indigo midnight palette, concentric light tunnel, solitary silhouetted figure, ethereal atmospheric glow, surreal cosmic scale, high contrast chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Bioluminescent Abyssal Resonance",
+    "thumbnail": "samples/Bioluminescent_Abyssal_Resonance.webp"
+  },
+  {
+    "name": "Chiaroscuro Nocturnal Fantasy",
+    "prompt": "chiaroscuro lighting, deep blue and amber contrast, atmospheric nocturnal fantasy, monumental scale, gothic architecture, mystical silhouettes, cinematic fog. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Chiaroscuro夜行幻想",
+    "thumbnail": "samples/Chiaroscuro_Nocturnal_Fantasy.webp"
+  },
+  {
+    "name": "Cinematic Cyan Abyssal",
+    "prompt": "cinematic cyan lighting, volumetric fog, chiaroscuro, deep teal color palette, mysterious silhouette, liminal space, surreal spotlight. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感青色深渊",
+    "thumbnail": "samples/Cinematic_Cyan_Abyssal.webp"
+  },
+  {
+    "name": "Cinematic Cyan Noir — Sci-Fi Fog",
+    "prompt": "cinematic cyan noir, volumetric backlighting, dense atmospheric fog, monolithic industrial scale, high-contrast silhouette, cold teal color grading, cyberpunk tactical aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感青色黑色SciFi雾",
+    "thumbnail": "samples/Cinematic_Cyan_Noir_—_Sci-Fi_Fog.webp"
+  },
+  {
+    "name": "Cinematic Gothic Nocturne — Rain-Slick Amber",
+    "prompt": "cinematic chiaroscuro, atmospheric twilight gothic, deep blue and amber color grading, looming architectural silhouettes, moody fog and weather effects, shallow depth of field, mysterious narrative lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Cinematic Gothic Nocturne — Rain-Slick Amber",
+    "thumbnail": "samples/Cinematic_Gothic_Nocturne_—_Rain-Slick_Amber.webp"
+  },
+  {
+    "name": "Cinematic Volumetric Noir",
+    "prompt": "cinematic chiaroscuro, volumetric light beams, dramatic backlit silhouette, anamorphic lens flare, high contrast noir, hazy atmospheric lighting, rim lighting, minimalist dark aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "电影感Volumetric黑色",
+    "thumbnail": "samples/Cinematic_Volumetric_Noir.webp"
+  },
+  {
+    "name": "Crimson Industrial Surrealism",
+    "prompt": "biomorphic surrealism, gothic noir atmosphere, distressed industrial textures, high contrast duotone, weathered brick and concrete, sinister organic fusion, vibrant crimson and teal. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红工业超现实",
+    "thumbnail": "samples/Crimson_Industrial_Surrealism.webp"
+  },
+  {
+    "name": "Crimson Noir Minimalism — Sculptural Editorial",
+    "prompt": "crimson and black palette, high-contrast studio lighting, sculptural silhouettes, gothic surrealism, minimalist composition, dramatic shadows, avant-garde fashion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红黑色极简主义Sculptural编辑",
+    "thumbnail": "samples/Crimson_Noir_Minimalism_—_Sculptural_Editorial.webp"
+  },
+  {
+    "name": "Crimson Void Surrealism",
+    "prompt": "cinematic crimson lighting, high-contrast black void, surreal liminal landscape, minimalist silhouette, viscous red fluid, ominous atmospheric fog, existential scale. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "绯红Void超现实",
+    "thumbnail": "samples/Crimson_Void_Surrealism.webp"
+  },
+  {
+    "name": "Dystopian Gothic Noir",
+    "prompt": "dark gothic fantasy, atmospheric smog, high-contrast silhouette, industrial dystopian, painterly texture, teal and amber lighting, moody cinematic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Dystopian哥特黑色",
+    "thumbnail": "samples/Dystopian_Gothic_Noir.webp"
+  },
+  {
+    "name": "Ethereal Bioluminescent Nocturne — Painterly Indigo Glow",
+    "prompt": "bioluminescent glow, ethereal nocturne, deep teal and indigo palette, surreal soft-focus lighting, mystical spectral highlights, painterly dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵BioluminescentNocturne绘画感靛蓝发光",
+    "thumbnail": "samples/Ethereal_Bioluminescent_Nocturne_—_Painterly_Indigo_Glow.webp"
+  },
+  {
+    "name": "Ethereal Nocturnal Solitude — Star-Speckled Fog",
+    "prompt": "monochromatic midnight blue, atmospheric fog, solitary silhouette, cinematic chiaroscuro, starry night sky, mysterious luminous glow, gothic melancholy, high-contrast landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Ethereal Nocturnal Solitude — Star-Speckled Fog",
+    "thumbnail": "samples/Ethereal_Nocturnal_Solitude_—_Star-Speckled_Fog.webp"
+  },
+  {
+    "name": "Ethereal Painterly Botanica",
+    "prompt": "painterly floral, soft-focus atmosphere, dreamy ethereal glow, romantic botanical, impressionistic brushwork, vintage texture overlay, diffused lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "空灵绘画感Botanica",
+    "thumbnail": "samples/Ethereal_Painterly_Botanica.webp"
+  },
+  {
+    "name": "Gilded Gothic Decay",
+    "prompt": "chiaroscuro lighting, gilded gold leaf, melancholic gothic portraiture, cracked plaster texture, high-contrast noir, metallic organic decay, surreal fragmentation. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Gilded哥特衰败",
+    "thumbnail": "samples/Gilded_Gothic_Decay.webp"
+  },
+  {
+    "name": "Liquid Gothic Sovereign",
+    "prompt": "dark gothic fantasy, liquid chrome texture, sharp metallic spikes, high-contrast studio lighting, avant-garde armor, monochromatic palette, reflective metallic sheen, ritualistic elegance. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Liquid Gothic Sovereign",
+    "thumbnail": "samples/Liquid_Gothic_Sovereign.webp"
+  },
+  {
+    "name": "Luminous Abyssal Dreamscape — Caustic Light Shafts",
+    "prompt": "underwater photography, chiaroscuro lighting, bioluminescent particles, caustic light ripples, deep blue and teal palette, ethereal light shafts, high contrast silhouettes, dreamlike cinematic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Luminous Abyssal Dreamscape — Caustic Light Shafts",
+    "thumbnail": "samples/Luminous_Abyssal_Dreamscape_—_Caustic_Light_Shafts.webp"
+  },
+  {
+    "name": "Luminous Abyssal Dreamscape — Sapphire Bioluminescence",
+    "prompt": "bioluminescent glow, deep blue monochromatic, ethereal aquatic atmosphere, high-contrast chiaroscuro, shimmering light particles, surreal underwater dreamscape, nocturnal fantasy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮深渊DreamscapeSapphireBioluminescence",
+    "thumbnail": "samples/Luminous_Abyssal_Dreamscape_—_Sapphire_Bioluminescence.webp"
+  },
+  {
+    "name": "Luminous Abyssal Noir — Macro Liquid Caustics",
+    "prompt": "chiaroscuro lighting, deep teal and obsidian palette, intricate light caustics, macro liquid photography, translucent glass reflections, dramatic rim lighting, minimalist dark studio. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮深渊黑色微距LiquidCaustics",
+    "thumbnail": "samples/Luminous_Abyssal_Noir_—_Macro_Liquid_Caustics.webp"
+  },
+  {
+    "name": "Luminous Abyssal Radiance",
+    "prompt": "underwater photography, low-angle upward perspective, crepuscular rays, silhouette against sunburst, deep ocean blue, god rays, ethereal aquatic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮深渊Radiance",
+    "thumbnail": "samples/Luminous_Abyssal_Radiance.webp"
+  },
+  {
+    "name": "Luminous Abyssal Silhouette",
+    "prompt": "underwater photography, backlit silhouette, low angle shot, shimmering sun rays, deep blue and indigo palette, high contrast, ethereal aquatic atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮深渊剪影",
+    "thumbnail": "samples/Luminous_Abyssal_Silhouette.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Dreamscapes — Bioluminescent Haze",
+    "prompt": "painterly digital art, bioluminescent glow, twilight blue hour palette, expressive brushwork, mystical atmosphere, atmospheric dreamscape, gothic fantasy lens. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行DreamscapesBioluminescentHaze",
+    "thumbnail": "samples/Luminous_Nocturnal_Dreamscapes_—_Bioluminescent_Haze.webp"
+  },
+  {
+    "name": "Luminous Nocturnal Ether",
+    "prompt": "bioluminescent blue glow, ethereal light trails, deep indigo background, high-contrast noir, grainy film texture, fluid organic motion, mystical dark aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮夜行以太",
+    "thumbnail": "samples/Luminous_Nocturnal_Ether.webp"
+  },
+  {
+    "name": "Luminous Surreal Twilight",
+    "prompt": "deep twilight blue and amber contrast, bioluminescent surrealism, volumetric golden lighting, dreamlike atmospheric composition, high-contrast chiaroscuro, ethereal organic textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "明亮超现实暮光",
+    "thumbnail": "samples/Luminous_Surreal_Twilight.webp"
+  },
+  {
+    "name": "Monochromatic Abyssal Brutalism",
+    "prompt": "monochromatic deep blue, volumetric lighting, brutalist monoliths, atmospheric fog, high-contrast chiaroscuro, liminal space, cinematic sci-fi, glowing ethereal light. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色深渊Brutalism",
+    "thumbnail": "samples/Monochromatic_Abyssal_Brutalism.webp"
+  },
+  {
+    "name": "Monochromatic Abyssal Chiaroscuro",
+    "prompt": "chiaroscuro lighting, volumetric light beams, deep blue and black palette, atmospheric haze, monolithic structures, high contrast, cinematic isolation, nocturnal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "单色深渊Chiaroscuro",
+    "thumbnail": "samples/Monochromatic_Abyssal_Chiaroscuro.webp"
+  },
+  {
+    "name": "Monolithic Atmospheric Romanticism",
+    "prompt": "cinematic scale, atmospheric haze, monolithic architecture, muted earth tones, moody lighting, desolate landscape, volumetric light rays, gothic fantasy realism. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic氛围浪漫主义",
+    "thumbnail": "samples/Monolithic_Atmospheric_Romanticism.webp"
+  },
+  {
+    "name": "Monolithic Brutalist Distortion",
+    "prompt": "brutalist architecture, extreme fisheye lens, desaturated moody palette, monolithic scale, atmospheric fog, high-contrast chiaroscuro, ominous storm clouds. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Monolithic Brutalist Distortion",
+    "thumbnail": "samples/Monolithic_Brutalist_Distortion.webp"
+  },
+  {
+    "name": "Nocturnal Esoteric Surrealism",
+    "prompt": "high contrast noir, electric blue and crimson, stippled airbrush texture, retro-futuristic sci-fi, esoteric ritual, dendritic networks, Lovecraftian silhouette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行Esoteric超现实",
+    "thumbnail": "samples/Nocturnal_Esoteric_Surrealism.webp"
+  },
+  {
+    "name": "Nocturnal Storybook Surrealism",
+    "prompt": "whimsical gothic illustration, glowing warm windows, dramatic twilight sky, textured colored pencil style, expressive hatch shading, surreal cosmic atmosphere, crooked fairytale architecture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行Storybook超现实",
+    "thumbnail": "samples/Nocturnal_Storybook_Surrealism.webp"
+  },
+  {
+    "name": "Nocturnal Sylvan Gothic",
+    "prompt": "dark gothic atmosphere, deep emerald and teal palette, chiaroscuro lighting, misty fog, painterly texture, desaturated sylvan landscape, grainy film aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "夜行Sylvan哥特",
+    "thumbnail": "samples/Nocturnal_Sylvan_Gothic.webp"
+  },
+  {
+    "name": "Sacred Gothic Noir",
+    "prompt": "chiaroscuro lighting, gothic opulence, ethereal veiled figure, metallic halo crown, stark black background, dramatic rim light, macabre elegance. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "神圣哥特黑色",
+    "thumbnail": "samples/Sacred_Gothic_Noir.webp"
+  },
+  {
+    "name": "Simulated Gothic Wilderness",
+    "prompt": "overcast natural light, desaturated forest greens, cinematic gloom, moody atmospheric texture, surreal wireframe overlay, high contrast shadows, solitary pastoral melancholy. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Simulated Gothic Wilderness",
+    "thumbnail": "samples/Simulated_Gothic_Wilderness.webp"
+  },
+  {
+    "name": "Spectral Pictorialist Noir",
+    "prompt": "pictorialism, spectral silhouette, motion blur, distressed film texture, gothic dreamscape, wet plate collodion, chiaroscuro. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "光谱Pictorialist黑色",
+    "thumbnail": "samples/Spectral_Pictorialist_Noir.webp"
+  },
+  {
+    "name": "Sublime Chiaroscuro Gothic",
+    "prompt": "chiaroscuro lighting, volcanic amber and deep blue palette, monumental gothic architecture, atmospheric volumetric fog, surreal entropic decay, cosmic surrealism, high-contrast cinematic composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "崇高Chiaroscuro哥特",
+    "thumbnail": "samples/Sublime_Chiaroscuro_Gothic.webp"
+  },
+  {
+    "name": "Surreal Abyssal Dreamscape",
+    "prompt": "ethereal surrealism, deep moody lighting, flowing translucent textures, bioluminescent highlights, chiaroscuro, dreamlike atmosphere, weightless composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实深渊Dreamscape",
+    "thumbnail": "samples/Surreal_Abyssal_Dreamscape.webp"
+  },
+  {
+    "name": "Surreal Botanical Synthesis",
+    "prompt": "mossy textures, verdant forest palette, chiaroscuro lighting, surreal organic structures, intricate fractal growth, botanical fantasy, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实BotanicalSynthesis",
+    "thumbnail": "samples/Surreal_Botanical_Synthesis.webp"
+  },
+  {
+    "name": "Surreal Infrared Crimson",
+    "prompt": "infrared photography style, crimson and cyan palette, surreal nature, ethereal dreamscape, high-contrast color blocking, gothic atmosphere, glowing red foliage. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实Infrared绯红",
+    "thumbnail": "samples/Surreal_Infrared_Crimson.webp"
+  },
+  {
+    "name": "Velvet Moss Surrealism — Subterranean Misty Gloom",
+    "prompt": "velvety green moss texture, chiaroscuro lighting, liminal subterranean landscape, surreal organic architecture, atmospheric mist, solitary silhouette, biophilic decay. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Velvet Moss Surrealism — Subterranean Misty Gloom",
+    "thumbnail": "samples/Velvet_Moss_Surrealism_—_Subterranean_Misty_Gloom.webp"
+  },
+  {
+    "name": "Volcanic Brutalist Abyss",
+    "prompt": "monumental brutalist architecture, volcanic subterranean landscape, fiery orange and teal contrast, cinematic atmospheric haze, industrial greeble textures, dystopian sci-fi scale, dramatic low-key lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Volcanic粗野主义深渊",
+    "thumbnail": "samples/Volcanic_Brutalist_Abyss.webp"
+  }
+]

@@ -1,0 +1,387 @@
+[
+  {
+    "name": "Surreal Retro Desert Sci-Fi",
+    "prompt": "retro-futuristic surrealism, alien desert landscape, terracotta and teal palette, painterly brushstrokes, vintage 70s sci-fi aesthetic, dreamy analog lighting, weathered industrial texture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实复古沙漠SciFi",
+    "thumbnail": "samples/Surreal_Retro_Desert_Sci-Fi.webp"
+  },
+  {
+    "name": "Surreal Retro Sunlight",
+    "prompt": "high-angle perspective, surrealist collage, vibrant green grass, mid-century aesthetic, harsh sunlight, sharp shadows, vintage film grain, absurdist composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实复古Sunlight",
+    "thumbnail": "samples/Surreal_Retro_Sunlight.webp"
+  },
+  {
+    "name": "Surreal Retro-Futurist Collage",
+    "prompt": "mixed-media collage, retro-futurism, surrealist composition, torn paper texture, vintage sci-fi, bold flat colors, high-contrast analog aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实复古未来主义拼贴",
+    "thumbnail": "samples/Surreal_Retro-Futurist_Collage.webp"
+  },
+  {
+    "name": "Surreal Retro-Futurist Pastoral",
+    "prompt": "retro-futurism, surreal landscape, liminal space, 1970s airbrush illustration, glowing neon orb, vanishing point perspective, saturated cobalt twilight, minimalist modernist architecture. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实复古未来主义Pastoral",
+    "thumbnail": "samples/Surreal_Retro-Futurist_Pastoral.webp"
+  },
+  {
+    "name": "Surreal Terracotta Minimalism",
+    "prompt": "minimalist surrealism, terracotta architecture, geometric arches, sculptural plaster, dramatic sunlight, monochromatic warm palette, hypnotic perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实Terracotta极简主义",
+    "thumbnail": "samples/Surreal_Terracotta_Minimalism.webp"
+  },
+  {
+    "name": "Surreal Thermal Hallucination",
+    "prompt": "thermal imaging gradient, heavy digital noise, chromatic aberration, fluid organic distortion, neon glow, CRT screen texture, psychedelic airbrush, lo-fi film grain. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实ThermalHallucination",
+    "thumbnail": "samples/Surreal_Thermal_Hallucination.webp"
+  },
+  {
+    "name": "Surreal Twilight Solitude",
+    "prompt": "deep ultramarine and cobalt, surreal minimalist composition, twilight blue hour, uncanny atmospheric mystery, long dramatic shadows, reflective dark water, cinematic solitude. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实暮光Solitude",
+    "thumbnail": "samples/Surreal_Twilight_Solitude.webp"
+  },
+  {
+    "name": "Surreal Verdant Biomorphism",
+    "prompt": "surreal mossy landscapes, biomorphic root structures, monochromatic deep green, eldritch cosmic horror, high-contrast directional lighting, intricate fibrous textures, isolated mystical figures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实翠绿Biomorphism",
+    "thumbnail": "samples/Surreal_Verdant_Biomorphism.webp"
+  },
+  {
+    "name": "Surreal Verdant Geometry",
+    "prompt": "aerial drone perspective, deep forest green, concentric geometric patterns, moody natural lighting, surrealist botanical structure, high-angle symmetry, dense organic textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实翠绿Geometry",
+    "thumbnail": "samples/Surreal_Verdant_Geometry.webp"
+  },
+  {
+    "name": "Surreal Verdant Minimalism — Lime Studio Absurdism",
+    "prompt": "vibrant lime green, minimalist surrealism, high contrast, macro texture, geometric composition, saturated color field, absurdist scale, clean studio lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Surreal Verdant Minimalism — Lime Studio Absurdism",
+    "thumbnail": "samples/Surreal_Verdant_Minimalism_—_Lime_Studio_Absurdism.webp"
+  },
+  {
+    "name": "Surreal Verdant Minimalism — Wave-Soft Diffusion",
+    "prompt": "undulating green hills, velvety moss texture, surreal minimalist composition, monochromatic green palette, extreme scale contrast, soft diffused lighting, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Surreal Verdant Minimalism — Wave-Soft Diffusion",
+    "thumbnail": "samples/Surreal_Verdant_Minimalism_—_Wave-Soft_Diffusion.webp"
+  },
+  {
+    "name": "Surreal Verdant Topography — Golden Side-Light",
+    "prompt": "rolling velvet hills, vibrant emerald landscape, surreal dreamcore, fluid topographic contours, golden hour side-lighting, volumetric low-hanging clouds, pristine organic textures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实翠绿Topography黄金侧浅",
+    "thumbnail": "samples/Surreal_Verdant_Topography_—_Golden_Side-Light.webp"
+  },
+  {
+    "name": "Surreal Verdant Topography — Graphic Shadow Accent",
+    "prompt": "aerial photography, undulating velvet grass, minimalist landscape, surreal atmosphere, high-angle perspective, dramatic chiaroscuro lighting, vibrant color contrast. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Surreal Verdant Topography — Graphic Shadow Accent",
+    "thumbnail": "samples/Surreal_Verdant_Topography_—_Graphic_Shadow_Accent.webp"
+  },
+  {
+    "name": "Surrealist Cobalt Minimalism",
+    "prompt": "high-contrast studio photography, saturated cobalt blue aesthetic, surrealist fashion editorial, minimalist centered composition, sharp graphic lighting, clean color-blocking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实Cobalt极简主义",
+    "thumbnail": "samples/Surrealist_Cobalt_Minimalism.webp"
+  },
+  {
+    "name": "Surrealist Crimson Noir",
+    "prompt": "surrealist fashion photography, high-contrast color blocking, crimson and cobalt blue, theatrical directional lighting, tactile textures, editorial minimalism, stark shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实绯红黑色",
+    "thumbnail": "samples/Surrealist_Crimson_Noir.webp"
+  },
+  {
+    "name": "Surrealist Editorial Beauty",
+    "prompt": "hyper-realistic macro beauty, surrealist editorial photography, vibrant primary color palette, high-contrast studio lighting, flawless skin texture, graphic avant-garde makeup, uncanny biological elements. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实编辑美",
+    "thumbnail": "samples/Surrealist_Editorial_Beauty.webp"
+  },
+  {
+    "name": "Surrealist Graphic Frame",
+    "prompt": "conceptual portraiture, surrealist composition, thematic framing, graphic studio lighting, muted earth tones, vivid primary accents, minimalist structure. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实图形画框",
+    "thumbnail": "samples/Surrealist_Graphic_Frame.webp"
+  },
+  {
+    "name": "Surrealist Liminal Horizons",
+    "prompt": "liminal space, surrealist landscape, one-point perspective, vast blue sky, minimalist composition, dreamlike isolation, sharp geometric shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实阈限Horizons",
+    "thumbnail": "samples/Surrealist_Liminal_Horizons.webp"
+  },
+  {
+    "name": "Surrealist Liminal Minimalism",
+    "prompt": "liminal space, minimalist surrealism, saturated blue sky, dreamcore, high-contrast lighting, vintage grain, geometric composition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实阈限极简主义",
+    "thumbnail": "samples/Surrealist_Liminal_Minimalism.webp"
+  },
+  {
+    "name": "Surrealist Liminal Pastoralism — Floating Daylight Dislocation",
+    "prompt": "surrealist landscape, liminal space, minimalist architecture, dreamcore, bright daylight, magical realism, floating structures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Surrealist Liminal Pastoralism — Floating Daylight Dislocation",
+    "thumbnail": "samples/Surrealist_Liminal_Pastoralism_—_Floating_Daylight_Dislocation.webp"
+  },
+  {
+    "name": "Surrealist Liminal Pastoralism — Precisionist Hard Shadows",
+    "prompt": "liminal space, saturated rural landscape, precisionist style, surrealist pastoral, hard directional shadows, minimalist composition, dreamcore atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Surrealist Liminal Pastoralism — Precisionist Hard Shadows",
+    "thumbnail": "samples/Surrealist_Liminal_Pastoralism_—_Precisionist_Hard_Shadows.webp"
+  },
+  {
+    "name": "Surrealist Minimalist Avant-Garde",
+    "prompt": "minimalist editorial fashion, stark high-contrast lighting, surrealist conceptual art, architectural silhouettes, liminal space photography, theatrical minimalism, crimson and black palette, geometric wireframe structures. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实极简AvantGarde",
+    "thumbnail": "samples/Surrealist_Minimalist_Avant-Garde.webp"
+  },
+  {
+    "name": "Surrealist Minimalist Fragmentation",
+    "prompt": "surrealist minimalism, deconstructed portraiture, pastel studio lighting, analog collage aesthetic, high-contrast shadow play, conceptual photography, digital glitch distortion. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实极简碎片化",
+    "thumbnail": "samples/Surrealist_Minimalist_Fragmentation.webp"
+  },
+  {
+    "name": "Surrealist Pastel Glitch",
+    "prompt": "surrealist studio portrait, minimalist pastel aesthetic, pixel sorting distortion, geometric crystal face, sharp focus, avant-garde fashion, uncanny visual glitch, solid colored background. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实粉彩故障",
+    "thumbnail": "samples/Surrealist_Pastel_Glitch.webp"
+  },
+  {
+    "name": "Surrealist Pastoral Dreamscape",
+    "prompt": "surrealist editorial photography, sculptural fashion, vast pastoral landscape, whimsical oversized forms, vintage film grain, clean minimalist composition, dreamlike atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实PastoralDreamscape",
+    "thumbnail": "samples/Surrealist_Pastoral_Dreamscape.webp"
+  },
+  {
+    "name": "Surrealist Retro Pastoralism",
+    "prompt": "surrealist pastoral landscape, retro-futuristic airbrush art, vintage film grain, dreamlike magic realism, incongruous mechanical elements, golden hour lighting, nostalgic saturated palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实复古Pastoralism",
+    "thumbnail": "samples/Surrealist_Retro_Pastoralism.webp"
+  },
+  {
+    "name": "Surrealist Retro Whimsy",
+    "prompt": "surrealist still life, magical realism, retro-futurist aesthetic, uncanny juxtaposition, vibrant pop saturation, tactile stone textures, staged studio lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实复古Whimsy",
+    "thumbnail": "samples/Surrealist_Retro_Whimsy.webp"
+  },
+  {
+    "name": "Surrealist Saturated Americana",
+    "prompt": "hyper-saturated primary colors, sharp natural sunlight, vibrant blue sky, minimalist pastoral composition, uncanny surrealist juxtapostion, high contrast cinematography, liminal dreamcore atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实高饱和Americana",
+    "thumbnail": "samples/Surrealist_Saturated_Americana.webp"
+  },
+  {
+    "name": "Surrealist Sky Collage",
+    "prompt": "surrealist sky collage, floating architectural fragments, deep blue cumulus sky, vintage 1970s grain, magical realism, liminal dreamcore, absurdist juxtaposition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实天空拼贴",
+    "thumbnail": "samples/Surrealist_Sky_Collage.webp"
+  },
+  {
+    "name": "Surrealist Tactile Theater",
+    "prompt": "surrealist diorama, theatrical set design, tactile craft textures, sculptural fabric installations, whimsical sky motifs, liminal studio space, vibrant high-contrast palettes, staged artificial landscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实触觉Theater",
+    "thumbnail": "samples/Surrealist_Tactile_Theater.webp"
+  },
+  {
+    "name": "Surrealist Topiary Labyrinths",
+    "prompt": "surrealist topiary maze, manicured geometric hedges, cinematic high-angle composition, lush mossy textures, mysterious solitary figure, theatrical dreamscape, vibrant green and crimson palette. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实TopiaryLabyrinths",
+    "thumbnail": "samples/Surrealist_Topiary_Labyrinths.webp"
+  },
+  {
+    "name": "Surrealist Urban Collage",
+    "prompt": "double exposure, surrealist collage, sepia monochrome, tactile paper texture, urban decay integration, dreamy juxtaposition, muted earth tones. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实都市拼贴",
+    "thumbnail": "samples/Surrealist_Urban_Collage.webp"
+  },
+  {
+    "name": "Surrealist Vintage Collage",
+    "prompt": "vintage surrealist collage, botanical illustration, engraving texture, torn paper layers, monochrome portraiture, saturated color accents, aged parchment, dreamlike juxtaposition. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "超现实复古拼贴",
+    "thumbnail": "samples/Surrealist_Vintage_Collage.webp"
+  },
+  {
+    "name": "Tactile Editorial Minimalism",
+    "prompt": "minimalist fashion photography, tactile fabric textures, soft diffused studio lighting, muted earth tone palette, avant-garde utilitarian design, high-end editorial composition, surrealist organic integration. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉编辑极简主义",
+    "thumbnail": "samples/Tactile_Editorial_Minimalism.webp"
+  },
+  {
+    "name": "Tactile Surrealist Avant-Garde",
+    "prompt": "surrealist avant-garde, high-contrast studio lighting, tactile organic texture, stark black background, zoomorphic editorial, minimalist composition, sharp focus. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉超现实AvantGarde",
+    "thumbnail": "samples/Tactile_Surrealist_Avant-Garde.webp"
+  },
+  {
+    "name": "Tactile Surrealist Collage",
+    "prompt": "analog paper collage, tactile layering, surrealist photomontage, vintage film grain, graphic paper cutouts, high-contrast edges, mixed media art, nostalgic editorial aesthetic. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉超现实拼贴",
+    "thumbnail": "samples/Tactile_Surrealist_Collage.webp"
+  },
+  {
+    "name": "Tactile Surrealist Minimalism — Muted Fabric Absurdity",
+    "prompt": "surrealist portraiture, minimalist composition, tactile texture, muted desaturated palette, soft diffused lighting, fine film grain, conceptual photography, subtle absurdity. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉超现实极简主义柔和FabricAbsurdity",
+    "thumbnail": "samples/Tactile_Surrealist_Minimalism_-_Muted_Fabric_Absurdity.webp"
+  },
+  {
+    "name": "Tactile Verdant Illustration",
+    "prompt": "monochromatic green palette, tactile paper texture, colored pencil hatching, aerial perspective, whimsical surrealism, hand-drawn aesthetic, organic landscape patterns. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "触觉翠绿插画",
+    "thumbnail": "samples/Tactile_Verdant_Illustration.webp"
+  },
+  {
+    "name": "Tactile Whimsical Minimalism — Earth-Toned Felt",
+    "prompt": "soft surrealism, tactile texture, minimalist studio lighting, muted earth tones, whimsical hybrid, levitating objects, plush and clay materials. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Tactile Whimsical Minimalism — Earth-Toned Felt",
+    "thumbnail": "samples/Tactile_Whimsical_Minimalism_-_Earth-Toned_Felt.webp"
+  },
+  {
+    "name": "Theatrical Surrealist Maximalism",
+    "prompt": "high-fashion editorial, theatrical studio lighting, saturated jewel tones, minimalist surrealism, sharp high-contrast shadows, tactile textile textures, graphic color blocking. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Theatrical Surrealist Maximalism",
+    "thumbnail": "samples/Theatrical_Surrealist_Maximalism.webp"
+  },
+  {
+    "name": "Velvet Moss Surrealism — Foggy Green Hush",
+    "prompt": "velvety moss texture, surrealist landscape, biophilic architecture, atmospheric fog, minimalist composition, deep forest green palette, liminal space. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Velvet Moss Surrealism — Foggy Green Hush",
+    "thumbnail": "samples/Velvet_Moss_Surrealism_—_Foggy_Green_Hush.webp"
+  },
+  {
+    "name": "Velvet Surreal Landscapes",
+    "prompt": "surrealist landscape, velvety moss terrain, minimalist composition, dramatic long shadows, moody forest greens, solitary figure, ethereal atmospheric lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天鹅绒超现实Landscapes",
+    "thumbnail": "samples/Velvet_Surreal_Landscapes.webp"
+  },
+  {
+    "name": "Velvet Verdant Surrealism — Crimson-Accent Gloom",
+    "prompt": "undulating velvet moss landscape, biomorphic surrealism, deep emerald and crimson palette, moody low-key lighting, fur-like grassy texture, minimalist cinematic composition, dreamlike liminal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天鹅绒翠绿超现实绯红AccentGloom",
+    "thumbnail": "samples/Velvet_Verdant_Surrealism_-_Crimson-Accent_Gloom.webp"
+  },
+  {
+    "name": "Velvet Verdant Surrealism — Golden Fiber Rhythm",
+    "prompt": "tactile velvet moss texture, undulating verdant hills, chiaroscuro golden lighting, surreal organic landscape, rhythmic grass fibers, minimalist atmospheric composition, deep earthy shadows. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天鹅绒翠绿超现实黄金Fiber节奏",
+    "thumbnail": "samples/Velvet_Verdant_Surrealism_—_Golden_Fiber_Rhythm.webp"
+  },
+  {
+    "name": "Velvet Verdant Surrealism — High-Angle Emerald Curves",
+    "prompt": "rolling velvet hills, chiaroscuro lighting, undulating emerald landscape, surreal minimalism, high-angle nature photography, dramatic shadows, verdant dreamscape. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Velvet Verdant Surrealism — High-Angle Emerald Curves",
+    "thumbnail": "samples/Velvet_Verdant_Surrealism_—_High-Angle_Emerald_Curves.webp"
+  },
+  {
+    "name": "Velvet Verdant Surrealism — Misty Emerald Sweep",
+    "prompt": "undulating mossy hills, velvety grass texture, dramatic chiaroscuro lighting, minimalist surrealism, deep emerald green palette, solitary focal point, dreamlike atmospheric solitude. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "天鹅绒翠绿超现实薄雾翠绿Sweep",
+    "thumbnail": "samples/Velvet_Verdant_Surrealism_-_Misty_Emerald_Sweep.webp"
+  },
+  {
+    "name": "Velvety Verdant Surrealism",
+    "prompt": "velvety moss texture, undulating organic landscape, cinematic low-key lighting, surreal minimalist composition, plush forest green, tactile 3D render, mystical nature atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Velvety翠绿超现实",
+    "thumbnail": "samples/Velvety_Verdant_Surrealism.webp"
+  },
+  {
+    "name": "Vertiginous Brutalist Surrealism",
+    "prompt": "extreme wide-angle fisheye, curved architectural perspective, brutalist megastructure, high-contrast daylight, surreal urban vortex, infinite geometry, vertigo-inducing scale. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "Vertiginous粗野主义超现实",
+    "thumbnail": "samples/Vertiginous_Brutalist_Surrealism.webp"
+  },
+  {
+    "name": "Vibrant Analog Surrealism — Sharp Sunlit Primaries",
+    "prompt": "analog film grain, saturated primary colors, sharp sunlight, tactile textures, minimalist outdoor composition, surrealist pop aesthetic, low angle perspective. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳模拟超现实锐利SunlitPrimaries",
+    "thumbnail": "samples/Vibrant_Analog_Surrealism_—_Sharp_Sunlit_Primaries.webp"
+  },
+  {
+    "name": "Vibrant Chromatic Botanical Surrealism",
+    "prompt": "minimalist botanical photography, saturated color gradient background, sharp focus macro, vivid chromatic contrast, velvety petal texture, surreal floral portrait, clean studio lighting. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳彩色Botanical超现实",
+    "thumbnail": "samples/Vibrant_Chromatic_Botanical_Surrealism.webp"
+  },
+  {
+    "name": "Vibrant Pastoral Dreamscape",
+    "prompt": "golden hour lighting, saturated primary colors, liminal pastoral landscape, surrealist nature, sun-drenched glow, vibrant blue sky, cinematic wide-angle. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳PastoralDreamscape",
+    "thumbnail": "samples/Vibrant_Pastoral_Dreamscape.webp"
+  },
+  {
+    "name": "Vibrant Textured Narrative",
+    "prompt": "intricate crosshatching, vibrant saturated palette, maximalist patterned interior, storybook illustration style, tactile printmaking textures, dreamy surreal atmosphere. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "鲜艳有纹理叙事",
+    "thumbnail": "samples/Vibrant_Textured_Narrative.webp"
+  },
+  {
+    "name": "Visceral Monochrome Texture",
+    "prompt": "high-contrast monochrome, extreme macro texture, stark studio lighting, anatomical detail, minimalist high-key background, surrealist confinement, specular highlights. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "内脏感单色纹理",
+    "thumbnail": "samples/Visceral_Monochrome_Texture.webp"
+  },
+  {
+    "name": "Visceral Spectral Noir",
+    "prompt": "high-contrast monochrome, heavy tactile film grain, chiaroscuro lighting, motion blur, spectral silhouettes, lo-fi noir texture, surrealist atmospheric photography. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "内脏感光谱黑色",
+    "thumbnail": "samples/Visceral_Spectral_Noir.webp"
+  },
+  {
+    "name": "Vivid Surrealist Maximalism",
+    "prompt": "vivid color palette, high-contrast studio lighting, surreal pop maximalism, tactile textures, graphic composition, whimsical staging, saturated editorial style. Subject:{prompt}",
+    "negative_prompt": "",
+    "name_cn": "生动超现实Maximalism",
+    "thumbnail": "samples/Vivid_Surrealist_Maximalism.webp"
+  }
+]
