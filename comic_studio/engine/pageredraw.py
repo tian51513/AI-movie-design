@@ -280,7 +280,10 @@ def _redraw_page_h3(db, data_dir, shot, proj, comfy, tmpl, base,
                        "path": char_refs[k][2] if k < len(char_refs) else str(base)})
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
-        params={"seed": seed, "duration": 4,
+        params={"seed": seed,
+                # 抽帧用途：短视频即可（2026-09-12 用户需求，settings 可调 1~4）
+                "duration": int((get_setting(db, "comfy") or {})
+                                .get("page_redraw_h3_duration", 2)),
                 "aspect": ASPECT_ENUM.get(proj["aspect_ratio"], ASPECT_ENUM["16:9"]),
                 "megapixels": proj["video_megapixels"],
                 "multiple": proj["video_multiple"],

@@ -59,6 +59,9 @@ DEFAULT_SETTINGS = {
               # 整页重绘幅度（2026-09-11 v3：线稿 ControlNet 锁结构后=1.0 全幅
               # 生成，构图由 CN strength 保证；调风格化程度改此值意义已变）
               "page_redraw_denoise": 1.0,
+              # v7 H3 抽帧道短视频时长（2026-09-12 用户需求：只抽首帧，越短越省）
+              # ——1~4 可调；H3 对超短视频的行为以真机为准（不稳就回调 4）
+              "page_redraw_h3_duration": 2,
               # H3 SLA 注意力（2026-09-10 用户自定义节点 H3SLAAttention）：五模板
               # LoRA 后最后一环；默认开（0.9=本机验证值/64=音频安全块，节点出厂默认）
               "h3_sla_enabled": True,

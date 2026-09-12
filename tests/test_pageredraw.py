@@ -574,3 +574,28 @@ def test_redraw_page_h3_e2e(tmp_path, monkeypatch):
     from comic_studio.engine.shots import list_shots as _ls
     after = {s["id"]: s for s in _ls(db, pid)}
     assert after[s1["id"]]["video_path"] is None
+
+
+def test_h3_redraw_duration_from_settings(tmp_path, monkeypatch):
+    """v7 时长旋钮（2026-09-12）：settings comfy.page_redraw_h3_duration
+    （默认 2，抽帧用途越短越省）注入 duration 参数。"""
+    db, pid = _motion_project(tmp_path, n=1)
+    from pathlib import Path as _P
+    import comic_studio.engine.pageredraw as pr
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.shots import list_shots
+    from comic_studio.engine.workflows import registry
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    set_setting(db, "template_map", {"page_redraw": "h3_page_redraw"})
+    set_setting(db, "comfy", {"page_redraw_h3_duration": 1})
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", _P("templates/workflows"))
+    monkeypatch.setattr(pr, "_extract_first_frame",
+                        lambda v, o: o.write_bytes(PNG))
+    s1 = list_shots(db, pid)[0]
+    with comfy_server("ok", video=True) as m:
+        pr.redraw_page(db, tmp_path / "data", s1["id"], ComfyClient(m.base_url))
+        wf = m.prompts[0]["prompt"]
+        dur = next(n["inputs"]["value"] for n in wf.values()
+                   if n["class_type"] == "PrimitiveFloat")
+        assert dur == 1

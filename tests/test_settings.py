@@ -67,6 +67,7 @@ def test_comfy_setting_default(tmp_path):
                                         "director_mix": True,
                                         "mute_quiet_shots": False,
                                         "page_redraw_denoise": 1.0,
+                                        "page_redraw_h3_duration": 2,
                                         "h3_sla_enabled": True,
                                         "h3_sla_sparsity": 0.9,
                                         "h3_sla_block_size": "64"}
