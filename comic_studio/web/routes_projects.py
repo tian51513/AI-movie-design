@@ -39,7 +39,9 @@ WORD_COUNT_RANGE = (300, 20000)
 _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "style_vis", "era", "comic_mode", "subtitles",
                     "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
                     "prompt_mode", "lora_realism", "target_duration", "autopilot",
-                    "redraw_characters", "redraw_done")
+                    "redraw_characters", "redraw_done",
+                    # 迁移 36（2026-09-12 小说转漫画）：前端详情页消费
+                    "dialogue_mode", "target_pages", "image_size", "quality_tier")
 
 
 @router.post("/{project_id}/retry-transcribe", status_code=202)
@@ -202,6 +204,54 @@ def create_from_comic(request: Request,
                             video_multiple=video_multiple, video_speed=video_speed)
     except ValueError as exc:
         raise HTTPException(422, str(exc))
+    return _public(proj)
+
+
+@router.post("/from-comic-novel", status_code=201)
+def create_from_comic_novel(request: Request,
+                            name: str = Form(...),
+                            aspect_ratio: str = Form("9:16"),
+                            novel: UploadFile = File(...),
+                            style: str = Form(""), style_vis: str = Form(""),
+                            dialogue_mode: str = Form("bubble"),
+                            target_pages: int = Form(0),
+                            image_size: str = Form("1024x1536"),
+                            quality_tier: str = Form("standard"),
+                            video_megapixels: float = Form(0.4),
+                            video_multiple: int = Form(32),
+                            video_speed: str = Form("标准"),
+                            default_shot_duration: float = Form(0.0),
+                            target_duration: float = Form(0.0)):
+    """小说转漫画创建（2026-09-12 Task 6）：正文上传 + 漫画输出四参数 →
+    comic_output 项目，之后走既有 分析→拆分镜→autopilot 逐页 t2i
+    （页面即交付物，无视频渲染链）。subtitles 恒 0——对白由页面自呈
+    （气泡/底部字幕条/不呈现），视频字幕烧录对漫画无意义。"""
+    from ..engine.projects import ASPECT_RATIOS
+    if aspect_ratio not in ASPECT_RATIOS:
+        raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
+    if dialogue_mode not in ("bubble", "footer", "none"):
+        raise HTTPException(422, "dialogue_mode 只能是 bubble（气泡）/footer（底部字幕条）/none（不呈现）")
+    if quality_tier not in ("fast", "standard", "high"):
+        raise HTTPException(422, "quality_tier 只能是 fast/standard/high")
+    from ..engine.comicgen import SIZE_PRESETS  # 惰性导入：不拉 queue.worker 注册链
+    if image_size not in SIZE_PRESETS:
+        raise HTTPException(422, f"image_size 只能是 {'/'.join(sorted(SIZE_PRESETS))}")
+    if target_pages < 0 or target_pages > 200:
+        raise HTTPException(422, "target_pages 需在 0~200（0=按剧情密度自动）")
+    try:
+        text = novel.file.read().decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(422, "小说文件需为 UTF-8 编码（请转换后重新上传）")
+    proj = create_project(request.app.state.db, request.app.state.data_dir,
+                          name, aspect_ratio, text, style=style, style_vis=style_vis,
+                          comic_mode="comic_output",
+                          dialogue_mode=dialogue_mode, target_pages=target_pages,
+                          image_size=image_size, quality_tier=quality_tier,
+                          video_megapixels=video_megapixels,
+                          video_multiple=video_multiple, video_speed=video_speed,
+                          default_shot_duration=default_shot_duration,
+                          target_duration=target_duration,
+                          subtitles=0)
     return _public(proj)
 
 
@@ -383,6 +433,45 @@ def describe_shots_route(project_id: int, request: Request,
                           shot_id=shot_id if shot_id else None,
                           payload=payload)
     return {"job_id": jid}
+
+
+@router.post("/{project_id}/generate-comic-pages", status_code=202)
+def generate_comic_pages(request: Request, project_id: int):
+    """手动补页（2026-09-12 Task 6）：缺页镜逐个入队 gen_comic_page——
+    非 autopilot 用户的生成入口，也是 autopilot「上次漫画页生成失败，
+    重试请手动发起」守卫的落点。已有页/在飞镜/无效镜跳过（与
+    autopilot tick gen_comic_pages 分支同口径）。"""
+    db = request.app.state.db
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    if (proj["comic_mode"] if "comic_mode" in proj.keys() else "") != "comic_output":
+        raise HTTPException(422, "仅漫画成品项目（comic_output）可生成漫画页")
+    if proj["stage"] not in ("storyboard_ready", "comic_ready"):
+        raise HTTPException(409, f"阶段 {proj['stage']} 不能生成漫画页（需分镜就绪）")
+    from ..engine.settings import ensure_comfy_configured
+    try:
+        ensure_comfy_configured(db)  # 配置门禁（2026-09-01 事故防线同款）
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
+    from ..engine.jobs import enqueue_job
+    from ..engine.paths import data_to_abs
+    from ..engine.shots import list_shots
+    pages_dir = data_to_abs(request.app.state.data_dir,
+                            f"projects/{proj['slug']}/pages")
+    queued = {r["shot_id"] for r in db.connect().execute(
+        "SELECT DISTINCT shot_id FROM jobs WHERE type='gen_comic_page' "
+        "AND shot_id IS NOT NULL AND status IN ('pending','running')")}
+    n = 0
+    for s in list_shots(db, project_id):
+        if s["disabled"] or s["id"] in queued:
+            continue
+        if (pages_dir / f"page_{s['seq']:03d}.png").exists():
+            continue
+        enqueue_job(db, "gen_comic_page", project_id=project_id, shot_id=s["id"],
+                    resource="gpu_comfy", payload={"shot_id": s["id"]})
+        n += 1
+    return {"enqueued": n}
 
 
 @router.post("/{project_id}/export-comic")

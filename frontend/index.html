@@ -820,6 +820,8 @@
               :style="detailMode==='assets' ? 'background:#16a34a' : ''">资产（{{ assets.length }}）</button>
       <button @click="switchDetailMode('shots')"
               :style="detailMode==='shots' ? 'background:#16a34a' : ''">分镜（{{ shots.length }}）</button>
+      <button v-if="project.comic_mode==='comic_output'" @click="switchDetailMode('pages')"
+              :style="detailMode==='pages' ? 'background:#16a34a' : ''">漫画页（{{ comicPageShots.length }}）</button>
     </p>
     <!-- 资产模式 -->
     <template v-if="detailMode==='assets'">
@@ -1154,6 +1156,48 @@
            :style="renderBadge(s)==='渲染失败' ? 'color:#f87171' : ''">⏱ {{ renderBadge(s) }}</div>
     </div>
     </template>
+    <!-- 漫画页模式（comic_output，2026-09-12）：页面即交付物——瀑布流浏览 + 补页 + 导出 -->
+    <template v-if="detailMode==='pages'">
+      <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="pill" :style="comicDonePages===comicPageShots.length && comicPageShots.length
+              ? 'background:#14532d;color:#86efac' : ''">{{ comicDonePages }}/{{ comicPageShots.length }} 页就绪
+          <template v-if="comicDonePages===comicPageShots.length && comicPageShots.length">✓</template></span>
+        <span v-if="comicGenBusy" class="pill" style="background:#7c2d12;color:#fdba74">🖼 生成中…（队列驱动自动刷新）</span>
+        <button v-if="project.stage==='storyboard_ready' || project.stage==='comic_ready'"
+                @click="genComicPages" :disabled="comicGenBusy"
+                :title="comicGenBusy ? '生成任务进行中' : '为缺页分镜入队 t2i 生成（autopilot「上次失败请手动发起」的落点）'">
+          🖼 生成缺失页</button>
+        <button @click="exportComic('pdf')" :disabled="exportingComic || !comicDonePages"
+                title="全部页面合成一个 PDF（Pillow）">📄 导出 PDF</button>
+        <button @click="exportComic('strip')" :disabled="exportingComic || !comicDonePages"
+                title="全部页面竖排拼成一张长图（ffmpeg）">📜 导出长图</button>
+        <a v-if="comicExportUrl" :href="comicExportUrl" target="_blank" class="pill"
+           style="background:#164e63;color:#67e8f9">⬇ {{ comicExportName }}</a>
+      </p>
+      <div v-if="comicPageShots.length" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
+        <div class="card" v-for="s in comicPageShots" :key="s.id"
+             :style="s.disabled ? 'opacity:.45' : ''">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <b>第 {{ s.seq }} 页</b>
+            <span v-if="s.disabled" class="pill" style="border:1px solid #7c3aed;color:#c084fc">无效</span>
+            <span class="pill">{{ comicPageStatusLabel(s) }}</span>
+          </div>
+          <template v-if="s.status==='comic_ready' && !s.disabled">
+            <img :src="comicPageUrl(s)" loading="lazy" @click="lightbox=comicPageUrl(s)"
+                 style="width:100%;margin-top:6px;cursor:zoom-in;border-radius:6px;border:1px solid #2c3540">
+          </template>
+          <div v-else class="muted" style="margin-top:6px;min-height:120px;display:flex;
+               align-items:center;justify-content:center;border:1px dashed #2c3540;border-radius:6px">
+            {{ s.disabled ? '不参与生成' : '待生成' }}</div>
+          <div v-if="dialogueOf(s).length" class="muted"
+               style="margin-top:4px;font-size:12px;line-height:1.5">
+            <div v-for="(d, i) in dialogueOf(s).slice(0, 3)" :key="i">{{ d.speaker }}：{{ d.line }}</div>
+            <div v-if="dialogueOf(s).length > 3">…共 {{ dialogueOf(s).length }} 句</div>
+          </div>
+        </div>
+      </div>
+      <p v-else class="muted" style="padding:20px 0">暂无漫画分镜——到「分镜」页拆分分镜，或开「🚀 一键出片」自动跑完全程</p>
+    </template>
     <div v-if="merges.length" style="margin-top:14px">
       <h3>成片（{{ merges.length }}）</h3>
       <div v-for="m in merges" :key="m.file" class="card" style="margin-bottom:8px">
@@ -1245,6 +1289,8 @@
                   :style="newMode==='comic'?'background:#16a34a':''">🖼 漫画导入</button>
           <button type="button" style="margin-left:4px" @click="newMode='audio'; newSubtitles=true"
                   :style="newMode==='audio'?'background:#16a34a':''">🎧 有声书</button>
+          <button type="button" style="margin-left:4px" @click="newMode='comicnovel'; newSubtitles=false"
+                  :style="newMode==='comicnovel'?'background:#16a34a':''">📖 漫画</button>
         </p>
         <!-- 三 tab 公共字段（名称/画幅/段时长/总时长）——原来每个表单各一份 -->
         <p><input v-model="newName" :placeholder="newMode==='theme' ? '漫剧名称（留空用主题名）' : '漫剧名称'"></p>
@@ -1263,7 +1309,7 @@
           </select></label>
           <label>质量档<select v-model="newSpeed">
             <option>快速</option><option>标准</option><option>高质量</option></select></label>
-          <label v-if="newMode!=='comic'" title="留空=AI 按镜间衔接逐镜智能选；指定=拆分镜后全部镜用该模式（漫画项目由导入模式决定，不适用）">渲染模式
+          <label v-if="newMode!=='comic' && newMode!=='comicnovel'" title="留空=AI 按镜间衔接逐镜智能选；指定=拆分镜后全部镜用该模式（漫画项目由导入模式决定，不适用）">渲染模式
             <select v-model="newRenderMode">
               <option value="">自动（AI 逐镜选）</option>
               <option value="ref2va">多参生视频</option>
@@ -1277,7 +1323,7 @@
            <span class="muted" style="font-size:12px">（总时长>0 时拆分镜后按镜数均摊）</span></p>
         <!-- 画风（2026-09-06）：上传/漫改随创建提交；动态漫不消费——画风跟随原页，
              此前漫画 tab 无画风字段，用户设了画风被静默忽略（黑白→真人误用动态漫事故） -->
-        <template v-if="newMode==='upload' || (newMode==='comic' && (comicMode==='film_adaptation' || comicRedraw))">
+        <template v-if="newMode==='upload' || newMode==='comicnovel' || (newMode==='comic' && (comicMode==='film_adaptation' || comicRedraw))">
           <p>画风<select v-model="newStyleKey">
              <option value="">不指定（默认）</option>
              <optgroup label="通用">
@@ -1323,6 +1369,31 @@
           <p class="muted" style="font-size:12px">已选 {{ comicFiles.length }} 页（一图一镜）</p>
           <p><button :disabled="creating || !comicFiles.length">
              {{ creating ? '创建中…' : '🖼 导入漫画' }}</button></p>
+        </form>
+
+        <form v-if="newMode==='comicnovel'" @submit.prevent="createComicNovel">
+          <p class="muted" style="font-size:12px">
+             小说正文 → LLM 拆成漫画分镜 → 逐页 t2i 出图（建「🚀 一键出片」自动跑完全程；
+             页面即交付物，无视频链）</p>
+          <p>页数<input type="number" min="0" max="200" v-model.number="comicTargetPages" style="width:52px">
+             <span class="muted" style="font-size:12px">（0=按剧情密度自动）</span>
+             尺寸<select v-model="comicImageSize" style="font-size:13px;padding:4px 6px">
+               <option value="1024x1536">竖版 1024×1536</option>
+               <option value="832x1216">竖版 832×1216</option>
+               <option value="1024x1024">方形 1024×1024</option>
+               <option value="1536x1024">横版 1536×1024</option></select>
+             质量档<select v-model="comicQuality" style="font-size:13px;padding:4px 6px">
+               <option value="fast">快速</option>
+               <option value="standard">标准</option>
+               <option value="high">高质量</option></select></p>
+          <p>对白呈现<select v-model="comicDialogueMode" style="font-size:13px;padding:4px 6px">
+               <option value="bubble">气泡（画在格内）</option>
+               <option value="footer">底部字幕条</option>
+               <option value="none">不呈现</option></select>
+             <span class="muted" style="font-size:12px">分镜对白按所选方式呈现到页面</span></p>
+          <p><input type="file" accept=".txt" @change="f => comicNovelFile = f.target.files[0]" required></p>
+          <p><button :disabled="creating || !comicNovelFile">
+             {{ creating ? '创建中…' : '📖 创建漫画项目' }}</button></p>
         </form>
 
         <form v-if="newMode==='audio'" @submit.prevent="fromAudio">

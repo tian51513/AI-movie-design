@@ -38,6 +38,11 @@ function data() {
     newExtraPrompt: '', themePreview: '', themePreviewing: false,
     createOpen: false, projPage: 1, projPageSize: 12, comicFiles: [],
     audioFile: null,  // P10A 有声书 tab（单文件）
+    // 📖 小说转漫画 tab（2026-09-12 Task 6）：正文 + 漫画输出四参数 → comic_output 项目
+    comicNovelFile: null, comicTargetPages: 0, comicImageSize: '1024x1536',
+    comicQuality: 'standard', comicDialogueMode: 'bubble',
+    exportingComic: false, comicExportUrl: '', comicExportName: '',
+    _pagesStamp: 0,  // 漫画页缓存戳：进页/补页后翻新，杜绝重生成后吃旧图缓存
     comicMode: 'motion_comic',
     comicRedraw: false,  // 动态漫角色重绘复选（2026-09-09）：勾选联动字幕默认开（watch），切走模式复位
     redrawBusy: false,  // 🖌 批量重绘分镜在途（防重复提交）
@@ -150,6 +155,16 @@ const computed = {
   batchVlmBusy() {  // 批量 VLM 读图状态由队列驱动（替换原来的 3s setTimeout hack）
     return ((this.queue && this.queue.jobs) || []).some(
       j => j.type === 'describe_shots' && (j.status === 'pending' || j.status === 'running'));
+  },
+  comicPageShots() {  // 漫画页 = comic 类型镜（seq 即页号，pages/page_NNN.png）
+    return this.shots.filter(s => s.workflow_type === 'comic');
+  },
+  comicDonePages() {  // 已生成页数（无效镜不计数，与补页/导出过滤同口径）
+    return this.comicPageShots.filter(s => !s.disabled && s.status === 'comic_ready').length;
+  },
+  comicGenBusy() {  // 漫画页生成在飞（队列驱动，生成中徽章 + 补页按钮防抖）
+    return ((this.queue && this.queue.jobs) || []).some(
+      j => j.type === 'gen_comic_page' && (j.status === 'pending' || j.status === 'running'));
   },
   hasActiveJobs() {
     return this.directorBusy || (this.queue && (this.queue.pending > 0 || this.queue.running > 0));
@@ -543,6 +558,11 @@ const methods = {
     const s = await fetch(`/api/projects/${this.project.id}/analyze/status`);
     if (s.ok) this.analyzeState = await s.json();
     if (this.project.stage === 'rendered' || this.project.stage === 'merged') await this.loadMerges();
+    // 漫画成品项目（comic_output）：详情页「漫画页（N）」计数随开即有（后续
+    // pages 模式的轮询接手刷新；shots 非空即跳过，不重复拉）
+    if ((this.project.comic_mode || '') === 'comic_output' && !this.shots.length) {
+      await this.loadShots();
+    }
   },
 
   // ===== autopilot 一键出片 =====
@@ -970,8 +990,8 @@ const methods = {
         }
         this._doneSeen = done; wasBusy = busy;
       } catch (e) { /* 队列瞬时失败不影响日志流 */ }
-      // 分镜模式轮询
-      if (this.detailMode === 'shots' && this.project) {
+      // 分镜模式轮询（pages 模式同源：漫画页就靠 shots 的 seq/status 刷新）
+      if ((this.detailMode === 'shots' || this.detailMode === 'pages') && this.project) {
         try {
           if (this.splitRunning) {
             const st = await (await fetch(`/api/projects/${this.project.id}/split-storyboards/status`)).json();
@@ -1014,7 +1034,40 @@ const methods = {
   ledgerLabel(cat) { return { must_appear: '必须出现', must_keep: '必须保持', may_change: '允许变化', must_avoid: '禁止' }[cat] || cat; },
   async switchDetailMode(mode) {
     this.detailMode = mode;
-    if (mode === 'shots' && this.project) await this.loadShots();
+    if ((mode === 'shots' || mode === 'pages') && this.project) {
+      this._pagesStamp = Date.now();  // 每次进页翻新缓存戳（重生成后不吃旧图）
+      await this.loadShots();
+    }
+  },
+  // ===== 漫画页浏览（comic_output，2026-09-12 Task 6） =====
+  comicPageUrl(s) {
+    const base = `/media/projects/${this.project.slug}/pages/page_${String(s.seq).padStart(3, '0')}.png`;
+    return this._pagesStamp ? `${base}?v=${this._pagesStamp}` : base;
+  },
+  comicPageStatusLabel(s) {
+    if (s.disabled) return '无效';
+    // pending=拆解后初始态（漫画项目不走 gen_prompts，直到 comic_ready 才变）
+    return { comic_ready: '已生成', ready: '待生成', pending: '待生成', stale: '待重生成' }[s.status] || s.status;
+  },
+  async genComicPages() {  // 手动补页：POST 202 入队，进度由队列轮询驱动（comicGenBusy）
+    if (this.comicGenBusy) return;
+    const r = await fetch(`/api/projects/${this.project.id}/generate-comic-pages`, { method: 'POST' });
+    if (!r.ok) { alert(await r.text()); return; }
+    const b = await r.json();
+    if (!b.enqueued) alert('没有缺失页——全部页面已生成');
+  },
+  async exportComic(format) {  // 同步导出（秒级）：返回 /media url，新窗预览/另存
+    this.exportingComic = true;
+    try {
+      const r = await fetch(`/api/projects/${this.project.id}/export-comic?format=${format}`,
+                            { method: 'POST' });
+      if (!r.ok) { alert(await r.text()); return; }
+      const b = await r.json();
+      this.comicExportUrl = b.url;
+      this.comicExportName = String(b.rel || '').split('/').pop();
+      window.open(b.url, '_blank');
+    } catch (e) { alert('导出失败：' + e); }
+    this.exportingComic = false;
   },
   async loadShots() {
     const pid = this.project?.id;
@@ -1192,6 +1245,30 @@ const methods = {
       this.newName = ''; this.audioFile = null; this.createOpen = false;
       await this.refresh();
     } catch (e) { alert('上传失败：' + e); }
+    this.creating = false;
+  },
+  async createComicNovel() {  // 📖 小说转漫画（2026-09-12）：正文 + 漫画参数 → comic_output 项目
+    if (!this.comicNovelFile) return;
+    this.creating = true;
+    try {
+      const fd = new FormData();
+      fd.append('name', this.newName || this.comicNovelFile.name.replace(/\.\w+$/, '') || '漫画');
+      fd.append('aspect_ratio', this.newRatio);
+      fd.append('novel', this.comicNovelFile);
+      fd.append('style', this._styleText()); fd.append('style_vis', this._styleVis());
+      fd.append('dialogue_mode', this.comicDialogueMode);
+      fd.append('target_pages', Number(this.comicTargetPages) || 0);  // L11：空串/NaN 兜 0（0=自动）
+      fd.append('image_size', this.comicImageSize);
+      fd.append('quality_tier', this.comicQuality);
+      fd.append('video_megapixels', this.newMegapixels);
+      fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
+      fd.append('default_shot_duration', Number(this.newSegDur) || 0);
+      fd.append('target_duration', Number(this.newTotalDur) || 0);
+      const resp = await fetch('/api/projects/from-comic-novel', { method: 'POST', body: fd });
+      if (!resp.ok) { alert(await resp.text()); return; }  // L19：失败保留表单可改后重试
+      this.newName = ''; this.comicNovelFile = null; this.createOpen = false;
+      await this.refresh();
+    } catch (e) { alert('创建失败：' + e); }
     this.creating = false;
   },
   async extractCharacters() {
@@ -1554,7 +1631,8 @@ const methods = {
   },
 
   stageName(s) { return { created: '已创建', analyzed: '已分析', assets_ready: '资产就绪',
-    storyboard_ready: '分镜就绪', rendering: '渲染中', rendered: '已渲染', merged: '已合成' }[s] || s; },
+    storyboard_ready: '分镜就绪', rendering: '渲染中', rendered: '已渲染', merged: '已合成',
+    comic_ready: '漫画就绪' }[s] || s; },
   kindName(k) { return { character: '角色', scene: '场景', prop: '道具' }[k]; },
   fmtDate(s) { return s ? String(s).slice(5, 16) : ''; },  // "2026-08-27 20:15" → "08-27 20:15"
   dialogueOf(s) { return (s.ledger && s.ledger.dialogue) || []; },

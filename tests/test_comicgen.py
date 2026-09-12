@@ -522,3 +522,89 @@ def test_export_comic_api(tmp_path):
         assert body["rel"].endswith("output/comic_strip.png")
         assert body["url"] == f"/media/{body['rel']}"
         assert (tmp_path / "data" / body["rel"]).exists()
+
+
+# ---- Task 6: 前端全套后端侧（创建路由 + 手动补页路由） ----
+
+def test_from_comic_novel_api(tmp_path):
+    """POST from-comic-novel：正文上传 + 漫画参数 → comic_output 项目（四列落库）。"""
+    from fastapi.testclient import TestClient
+
+    from comic_studio.web.app import create_app
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post("/api/projects/from-comic-novel",
+                   data={"name": "漫画测试", "aspect_ratio": "3:4",
+                         "dialogue_mode": "footer", "target_pages": "12",
+                         "image_size": "832x1216", "quality_tier": "high",
+                         "style": "水墨画风", "style_vis": "水墨留白"},
+                   files={"novel": ("novel.txt", "少年推门而入。" * 30, "text/plain")})
+        assert r.status_code == 201, r.text
+        body = r.json()
+        assert body["comic_mode"] == "comic_output"
+        assert body["dialogue_mode"] == "footer"
+        assert body["target_pages"] == 12
+        assert body["image_size"] == "832x1216"
+        assert body["quality_tier"] == "high"
+        assert body["style"] == "水墨画风"
+        # 非法参数逐个 422
+        for k, v in {"dialogue_mode": "loud", "quality_tier": "ultra",
+                     "image_size": "1x1", "target_pages": "999"}.items():
+            data = {"name": "x", k: v}
+            rr = c.post("/api/projects/from-comic-novel", data=data,
+                        files={"novel": ("n.txt", "正文内容。" * 50, "text/plain")})
+            assert rr.status_code == 422, (k, rr.text)
+        # 非 UTF-8 文件 422
+        rr = c.post("/api/projects/from-comic-novel", data={"name": "x"},
+                    files={"novel": ("n.txt", b"\xff\xfe\x00bad", "text/plain")})
+        assert rr.status_code == 422
+
+
+def test_from_comic_novel_defaults(tmp_path):
+    """不传可选参数：全部落默认（bubble/0=自动/1024x1536/standard）。"""
+    from fastapi.testclient import TestClient
+
+    from comic_studio.web.app import create_app
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post("/api/projects/from-comic-novel",
+                   data={"name": "默认参数"},
+                   files={"novel": ("n.txt", "正文。" * 100, "text/plain")})
+        assert r.status_code == 201, r.text
+        b = r.json()
+        assert b["comic_mode"] == "comic_output" and b["dialogue_mode"] == "bubble"
+        assert b["target_pages"] == 0 and b["quality_tier"] == "standard"
+
+
+def test_generate_comic_pages_api(tmp_path):
+    """POST generate-comic-pages：手动补页——404/409 守卫 + 缺页入队、
+    已有页与在飞镜跳过。"""
+    from fastapi.testclient import TestClient
+
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project, set_stage
+    db, pid = _comic_project(tmp_path)
+    sids = _comic_shot_ids(db, pid)
+    set_stage(db, pid, "storyboard_ready")
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        assert c.post("/api/projects/9999/generate-comic-pages").status_code == 404
+        # 未配置 ComfyUI → 409 门禁（2026-09-01 事故防线同款）——新库默认带
+        # 127.0.0.1:8188，先清空再验证门禁
+        from comic_studio.engine.settings import set_setting
+        set_setting(db, "comfy", {"base_url": ""})
+        r = c.post(f"/api/projects/{pid}/generate-comic-pages")
+        assert r.status_code == 409
+        # 配好 ComfyUI 地址（写 settings comfy.base_url）
+        set_setting(db, "comfy", {"base_url": "http://mock:8188"})
+        r = c.post(f"/api/projects/{pid}/generate-comic-pages")
+        assert r.status_code == 202, r.text
+        assert r.json() == {"enqueued": 1}
+        # 阶段守卫：created 不能生成
+        set_stage(db, pid, "created")
+        r = c.post(f"/api/projects/{pid}/generate-comic-pages")
+        assert r.status_code == 409
+        # 非 comic_output 项目 422
+        from comic_studio.engine.projects import create_project
+        vid = create_project(db, tmp_path / "data", "普通项目", "9:16", "正文" * 100)["id"]
+        assert c.post(f"/api/projects/{vid}/generate-comic-pages").status_code == 422
