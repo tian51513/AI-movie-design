@@ -206,6 +206,12 @@ MIGRATIONS: list[str] = [
     # redraw_done=用户已点过批量重绘分镜（autopilot 停等标记）
     """ALTER TABLE projects ADD COLUMN redraw_characters INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE projects ADD COLUMN redraw_done INTEGER NOT NULL DEFAULT 0;""",
+    # 36 小说转漫画（2026-09-12）：第五种项目类型——dialogue_mode 对白呈现
+    # /target_pages 页数(0=自动)/image_size 尺寸预设/quality_tier 质量档
+    """ALTER TABLE projects ADD COLUMN dialogue_mode TEXT NOT NULL DEFAULT 'bubble';
+    ALTER TABLE projects ADD COLUMN target_pages INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE projects ADD COLUMN image_size TEXT NOT NULL DEFAULT '1024x1536';
+    ALTER TABLE projects ADD COLUMN quality_tier TEXT NOT NULL DEFAULT 'standard';""",
 ]
 
 
