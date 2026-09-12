@@ -86,6 +86,34 @@ EMOTIONS = ("平静", "温柔", "开心", "轻笑", "严肃", "愤怒", "激动"
 CONTINUITY_MODES = ("全程继承", "微变延续", "焦点跟随", "缓慢推镜", "缓慢拉镜", "场景断点")
 
 
+# 漫画输出模式（2026-09-12 小说转漫画）：追加在 SPLIT_SYSTEM 之后的分支规则——
+# 分镜=漫画页单格：场景+人物+对白；无运镜/机位/声音/时长概念（静态画面媒介）。
+# JSON 输出 schema 不变（ShotDraft 宽进：camera/duration 留默认，workflow_type 引擎机械覆写）。
+COMIC_SPLIT_RULES = """
+
+【漫画页模式——本项目产出静态漫画页，不生成视频】
+以下规则覆盖前文中与视频生成相关的条目：
+1. 每个分镜 = 一格漫画页：description 写清 场景环境 + 出场人物（一律用名字）的动作与表情 +
+   本格承载的对白内容，80 字内中文；一格讲完一个叙事拍点，格与格按剧情顺序衔接
+2. 无运镜：camera 一律留空对象 {}（景别/机位/运镜/转场一概不写）；无声音：不写任何
+   环境声/音效/配乐描述；无时长：duration 可省略（静态页无时长概念）
+3. workflow_type 一律忽略（系统统一填 comic，无需你判断）
+4. dialogue 照旧：[{"speaker":"说话人","line":"原话"}] 逐字照录本格对白，供气泡排版使用
+5. 台账照旧服务跨格画面一致性：must_keep（角色发型/服装/外貌特征）、must_avoid（易错项）；
+   泛称群体称谓→白名单具名角色的纪律照旧
+6. 输出 JSON 结构与上述 schema 完全一致（忽略的字段留空/省略即可）"""
+
+
+def comic_split_system(target_pages: int = 0) -> str:
+    """comic_output 项目的拆解 system 提示词：SPLIT_SYSTEM + 漫画页分支规则
+    （target_pages>0 时注入全文页数指引，2026-09-12 Task 2）。"""
+    rules = COMIC_SPLIT_RULES
+    if target_pages and target_pages > 0:
+        rules += (f"\n7. 全文目标约 {target_pages} 个漫画页（即约 {target_pages} 个分镜），"
+                  "按各段剧情密度分配，允许 ±20% 浮动")
+    return SPLIT_SYSTEM + rules
+
+
 def _random_seed() -> int:
     import random
     return random.randint(0, 2 ** 31 - 1)
@@ -318,6 +346,10 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     provider = get_setting(db, "llm_routing")["split_storyboards"]
     # 段时长基准（2026-09-05）：进拆解上下文；0=LLM 动态估时（无对白镜也自估）
     _dur = float(proj["default_shot_duration"] or 0.0)
+    # 漫画输出模式（2026-09-12 Task 2）：comic_output → system 走漫画页分支
+    # （场景+人物+对白，无运镜/声音/时长）；dur_hint 不注入（静态页无时长概念）
+    _comic = proj["comic_mode"] == "comic_output"
+    _sys = comic_split_system(int(proj["target_pages"] or 0)) if _comic else SPLIT_SYSTEM
     # 有声书对白规则（2026-09-05 真机：转写无引号 → LLM 不识台词 → dialogue
     # 空 → 提示词无对白）：音频项目注入「全篇皆对白」规则+说话人推断+主题
     _audio_rules = ""
@@ -344,9 +376,9 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
         t0 = time.monotonic()
         quota_line = (f"【数量约束】全文目标 {target_count} 个分镜，本块目标拆出约 {quotas[i-1]} 个分镜"
                       f"（按篇幅分配，允许 ±1 浮动）") if quotas else None
-        result, usage = ask_validated(client, SPLIT_SYSTEM + _audio_rules,
+        result, usage = ask_validated(client, _sys + _audio_rules,
                                       build_split_user_prompt(chunk, assets, quota_line,
-                                                              dur_hint=_dur),
+                                                              dur_hint=None if _comic else _dur),
                                       ChunkStoryboard)
         emit_log(db, "llm", "info",
                  f"split_storyboards 完成 · {getattr(client, 'model', '?')} · "
@@ -413,6 +445,12 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     if _rm:
         for s in staged:
             s.workflow_type = _rm
+    # 漫画输出模式（2026-09-12 Task 2）：全部镜机械固定 workflow_type='comic'——
+    # 覆盖 LLM 建议与 render_mode 指定（漫画项目无视频工作流语义，延续校准的
+    # fl2v/ref2va 建议一律作废；放在 render_mode 覆写之后保证 comic 优先）
+    if _comic:
+        for s in staged:
+            s.workflow_type = "comic"
     if n_dur:
         emit_log(db, "storyboard", "info",
                  f"对白镜时长重估：{n_dur} 镜（句数×2.5s，钳 4~15）", project_id=project_id)
