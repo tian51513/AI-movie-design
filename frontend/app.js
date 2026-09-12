@@ -1558,6 +1558,63 @@ const methods = {
   kindName(k) { return { character: '角色', scene: '场景', prop: '道具' }[k]; },
   fmtDate(s) { return s ? String(s).slice(5, 16) : ''; },  // "2026-08-27 20:15" → "08-27 20:15"
   dialogueOf(s) { return (s.ledger && s.ledger.dialogue) || []; },
+    _styleText() {
+      if (this.newStyleKey === '自定义') return this.newStyleText;
+      if (this.newStyleKey === 'Krea2库') return this._kreaPrompt();
+      return presetStyle(this.newStyleKey);
+    },
+    _styleVis() {
+      if (this.newStyleKey === '自定义') return this.newStyleText;
+      if (this.newStyleKey === 'Krea2库') return this._kreaPrompt();
+      return presetStyleVis(this.newStyleKey);
+    },
+    _kreaPrompt() {
+      const styles = this.kreaLibs[this.kreaLib] || [];
+      const s = styles.find(x => x.name === this.kreaName);
+      return s ? s.prompt : '';
+    },
+    toggleStylePanel() {
+      this.styleOpen = !this.styleOpen;
+      if (this.styleOpen) {
+        this.styleEditStyle = this.project.style || '';
+        this.styleEditVis = this.project.style_vis || '';
+      }
+    },
+    async saveStylePanel() {
+      this.styleSaving = true;
+      try {
+        const body = { style: this.styleEditStyle.trim() };
+        if (this.styleEditVis.trim()) body.style_vis = this.styleEditVis.trim();
+        const r = await fetch(`/api/projects/${this.project.id}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body) });
+        if (r.ok) { this.styleOpen = false; await this.loadDetail(); }
+        else alert(await r.text());
+      } finally { this.styleSaving = false; }
+    },
+    openStylePicker(ctx) {
+      this.spCtx = ctx;
+      this.spSel = '';
+      this.spSearch = '';
+      if (!this.spLib) {
+        const first = Object.keys(this.kreaLibs)[0];
+        if (first) this.spLib = first;
+      }
+      this.stylePickerOpen = true;
+    },
+    confirmStylePicker() {
+      const styles = this.kreaLibs[this.spLib] || [];
+      const s = styles.find(x => x.name === this.spSel);
+      if (!s) return;
+      if (this.spCtx === 'create') {
+        this.kreaLib = this.spLib;
+        this.kreaName = s.name;
+      } else {
+        this.styleEditStyle = s.prompt;
+        if (!this.styleEditVis.trim()) this.styleEditVis = s.prompt;
+      }
+      this.stylePickerOpen = false;
+    },
 };
 
 /* ===== 可复用组件 ===== */
@@ -1620,63 +1677,6 @@ createApp({ components: { PromptBox }, data, computed, methods,
     // 决策 9：勾重绘=要按新画风重绘出新画面 → 漫画字幕默认开（漫画 tab 的字幕复选就是 newSubtitles）
     comicRedraw(v) { if (v && this.comicMode === 'motion_comic') this.newSubtitles = true; },
   },
-    _styleText() {
-      if (this.newStyleKey === '自定义') return this.newStyleText;
-      if (this.newStyleKey === 'Krea2库') return this._kreaPrompt();
-      return presetStyle(this.newStyleKey);
-    },
-    _styleVis() {
-      if (this.newStyleKey === '自定义') return this.newStyleText;
-      if (this.newStyleKey === 'Krea2库') return this._kreaPrompt();
-      return presetStyleVis(this.newStyleKey);
-    },
-    _kreaPrompt() {
-      const styles = this.kreaLibs[this.kreaLib] || [];
-      const s = styles.find(x => x.name === this.kreaName);
-      return s ? s.prompt : '';
-    },
-    toggleStylePanel() {
-      this.styleOpen = !this.styleOpen;
-      if (this.styleOpen) {
-        this.styleEditStyle = this.project.style || '';
-        this.styleEditVis = this.project.style_vis || '';
-      }
-    },
-    async saveStylePanel() {
-      this.styleSaving = true;
-      try {
-        const body = { style: this.styleEditStyle.trim() };
-        if (this.styleEditVis.trim()) body.style_vis = this.styleEditVis.trim();
-        const r = await fetch(`/api/projects/${this.project.id}`, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body) });
-        if (r.ok) { this.styleOpen = false; await this.loadDetail(); }
-        else alert(await r.text());
-      } finally { this.styleSaving = false; }
-    },
-    openStylePicker(ctx) {
-      this.spCtx = ctx;
-      this.spSel = '';
-      this.spSearch = '';
-      if (!this.spLib) {
-        const first = Object.keys(this.kreaLibs)[0];
-        if (first) this.spLib = first;
-      }
-      this.stylePickerOpen = true;
-    },
-    confirmStylePicker() {
-      const styles = this.kreaLibs[this.spLib] || [];
-      const s = styles.find(x => x.name === this.spSel);
-      if (!s) return;
-      if (this.spCtx === 'create') {
-        this.kreaLib = this.spLib;
-        this.kreaName = s.name;
-      } else {
-        this.styleEditStyle = s.prompt;
-        if (!this.styleEditVis.trim()) this.styleEditVis = s.prompt;
-      }
-      this.stylePickerOpen = false;
-    },
   async mounted() {
     fetch('/api/settings/style-presets').then(r => r.json())
       .then(d => { this.kreaLibs = d; })
