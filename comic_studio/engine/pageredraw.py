@@ -455,9 +455,10 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
                            "不得删除、隐藏、合并或补全；背景与构图保持完全不变；"
                            "若图1中无任何人物则不添加人物")
             else:
-                # 多人镜/无绑定：回填原页（白图 1×1 对 Krea2 双图有干扰，
-                # 原页=场景重复参考无语义污染——2026-09-12 v4 判例同款）
-                images.append({"slot": slot, "path": str(base)})
+                # 多人镜/无绑定：纯白图（2026-09-12 真机四修：原页回填=双图
+                # 模式在 image2 里看到人脸 → 复制成 3 个头像；白图无人脸
+                # → identity LoRA 无东西可注入 → 纯场景风格转换）
+                images.append({"slot": slot, "path": str(_blank_ref_png(data_dir))})
     # v3 线稿 ControlNet 版画幅链：ResolutionSelector 三必填（2026-09-11 真机
     # 400——manifest 声明了注入点但 params 没带键=required_input_missing）
     from .rendershot import ASPECT_ENUM
