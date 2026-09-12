@@ -421,19 +421,24 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
 
         refs, names, traits = [], [], []
         led = json.loads(shot["ledger_json"] or "{}")
-        for aid in (led.get("assets", {}) or {}).get("characters", []):
-            a = get_asset(db, aid)
-            if a and a["library_dir"]:
-                main = data_to_abs(data_dir, a["library_dir"]) / "main.png"
-                if main.exists():
-                    refs.append(str(main))
-                    names.append(a["name"])
-                    # v6.1（2026-09-12 真机）：点名句注入具体外貌细节——
-                    # 「黑长直」类大众特征模型会拿原脸糊弄，写明细才锚得住
-                    traits.append(_ref_trait(
-                        json.loads(a["appearance_json"]).get("detail", "")))
-            if len(refs) >= len(char_slots):
-                break
+        all_bound = list((led.get("assets", {}) or {}).get("characters", []))
+        # 多人镜不给参考图（2026-09-12 真机三修）：Krea2 双图=单人合成
+        # （把图2的人放进图1场景）——多人镜给了单人参考 → 其他人被丢。
+        # 仅当模板 char 槽装不下全部绑定角色时跳过（Krea2=1 槽 vs 2+ 角色）；
+        # 多槽模板（MR 的 char1+char2）正常逐槽注入
+        multi = len(all_bound) > len(char_slots)
+        if not multi:
+            for aid in all_bound:
+                a = get_asset(db, aid)
+                if a and a["library_dir"]:
+                    main = data_to_abs(data_dir, a["library_dir"]) / "main.png"
+                    if main.exists():
+                        refs.append(str(main))
+                        names.append(a["name"])
+                        traits.append(_ref_trait(
+                            json.loads(a["appearance_json"]).get("detail", "")))
+                if len(refs) >= len(char_slots):
+                    break
         for k, slot in enumerate(char_slots):
             if k < len(refs):
                 images.append({"slot": slot, "path": refs[k]})
@@ -450,7 +455,9 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
                            "不得删除、隐藏、合并或补全；背景与构图保持完全不变；"
                            "若图1中无任何人物则不添加人物")
             else:
-                images.append({"slot": slot, "path": str(_blank_ref_png(data_dir))})
+                # 多人镜/无绑定：回填原页（白图 1×1 对 Krea2 双图有干扰，
+                # 原页=场景重复参考无语义污染——2026-09-12 v4 判例同款）
+                images.append({"slot": slot, "path": str(base)})
     # v3 线稿 ControlNet 版画幅链：ResolutionSelector 三必填（2026-09-11 真机
     # 400——manifest 声明了注入点但 params 没带键=required_input_missing）
     from .rendershot import ASPECT_ENUM
