@@ -1,79 +1,70 @@
-# 小说转漫画（novel-to-comic）设计草案
+# 小说转漫画（novel-to-comic）设计定稿
 
-> 2026-09-12 用户需求整理，待 /grill-me 定稿后实施
+> 2026-09-12 /grill-me 定稿，所有分支已决策
 
-## 核心概念
+## 已定决策
 
-文本（小说/主题/有声书）→ LLM 分析剧情 → 逐页生成单格漫画（不是视频）→ 按页序导出。
-作为视频生成的**快速预览通道**：先出漫画看效果，满意再渲视频。
-
-## 创建入口
-
-复用现有三入口（上传小说 / 主题生成 / 有声书转写），新增输出类型选项「📖 漫画」。
+| # | 决策点 | 结论 |
+|---|---|---|
+| 1 | 项目关系 | **独立项目类型**（第五种，与小说/主题/有声/动态漫并列） |
+| 2 | 页面格式 | **一期单格插画**，多格分镜二期 |
+| 3 | 对白呈现 | **参数化三选一**：无对白 / 气泡 / 底部字幕条 |
+| 4 | 导出格式 | **三种全要**：在线翻页 + PDF + 长图 |
+| 5 | 自动页数 | **字数基线 + LLM 微调**（±20%） |
+| 6 | 角色一致性 | **可选开关**（默认开=走资产链+参考图；关=跳过资产直接逐页） |
+| 7 | 阶段流转 | **复用前半 + 新后半**：created→analyze→assets→storyboard→**comic_ready** |
+| 8 | 分镜拆解 | **复用 split_storyboards + 模式分支**（system prompt 按 comic 模式输出场景+人物+对白，不写运镜/声音） |
+| 9 | 前端入口 | **创建弹窗第五 tab「📖 漫画」** |
+| 10 | 图片 job | **新写 gen_comic_page**（逐页 job，镜像 gen_shot 模式） |
+| 11 | 总原则 | **能复用就复用** |
 
 ## 创建参数
 
-| 参数 | 说明 | 默认 |
-|---|---|---|
-| **画风** | Krea2 风格库 73 库预览选择 / 自定义 / Z-Image 原生 | 动漫 |
-| **页数** | 指定页数（LLM 按剧情密度分配每页内容）；0=自动 | 0 自动 |
-| **尺寸** | 预设常用：1024×1024 方形 / 1024×1536 竖版 / 1536×1024 横版 / 832×1216（SD 系） | 1024×1536 |
-| **质量档** | 快速（8步）/ 标准（12步）/ 高质量（20步） | 标准 |
-| **模板** | Krea2（10-15s/页 画质好）/ Z-Image turbo（5-8s/页 快） | Krea2 |
-| **对白呈现** | 漫画气泡内嵌文字 / 底部字幕条 / 无对白纯画面 | 气泡 |
+| 参数 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| 画风 | Krea2 库预览 / 自定义 | 动漫 | 复用现有 73 库+预览面板 |
+| 页数 | int | 0=自动 | 0 时按字数基线+LLM 微调 |
+| 尺寸 | select | 1024×1536 竖版 | 方形/竖版/横版/SD竖版 |
+| 质量档 | select | 标准 | 快速 8 步 / 标准 12 步 / 高质量 20 步 |
+| 模板 | select | Krea2 | Krea2（10-15s/页）/ Z-Image turbo（5-8s/页） |
+| 对白 | select | 气泡 | 无 / 气泡 / 底部 |
+| 角色一致性 | bool | true | 开=资产链+参考图；关=纯文字描述 |
 
 ## 管线
 
 ```
-文本 → analyze（复用：角色/场景/道具提取+参考图）
-     → storyboard（复用：分镜拆解=分页，target_pages 替代 target_duration）
-     → comic_prompt（新写：每页单格漫画提示词 = 场景+人物+对白+画风）
-     → gen_comic_page（新写 job 类型：t2i 生成，复用 genref 基建）
-     → export（新写：按页序拼接 PDF / 长图 / ZIP）
+文本（小说/主题/有声）
+  → analyze（复用：角色/场景/道具提取）
+  → [可选] gen_refs（角色一致性开时：参考图生成）
+  → split_storyboards（复用+模式分支：每镜=一页，输出场景+人物+对白）
+  → gen_comic_page（新 job：逐页 t2i + 对白后处理）
+  → comic_ready（全部页面完成）
+  → 导出（在线浏览 / PDF / 长图）
 ```
 
-## 复用 vs 新写
+## 数据库变更
 
-**复用（~80%）**：
-- 三个创建入口 + LLM 分析 + 角色提取 + 参考图生成
-- 分镜拆解（`target_pages` 替代 `target_duration`，公式：⌈字数/每页字数⌉）
-- Krea2 风格库（73 库 + 预览面板）
-- genref 的 t2i 模板路由 / 模型槽位 / settings 覆写
-- autopilot 编排 / 队列系统 / 温和停止
+- `projects.comic_mode` 新值 `'comic_output'`
+- 新列：`dialogue_mode`（TEXT: none/bubble/footer）、`target_pages`（INT, 0=自动）、`image_size`（TEXT）、`quality_tier`（TEXT）
+- `shots.workflow_type` 新值 `'comic'`
+- 页面文件存 `projects/<slug>/pages/page_NNN.png`（复用现有 pages 约定）
 
-**新写（~20%）**：
-- `comic_prompt` builder：每页单格提示词（场景描述+人物外貌+对白+画风）
-- `gen_comic_page` job：走 t2i 模板（Krea2 或 Z-Image），按尺寸/质量档出图
-- 导出模块：按页序拼 PDF（Pillow）或长图（ffmpeg tile）
-- 前端：创建 tab「漫画」+ 项目详情漫画页浏览（分页瀑布流）
-- autopilot 新分支：`comic_ready` 阶段
+## 新写模块
 
-## 与视频模式共存
-
-同一项目可先出漫画再出视频——`project.comic_mode` 新增 `comic_output`；
-或独立项目类型（待 grill-me 决定）。
-
-## 尺寸预设
-
-| 预设名 | 分辨率 | 用途 |
+| 模块 | 文件 | 职责 |
 |---|---|---|
-| 方形 | 1024×1024 | 社交媒体 |
-| 竖版 | 1024×1536 | 手机阅读/条漫 |
-| 横版 | 1536×1024 | 桌面阅读/网页 |
-| SD 竖版 | 832×1216 | SD 系模型兼容 |
+| `gen_comic_page` job | `engine/comicgen.py` | 逐页生成：提示词组装+模板提交+对白后处理+落盘 |
+| 对白后处理 | `engine/comicgen.py` | 气泡绘制（Pillow）或底部字幕条 |
+| PDF 导出 | `engine/comicexport.py` | Pillow 拼接 PDF |
+| 长图导出 | `engine/comicexport.py` | ffmpeg tile 纵向拼接 |
+| 漫画拆解 prompt | `engine/llm/storyboard.py` | comic 模式 system prompt 分支 |
+| autopilot 分支 | `engine/autopilot.py` | comic_output 流程（storyboard_ready→gen pages→comic_ready） |
+| 前端 | `frontend/` | 第五 tab + 漫画浏览页 + 导出按钮 |
 
-## 质量档位
+## 依赖引入
 
-| 档位 | 步数 | 速度（Krea2） | 说明 |
-|---|---|---|---|
-| 快速 | 8 | ~10s/页 | 预览/草稿 |
-| 标准 | 12 | ~15s/页 | 日常使用 |
-| 高质量 | 20 | ~25s/页 | 精修/成品 |
+- `Pillow`（气泡绘制+PDF 导出）→ `pyproject.toml [comic]` extra
 
-## 待定项（下次 /grill-me）
+## 工作量估算
 
-1. 单格 vs 分格（一页一格 vs 一页多格漫画分格）
-2. 对白呈现方式（气泡内嵌文字的字体/位置/大小如何控制）
-3. 导出格式（PDF / 长图 / ZIP / 在线翻页）
-4. 与视频模式的关系（同一项目切换输出类型 vs 独立项目类型）
-5. 自动页数的计算公式（字数比例 vs LLM 判断剧情节点）
+约 3-4 天（含测试）
