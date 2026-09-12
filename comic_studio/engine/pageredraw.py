@@ -428,9 +428,13 @@ def redraw_page(db, data_dir, shot_id, comfy, job=None, seed=None) -> Path:
                 # 图N 从 2 起数（图1=原页）；指令式措辞（真机对照实验：
                 # 指令式参考参与度明显高于陈述式）
                 detail = f"（{traits[k]}）" if traits[k] else ""
-                prompt += (f"。将图{k + 2}角色的面部特征与发型{detail}"
-                           f"应用到图1中「{names[k]}」对应的人物身上，"
-                           f"使其与图{k + 2}完全一致")
+                # 条件式措辞（2026-09-12 真机二连修）：①画面无人→不添加
+                # （桌子镜凭空造人）②多人→只改对应角色其余保持（两人镜丢
+                # 男性）——「使其完全一致」太强会让模型只画参考图那个人
+                prompt += (f"。若图1中存在「{names[k]}」人物，"
+                           f"则将其面部特征与发型{detail}调整为与图{k + 2}参考图一致；"
+                           "图1中的其余人物数量、位置、姿态与背景保持完全不变；"
+                           "若图1中无人物则不添加任何人物")
             else:
                 images.append({"slot": slot, "path": str(_blank_ref_png(data_dir))})
     # v3 线稿 ControlNet 版画幅链：ResolutionSelector 三必填（2026-09-11 真机

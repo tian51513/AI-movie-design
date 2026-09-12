@@ -494,9 +494,9 @@ def test_redraw_page_mr_injects_char_refs_and_placeholders(tmp_path, monkeypatch
         prompt = next(n["inputs"]["value"] for n in wf.values()
                       if n["class_type"] == "PrimitiveStringMultiline")
         # v6.1 指令式 + 外貌细节（大众特征靠明细锚定）
-        assert "将图2角色的面部特征与发型" in prompt
-        assert "应用到图1中「黑发女性」" in prompt
-        assert "应用到图1中「金发女性」" in prompt
+        assert "若图1中存在「黑发女性」" in prompt
+        assert "与图2参考图一致" in prompt
+        assert "不添加任何人物" in prompt
         assert "黑色长直发" in prompt        # traits 注入
         ups = [str(u) for u in m.uploads]
         for slot in ("char1", "char2"):
