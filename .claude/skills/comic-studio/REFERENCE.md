@@ -56,16 +56,20 @@
 **目录结构**：`data/library?`→assets 表 library_dir 相对 POSIX；views/（三视图）+ main.png 为「有图」判据（**目录存在≠有图**——persist 恒建空目录，判断用 has_views 按文件）。
 **漫改提取两入口**：describe_shots 顺手提取（对白说话人聚合，幂等）vs 手动 extract_comic_characters（采样读页，清空重建——注意不清 ledger 旧 id，审计中危）；两路按 (kind,name,source_project) 去重。
 
-## 6. 动态漫角色重绘操作序（2026-09-09）
+## 6. 动态漫角色重绘操作序（2026-09-09 建；2026-09-12 大修）
 
 **适用**：motion_comic 项目勾「是否重绘角色」（漫改忽略——画风本就要转换）。目的：VLM 提取主要角色→按画风重绘角色主图→整页重绘分镜首尾帧出新版本；原页构图不动，只换画风/清气泡文字。设计决策表 docs/superpowers/plans/2026-09-09-motion-comic-character-redraw.md §0。
 
-1. **创建**：漫画 tab 勾「是否重绘角色」（联动字幕默认开——重绘清掉原页文字，成片须烧字幕）；存量项目参数面板可补开（无 pages/ 时重绘底图用当前活动 kf bootstrap——重绘过的镜再重绘会逐代漂移）
-2. **🚀 一键出片**：describe_shots 读原页（pages/ 单一事实源；重绘模式跳过 speaker 资产——提取 job 是唯一建资产入口）→ autopilot 入队 VLM 提取（characters_only 主要角色+bind_shots 补绑）→ gen_refs stage=main 只烧角色主图（不建三视图、不标 stale）→ **停等**「请检查/重试角色图后点『🖌 批量重绘分镜』」（停等 detail 不含「失败」，不算卡死）
-3. **检查/重试**：资产卡重生单角色主图（gen_ref stage=main）；提取/生成失败 autopilot 报一次卡死等手动重发（_latest_failed 项目级——资产 A 失败挡整批，重发即解除）
-4. **🖌 批量重绘分镜**：逐镜 redraw_kf job（底图=原页、清文字保气泡形状、模板 template_map.page_redraw 默认 zimage_i2i、denoise 默认 0.75、绑定角色 main.png 条件第二槽）→ 新版本 kf_start_v{N}+前镜尾帧同版联动+双镜 video_path 置空待重渲；已完成镜重发不重绘（pending_redraw 标记判据）、无效镜跳过
-5. **续跑**：全部重绘完 autopilot 自动落回 渲染→门3→合成（video 置空的镜重渲）
-6. **不满意**：单镜「重生关键帧」= 新 seed 出新版本（重绘项目分流 redraw_kf 入队，决策 13 单镜重生=批量单镜版）；分镜卡首帧版本 chips 切活动版（联动前镜尾帧+视频自动置空）；尾帧独立切版仅末镜
+1. **创建**：漫画 tab 勾「是否重绘角色」（联动字幕默认开）；画风可选「Krea2 风格库…」预览面板（73 库缩略图点击确认）；存量项目详情页 🎨 pill → 画风面板改画风+Krea2 选择
+2. **🚀 一键出片**：describe_shots 读原页 → autopilot 提取+主图 → 停等检查
+3. **检查/重试**：资产卡「主图」按钮重roll；检查满意后继续
+4. **🖌 批量重绘分镜**：逐镜 redraw_kf job（模板设置页可选 v4/v5.1/v7/**v8 Krea2 快道**推荐——10-15s/页；改模板不需重启）→ 新版本 kf_start_v{N}+前镜尾帧联动+视频置空
+5. **续跑**：autopilot 自动渲染→合成
+6. **不满意**：单镜「🔄 重生此帧」（新 seed 新版本）；chips 切版本秒级（缩略图 360px + 纳秒缓存戳）
+
+**重绘模板矩阵**（设置页「整页重绘模板」切换）：v4 Edit-2511（画质道 1-3 分/页）/ v5.1 turbo+Fun-CN（速度道）/ v7 H3 抽帧（ref2va 短视频 2s）/ **v8 Krea2 快道**（主力——LazyKreaWorkbench 双图分工+identity_edit LoRA 必接+编辑LoRA 从 Krea2 子目录选）
+
+**多人镜策略**（真机四修定稿）：模板 char 槽装不下全部绑定角色时（Krea2=1 槽 vs 2+ 角色）→ 全部槽填纯白图 + 不注入身份指令 → 纯风格转换（保人数不贴主图）；单人镜正常给参考图；零绑定=场景专用提示词（严禁添加人物+剥离肢体纠错词）
 
 ## 7. 渲染链（engine/rendershot.py、workflows/）
 
