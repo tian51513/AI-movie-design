@@ -529,7 +529,7 @@
                title="下载当前主图模板 JSON → 打开 ComfyUI 拖入测试">🧪</button></p>
     <p><label class="muted">整页重绘模板：</label>
        <select v-model="settingsForm.prTm" style="width:300px">
-         <option v-for="t in templatesOfType('i2i').concat(templatesOfType('t2i'))" :key="t.id" :value="t.id"
+         <option v-for="t in templatesOfType('i2i').concat(templatesOfType('t2i'), templatesOfType('ref2va'))" :key="t.id" :value="t.id"
                  :title="t.id">{{ t.name }}</option>
        </select>
        <span class="muted">动态漫角色重绘整页重绘用（base=漫画原页图；重绘幅度在 ComfyUI 区「page_redraw_denoise」）</span></p>
