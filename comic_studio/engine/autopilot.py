@@ -14,6 +14,7 @@ from .paths import data_to_abs
 from .projects import get_project
 from .queue.worker import register
 from .settings import get_setting
+from .shots import list_shots
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 
@@ -142,6 +143,24 @@ def _all_shots_have_video(db, project_id) -> bool:
     return total > 0 and total == done
 
 
+def _comic_pages_gap(db, data_dir, project_id, proj) -> dict | None:
+    """漫画成品项目（comic_output，2026-09-12）storyboard_ready 决策：
+    按 pages/page_NNN.png 找缺页 → 逐页入队 gen_comic_page；全齐 →
+    comic_done（tick 落 comic_ready 终态）。视频门3/合成对漫画不适用——
+    页面就是交付物（护栏：缺页判定过滤无效镜，与门禁计数同口径）。"""
+    pages_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/pages")
+    missing = [s["id"] for s in list_shots(db, project_id)
+               if not s["disabled"]
+               and not (pages_dir / f"page_{s['seq']:03d}.png").exists()]
+    if missing:
+        if _has_active_job(db, project_id, "gen_comic_page"):
+            return {"action": "wait", "detail": f"漫画页生成中（余 {len(missing)} 页）"}
+        if _latest_failed(db, project_id, "gen_comic_page"):
+            return {"action": "wait", "detail": "上次漫画页生成失败，重试请手动发起"}
+        return {"action": "gen_comic_pages", "detail": f"漫画页缺 {len(missing)} 张"}
+    return {"action": "comic_done", "detail": "全部漫画页就绪"}
+
+
 def next_action(db, data_dir, project_id) -> dict:
     """纯决策：按项目类型分发到对应流程。返回 {"action": str, "detail": str} 或 None。"""
     proj = get_project(db, project_id)
@@ -161,6 +180,9 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
     stage = proj["stage"]
     if stage == "merged":
         return {"action": "done", "detail": "已成片"}
+    if stage == "comic_ready":
+        # 漫画成品项目终态（comic_output 专属，tick 的 done 分支自动关开关）
+        return {"action": "done", "detail": "漫画已全部生成"}
     if stage == "created":
         # P10 守卫（终审 M-1 真机命中 2026-09-05）：源音频在、转写未落盘 →
         # 占位正文（~20 字）会被分析成空资产。等转写；失败给手动指引
@@ -217,6 +239,10 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
             if _latest_failed(db, project_id, "split_storyboards"):
                 return {"action": "wait", "detail": "上次分镜拆解失败，重试请手动发起"}
             return {"action": "split", "detail": "无分镜，先拆解"}
+        # 漫画成品项目（comic_output，2026-09-12）：storyboard_ready 后不走
+        # 视频渲染/门3/合成——逐页 t2i 出 pages/page_NNN.png，全齐落 comic_ready
+        if (proj["comic_mode"] if "comic_mode" in proj.keys() else "") == "comic_output":
+            return _comic_pages_gap(db, data_dir, project_id, proj)
         gap = _prompt_gap(db, project_id)
         if gap:
             return gap
@@ -476,12 +502,50 @@ def tick(db, data_dir, project_id) -> dict:
                         payload={"shot_id": s["id"], "template": pick_template_id(s)})
             n += 1
         emit_log(db, "autopilot", "info", f"autopilot 入队 {n} 镜渲染", project_id=project_id)
+    elif action == "gen_comic_pages":
+        # 漫画成品（2026-09-12）：缺页镜逐个入队 t2i 逐页生成。不跳失败镜——
+        # next_action 的 _latest_failed 批次守卫已防死循环（失败即 wait 等手动），
+        # 此处跳过会让「部分失败」项目每轮「入队 0 页」刷屏（M1 反模式）
+        from .jobs import enqueue_job
+        try:
+            from .settings import ensure_comfy_configured
+            ensure_comfy_configured(db)  # 配置门禁（2026-09-01 事故）：空地址不入队
+        except ValueError as exc:
+            emit_log(db, "autopilot", "error", f"autopilot 跳过漫画页入队：{exc}",
+                     project_id=project_id)
+            return act
+        conn = db.connect()
+        queued = {r["shot_id"] for r in conn.execute(
+            "SELECT DISTINCT shot_id FROM jobs WHERE type='gen_comic_page' "
+            "AND shot_id IS NOT NULL AND status IN ('pending','running')").fetchall()}
+        _p = get_project(db, project_id)
+        pages_dir = data_to_abs(data_dir, f"projects/{_p['slug']}/pages")
+        # 局部 import（同 tick 其他分支）：函数内任一分支局部导入即整函数作用域
+        # 遮蔽模块名——依赖顶部 import 而别的分支又有局部 import 时先引用必炸
+        from .shots import list_shots
+        n = 0
+        for s in list_shots(db, project_id):
+            if (s["disabled"] or s["id"] in queued
+                    or (pages_dir / f"page_{s['seq']:03d}.png").exists()):
+                continue
+            enqueue_job(db, "gen_comic_page", project_id=project_id, shot_id=s["id"],
+                        resource="gpu_comfy", payload={"shot_id": s["id"]})
+            n += 1
+        emit_log(db, "autopilot", "info", f"autopilot 入队 {n} 页漫画生成",
+                 project_id=project_id)
     elif action == "merge":
         # H2a（2026-09-05 审计）：TTS/SRT 前置挪进 merge 任务本身（handle_merge）
         # ——此前巡检线程同步跑 ~5min TTS 会卡停全部 autopilot 项目的巡检，
         # 且手动 POST /merge 与自动合成待遇不一致（只拼旧音轨）
         from .jobs import enqueue_job
         enqueue_job(db, "merge", project_id=project_id, payload={"project_id": project_id})
+    elif action == "comic_done":
+        # 漫画成品项目终态（2026-09-12）：页面就是交付物，全齐即收官。
+        # 下一轮 next_action 在 comic_ready 返回 done → 自动关 autopilot
+        from .projects import set_stage
+        set_stage(db, project_id, "comic_ready")
+        emit_log(db, "autopilot", "info", "autopilot：漫画页全部就绪 → comic_ready",
+                 project_id=project_id)
     elif action.startswith("gate"):
         from .pipeline_gates import gate_pass
         try:

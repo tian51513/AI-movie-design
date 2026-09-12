@@ -9,7 +9,8 @@ from .db import Database
 from .paths import rel_to_data
 
 STAGES = ("created", "analyzed", "assets_ready", "storyboard_ready",
-          "rendering", "rendered", "merged")
+          "rendering", "rendered", "merged",
+          "comic_ready")  # 漫画成品项目（comic_output）终态：全部漫画页生成完毕
 
 
 def slugify(name: str) -> str:

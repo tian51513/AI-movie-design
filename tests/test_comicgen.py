@@ -279,6 +279,87 @@ def test_comic_page_template_registered(tmp_path, monkeypatch):
     assert wf["57:27"]["inputs"]["text"] == "测试"
 
 
+# ---- Task 4: autopilot 漫画分支（storyboard_ready → 逐页 → comic_ready） ----
+
+
+def _comic_shot_ns():
+    from types import SimpleNamespace as NS
+    return NS(
+        text_span="少年推门", description="室内场景，少年推门",
+        shot_type="", camera={"景别": "中景", "机位": "平视", "运镜": "固定", "转场": "切"},
+        duration=5.0, workflow_type="comic", ledger={},
+        character_ids=[], scene_ids=[], prop_ids=[], depends_on=None, prompt="x")
+
+
+def test_autopilot_comic_flow(tmp_path):
+    """comic_output：storyboard_ready + 有 prompt + 无页面 → gen_comic_pages 动作。"""
+    from comic_studio.engine.autopilot import next_action
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.shots import persist_shots
+    db, pid = _comic_project(tmp_path)
+    set_stage(db, pid, "storyboard_ready")
+    persist_shots(db, pid, [_comic_shot_ns()])
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "gen_comic_pages"
+
+
+def test_autopilot_comic_tick_enqueues_pages(tmp_path):
+    """tick：缺页镜逐个入队 gen_comic_page（shot_id 挂镜、gpu_comfy 资源）。"""
+    from comic_studio.engine.autopilot import tick
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.shots import persist_shots
+    db, pid = _comic_project(tmp_path)
+    set_setting(db, "comfy", {"base_url": "http://127.0.0.1:8188"})
+    set_stage(db, pid, "storyboard_ready")
+    persist_shots(db, pid, [_comic_shot_ns(), _comic_shot_ns()])
+    act = tick(db, tmp_path / "data", pid)
+    assert act["action"] == "gen_comic_pages"
+    jobs = db.connect().execute(
+        "SELECT * FROM jobs WHERE type='gen_comic_page' ORDER BY id").fetchall()
+    assert len(jobs) == 2
+    assert all(j["resource"] == "gpu_comfy" and j["shot_id"] for j in jobs)
+
+
+def test_autopilot_comic_pages_ready_sets_stage(tmp_path):
+    """全部页面落盘 → comic_done；tick 落 comic_ready 终态；此后 done。"""
+    from comic_studio.engine.autopilot import next_action, tick
+    from comic_studio.engine.paths import data_to_abs
+    from comic_studio.engine.projects import get_project, set_stage
+    from comic_studio.engine.shots import persist_shots
+    db, pid = _comic_project(tmp_path)
+    slug = get_project(db, pid)["slug"]
+    set_stage(db, pid, "storyboard_ready")
+    persist_shots(db, pid, [_comic_shot_ns()])
+    pages_dir = data_to_abs(tmp_path / "data", f"projects/{slug}/pages")
+    pages_dir.mkdir(parents=True)
+    (pages_dir / "page_001.png").write_bytes(PNG)
+    assert next_action(db, tmp_path / "data", pid)["action"] == "comic_done"
+    tick(db, tmp_path / "data", pid)
+    assert get_project(db, pid)["stage"] == "comic_ready"
+    assert next_action(db, tmp_path / "data", pid)["action"] == "done"
+
+
+def test_autopilot_comic_active_and_failed_guards(tmp_path):
+    """在飞 → wait 生成中；最新 job 失败且无在飞 → wait 等手动重发。"""
+    from comic_studio.engine.autopilot import next_action
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.shots import persist_shots
+    db, pid = _comic_project(tmp_path)
+    set_stage(db, pid, "storyboard_ready")
+    (sid,) = persist_shots(db, pid, [_comic_shot_ns()])
+    jid = enqueue_job(db, "gen_comic_page", project_id=pid, shot_id=sid,
+                      resource="gpu_comfy", payload={"shot_id": sid})
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "生成中" in act["detail"]
+    conn = db.connect()
+    conn.execute("UPDATE jobs SET status='failed' WHERE id=?", (jid,))
+    conn.commit()
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "失败" in act["detail"]
+
+
 def test_postprocess_dialogue_footer_draws(monkeypatch, tmp_path):
     """footer 后处理（有 Pillow 环境）：真 PNG 上画底部字幕条并覆写文件。"""
     pytest.importorskip("PIL")
