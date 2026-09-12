@@ -71,6 +71,18 @@
 
 **多人镜策略**（真机四修定稿）：模板 char 槽装不下全部绑定角色时（Krea2=1 槽 vs 2+ 角色）→ 全部槽填纯白图 + 不注入身份指令 → 纯风格转换（保人数不贴主图）；单人镜正常给参考图；零绑定=场景专用提示词（严禁添加人物+剥离肢体纠错词）
 
+## 6a. 小说转漫画操作序（comic_output，2026-09-12 建）
+
+**适用**：小说正文直接出漫画成书（页面即交付物，**无视频渲染/门3/合成链**；终态 `comic_ready`，autopilot done 自动关）。前半链与小说共用（分析→参考图→门1→拆解），拆解走漫画页分支（场景+人物+对白，禁运镜/声音/时长；workflow_type 机械固定 'comic'，**拆解即填 prompt=description 不烧视频提示词**）。
+
+1. **创建**：创建弹窗「📖 漫画」tab——正文 .txt（UTF-8）+ 页数（0=按剧情密度自动）/尺寸（四预设）/质量档（fast8·standard12·high20 步）/对白呈现（bubble/footer/none）；画风可选 Krea2 风格库
+2. **🚀 一键出片**：分析→参考图→门1→拆解→逐页 t2i（`gen_comic_page`→`pages/page_NNN.png`，模板=template_map.comic_page 可切）→「漫画就绪」自动停
+3. **浏览/补页**：详情「漫画页」页签（x/N 就绪 pill、点击放大、对白行）；缺页/失败页「🖼 生成缺失页」（autopilot 失败守卫解除入口；跳过已有/在飞/无效镜）
+4. **导出**：📄 导出 PDF（Pillow 多页，需 `pip install -e ".[pdf]"`）/ 📜 导出长图（ffmpeg vstack 竖拼）→ `output/comic.pdf|comic_strip.png` 同名覆盖；无效镜/已删残页不进导出
+5. **对白呈现**：footer=底部字幕条（Pillow 画字，换行+字体回退）；bubble/none 现为占位/跳过（气泡二期）
+
+**注意**：角色参考图分析/生成照跑但页面生成不消费（角色一致性=二期参考图注入）；gen_comic_page 不在重启重排白名单——重启丢在跑页任务用手动补页；subtitles 恒 0（对白页面自呈）。
+
 ## 7. 渲染链（engine/rendershot.py、workflows/）
 
 **模板选型**（workflow_type → template_map 可配）：
@@ -126,12 +138,13 @@ fl2v/i2v/t2v（无音频槽）→ 单说话人+绑音色 → qwen_tts_clone 整�
 ## 12. API 速查（常用）
 
 ```
-POST /api/projects（上传）· /from-theme[/preview] · /from-comic · /from-audio（🎧，P10A）
+POST /api/projects（上传）· /from-theme[/preview] · /from-comic · /from-audio（🎧，P10A）· /from-comic-novel（📖 小说转漫画，§6a）
 POST transcribe 经 from-audio 自动入队（无手动重发入口——失败重传项目）
 POST /api/projects/{id}/analyze | /split-storyboards | /describe-shots | /merge | /tts | /stop-jobs | /asr-cleanup（✨转写校对）/retry-transcribe
 GET  /api/projects/{id}/novel-text（📄正文查看）
 POST /api/shots/{id}/render | /regen-prompt | /regen-keyframes | /use-kf · GET /api/shots/{id}/kf-versions
 POST /api/projects/{id}/generate-prompts | /render-batch | /batch-redraw（🖌 动态漫整页重绘，§6）
+POST /api/projects/{id}/generate-comic-pages（🖼 手动补页，§6a）· /export-comic?format=pdf|strip（§6a）
 PATCH /api/projects/{id}（autopilot/style/画幅/段时长/render_mode…）
 GET  /api/projects/{id}/merges · /api/jobs/{id}/snapshot
 POST /api/voices/design|promote · DELETE /api/voices?scope=…

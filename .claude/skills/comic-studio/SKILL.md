@@ -1,6 +1,6 @@
 ---
 name: comic-studio
-description: comic_studio（漫剧工坊）项目全流程操作手册——开发约定、启动运维、四类项目生产线（小说/主题/漫画动态漫/漫改）、门禁与一键出片、音色配音、合成链、真机排障。Use when 在本仓库开发/调试/运营 comic_studio，或用户提到 漫剧工坊、一键出片、autopilot、分镜、提示词、渲染、合成成片、音色、配音、ComfyUI、门禁、start-prod 等词。
+description: comic_studio（漫剧工坊）项目全流程操作手册——开发约定、启动运维、六类项目生产线（小说/主题/有声书/小说转漫画/漫画动态漫/漫改）、门禁与一键出片、音色配音、合成链、真机排障。Use when 在本仓库开发/调试/运营 comic_studio，或用户提到 漫剧工坊、一键出片、autopilot、分镜、提示词、渲染、合成成片、音色、配音、ComfyUI、门禁、start-prod、小说转漫画 等词。
 ---
 
 # comic_studio 漫剧工坊 · 项目 Skill
@@ -34,8 +34,9 @@ description: comic_studio（漫剧工坊）项目全流程操作手册——开�
 
 ## 生产线总览（细节见 REFERENCE.md）
 
-**五类入口同一终点 merged，路径两类：**
+**六类入口，终点两类（视频=merged / 漫画成书=comic_ready）：**
 - 小说/主题/**🎧有声书**（上传音频→transcribe 回填正文，之后同小说链；**分镜时长=音频实测段**；转写未完成守卫拦分析；转写期间全队列串行）：`created→[transcribe]→analyze→gen_refs→门1→assets_ready→split→gen_prompts→门2→storyboard_ready→render→门3→rendered→merge→merged`
+- **📖小说转漫画**（comic_output）：同小说前半链到拆解（每镜=一页，**不走视频提示词/渲染/门3/合成**）→逐页 t2i `pages/page_NNN.png`→**终态 comic_ready**；详情「漫画页」浏览+补页+📄PDF/📜长图导出（§6a）
 - 漫画（动态漫/漫改）：导入直达 `storyboard_ready→describe_shots(读图+提角色+提示词)→[漫改 gen_refs]→render→门3→merge`
 
 **autopilot（🚀 一键出片）**：3s 巡检幂等续跑；失败守卫（批次失败不重烧等手动、单镜失败跳过推进）；跨类型在飞感知（重渲染未收尾不门3/不合成）；merged 自动关。
