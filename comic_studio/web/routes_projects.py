@@ -207,11 +207,25 @@ def create_from_comic(request: Request,
     return _public(proj)
 
 
+def _validate_comic_output_params(dialogue_mode, target_pages, image_size, quality_tier):
+    """comic_output 四参数统一 422 校验（from-comic-novel / from-comic-audio 共用）。"""
+    if dialogue_mode not in ("bubble", "footer", "none"):
+        raise HTTPException(422, "dialogue_mode 只能是 bubble（气泡）/footer（底部字幕条）/none（不呈现）")
+    if quality_tier not in ("fast", "standard", "high"):
+        raise HTTPException(422, "quality_tier 只能是 fast/standard/high")
+    from ..engine.comicgen import SIZE_PRESETS  # 惰性导入：不拉 queue.worker 注册链
+    if image_size not in SIZE_PRESETS:
+        raise HTTPException(422, f"image_size 只能是 {'/'.join(sorted(SIZE_PRESETS))}")
+    if target_pages < 0 or target_pages > 200:
+        raise HTTPException(422, "target_pages 需在 0~200（0=按剧情密度自动）")
+
+
 @router.post("/from-comic-novel", status_code=201)
 def create_from_comic_novel(request: Request,
                             name: str = Form(...),
                             aspect_ratio: str = Form("9:16"),
-                            novel: UploadFile = File(...),
+                            novel: UploadFile = File(None),
+                            text: str = Form(""),
                             style: str = Form(""), style_vis: str = Form(""),
                             dialogue_mode: str = Form("bubble"),
                             target_pages: int = Form(0),
@@ -225,25 +239,25 @@ def create_from_comic_novel(request: Request,
     """小说转漫画创建（2026-09-12 Task 6）：正文上传 + 漫画输出四参数 →
     comic_output 项目，之后走既有 分析→拆分镜→autopilot 逐页 t2i
     （页面即交付物，无视频渲染链）。subtitles 恒 0——对白由页面自呈
-    （气泡/底部字幕条/不呈现），视频字幕烧录对漫画无意义。"""
+    （气泡/底部字幕条/不呈现），视频字幕烧录对漫画无意义。
+
+    2026-09-13 Part A：正文来源两选一——novel 文件（文本小说 tab）或
+    text 直传（主题生成第二步：preview 已出正文，不再落临时文件）；文件优先。"""
     from ..engine.projects import ASPECT_RATIOS
     if aspect_ratio not in ASPECT_RATIOS:
         raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
-    if dialogue_mode not in ("bubble", "footer", "none"):
-        raise HTTPException(422, "dialogue_mode 只能是 bubble（气泡）/footer（底部字幕条）/none（不呈现）")
-    if quality_tier not in ("fast", "standard", "high"):
-        raise HTTPException(422, "quality_tier 只能是 fast/standard/high")
-    from ..engine.comicgen import SIZE_PRESETS  # 惰性导入：不拉 queue.worker 注册链
-    if image_size not in SIZE_PRESETS:
-        raise HTTPException(422, f"image_size 只能是 {'/'.join(sorted(SIZE_PRESETS))}")
-    if target_pages < 0 or target_pages > 200:
-        raise HTTPException(422, "target_pages 需在 0~200（0=按剧情密度自动）")
-    try:
-        text = novel.file.read().decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(422, "小说文件需为 UTF-8 编码（请转换后重新上传）")
+    _validate_comic_output_params(dialogue_mode, target_pages, image_size, quality_tier)
+    if novel is not None:
+        try:
+            novel_text = novel.file.read().decode("utf-8")
+        except UnicodeDecodeError:
+            raise HTTPException(422, "小说文件需为 UTF-8 编码（请转换后重新上传）")
+    elif (text or "").strip():
+        novel_text = text
+    else:
+        raise HTTPException(422, "正文缺失：上传 .txt 文件或 text 二选一（主题生成直传）")
     proj = create_project(request.app.state.db, request.app.state.data_dir,
-                          name, aspect_ratio, text, style=style, style_vis=style_vis,
+                          name, aspect_ratio, novel_text, style=style, style_vis=style_vis,
                           comic_mode="comic_output",
                           dialogue_mode=dialogue_mode, target_pages=target_pages,
                           image_size=image_size, quality_tier=quality_tier,
@@ -252,6 +266,60 @@ def create_from_comic_novel(request: Request,
                           default_shot_duration=default_shot_duration,
                           target_duration=target_duration,
                           subtitles=0)
+    return _public(proj)
+
+
+@router.post("/from-comic-audio", status_code=201)
+def create_from_comic_audio(request: Request, name: str = Form(...),
+                            aspect_ratio: str = Form("9:16"),
+                            style: str = Form(""), style_vis: str = Form(""),
+                            dialogue_mode: str = Form("bubble"),
+                            target_pages: int = Form(0),
+                            image_size: str = Form("1024x1536"),
+                            quality_tier: str = Form("standard"),
+                            video_megapixels: float = Form(0.4),
+                            video_multiple: int = Form(32), video_speed: str = Form("标准"),
+                            default_shot_duration: float = Form(0.0),
+                            target_duration: float = Form(0.0),
+                            audio: UploadFile = File(...)):
+    """漫画项目·有声小说入口（2026-09-13 Part A）：存源音频 → 建
+    comic_output 项目（占位正文+四漫画参数，subtitles 恒 0）→ 入队
+    transcribe；转写回填正文后 autopilot 按 comic_mode 自动走漫画链
+    （分析→拆解漫画分支→逐页→comic_ready）——引擎侧零改动，复用 P10 全链。"""
+    from ..engine.projects import ASPECT_RATIOS
+    if aspect_ratio not in ASPECT_RATIOS:
+        raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
+    _validate_comic_output_params(dialogue_mode, target_pages, image_size, quality_tier)
+    data = audio.file.read()
+    if len(data) > 200 * 1024 * 1024:
+        raise HTTPException(422, "音频超过 200MB 上限（请先切分）")
+    ext = (Path(audio.filename or "a.mp3").suffix.lstrip(".") or "mp3").lower()
+    if ext not in ("mp3", "wav", "m4a", "flac", "ogg"):
+        raise HTTPException(422, f"不支持的音频格式 .{ext}")
+    from ..engine.asr import TranscribeUnavailable  # noqa: 探测依赖
+    try:
+        from faster_whisper import WhisperModel  # noqa: F401 —— 缺包即 422
+    except (ImportError, TranscribeUnavailable) as e:  # 破损安装抛普通 ImportError
+        raise HTTPException(422, f"ASR 依赖未安装：{e}；"
+                                 "WSL `.venv/bin/pip install -e '.[asr]'` / "
+                                 "Windows `.venv-win/Scripts/pip.exe install -e '.[asr]'`")
+    proj = create_project(request.app.state.db, request.app.state.data_dir,
+                          name, aspect_ratio, "（有声书转写中，转写完成后自动回填正文）",
+                          style=style, style_vis=style_vis,
+                          comic_mode="comic_output",
+                          dialogue_mode=dialogue_mode, target_pages=target_pages,
+                          image_size=image_size, quality_tier=quality_tier,
+                          video_megapixels=video_megapixels,
+                          video_multiple=video_multiple, video_speed=video_speed,
+                          default_shot_duration=default_shot_duration,
+                          target_duration=target_duration,
+                          subtitles=0)
+    adir = Path(request.app.state.data_dir) / f"projects/{proj['slug']}/audio"
+    adir.mkdir(parents=True, exist_ok=True)
+    (adir / f"source.{ext}").write_bytes(data)
+    from ..engine.jobs import enqueue_job
+    enqueue_job(request.app.state.db, "transcribe", project_id=proj["id"],
+                payload={"project_id": proj["id"], "ext": ext})
     return _public(proj)
 
 

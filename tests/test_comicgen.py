@@ -673,3 +673,88 @@ def test_generate_comic_pages_api(tmp_path):
         from comic_studio.engine.projects import create_project
         vid = create_project(db, tmp_path / "data", "普通项目", "9:16", "正文" * 100)["id"]
         assert c.post(f"/api/projects/{vid}/generate-comic-pages").status_code == 422
+
+
+# ---- Part A（2026-09-13）：漫画项目三数据源——主题生成 text 模式 + 有声小说音频 ----
+
+def test_from_comic_novel_text_param(tmp_path):
+    """from-comic-novel 支持 text 直传（主题生成第二步：preview 已出正文，
+    不再走文件）；文件与 text 二选一（file 优先），都空 422。"""
+    from fastapi.testclient import TestClient
+
+    from comic_studio.web.app import create_app
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        text = "少年推门，屋内烛火摇曳。" * 20
+        r = c.post("/api/projects/from-comic-novel",
+                   data={"name": "主题漫画", "text": text,
+                         "dialogue_mode": "footer", "target_pages": "8"})
+        assert r.status_code == 201, r.text
+        b = r.json()
+        assert b["comic_mode"] == "comic_output" and b["dialogue_mode"] == "footer"
+        assert b["target_pages"] == 8
+        # 正文直传落库（读 novel.txt）
+        novel = (tmp_path / "data" / "projects" / b["slug"] / "novel.txt")
+        assert novel.exists() and text[:30] in novel.read_text(encoding="utf-8")
+        # 都空 → 422
+        r = c.post("/api/projects/from-comic-novel", data={"name": "x"})
+        assert r.status_code == 422
+
+
+def test_from_comic_audio_api(tmp_path, monkeypatch):
+    """from-comic-audio：音频→comic_output 项目（占位正文+subtitles=0+四参数）
+    →存源音频→入队 transcribe；格式 422；依赖缺失 422。"""
+    import io
+    import sys
+    import types
+    stub = types.ModuleType("faster_whisper")
+    stub.WhisperModel = object
+    monkeypatch.setitem(sys.modules, "faster_whisper", stub)
+
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post("/api/projects/from-comic-audio",
+                   data={"name": "有声漫画", "aspect_ratio": "3:4",
+                         "dialogue_mode": "footer", "target_pages": "10",
+                         "image_size": "832x1216", "quality_tier": "high"},
+                   files={"audio": ("book.mp3", io.BytesIO(b"ID3fake"),
+                                    "audio/mpeg")})
+        assert r.status_code == 201, r.text
+        b = r.json()
+        assert b["comic_mode"] == "comic_output"
+        assert b["dialogue_mode"] == "footer" and b["target_pages"] == 10
+        assert b["image_size"] == "832x1216" and b["quality_tier"] == "high"
+        assert b["subtitles"] == 0  # 漫画页自呈对白，恒 0
+        src = (tmp_path / "data" / "projects" / b["slug"] / "audio" / "source.mp3")
+        assert src.exists() and src.read_bytes() == b"ID3fake"
+        row = app.state.db.connect().execute(
+            "SELECT type, status FROM jobs WHERE project_id=? "
+            "ORDER BY id DESC LIMIT 1", (b["id"],)).fetchone()
+        assert row["type"] == "transcribe" and row["status"] == "pending"
+        # 非音频格式 422
+        r = c.post("/api/projects/from-comic-audio", data={"name": "x"},
+                   files={"audio": ("book.txt", io.BytesIO(b"no"), "text/plain")})
+        assert r.status_code == 422
+        # 缺 asr 依赖 → 422 安装指引
+        monkeypatch.setitem(sys.modules, "faster_whisper", None)
+        r = c.post("/api/projects/from-comic-audio", data={"name": "y"},
+                   files={"audio": ("b.mp3", io.BytesIO(b"x"), "audio/mpeg")})
+        assert r.status_code == 422 and "asr" in r.json()["detail"].lower()
+
+
+def test_comic_small_size_presets(tmp_path):
+    """2026-09-13 用户需求：小尺寸档（512/768 系，32 倍数对齐）——出图速度
+    约为 1024 档 1/4；进 SIZE_PRESETS 即可被 from-comic-novel 接受。"""
+    from comic_studio.engine.comicgen import SIZE_PRESETS
+    assert {"512x768", "768x512", "512x512", "768x1024", "1024x768"} <= set(SIZE_PRESETS)
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post("/api/projects/from-comic-novel",
+                   data={"name": "小尺寸", "image_size": "512x768"},
+                   files={"novel": ("n.txt", "正文。" * 100, "text/plain")})
+        assert r.status_code == 201, r.text
+        assert r.json()["image_size"] == "512x768"

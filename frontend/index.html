@@ -1280,7 +1280,19 @@
     <div class="card" style="width:min(760px,94vw);margin:36px 0">
       <h3 style="margin:0 0 10px">➕ 创建项目
         <button @click="createOpen=false" style="float:right;font-size:12px;padding:2px 8px">✕ 关闭</button></h3>
-        <p style="margin:0 0 8px">
+        <!-- 类型选择层（2026-09-13 Part A）：先定产物类型，再选素材入口；
+             文本小说/有声小说为规划占位（未来独立产线） -->
+        <p style="margin:0 0 6px">
+          <button type="button" @click="setProjType('video')"
+                  :style="newProjType==='video'?'background:#2563eb':''">🎬 视频项目</button>
+          <button type="button" style="margin-left:4px" @click="setProjType('comic')"
+                  :style="newProjType==='comic'?'background:#16a34a':''">📖 漫画项目</button>
+          <button type="button" style="margin-left:4px" disabled
+                  title="规划中——独立小说创作产线">📝 文本小说（规划中）</button>
+          <button type="button" style="margin-left:4px" disabled
+                  title="规划中——有声书制作产线">🎧 有声小说（规划中）</button>
+        </p>
+        <p style="margin:0 0 8px" v-if="newProjType==='video'">
           <button type="button" @click="newMode='upload'; newSubtitles=true"
                   :style="newMode==='upload'?'background:#16a34a':''">📎 上传小说</button>
           <button type="button" style="margin-left:4px" @click="newMode='theme'; newSubtitles=true; loadThemes()"
@@ -1289,17 +1301,26 @@
                   :style="newMode==='comic'?'background:#16a34a':''">🖼 漫画导入</button>
           <button type="button" style="margin-left:4px" @click="newMode='audio'; newSubtitles=true"
                   :style="newMode==='audio'?'background:#16a34a':''">🎧 有声书</button>
-          <button type="button" style="margin-left:4px" @click="newMode='comicnovel'; newSubtitles=false"
-                  :style="newMode==='comicnovel'?'background:#16a34a':''">📖 漫画</button>
+        </p>
+        <p style="margin:0 0 8px" v-else>
+          <button type="button" @click="newMode='comicnovel'"
+                  :style="newMode==='comicnovel'?'background:#16a34a':''">📎 文本小说</button>
+          <button type="button" style="margin-left:4px" @click="newMode='comicaudio'"
+                  :style="newMode==='comicaudio'?'background:#16a34a':''">🎧 有声小说</button>
+          <button type="button" style="margin-left:4px" @click="newMode='comictheme'; loadThemes()"
+                  :style="newMode==='comictheme'?'background:#16a34a':''">🎨 主题生成</button>
         </p>
         <!-- 三 tab 公共字段（名称/画幅/段时长/总时长）——原来每个表单各一份 -->
         <p><input v-model="newName" :placeholder="newMode==='theme' ? '漫剧名称（留空用主题名）' : '漫剧名称'"></p>
-        <!-- 高级参数折叠区（2026-09-07）：建时就定，免建完再翻参数面板 -->
+        <!-- 高级参数折叠区（2026-09-07）：建时就定，免建完再翻参数面板；
+             2026-09-13 Part A：全部是视频参数——漫画项目（尺寸走 image_size、
+             无时长/字幕/渲染概念）整区隐藏 -->
+        <template v-if="newProjType==='video'">
         <p style="margin:2px 0"><button type="button" @click="advOpen=!advOpen"
            style="font-size:12px;padding:2px 10px">{{ advOpen ? '▾ 高级参数' : '▸ 高级参数' }}</button></p>
         <div v-if="advOpen" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;
              font-size:13px;padding:2px 0 6px;border-bottom:1px dashed #2c3540">
-          <label title="成片是否烧录字幕——漫画项目默认关（原页自带台词文字）">字幕
+          <label v-if="newProjType==='video'" title="成片是否烧录字幕——漫画项目默认关（原页自带台词文字）">字幕
             <input type="checkbox" v-model="newSubtitles"></label>
           <label>兆像素<select v-model.number="newMegapixels">
             <option v-for="m in [0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.2,1.5,1.8,2.0]" :value="m">{{ m }}MP</option>
@@ -1309,7 +1330,7 @@
           </select></label>
           <label>质量档<select v-model="newSpeed">
             <option>快速</option><option>标准</option><option>高质量</option></select></label>
-          <label v-if="newMode!=='comic' && newMode!=='comicnovel'" title="留空=AI 按镜间衔接逐镜智能选；指定=拆分镜后全部镜用该模式（漫画项目由导入模式决定，不适用）">渲染模式
+          <label v-if="newProjType==='video' && newMode!=='comic'" title="留空=AI 按镜间衔接逐镜智能选；指定=拆分镜后全部镜用该模式（漫画项目由导入模式决定，不适用）">渲染模式
             <select v-model="newRenderMode">
               <option value="">自动（AI 逐镜选）</option>
               <option value="ref2va">多参生视频</option>
@@ -1321,9 +1342,11 @@
            段时长<input type="number" min="0" max="15" v-model.number="newSegDur" style="width:44px">s
            总时长<input type="number" min="0" max="3600" v-model.number="newTotalDur" style="width:52px">s
            <span class="muted" style="font-size:12px">（总时长>0 时拆分镜后按镜数均摊）</span></p>
+        </template>
         <!-- 画风（2026-09-06）：上传/漫改随创建提交；动态漫不消费——画风跟随原页，
-             此前漫画 tab 无画风字段，用户设了画风被静默忽略（黑白→真人误用动态漫事故） -->
-        <template v-if="newMode==='upload' || newMode==='comicnovel' || (newMode==='comic' && (comicMode==='film_adaptation' || comicRedraw))">
+             此前漫画 tab 无画风字段，用户设了画风被静默忽略（黑白→真人误用动态漫事故）；
+             2026-09-13 Part A：漫画项目三数据源（文本/音频/主题）全部可选画风 -->
+        <template v-if="newProjType==='comic' || newMode==='upload' || (newMode==='comic' && (comicMode==='film_adaptation' || comicRedraw))">
           <p>画风<select v-model="newStyleKey">
              <option value="">不指定（默认）</option>
              <optgroup label="通用">
@@ -1348,6 +1371,33 @@
         </template>
         <p v-else-if="newMode==='comic'" class="muted" style="font-size:12px">
           📖 动态漫画风跟随漫画原页；要转换画风（如黑白→真人）请选「🎬 漫改电影」并指定画风</p>
+
+        <!-- 漫画项目公共参数（2026-09-13 Part A）：三数据源（文本/音频/主题）共用 -->
+        <template v-if="newProjType==='comic'">
+          <p>页数<input type="number" min="0" max="200" v-model.number="comicTargetPages" style="width:52px">
+             <span class="muted" style="font-size:12px">（0=按剧情密度自动）</span>
+             尺寸<select v-model="comicImageSize" style="font-size:13px;padding:4px 6px"
+                     title="小尺寸出图快（512 档像素量约为 1024 档 1/4），大尺寸更精细">
+               <option value="512x768">竖版 512×768（快）</option>
+               <option value="768x1024">竖版 768×1024（中）</option>
+               <option value="832x1216">竖版 832×1216</option>
+               <option value="1024x1536">竖版 1024×1536（精细）</option>
+               <option value="512x512">方形 512×512（快）</option>
+               <option value="1024x1024">方形 1024×1024</option>
+               <option value="768x512">横版 768×512（快）</option>
+               <option value="1024x768">横版 1024×768（中）</option>
+               <option value="1536x1024">横版 1536×1024（精细）</option></select>
+             质量档<select v-model="comicQuality" style="font-size:13px;padding:4px 6px"
+                     title="采样步数：步数越多越细腻越慢">
+               <option value="fast">快速（8 步）</option>
+               <option value="standard">标准（12 步）</option>
+               <option value="high">高质量（20 步）</option></select></p>
+          <p>对白呈现<select v-model="comicDialogueMode" style="font-size:13px;padding:4px 6px">
+               <option value="bubble">气泡（画在格内）</option>
+               <option value="footer">底部字幕条</option>
+               <option value="none">不呈现</option></select>
+             <span class="muted" style="font-size:12px">分镜对白按所选方式呈现到页面</span></p>
+        </template>
 
         <form v-if="newMode==='comic'" @submit.prevent="createFromComic">
           <p>模式
@@ -1375,25 +1425,21 @@
           <p class="muted" style="font-size:12px">
              小说正文 → LLM 拆成漫画分镜 → 逐页 t2i 出图（建「🚀 一键出片」自动跑完全程；
              页面即交付物，无视频链）</p>
-          <p>页数<input type="number" min="0" max="200" v-model.number="comicTargetPages" style="width:52px">
-             <span class="muted" style="font-size:12px">（0=按剧情密度自动）</span>
-             尺寸<select v-model="comicImageSize" style="font-size:13px;padding:4px 6px">
-               <option value="1024x1536">竖版 1024×1536</option>
-               <option value="832x1216">竖版 832×1216</option>
-               <option value="1024x1024">方形 1024×1024</option>
-               <option value="1536x1024">横版 1536×1024</option></select>
-             质量档<select v-model="comicQuality" style="font-size:13px;padding:4px 6px">
-               <option value="fast">快速</option>
-               <option value="standard">标准</option>
-               <option value="high">高质量</option></select></p>
-          <p>对白呈现<select v-model="comicDialogueMode" style="font-size:13px;padding:4px 6px">
-               <option value="bubble">气泡（画在格内）</option>
-               <option value="footer">底部字幕条</option>
-               <option value="none">不呈现</option></select>
-             <span class="muted" style="font-size:12px">分镜对白按所选方式呈现到页面</span></p>
           <p><input type="file" accept=".txt" @change="f => comicNovelFile = f.target.files[0]" required></p>
           <p><button :disabled="creating || !comicNovelFile">
-             {{ creating ? '创建中…' : '📖 创建漫画项目' }}</button></p>
+             {{ creating ? '创建中…' : '📎 创建漫画项目' }}</button></p>
+        </form>
+
+        <form v-if="newMode==='comicaudio'" @submit.prevent="createComicAudio">
+          <p class="muted" style="font-size:12px">
+             有声小说自动转写为正文（faster-whisper 后台转写），回填后走漫画链——
+             转写完点「🚀 一键出片」出漫画</p>
+          <p><input type="file" accept="audio/*" required @change="f => comicAudioFile = f.target.files[0]"
+                    style="width:90%" title="mp3/wav/m4a 等（≤200MB）"></p>
+          <p class="muted" style="font-size:12px" v-if="comicAudioFile">
+             已选 {{ comicAudioFile.name }}（{{ (comicAudioFile.size/1048576).toFixed(1) }} MB）</p>
+          <p><button :disabled="creating || !comicAudioFile">
+             {{ creating ? '上传中…（大文件请耐心）' : '🎧 创建漫画项目' }}</button></p>
         </form>
 
         <form v-if="newMode==='audio'" @submit.prevent="fromAudio">
@@ -1407,7 +1453,9 @@
              {{ creating ? '上传中…（大文件请耐心）' : '🎧 上传有声书' }}</button></p>
         </form>
 
-        <template v-if="newMode==='theme'">
+        <template v-if="newMode==='theme' || newMode==='comictheme'">
+        <p v-if="newMode==='comictheme'" class="muted" style="font-size:12px;margin:4px 0">
+          正文将用于逐页漫画生成（主题 → LLM 生成正文 → 拆漫画页 → 逐页出图）</p>
         <form @submit.prevent="previewFromTheme">
           <p><select v-model="newThemeId" required>
                <option value="" disabled>选择主题…</option>
@@ -1427,8 +1475,8 @@
             <span class="pill">{{ themePreview.length }} 字</span></h3>
           <textarea v-model="themePreview" rows="12" style="width:100%;background:#0d1117;color:#eee;border:1px solid #2c3540;border-radius:6px;padding:6px;resize:vertical;font-size:13px"></textarea>
           <p style="display:flex;gap:8px;align-items:center">
-            <button @click="createFromTheme" :disabled="creating"
-                    style="background:#16a34a">{{ creating ? '创建中…' : '✔ 确认创建项目' }}</button>
+            <button @click="newMode==='comictheme' ? createComicTheme() : createFromTheme()" :disabled="creating"
+                    style="background:#16a34a">{{ creating ? '创建中…' : (newMode==='comictheme' ? '✔ 确认创建漫画项目' : '✔ 确认创建项目') }}</button>
             <button @click="previewFromTheme" :disabled="themePreviewing"
                     title="不满意？换一版重新生成（补充描述改了会生效）">🔄 重新生成</button>
             <button @click="themePreview=''">放弃</button>

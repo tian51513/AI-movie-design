@@ -41,6 +41,8 @@ function data() {
     // 📖 小说转漫画 tab（2026-09-12 Task 6）：正文 + 漫画输出四参数 → comic_output 项目
     comicNovelFile: null, comicTargetPages: 0, comicImageSize: '1024x1536',
     comicQuality: 'standard', comicDialogueMode: 'bubble',
+    // Part A（2026-09-13）：类型选择层（video=视频/comic=漫画成品；文本小说/有声小说规划占位）
+    newProjType: 'video', comicAudioFile: null,
     exportingComic: false, comicExportUrl: '', comicExportName: '',
     _pagesStamp: 0,  // 漫画页缓存戳：进页/补页后翻新，杜绝重生成后吃旧图缓存
     comicMode: 'motion_comic',
@@ -1247,23 +1249,62 @@ const methods = {
     } catch (e) { alert('上传失败：' + e); }
     this.creating = false;
   },
+  setProjType(t) {  // 类型选择层（2026-09-13 Part A）：mode 重置为该类型首个入口
+    this.newProjType = t;
+    if (t === 'comic') { this.newMode = 'comicnovel'; this.newSubtitles = false; }
+    else { this.newMode = 'upload'; this.newSubtitles = true; }
+  },
+  _comicOutputForm() {  // 漫画项目公共表单字段（三数据源共用）
+    const fd = new FormData();
+    fd.append('aspect_ratio', this.newRatio);
+    fd.append('style', this._styleText()); fd.append('style_vis', this._styleVis());
+    fd.append('dialogue_mode', this.comicDialogueMode);
+    fd.append('target_pages', Number(this.comicTargetPages) || 0);  // 空串/NaN 兜 0（0=自动）
+    fd.append('image_size', this.comicImageSize);
+    fd.append('quality_tier', this.comicQuality);
+    fd.append('video_megapixels', this.newMegapixels);
+    fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
+    fd.append('default_shot_duration', Number(this.newSegDur) || 0);
+    fd.append('target_duration', Number(this.newTotalDur) || 0);
+    return fd;
+  },
+  async createComicAudio() {  // 🎧 有声小说→漫画（Part A）：音频转写回填正文后走漫画链
+    if (!this.comicAudioFile) return;
+    this.creating = true;
+    try {
+      const fd = this._comicOutputForm();
+      fd.append('name', this.newName || this.comicAudioFile.name.replace(/\.\w+$/, '') || '有声漫画');
+      fd.append('audio', this.comicAudioFile);
+      const resp = await fetch('/api/projects/from-comic-audio', { method: 'POST', body: fd });
+      if (!resp.ok) { alert(await resp.text()); return; }
+      this.newName = ''; this.comicAudioFile = null; this.createOpen = false;
+      await this.refresh();
+    } catch (e) { alert('创建失败：' + e); }
+    this.creating = false;
+  },
+  async createComicTheme() {  // 🎨 主题生成→漫画（Part A）：preview 正文 text 直传
+    this.creating = true;
+    try {
+      const fd = this._comicOutputForm();
+      const theme = this.themes.find(t => t.id === this.newThemeId);
+      fd.append('name', this.newName || (theme ? theme.name : '') || '主题漫画');
+      fd.append('text', this.themePreview || '');
+      const resp = await fetch('/api/projects/from-comic-novel', { method: 'POST', body: fd });
+      if (!resp.ok) { alert(await resp.text()); return; }
+      this.newName = ''; this.newProtagonist = ''; this.newThemeId = '';
+      this.newWordCount = ''; this.newExtraPrompt = ''; this.themePreview = '';
+      this.createOpen = false;
+    } catch (e) { alert('创建失败：' + e); }
+    this.creating = false;
+    await this.refresh();
+  },
   async createComicNovel() {  // 📖 小说转漫画（2026-09-12）：正文 + 漫画参数 → comic_output 项目
     if (!this.comicNovelFile) return;
     this.creating = true;
     try {
-      const fd = new FormData();
+      const fd = this._comicOutputForm();
       fd.append('name', this.newName || this.comicNovelFile.name.replace(/\.\w+$/, '') || '漫画');
-      fd.append('aspect_ratio', this.newRatio);
       fd.append('novel', this.comicNovelFile);
-      fd.append('style', this._styleText()); fd.append('style_vis', this._styleVis());
-      fd.append('dialogue_mode', this.comicDialogueMode);
-      fd.append('target_pages', Number(this.comicTargetPages) || 0);  // L11：空串/NaN 兜 0（0=自动）
-      fd.append('image_size', this.comicImageSize);
-      fd.append('quality_tier', this.comicQuality);
-      fd.append('video_megapixels', this.newMegapixels);
-      fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
-      fd.append('default_shot_duration', Number(this.newSegDur) || 0);
-      fd.append('target_duration', Number(this.newTotalDur) || 0);
       const resp = await fetch('/api/projects/from-comic-novel', { method: 'POST', body: fd });
       if (!resp.ok) { alert(await resp.text()); return; }  // L19：失败保留表单可改后重试
       this.newName = ''; this.comicNovelFile = null; this.createOpen = false;
