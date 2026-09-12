@@ -44,8 +44,30 @@ def _set_active(db, shot, role: str, version: str) -> None:
     update_shot(db, shot["id"], {"ledger_json": json.dumps(led, ensure_ascii=False)})
 
 
+def refresh_kf_thumb(shot_dir, role: str) -> Path | None:
+    """活动帧缩略图（2026-09-12 性能优化）：胶片条 <img> 此前加载全尺寸
+    kf（1-2MB PNG × 729 镜全量入 DOM）——切换版本=重拉+解码大图=卡顿。
+    ffmpeg 缩到 360px 宽 jpg（条上秒切；查看器仍用全图）。失败容错返 None
+    （调用方回落全图 URL）。每次活动帧被重写后调用（mtime 即缓存戳）。"""
+    import subprocess as _sp
+    from .merge import ffmpeg_bin
+    d = Path(shot_dir)
+    src = d / f"kf_{role}.png"
+    if not src.is_file():
+        return None
+    out = d / f"kf_{role}_thumb.jpg"
+    try:
+        _sp.run([ffmpeg_bin(), "-y", "-i", str(src), "-vf", "scale=360:-2",
+                 "-frames:v", "1", "-q:v", "4", str(out)],
+                check=True, capture_output=True, timeout=60,
+                encoding="utf-8", errors="replace")
+        return out if out.is_file() else None
+    except Exception:
+        return None
+
+
 def save_kf_version(shot_dir, role: str, src: Path) -> str:
-    """新版本落盘（v{max+1}）并刷新活动拷贝。返回 "vN"。"""
+    """新版本落盘（v{max+1}）并刷新活动拷贝（+活动帧缩略图）。返回 "vN"。"""
     d = Path(shot_dir); d.mkdir(parents=True, exist_ok=True)
     n = 0
     for v in kf_versions(d, role):
@@ -53,6 +75,7 @@ def save_kf_version(shot_dir, role: str, src: Path) -> str:
     data = Path(src).read_bytes()
     (d / f"kf_{role}_v{n + 1}.png").write_bytes(data)
     (d / f"kf_{role}.png").write_bytes(data)
+    refresh_kf_thumb(d, role)
     return f"v{n + 1}"
 
 
@@ -108,6 +131,7 @@ def activate_kf_version(db, data_dir, shot_id: int, role: str, version: str) -> 
             raise ValueError("动态漫尾帧=下镜首帧派生，请切下镜首帧版本")
     data = src.read_bytes()
     (shot_dir / f"kf_{role}.png").write_bytes(data)
+    refresh_kf_thumb(shot_dir, role)
     _set_active(db, shot, role, version)
     cleared = [shot_id]
     if role == "start":

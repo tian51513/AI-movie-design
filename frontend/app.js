@@ -50,6 +50,8 @@ function data() {
     themesManage: [], themeImportFile: null, themeImporting: false,
     editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character',
     newStyleKey: '', newStyleText: '', kreaLibs: {}, kreaLib: '', kreaName: '',
+    styleOpen: false, styleEditStyle: '', styleEditVis: '', styleSaving: false,
+    stylePickerOpen: false, spLib: '', spSel: '', spSearch: '', spCtx: 'create',
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, online: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
       comfy: {}, t2i_tm: '', speakerBlacklist: '',
@@ -115,6 +117,15 @@ const computed = {
     return mo[this.moTemplate];
   },
   projTotalPages() { return Math.max(1, Math.ceil(this.projects.length / this.projPageSize)); },
+  spFiltered() {  // 风格选择弹窗：当前库 + 名字过滤（只渲染选中库，防 3946 图全铺）
+    const styles = this.kreaLibs[this.spLib] || [];
+    const q = (this.spSearch || '').toLowerCase();
+    return q ? styles.filter(s => s.name.toLowerCase().includes(q)) : styles;
+  },
+  spSelPrompt() {
+    const s = (this.kreaLibs[this.spLib] || []).find(x => x.name === this.spSel);
+    return s ? s.prompt : '';
+  },
   arCSS() {  // 项目画幅 → CSS aspect-ratio（卡内缩略图统一尺寸盒，2026-08-30 需求）
     const ar = (this.project && this.project.aspect_ratio) || '9:16';
     const [w, h] = ar.split(':').map(Number);
@@ -1057,8 +1068,16 @@ const methods = {
     if (s.kfVers) {
       s.kfVers.active = { ...(s.kfVers.active || {}), [role]: ver };
     }
-    const u = s[`kf_${role}_url`] || `/media/projects/${this.project.slug}/shots/${s.seq}/kf_${role}.png`;
-    s[`kf_${role}_url`] = u.split('?')[0] + '?v=' + Date.now();
+    // 图 URL 原地翻新（全图+缩略图同刷缓存戳——条上显示的是缩略图，
+    // 360px jpg 秒级解码；旧 mtime 戳的请求后端缩略图已重生成）
+    const bump = (key, fallback) => {
+      const u = s[key] || fallback;
+      s[key] = u.split('?')[0] + '?v=' + Date.now();
+    };
+    bump(`kf_${role}_url`,
+         `/media/projects/${this.project.slug}/shots/${s.seq}/kf_${role}.png`);
+    bump(`kf_${role}_thumb_url`,
+         `/media/projects/${this.project.slug}/shots/${s.seq}/kf_${role}_thumb.jpg`);
     alert(`已切 ${ver}（视频待重渲）`);
   },
   async startSplit() {
@@ -1615,6 +1634,48 @@ createApp({ components: { PromptBox }, data, computed, methods,
       const styles = this.kreaLibs[this.kreaLib] || [];
       const s = styles.find(x => x.name === this.kreaName);
       return s ? s.prompt : '';
+    },
+    toggleStylePanel() {
+      this.styleOpen = !this.styleOpen;
+      if (this.styleOpen) {
+        this.styleEditStyle = this.project.style || '';
+        this.styleEditVis = this.project.style_vis || '';
+      }
+    },
+    async saveStylePanel() {
+      this.styleSaving = true;
+      try {
+        const body = { style: this.styleEditStyle.trim() };
+        if (this.styleEditVis.trim()) body.style_vis = this.styleEditVis.trim();
+        const r = await fetch(`/api/projects/${this.project.id}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body) });
+        if (r.ok) { this.styleOpen = false; await this.loadDetail(); }
+        else alert(await r.text());
+      } finally { this.styleSaving = false; }
+    },
+    openStylePicker(ctx) {
+      this.spCtx = ctx;
+      this.spSel = '';
+      this.spSearch = '';
+      if (!this.spLib) {
+        const first = Object.keys(this.kreaLibs)[0];
+        if (first) this.spLib = first;
+      }
+      this.stylePickerOpen = true;
+    },
+    confirmStylePicker() {
+      const styles = this.kreaLibs[this.spLib] || [];
+      const s = styles.find(x => x.name === this.spSel);
+      if (!s) return;
+      if (this.spCtx === 'create') {
+        this.kreaLib = this.spLib;
+        this.kreaName = s.name;
+      } else {
+        this.styleEditStyle = s.prompt;
+        if (!this.styleEditVis.trim()) this.styleEditVis = s.prompt;
+      }
+      this.stylePickerOpen = false;
     },
   async mounted() {
     fetch('/api/settings/style-presets').then(r => r.json())

@@ -209,6 +209,8 @@ def upload_keyframe(request: Request, shot_id: int,
     if len(data) > 20 * 1024 * 1024:
         raise HTTPException(422, "图片超过 20MB 上限")
     dest.write_bytes(data)
+    from ..engine.pageredraw import refresh_kf_thumb
+    refresh_kf_thumb(dest.parent, phase)   # 活动帧缩略图同步（性能优化）
     from ..engine.logbus import emit as emit_log
     emit_log(db, "comfy", "info",
              f"分镜 {shot['seq']} 关键帧（{phase}）已人工上传",

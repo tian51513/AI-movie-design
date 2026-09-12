@@ -209,6 +209,11 @@ def create_app(db_path: str | Path = "./data/studio.db",
         app.mount("/vendor", StaticFiles(directory=vendor_dir), name="vendor")
     if _FRONTEND.parent.is_dir():
         app.mount("/static", StaticFiles(directory=_FRONTEND.parent), name="static")
+    # Krea2 风格库静态资源（2026-09-12 预览面板）：templates/styles/krea2/
+    # samples/ 缩略图 + JSON 由 /styles/ 前缀直出
+    _styles_dir = _FRONTEND.parents[1] / "templates" / "styles"
+    if _styles_dir.is_dir():
+        app.mount("/styles", StaticFiles(directory=_styles_dir), name="styles")
 
     from .routes_assets import router as assets_router
     app.include_router(assets_router)

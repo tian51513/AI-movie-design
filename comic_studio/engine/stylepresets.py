@@ -29,10 +29,18 @@ def list_style_libs(repo_root: Path | None = None) -> dict:
             for prefix in ("krea2_",):
                 if lib.startswith(prefix):
                     lib = lib[len(prefix):]
-            styles = [{"name": str(s.get("name") or s.get("name_cn") or ""),
-                       "prompt": str(s.get("prompt") or "")}
-                      for s in items
-                      if isinstance(s, dict) and (s.get("prompt") or "").strip()]
+            styles = []
+            for s in items:
+                if not (isinstance(s, dict) and (s.get("prompt") or "").strip()):
+                    continue
+                entry = {"name": str(s.get("name") or s.get("name_cn") or ""),
+                         "prompt": str(s.get("prompt") or "")}
+                # 缩略图（2026-09-12 预览面板）：JSON 引用 samples/xxx.webp，
+                # 文件在才给 URL（/styles 静态挂载直出）
+                thumb = str(s.get("thumbnail") or "").strip()
+                if thumb and (d / thumb).is_file():
+                    entry["thumb"] = f"/styles/krea2/{thumb}"
+                styles.append(entry)
             if styles:
                 out[lib] = styles
     _CACHE = out

@@ -51,6 +51,13 @@ def _shot_public(r, versions=None, db=None, data_dir=None, slug=None):
                 kf_urls[f"kf_{phase}_url"] = (
                     f"/media/projects/{slug}/shots/{r['seq']}/kf_{phase}.png"
                     f"?v={int(kf.stat().st_mtime)}")
+                # 缩略图（2026-09-12 性能优化）：胶片条用 360px jpg（全尺寸
+                # PNG ×729 镜入 DOM=切换卡顿根因）；查看器仍用全图 URL
+                thumb = shot_dir / f"kf_{phase}_thumb.jpg"
+                if thumb.is_file():
+                    kf_urls[f"kf_{phase}_thumb_url"] = (
+                        f"/media/projects/{slug}/shots/{r['seq']}/"
+                        f"kf_{phase}_thumb.jpg?v={int(thumb.stat().st_mtime)}")
     return {"id": r["id"], "seq": r["seq"], "description": r["description"],
             "shot_type": r["shot_type"], "camera": json.loads(r["camera_json"] or "{}"),
             "ledger": json.loads(r["ledger_json"] or "{}"), "duration": r["duration"],
