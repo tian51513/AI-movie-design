@@ -870,8 +870,8 @@
                title="0=按剧情密度自动；重拆分镜时生效"></label>
       <label>尺寸
         <select :value="project.image_size" @change="patchComicParam('image_size', $event.target.value)"
-                title="小尺寸出图快（512 档像素量约为 1024 档 1/4）">
-          <option v-for="s in ['512x768','768x1024','832x1216','1024x1536','512x512','1024x1024','768x512','1024x768','1536x1024']" :value="s">{{ s }}</option>
+                title="百万像素档=Krea2 快道耗时闸：0.4MP≈30s/页、0.8MP≈60s、1.0MP≈90s">
+          <option v-for="s in ['512x768','768x1024','832x1216','1024x1536','512x512','1024x1024','768x512','1024x768','1536x1024']" :value="s">{{ s }}（{{ (parseInt(s.split('x')[0])*parseInt(s.split('x')[1])/1e6).toFixed(1) }}MP）</option>
         </select></label>
       <label>质量档
         <select :value="project.quality_tier" @change="patchComicParam('quality_tier', $event.target.value)"
@@ -1502,16 +1502,16 @@
           <p>页数<input type="number" min="0" max="200" v-model.number="comicTargetPages" style="width:52px">
              <span class="muted" style="font-size:12px">（0=按剧情密度自动）</span>
              尺寸<select v-model="comicImageSize" style="font-size:13px;padding:4px 6px"
-                     title="小尺寸出图快（512 档像素量约为 1024 档 1/4），大尺寸更精细">
-               <option value="512x768">竖版 512×768（快）</option>
-               <option value="768x1024">竖版 768×1024（中）</option>
-               <option value="832x1216">竖版 832×1216</option>
-               <option value="1024x1536">竖版 1024×1536（精细）</option>
-               <option value="512x512">方形 512×512（快）</option>
-               <option value="1024x1024">方形 1024×1024</option>
-               <option value="768x512">横版 768×512（快）</option>
-               <option value="1024x768">横版 1024×768（中）</option>
-               <option value="1536x1024">横版 1536×1024（精细）</option></select>
+                     title="括号为百万像素档（Krea2 快道的耗时闸）：0.4MP≈30s/页、0.8MP≈60s、1.0MP≈90s、1.6MP 更慢——小档快大档精细">
+               <option value="512x768">竖版 512×768（0.4MP·快）</option>
+               <option value="768x1024">竖版 768×1024（0.8MP·中）</option>
+               <option value="832x1216">竖版 832×1216（1.0MP）</option>
+               <option value="1024x1536">竖版 1024×1536（1.6MP·精细）</option>
+               <option value="512x512">方形 512×512（0.3MP·快）</option>
+               <option value="1024x1024">方形 1024×1024（1.0MP）</option>
+               <option value="768x512">横版 768×512（0.4MP·快）</option>
+               <option value="1024x768">横版 1024×768（0.8MP·中）</option>
+               <option value="1536x1024">横版 1536×1024（1.6MP·精细）</option></select>
              质量档<select v-model="comicQuality" style="font-size:13px;padding:4px 6px"
                      title="采样步数：步数越多越细腻越慢">
                <option value="fast">快速（8 步）</option>
