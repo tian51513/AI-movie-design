@@ -135,3 +135,51 @@ def test_worker_comfy_job_without_config_fails_clearly(tmp_path):
     assert job["status"] == "failed"
     assert "ComfyUI 未配置" in job["error"]
     assert called == []                    # 没带 None client 进 handler
+
+
+def test_llm_job_frees_comfy_vram_first(tmp_path):
+    """让位双向化（2026-09-13 真机判例：拆分切 27B 重度秒 504——ComfyUI 渲染
+    模型跑完驻留显存，重 LLM 装不下；旧让位只有单向 LLM→Comfy）。gpu_llm_local
+    任务启动前 comfy.free() 释放驻留模型。队列 gpu 组互斥保证 free 时无渲染在跑。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "p", "9:16", "t")["id"]
+    freed = []
+
+    class FakeComfy:
+        def free(self, unload_models=True):
+            freed.append(unload_models)
+
+    @register("llm_test_job")
+    def handle(db, data_dir, job, comfy):
+        pass  # free 断言在 handler 外
+
+    stop = threading.Event()
+    w = Worker(db.path, tmp_path / "data", None, stop, poll_interval=0.05,
+               handler_types=("llm_test_job",), comfy_factory=lambda: FakeComfy())
+    w.start()
+    jid = enqueue_job(db, "llm_test_job", project_id=pid, resource="gpu_llm_local")
+    for _ in range(100):
+        if get_job(db, jid)["status"] == "done":
+            break
+        time.sleep(0.05)
+    stop.set(); w.join(timeout=2)
+    assert get_job(db, jid)["status"] == "done"
+    assert freed, "gpu_llm_local 任务前未释放 ComfyUI 显存"
+
+    # 非 gpu_llm_local 任务不触发（普通任务不打扰 ComfyUI 缓存）
+    freed.clear()
+
+    @register("plain_test_job")
+    def handle2(db, data_dir, job, comfy):
+        pass
+    stop2 = threading.Event()
+    w2 = Worker(db.path, tmp_path / "data", None, stop2, poll_interval=0.05,
+                handler_types=("plain_test_job",), comfy_factory=lambda: FakeComfy())
+    w2.start()
+    jid2 = enqueue_job(db, "plain_test_job", project_id=pid)
+    for _ in range(100):
+        if get_job(db, jid2)["status"] == "done":
+            break
+        time.sleep(0.05)
+    stop2.set(); w2.join(timeout=2)
+    assert not freed, "普通任务不应清 ComfyUI 显存"
