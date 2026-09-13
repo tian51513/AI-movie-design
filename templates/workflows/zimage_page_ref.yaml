@@ -22,6 +22,7 @@ inject:
   - {node: '23', field: image, slot: char1}
   - {node: '24', field: image, slot: char2}
   - {node: '25', field: image, slot: scene}
+  - {node: '26', field: image, slot: canvas}
 outputs:
 - node: '10'
   filename_prefix: cs/{project}/{asset}
@@ -33,6 +34,11 @@ models:
 - {label: vae, node: '3', field: vae_name, cls: VAELoader, label_cn: VAE（qwen_image_vae）}
 - {label: lightning, node: '9001', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 加速 LoRA（Lightning 4 步；设空文件=关闭走质量档步数）}
 
+# v1.3（2026-09-13 真机判例·底图锁死）：latent 底改空白画布（26→45→1085）——
+# 旧版 char1 主图直作 latent 底，Edit「保持一致」把构图（半身照）与风格（主图
+# 摄影风）一并锁死，分镜描述/画风词与底图拔河（换风格输出几乎不变）。
+# 现参考图只走 Plus 编码器做身份条件，denoise 1.0 纯生成按描述+画风重构图。
+#
 # 二期 v1.1（2026-09-13 分析报告落地，docs/2026-09-13-comic-workflow-analysis.md）：
 # 2511 多图（官方多人合照一致性强化）——char1+char2 双角色真参考注入；
 # Lightning 4 步（strength=comfy.page_ref_lightning 默认 1.0，设 0 关闭）；

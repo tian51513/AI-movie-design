@@ -30,7 +30,7 @@
   "class_type": "ImageResizeKJv2",
   "inputs": {
    "image": [
-    "23",
+    "26",
     0
    ],
    "width": 1024,
@@ -181,6 +181,13 @@
   "class_type": "LoadImage",
   "inputs": {
    "image": "blank_ref.png",
+   "upload": "image"
+  }
+ },
+ "26": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "blank_canvas.png",
    "upload": "image"
   }
  }

@@ -1180,7 +1180,7 @@ def test_comic_page_ref_template_registered(tmp_path, monkeypatch):
     db = Database(tmp_path / "s.db"); db.migrate()
     t = registry.resolve_template(db, "comic_page_ref")
     assert t.id == "zimage_page_ref"
-    assert [im["slot"] for im in t.inject_images] == ["char1", "char2", "scene"]
+    assert [im["slot"] for im in t.inject_images] == ["char1", "char2", "scene", "canvas"]
     for p in ("seed", "steps", "denoise", "cfg", "lightning_strength", "width", "height"):
         assert p in t.inject_params, p
 
@@ -1247,11 +1247,13 @@ def test_gen_comic_page_ref_injection(tmp_path, monkeypatch):
     assert any(u.endswith("__char1.png") for u in ups), ups
     assert any(u.endswith("__char2.png") for u in ups), ups        # 双角色真参考
     assert any(u.endswith("__scene.png") for u in ups), ups        # 缺省槽白图占位
+    assert any(u.endswith("__canvas.png") for u in ups), ups       # v1.3 空白画布 latent 底
     val = m.prompts[0]["prompt"]["28"]["inputs"]["value"]
     assert "图1中的人物" in val and "图2" in val                    # 多图按图号引用
+    assert "构图" in val and "全身" in val                          # v1.3 构图遵循指令
     assert "山顶云海" in val
     k = m.prompts[0]["prompt"]["4"]["inputs"]
-    assert k["steps"] == 4 and k["cfg"] == 2.5 and k["denoise"] == 0.9
+    assert k["steps"] == 4 and k["cfg"] == 2.5 and k["denoise"] == 1.0  # v1.3 纯生成
     assert m.prompts[0]["prompt"]["9001"]["inputs"]["strength_model"] == 1.0
     assert (m.prompts[0]["prompt"]["45"]["inputs"]["width"],
             m.prompts[0]["prompt"]["45"]["inputs"]["height"]) == (1024, 1536)

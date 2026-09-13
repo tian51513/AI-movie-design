@@ -116,8 +116,8 @@ def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
         who = "图1中的人物" if not extra_chars else f"图1中的人物与图2中的人物（{extra_chars}）"
         where = "图3中的场景" if scene_img else "新场景"
         prompt = (f"严格按场景描述重新构图：{detail[:200]}。"
-                  f"将{who}置于{where}，人物五官/发型/服装与参考图保持一致，"
-                  "按描述改变姿势、构图与环境")
+                  f"将{who}置于{where}，人物五官/发型/服装与参考图保持一致。"
+                  "画面构图（全身/半身/特写/机位）严格按描述执行，人物完整按描述呈现")
         if style:
             prompt += f"。画风（严格执行）：{style}"   # 画风前置加重（尾部被淹没判例）
     else:
@@ -195,10 +195,13 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
             blank = _dta2(data_dir, "_cache/blank_ref.png")
             if not Path(blank).exists():
                 blank = _ensure_blank(data_dir)
+            # v1.3：canvas=空白画布作 latent 底（不锁构图——旧版 char1 直作底图
+            # 把半身构图与摄影风格一并锁死，2026-09-13 真机判例）
             images = [
                 {"slot": "char1", "path": str(char_refs[0][1])},
                 {"slot": "char2", "path": str(char_refs[1][1]) if len(char_refs) == 2 else str(blank)},
                 {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(blank)},
+                {"slot": "canvas", "path": str(blank)},
             ]
             scene_img_used = scene_ref is not None
             params["denoise"] = float(

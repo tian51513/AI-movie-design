@@ -60,7 +60,7 @@ def test_comfy_setting_default(tmp_path):
                                         "min_free_vram_gb": 8,
                                         "merge_xfade": False,
                                         "merge_grade": False,
-                                        "director_batch_frames": 512, "page_ref_denoise": 0.9, "page_ref_lightning": 1.0, "page_ref_cfg": 2.5,
+                                        "director_batch_frames": 512, "page_ref_denoise": 1.0, "page_ref_lightning": 1.0, "page_ref_cfg": 2.5,
                                         "director_clear_vram": False,
                                         "director_export_source": False,
                                         "director_batch_relay": True,
