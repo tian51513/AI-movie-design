@@ -648,6 +648,13 @@ def convert_to_video(request: Request, project_id: int, body: dict | None = None
     vp_keys = ("video_megapixels", "video_multiple", "video_speed", "prompt_mode",
                "lora_realism", "default_shot_duration", "target_duration",
                "aspect_ratio")
+    # 重绘角色（复刻漫画导入参数·用户需求 2026-09-14）：motion 模式勾上则
+    # 渲染前整页重绘链激活（redraw_characters=1）；standard 不消费
+    if "redraw_characters" in body:
+        conn = db.connect()
+        conn.execute("UPDATE projects SET redraw_characters=? WHERE id=?",
+                     (1 if body["redraw_characters"] else 0, project_id))
+        conn.commit()
     kwargs = {k: body[k] for k in vp_keys if k in body}
     wf_mode = body.get("render_mode", "")
     if wf_mode and wf_mode not in ("ref2va", "fl2v", "t2v"):

@@ -1648,10 +1648,12 @@
         不行可手动强制重读）→渲染→配音字幕→合成。漫画页保留可导出。</p>
       <p>画风<input v-model="c2vStyle" style="width:80%"
               title="预填漫画项目画风，可改（渲染参考图与提示词消费）"></p>
-      <p>转化类型<select v-model="c2vMode">
+      <p>转化类型<select v-model="c2vMode" @change="c2vModeChanged">
            <option value="standard">重渲染（资产参考全新画面·质量高）</option>
            <option value="motion">动态漫（漫画原画动起来·快）</option>
-           <option value="film">漫改电影（角色动画·慢）</option></select></p>
+           <option value="film">漫改电影（角色动画·慢）</option></select>
+         <span v-if="c2vMode==='motion'" class="muted" style="font-size:12px">（动态漫=首尾帧翻页，渲染模式已联动 fl2v；提示词由读图生成，模式不消费）</span>
+         <span v-else-if="c2vMode==='film'" class="muted" style="font-size:12px">（漫改=角色参考动画，渲染模式已联动 ref2va；提示词由读图生成，模式不消费）</span></p>
       <p>画幅<select v-model="c2vRatio">
         <option>9:16</option><option>16:9</option><option>3:4</option>
         <option>4:3</option><option>1:1</option></select>
@@ -1663,11 +1665,18 @@
          </select>
          质量档<select v-model="c2vSpeed"><option>快速</option><option>标准</option><option>高质量</option></select>
          字幕<input type="checkbox" v-model="c2vSubs"></p>
-      <p>渲染模式<select v-model="c2vRender">
+      <p>段时长<input type="number" min="0" max="15" v-model.number="c2vSegDur" style="width:44px">s
+         总时长<input type="number" min="0" max="3600" v-model.number="c2vTotalDur" style="width:52px">s
+         <span class="muted" style="font-size:12px">（总时长>0 时拆分镜后按镜数均摊）</span></p>
+      <p><label style="cursor:pointer" title="动态漫模式：VLM 提取主要角色→按画风重绘角色主图→整页重绘清气泡文字（标准重渲染不消费此选项）">
+           <input type="checkbox" v-model="c2vRedraw"> 是否重绘角色（动态漫可选）</label></p>
+      <p>渲染模式<select v-model="c2vRender" :disabled="c2vMode!=='standard'" @change="_c2vRenderTouched = true"
+                :title="c2vMode==='motion' ? '已联动 fl2v（动态漫链固定首尾帧）——手动改需先切回重渲染' : '已联动 ref2va（漫改链固定角色动画）'">
            <option value="ref2va">多参生视频（默认，角色一致性好）</option>
            <option value="fl2v">首尾帧生视频（连贯性好）</option>
            <option value="t2v">文生视频（最快）</option></select>
-         提示词模式<select v-model="c2vPromptMode">
+         提示词模式<select v-model="c2vPromptMode" :disabled="c2vMode!=='standard'"
+                :title="c2vMode!=='standard' ? '动态漫/漫改提示词由 VLM 读图生成（integrated/六段格式），A~E 模式不消费' : ''">
            <option value="D">D 多镜电影（中文）</option>
            <option value="E">E 英文控制式</option>
            <option value="A">A 散文</option><option value="B">B 结构化</option>

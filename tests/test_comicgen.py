@@ -2190,3 +2190,27 @@ def test_reroll_uses_new_seed(tmp_path, monkeypatch):
         # 重出后库值也被更新（新 seed 入库，连续链从新值续）
         assert get_shot(db, sid)["seed"] == seeds[-1]
     assert seeds[0] != 777 and seeds[1] != 777 and seeds[0] != seeds[1]
+
+
+def test_convert_to_video_full_params(tmp_path):
+    """转化面板复刻漫画导入全参数（用户需求 2026-09-14）：段时长/总时长/
+    重绘角色三新参落列；已有画幅/兆像素/倍速/质量档/字幕/渲染模式/画风。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project, set_stage
+
+    db, pid = _comic_project(tmp_path)
+    _comic_shot_ids(db, pid)
+    set_stage(db, pid, "comic_ready")
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post(f"/api/projects/{pid}/convert-to-video", json={
+            "video_mode": "motion", "default_shot_duration": 5,
+            "redraw_characters": True,
+            "video_multiple": 16, "subtitles": False})
+        assert r.status_code == 200, r.text
+        p = get_project(db, pid)
+        assert p["comic_mode"] == "motion_comic"
+        assert p["default_shot_duration"] == 5   # 总时长不传→不触发均摊同步
+        assert p["redraw_characters"] == 1 and p["video_multiple"] == 16
+        assert p["subtitles"] == 0

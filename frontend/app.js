@@ -46,6 +46,7 @@ function data() {
     comicBubbleOpacity: 85, comicBubbleColor: '#222222', comicBubbleFontSize: 0,
     exportingComic: false, comicExportUrl: '', comicExportName: '',
     c2vOpen: false, c2vBusy: false, c2vMode: 'standard', c2vStyle: '', c2vRatio: '9:16', c2vMP: 0.4,
+    c2vSegDur: 0, c2vTotalDur: 0, c2vRedraw: false,
     bubEdit: null, _bubDrag: null,
     c2vMul: 32, c2vSpeed: '标准', c2vSubs: true, c2vRender: '', c2vPromptMode: 'D',
     _pagesStamp: 0,  // 漫画页缓存戳：进页/补页后翻新，杜绝重生成后吃旧图缓存
@@ -1115,6 +1116,14 @@ const methods = {
     if (!r.ok) { alert(await r.text()); return; }
     await this.loadDetail();
   },
+  c2vModeChanged() {  // 联动默认（2026-09-14 用户需求）：切模式自动定渲染方式——
+    // 固定一套默认，用户手动改过（值非默认）则尊重用户
+    const defs = { motion: 'fl2v', film: 'ref2va', standard: 'ref2va' };
+    if (!this._c2vRenderTouched || this.c2vRender === { motion: 'ref2va', film: 'fl2v', standard: 'fl2v' }[this.c2vMode]) {
+      this.c2vRender = defs[this.c2vMode] || 'ref2va';
+    }
+    if (this.c2vMode === 'motion') this.c2vRedraw = this.c2vRedraw;  // 保留用户勾选
+  },
   convertToVideo() {  // 🎬 打开转化设置面板（2026-09-13）：预填漫画项目画风与现参数
     this.c2vStyle = this.project.style || '';
     this.c2vRatio = this.project.aspect_ratio || '9:16';
@@ -1123,7 +1132,11 @@ const methods = {
     this.c2vSpeed = this.project.video_speed || '标准';
     this.c2vSubs = true;
     this.c2vRender = '';
+    this._c2vRenderTouched = false;
     this.c2vMode = 'standard';
+    this.c2vSegDur = this.project.default_shot_duration || 0;
+    this.c2vTotalDur = this.project.target_duration || 0;
+    this.c2vRedraw = false;
     this.c2vPromptMode = this.project.prompt_mode || 'D';
     this.c2vOpen = true;
   },
@@ -1133,6 +1146,9 @@ const methods = {
       const body = { video_mode: this.c2vMode, aspect_ratio: this.c2vRatio, video_megapixels: this.c2vMP,
                      video_multiple: this.c2vMul, video_speed: this.c2vSpeed,
                      subtitles: !!this.c2vSubs, prompt_mode: this.c2vPromptMode,
+                     default_shot_duration: Number(this.c2vSegDur) || 0,
+                     target_duration: Number(this.c2vTotalDur) || 0,
+                     redraw_characters: !!this.c2vRedraw,
                      style: this.c2vStyle || undefined };
       if (this.c2vRender) body.render_mode = this.c2vRender;
       const r = await fetch(`/api/projects/${this.project.id}/convert-to-video`,
