@@ -209,6 +209,17 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
             return {"action": "wait",
                     "detail": "分析未产出任何角色资产——正文过短或转写异常，"
                               "请检查正文后重新分析"}
+        # 漫画链停等确认（2026-09-13 B1）：资产名册喂拆解绑定，名字错=页面画错人
+        # ——分析完停等用户检查/改名/删减，点「✓ 确认资产」放行（同时跳过参考图
+        # 生成与门1：漫画页不消费参考图，gen_refs 纯烧 ComfyUI）。停等措辞刻意
+        # 不含「失败」（tick 失败守卫按子串上报卡死——重绘停等判例）
+        if (proj["comic_mode"] if "comic_mode" in proj.keys() else "") == "comic_output":
+            if not (proj["comic_assets_confirmed"]
+                    if "comic_assets_confirmed" in proj.keys() else 0):
+                return {"action": "wait",
+                        "detail": "请检查角色资产名册（可改名/删减）后点「✓ 确认资产，继续出片」"}
+            return {"action": "comic_skip_refs",
+                    "detail": "资产已确认，跳过参考图直接拆解"}
         if _all_assets_have_sheets(db, data_dir, project_id):
             return {"action": "gate1", "detail": "资产齐全，过门1"}
         if _has_active_job(db, project_id, "gen_ref"):
@@ -502,6 +513,13 @@ def tick(db, data_dir, project_id) -> dict:
                         payload={"shot_id": s["id"], "template": pick_template_id(s)})
             n += 1
         emit_log(db, "autopilot", "info", f"autopilot 入队 {n} 镜渲染", project_id=project_id)
+    elif action == "comic_skip_refs":
+        # B1：确认后跳过 gen_refs/门1 直进 assets_ready（参考图无消费方）
+        from .projects import set_stage as _ss
+        _ss(db, project_id, "assets_ready")
+        emit_log(db, "autopilot", "info",
+                 "漫画链跳过参考图生成（页面不消费参考图），进入拆解",
+                 project_id=project_id)
     elif action == "gen_comic_pages":
         # 漫画成品（2026-09-12）：缺页镜逐个入队 t2i 逐页生成。不跳失败镜——
         # next_action 的 _latest_failed 批次守卫已防死循环（失败即 wait 等手动），

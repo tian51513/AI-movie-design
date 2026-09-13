@@ -215,6 +215,9 @@ MIGRATIONS: list[str] = [
     # 37 气泡渲染（2026-09-13 二期①）：bubble_style JSON（opacity 只作用底色/
     # font_color/font_size 0=随页宽自适应）——空串=默认样式
     """ALTER TABLE projects ADD COLUMN bubble_style TEXT NOT NULL DEFAULT '';""",
+    # 38 漫画链资产停等确认（2026-09-13 B1）：分析后用户确认名册才拆解出页；
+    # 确认同时跳过参考图生成/门1（漫画页不消费参考图）
+    """ALTER TABLE projects ADD COLUMN comic_assets_confirmed INTEGER NOT NULL DEFAULT 0;""",
 ]
 
 

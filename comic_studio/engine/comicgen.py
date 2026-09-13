@@ -34,8 +34,31 @@ def _ledger(shot) -> dict:
         return {}
 
 
+def _anchor_lines(shot, db, project_id) -> str:
+    """文本外貌锚（2026-09-13 一致性）：绑定角色的资产库外貌行 + 场景描述
+    注入页面提示词——与参考图生成同源数据，跨页文字锚定（一期无参考图注入，
+    同一角色每页靠这段保持发型/服装一致）。上限 3 角色/2 场景防爆。"""
+    led = _ledger(shot)
+    bound = led.get("assets") or {}
+    from .assets import get_asset
+    parts = []
+    for cid in (bound.get("characters") or [])[:3]:
+        a = get_asset(db, cid)
+        if a is None or a["kind"] != "character":
+            continue
+        rows = [ln.strip() for ln in (a["appearance_json"] or "").splitlines() if ln.strip()]
+        rows = [ln for ln in rows if not ln.endswith("无")]  # 「无」行零信息
+        if rows:
+            parts.append(f"{a['name']}（{'；'.join(rows)}）")
+    for sid in (bound.get("scenes") or [])[:2]:
+        a = get_asset(db, sid)
+        if a is not None and a["kind"] == "scene" and a["appearance_json"]:
+            parts.append(f"场景{a['name']}：{a['appearance_json'][:60]}")
+    return "；".join(parts)
+
+
 def build_comic_prompt(db, proj, shot) -> str:
-    """漫画页提示词：场景 + 画风。
+    """漫画页提示词：场景 + 外貌锚 + 画风。
 
     对白一律不进提示词（2026-09-13 气泡渲染反转：t2i 画中文=乱码）——
     bubble 模式注入「上方留白+禁字」指令，气泡由 Pillow 后处理画；
@@ -43,6 +66,9 @@ def build_comic_prompt(db, proj, shot) -> str:
     """
     detail = (shot["description"] or "").strip() or "按分镜描述生成"
     prompt = f"单格漫画插画：{detail[:200]}"
+    anchor = _anchor_lines(shot, db, proj["id"])
+    if anchor:
+        prompt += f"。角色外貌锚（各角色严格保持一致）：{anchor}"
     if (proj["dialogue_mode"] or "bubble") == "bubble":
         prompt += "。画面上方适当留白，不要画任何文字、对话气泡、字幕"
     style = ((proj["style_vis"] or proj["style"]) or "").strip()

@@ -910,3 +910,108 @@ def test_from_comic_novel_bubble_style_and_patch(tmp_path):
         assert c.patch(f"/api/projects/{pid}", json={"dialogue_mode": "loud"}).status_code == 422
         assert c.patch(f"/api/projects/{pid}", json={"bubble_style": "{bad"}).status_code == 422
         assert c.patch(f"/api/projects/{pid}", json={"bubble_style": '{"opacity":300}'}).status_code == 422
+
+
+# ---- B1（2026-09-13）：漫画链资产停等确认 + 跳过参考图生成 ----
+
+def test_migration_38_comic_assets_confirmed(tmp_path):
+    db = Database(tmp_path / "s.db"); db.migrate()
+    cols = {c[1] for c in db.connect().execute("PRAGMA table_info(projects)")}
+    assert "comic_assets_confirmed" in cols
+
+
+def _analyzed_with_asset(tmp_path, confirmed=0):
+    """analyzed 阶段 + 1 个角色资产的漫画项目。"""
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.assets import persist_assets
+    from comic_studio.engine.llm.schemas import AssetsAnalysis, CharacterAsset
+    db, pid = _comic_project(tmp_path)
+    conn = db.connect()
+    if confirmed:
+        conn.execute("UPDATE projects SET comic_assets_confirmed=1 WHERE id=?", (pid,))
+        conn.commit()
+    persist_assets(db, tmp_path / "data", pid, AssetsAnalysis(
+        characters=[CharacterAsset(name="少年", role="主角",
+                                   appearance="性别：男\n服装：青色布衣",
+                                   tags=["主角"])],
+        scenes=[], props=[]))
+    set_stage(db, pid, "analyzed")
+    return db, pid
+
+
+def test_comic_autopilot_waits_asset_confirm(tmp_path):
+    """analyzed + 未确认 → 停等（措辞不含「失败」——tick 卡死守卫按子串上报）。"""
+    from comic_studio.engine.autopilot import next_action
+    db, pid = _analyzed_with_asset(tmp_path, confirmed=0)
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait"
+    assert "确认资产" in act["detail"] and "失败" not in act["detail"]
+
+
+def test_comic_autopilot_confirmed_skips_refs(tmp_path):
+    """已确认 → 跳过 gen_refs/门1 直落 assets_ready（参考图无消费方不烧）。"""
+    from comic_studio.engine.autopilot import next_action, tick
+    from comic_studio.engine.projects import get_project
+    db, pid = _analyzed_with_asset(tmp_path, confirmed=1)
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "comic_skip_refs"
+    tick(db, tmp_path / "data", pid)
+    assert get_project(db, pid)["stage"] == "assets_ready"
+
+
+def test_confirm_comic_assets_api(tmp_path):
+    """POST confirm-comic-assets：落 confirmed + 直进 assets_ready；
+    非 comic_output 422；幂等重放 202。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project
+    db, pid = _analyzed_with_asset(tmp_path)
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        assert c.post("/api/projects/9999/confirm-comic-assets").status_code == 404
+        r = c.post(f"/api/projects/{pid}/confirm-comic-assets")
+        assert r.status_code == 202, r.text
+        p = get_project(db, pid)
+        assert p["comic_assets_confirmed"] == 1 and p["stage"] == "assets_ready"
+        # 幂等重放
+        assert c.post(f"/api/projects/{pid}/confirm-comic-assets").status_code == 202
+        # 非漫画项目 422
+        from comic_studio.engine.projects import create_project
+        vid = create_project(db, tmp_path / "data", "视频剧", "9:16", "正文" * 100)["id"]
+        assert c.post(f"/api/projects/{vid}/confirm-comic-assets").status_code == 422
+
+
+# ---- 文本外貌锚（2026-09-13 一致性）：绑定角色/场景的资产库外貌注入页面提示词 ----
+
+def test_comic_prompt_character_scene_anchor(tmp_path):
+    """绑定角色的外貌锚 + 场景描述锚注入页面提示词——跨页文字一致性
+    （一期无参考图注入，锚数据与参考图生成同源）。上限 3 角色/2 场景防爆。"""
+    from comic_studio.engine.comicgen import build_comic_prompt
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.assets import persist_assets
+    from comic_studio.engine.llm.schemas import AssetsAnalysis, CharacterAsset, SceneAsset
+
+    db, pid = _comic_project(tmp_path)
+    set_stage(db, pid, "analyzed")
+    ids = persist_assets(db, tmp_path / "data", pid, AssetsAnalysis(
+        characters=[CharacterAsset(name="少年", role="主角",
+                                   appearance="性别：男\n发色发型：黑色短碎发\n服装：青色布衣",
+                                   tags=[])],
+        scenes=[SceneAsset(name="玄关", description="昏暗古宅玄关，烛火摇曳")],
+        props=[]))
+    cid, sid = ids[0], ids[1]
+    from comic_studio.engine.projects import get_project
+    proj = get_project(db, pid)
+    import json as _json
+    shot = {"description": "少年推门而入",
+            "ledger_json": _json.dumps({"dialogue": [], "assets": {
+                "characters": [cid], "scenes": [sid], "props": []}})}
+    p = build_comic_prompt(db, proj, shot)
+    assert "外貌锚" in p or "外貌参考" in p
+    assert "黑色短碎发" in p and "青色布衣" in p      # 外貌行进提示词
+    assert "配饰" not in p                            # 「无」行不注入（无信息）
+    assert "玄关" in p and "烛火摇曳" in p            # 场景锚
+    # 未绑定镜：无锚段
+    shot2 = {"description": "空镜", "ledger_json": '{"dialogue": []}'}
+    p2 = build_comic_prompt(db, proj, shot2)
+    assert "外貌锚" not in p2 and "外貌参考" not in p2

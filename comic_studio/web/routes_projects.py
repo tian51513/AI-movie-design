@@ -43,7 +43,9 @@ _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", 
                     # 迁移 36（2026-09-12 小说转漫画）：前端详情页消费
                     "dialogue_mode", "target_pages", "image_size", "quality_tier",
                     # 迁移 37（2026-09-13 气泡渲染）：样式三参数 JSON
-                    "bubble_style")
+                    "bubble_style",
+                    # 迁移 38（2026-09-13 B1）：资产停等确认标记
+                    "comic_assets_confirmed")
 
 
 @router.post("/{project_id}/retry-transcribe", status_code=202)
@@ -531,6 +533,31 @@ def describe_shots_route(project_id: int, request: Request,
                           shot_id=shot_id if shot_id else None,
                           payload=payload)
     return {"job_id": jid}
+
+
+@router.post("/{project_id}/confirm-comic-assets", status_code=202)
+def confirm_comic_assets(request: Request, project_id: int):
+    """B1 漫画链资产停等确认（2026-09-13）：用户检查/改名/删减名册后放行——
+    落 comic_assets_confirmed=1 并直进 assets_ready（跳过参考图生成与门1：
+    漫画页不消费参考图）。幂等：重复确认 no-op。"""
+    db = request.app.state.db
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    if (proj["comic_mode"] if "comic_mode" in proj.keys() else "") != "comic_output":
+        raise HTTPException(422, "仅漫画成品项目（comic_output）有资产确认环节")
+    if not (proj["comic_assets_confirmed"]
+            if "comic_assets_confirmed" in proj.keys() else 0):
+        conn = db.connect()
+        conn.execute("UPDATE projects SET comic_assets_confirmed=1 WHERE id=?",
+                     (project_id,))
+        conn.commit()
+        emit_log(db, "autopilot", "info", "资产名册已确认，继续拆解出页",
+                 project_id=project_id)
+        if proj["stage"] == "analyzed":
+            from ..engine.projects import set_stage
+            set_stage(db, project_id, "assets_ready")
+    return {"confirmed": True}
 
 
 @router.post("/{project_id}/generate-comic-pages", status_code=202)
