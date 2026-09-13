@@ -58,6 +58,18 @@ def _ledger(shot) -> dict:
         return {}
 
 
+def _anchor_detail(raw: str) -> str:
+    """appearance_json 可能是 {"detail": 行模板} 包装（2026-09-13 真机判例：
+    不拆包整段 JSON 泄漏进提示词成噪声）——拆包失败回落原文。"""
+    try:
+        d = json.loads(raw or "")
+        if isinstance(d, dict):
+            return str(d.get("detail") or "")
+    except (ValueError, TypeError):
+        pass
+    return raw or ""
+
+
 def _anchor_lines(shot, db, project_id) -> str:
     """文本外貌锚（2026-09-13 一致性）：绑定角色的资产库外貌行 + 场景描述
     注入页面提示词——与参考图生成同源数据，跨页文字锚定（一期无参考图注入，
@@ -65,24 +77,13 @@ def _anchor_lines(shot, db, project_id) -> str:
     led = _ledger(shot)
     bound = led.get("assets") or {}
 
-    def _detail(raw: str) -> str:
-        """appearance_json 可能是 {"detail": 行模板} 包装（2026-09-13 真机判例：
-        不拆包整段 JSON 泄漏进提示词成噪声）——拆包失败回落原文。"""
-        try:
-            d = json.loads(raw or "")
-            if isinstance(d, dict):
-                return str(d.get("detail") or "")
-        except (ValueError, TypeError):
-            pass
-        return raw or ""
-
     from .assets import get_asset
     parts = []
     for cid in (bound.get("characters") or [])[:3]:
         a = get_asset(db, cid)
         if a is None or a["kind"] != "character":
             continue
-        rows = [ln.strip() for ln in _detail(a["appearance_json"]).splitlines()
+        rows = [ln.strip() for ln in _anchor_detail(a["appearance_json"]).splitlines()
                 if ln.strip()]
         rows = [ln for ln in rows if not ln.endswith("无")]  # 「无」行零信息
         if rows:
@@ -90,14 +91,15 @@ def _anchor_lines(shot, db, project_id) -> str:
     for sid in (bound.get("scenes") or [])[:2]:
         a = get_asset(db, sid)
         if a is not None and a["kind"] == "scene":
-            d = _detail(a["appearance_json"])
+            d = _anchor_detail(a["appearance_json"])
             if d:
                 parts.append(f"场景{a['name']}：{d[:60]}")
     return "；".join(parts)
 
 
 def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
-                       scene_img=False, scene_name="", krea_names=None) -> str:
+                       scene_img=False, scene_name="", krea_names=None,
+                       second_anchor="") -> str:
     """漫画页提示词：场景 + 外貌锚 + 画风。
 
     对白一律不进提示词（2026-09-13 气泡渲染反转：t2i 画中文=乱码）——
@@ -120,9 +122,12 @@ def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
         where = "图3中的场景" if scene_img else "新场景"
         scene_anchor = f"场景：{scene_name}，" if scene_name else ""
         if krea_names:
-            # Krea2 快道方言：图1=场景 / 图2=人物（槽序固定）。单角色单段；
-            # 双角色链式两段——本函数只写 P1（放第一人），P2 由 handler 内联
+            # Krea2 快道方言：图1=场景 / 图2=人物（槽序固定）。单次出图
+            # （用户决策 2026-09-13：双角色不做链式两段——第一人入图2 参考，
+            # 第二人文字锚）
             who = f"图2 参考中的人物（{krea_names[0]}），外貌与图2 保持一致"
+            if second_anchor:
+                who += f"；画面中同时出现 {second_anchor}"
             where = "图1 的场景" if scene_img else "按描述构建的场景"
             prompt = (f"{scene_anchor}画面内容：{detail[:200]}。"
                       f"将{who}置于{where}。"
@@ -200,6 +205,7 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     extra_chars = ""
     scene_img_used = False
     krea_names = []
+    second_anchor = ""
     if 1 <= len(char_refs) <= 2:
         from .paths import data_to_abs as _dta2
         blank = _dta2(data_dir, "_cache/blank_ref.png")
@@ -221,6 +227,12 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
         if krea_tmpl is not None:
             tmpl = krea_tmpl
             krea_names = [c[0]["name"] for c in char_refs]
+            if len(char_refs) == 2:
+                # 第二角色文字锚（用户决策 2026-09-13：单次出图，不做链式两段）
+                a2 = char_refs[1][0]
+                rows = [ln.strip() for ln in _anchor_detail(a2["appearance_json"]).splitlines()
+                        if ln.strip() and not ln.strip().endswith("无")][:3]
+                second_anchor = f"{a2['name']}（{'；'.join(rows)}）" if rows else a2["name"]
             images = [
                 {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(gray)},
                 {"slot": "char", "path": str(char_refs[0][1])},
@@ -258,7 +270,7 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     prompt = build_comic_prompt(db, proj, shot,
                                 scene_mode=bool(images), extra_chars=extra_chars,
                                 scene_img=scene_img_used, scene_name=scene_name,
-                                krea_names=krea_names)
+                                krea_names=krea_names, second_anchor=second_anchor)
     comfy_cfg = get_setting(db, "comfy") or {}
     # v1.4：Lightning 默认关（4 步蒸馏画面糊·真机判例）——质量档步数 + cfg 3.5
     # （v4 锐利基线）；设 1.0 走 4 步草稿加速档（cfg 建议 2.5）
@@ -302,32 +314,9 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
                        out_path)
         return _wf
 
-    chained_final_prompt = None
-    if tmpl.id == "comic_page_krea2" and len(char_refs) == 2:
-        # 链式两段（官方 workaround）：P1 场景+A → 中间产物 → P2 以 P1 为图1 插 B
-        mid = pages_dir / f".chain_{shot['seq']:03d}.png"
-        p1 = build_comic_prompt(db, proj, shot, scene_mode=True, extra_chars="",
-                                scene_img=scene_img_used, scene_name=scene_name,
-                                krea_names=[krea_names[0]])
-        _submit_pass(p1, images, mid, tag="-链1")   # tag 严禁含 /（真机判例：上传名即路径）
-        p2_images = [{"slot": "scene", "path": str(mid)},
-                     {"slot": "char", "path": str(char_refs[1][1])}]
-        p2 = (f"在图1 的画面基础上加入图2 参考中的人物（{krea_names[1]}）："
-              f"{(shot['description'] or '')[:180]}。图1 中已有的人物与场景保持不变，"
-              f"{krea_names[1]} 的外貌与图2 保持一致，按描述安排其位置与动作，"
-              "画面高清锐利、细节清晰")
-        st = ((proj["style_vis"] or proj["style"]) or "").strip()
-        if st:
-            p2 += f"。画风（严格执行）：{st}"
-        if (proj["dialogue_mode"] or "bubble") == "bubble":
-            p2 += "。画面上方适当留白，不要画任何文字、对话气泡、字幕"
-        wf = _submit_pass(p2, p2_images, dest, seed=random.randint(0, 2**31 - 1),
-                          tag="-链2")
-        chained_final_prompt = p2
-        mid.unlink(missing_ok=True)
-        prompt = chained_final_prompt
-    else:
-        wf = _submit_pass(prompt, images, dest)
+    # 单次出图（用户决策 2026-09-13「排除重复出图」）：双角色页不做链式两段——
+    # 第一角色主图入图2 参考槽，第二角色文字锚（外貌行）进提示词
+    wf = _submit_pass(prompt, images, dest)
     if job is not None:
         attach_snapshot(db, job["id"], prompt=prompt, workflow=wf, template_id=tmpl.id)
 

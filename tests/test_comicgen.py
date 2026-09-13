@@ -1487,20 +1487,19 @@ def test_gen_comic_page_krea2_fast_lane(tmp_path, monkeypatch):
         snap = json.loads(db.connect().execute(
             "SELECT snapshot_json FROM jobs WHERE id=?", (jid,)).fetchone()["snapshot_json"])
         assert snap["template"] == "comic_page_krea2"
-        # 链式两段（官方 workaround：先放 A → 结果作图1 再插 B——拼接合成参考
-        # 有 faces drift 官方确认缺陷，2026-09-13 README 实证改链式）
-        assert len(m.prompts) == 2, "双角色页应两段链式提交"
+        # 单次出图（用户决策 2026-09-13「排除重复出图」）：双角色不做链式两段
+        # ——第一人（少年）主图入 char 槽，第二人（老者）文字锚进提示词
+        assert len(m.prompts) == 1, "应单次提交"
         ups = [u for u in m.uploads if u.endswith(".png") and "__" in u]
-        assert any(u.endswith("__scene.png") for u in ups), ups   # 两段各有 scene 槽
+        assert any(u.endswith("__scene.png") for u in ups), ups
         assert any(u.endswith("__char.png") for u in ups), ups
         g = wf["2001"]["inputs"]
         assert abs(g["百万像素"] - 1024 * 1536 / 1e6) < 0.1   # 按项目尺寸档换算
-        assert (g["宽度"], g["高度"]) == (1024, 1536)  # 画幅锁定（方形输出判例）
+        assert "宽度" not in g or (g.get("宽度"), g.get("高度")) == (1024, 1024)  # 原生结构不注入
         assert g["步数"] == 10   # krea 道固定 10（步数非瓶颈实测）
         v1 = m.prompts[0]["prompt"]["28"]["inputs"]["value"]
-        v2 = m.prompts[1]["prompt"]["28"]["inputs"]["value"]
-        assert "少年" in v1 and "老者" not in v1               # 第一段只放 A
-        assert "老者" in v2 and "加入" in v2                    # 第二段插 B
+        assert "少年" in v1 and "图2" in v1                     # 第一人参考锚
+        assert "老者" in v1 and "同时出现" in v1                 # 第二人文字锚
 
     # Krea2 模板缺失 → 回落 zimage_page_ref（文件级 fallback）
     import shutil, tempfile
