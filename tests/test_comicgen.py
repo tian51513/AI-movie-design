@@ -1167,8 +1167,8 @@ def test_comic_page_ref_template_registered(tmp_path, monkeypatch):
     db = Database(tmp_path / "s.db"); db.migrate()
     t = registry.resolve_template(db, "comic_page_ref")
     assert t.id == "zimage_page_ref"
-    assert t.inject_images and t.inject_images[0]["slot"] == "base"
-    for p in ("seed", "steps", "denoise", "width", "height"):
+    assert [im["slot"] for im in t.inject_images] == ["char1", "char2", "scene"]
+    for p in ("seed", "steps", "denoise", "cfg", "lightning_strength", "width", "height"):
         assert p in t.inject_params, p
 
 
@@ -1227,13 +1227,19 @@ def test_gen_comic_page_ref_injection(tmp_path, monkeypatch):
             handle_gen_comic_page(db, tmp_path / tag / "data", job, ComfyClient(m.base_url))
             return db, pid, m
 
-    # ① 双绑定 + 2 主图 → 参考注入：base 上传 + 场景化措辞 + denoise 0.9
+    # ① 双绑定 + 2 主图 → v1.1 多图：char1+char2 真参考 + scene 白图占位 +
+    #    图1/图2 措辞 + Lightning（steps=4/cfg=2.5/strength=1.0）+ denoise
     db, pid, m = _run("m2", mains=2, bound=True)
-    assert any(u.endswith("__base.png") for u in m.uploads), m.uploads
+    ups = [u for u in m.uploads if "__" in u]
+    assert any(u.endswith("__char1.png") for u in ups), ups
+    assert any(u.endswith("__char2.png") for u in ups), ups        # 双角色真参考
+    assert any(u.endswith("__scene.png") for u in ups), ups        # 缺省槽白图占位
     val = m.prompts[0]["prompt"]["28"]["inputs"]["value"]
-    assert "将" in val and "保持" in val and "面部" in val   # 场景化保身份措辞
-    assert "山顶云海" in val                                  # 场景来自描述
-    assert m.prompts[0]["prompt"]["4"]["inputs"]["denoise"] == 0.9
+    assert "图1中的人物" in val and "图2" in val                    # 多图按图号引用
+    assert "山顶云海" in val
+    k = m.prompts[0]["prompt"]["4"]["inputs"]
+    assert k["steps"] == 4 and k["cfg"] == 2.5 and k["denoise"] == 0.9
+    assert m.prompts[0]["prompt"]["9001"]["inputs"]["strength_model"] == 1.0
     assert (m.prompts[0]["prompt"]["45"]["inputs"]["width"],
             m.prompts[0]["prompt"]["45"]["inputs"]["height"]) == (1024, 1536)
     from comic_studio.engine.shots import list_shots
@@ -1241,10 +1247,43 @@ def test_gen_comic_page_ref_injection(tmp_path, monkeypatch):
 
     # ② 无绑定 → 纯 t2i：无上传、comic_page 模板（prompt 节点 57:27）
     _db2, _p2, m2 = _run("m0b", mains=2, bound=False)
-    assert not [u for u in m2.uploads if u.endswith("__base.png")]
+    assert not [u for u in m2.uploads if u.endswith(".png") and "__" in u]
     assert "57:27" in m2.prompts[0]["prompt"]
 
     # ③ 绑定但主图缺 → 退纯 t2i
     _db3, _p3, m3 = _run("m0", mains=0, bound=True)
-    assert not [u for u in m3.uploads if u.endswith("__base.png")]
+    assert not [u for u in m3.uploads if u.endswith(".png") and "__" in u]
     assert "57:27" in m3.prompts[0]["prompt"]
+
+    # ④ v1.2 场景参考：绑定场景有 main.png → scene 槽真图 + 「图3中的场景」
+    db4, pid4, sid4, ids4 = _ref_project_with_shot(tmp_path / "m4", mains=1, bound=True)
+    from comic_studio.engine.assets import persist_assets as _pa
+    from comic_studio.engine.llm.schemas import AssetsAnalysis as _AA, SceneAsset as _SA
+    _pa(db4, tmp_path / "m4" / "data", pid4, _AA(
+        characters=[], scenes=[_SA(name="山顶", description="云海翻腾的山巅")], props=[]))
+    row = db4.connect().execute(
+        "SELECT library_dir FROM assets WHERE kind='scene' LIMIT 1").fetchone()
+    d = tmp_path / "m4" / "data" / row["library_dir"]
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "main.png").write_bytes(PNG)
+    # 场景绑定进 ledger（fixture 只绑 characters——直接补 ledger）
+    import json as _j
+    led = _j.loads(db4.connect().execute(
+        "SELECT ledger_json FROM shots WHERE id=?", (sid4,)).fetchone()["ledger_json"])
+    sid_scene = db4.connect().execute(
+        "SELECT id FROM assets WHERE kind='scene' LIMIT 1").fetchone()["id"]
+    led["assets"]["scenes"] = [sid_scene]
+    from comic_studio.engine.shots import update_shot as _us
+    _us(db4, sid4, {"ledger_json": _j.dumps(led, ensure_ascii=False)})
+    with comfy_server("ok") as m4:
+        set_setting(db4, "comfy", {"base_url": m4.base_url})
+        jid4 = enqueue_job(db4, "gen_comic_page", project_id=pid4, shot_id=sid4,
+                           resource="gpu_comfy", payload={"shot_id": sid4})
+        job4 = db4.connect().execute("SELECT * FROM jobs WHERE id=?",
+                                     (jid4,)).fetchone()
+        handle_gen_comic_page(db4, tmp_path / "m4" / "data", job4,
+                              ComfyClient(m4.base_url))
+        ups4 = [u for u in m4.uploads if u.endswith(".png") and "__" in u]
+        assert any(u.endswith("__scene.png") for u in ups4), ups4
+        val4 = m4.prompts[0]["prompt"]["28"]["inputs"]["value"]
+        assert "图3中的场景" in val4

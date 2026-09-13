@@ -27,6 +27,27 @@ SIZE_PRESETS = {
 }
 
 
+def _ensure_blank(data_dir) -> str:
+    """白图占位（缺省参考槽用）：data/_cache/blank_ref.png，无则生成 64x64。"""
+    import struct
+    import zlib
+    d = Path(data_dir) / "_cache"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "blank_ref.png"
+    if not p.exists():
+        w = h = 64
+        raw = b"".join(b"\x00" + b"\xff" * (w * 3) for _ in range(h))
+        def chunk(tag, data):
+            c = struct.pack(">I", len(data)) + tag + data
+            return c + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+        png = (b"\x89PNG\r\n\x1a\n"
+               + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+               + chunk(b"IDAT", zlib.compress(raw))
+               + chunk(b"IEND", b""))
+        p.write_bytes(png)
+    return str(p)
+
+
 def _ledger(shot) -> dict:
     try:
         return json.loads(shot["ledger_json"] or "{}")
@@ -57,7 +78,8 @@ def _anchor_lines(shot, db, project_id) -> str:
     return "；".join(parts)
 
 
-def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None) -> str:
+def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
+                       scene_img=False) -> str:
     """漫画页提示词：场景 + 外貌锚 + 画风。
 
     对白一律不进提示词（2026-09-13 气泡渲染反转：t2i 画中文=乱码）——
@@ -70,9 +92,11 @@ def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None) -> st
     """
     detail = (shot["description"] or "").strip() or "按分镜描述生成"
     if scene_mode:
-        prompt = (f"将图中人物置于新场景并按描述重新构图：{detail[:200]}。"
-                  "人物的五官、面部特征、发型与服装与原图保持完全一致，"
-                  "只改变姿势、场景与环境")
+        who = "图1中的人物" if not extra_chars else f"图1中的人物与图2中的人物（{extra_chars}）"
+        where = "图3中的场景" if scene_img else "新场景"
+        prompt = (f"将{who}置于{where}并按描述重新构图：{detail[:200]}。"
+                  "每个人物的五官、面部特征、发型与服装与各自参考图保持完全一致，"
+                  "只改变姿势、构图与环境")
     else:
         prompt = f"单格漫画插画：{detail[:200]}"
     anchor = _anchor_lines(shot, db, proj["id"])
@@ -115,17 +139,27 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     # 模板（base=第一角色主图；第二角色文字锚）。无绑定/主图缺/>2 → 纯 t2i。
     from .assets import get_asset
     from .paths import data_to_abs as _dta
-    refs = []
-    for cid in (_ledger(shot).get("assets") or {}).get("characters") or []:
+    bound = _ledger(shot).get("assets") or {}
+    char_refs = []
+    for cid in (bound.get("characters") or []):
         a = get_asset(db, cid)
         if a is not None and a["kind"] == "character":
             mp = _dta(data_dir, a["library_dir"]) / "main.png"
             if Path(mp).exists():
-                refs.append((a, mp))
-        if len(refs) >= 2:
+                char_refs.append((a, mp))
+        if len(char_refs) >= 2:
             break
+    # v1.2 场景参考：绑定场景资产有 main.png 即入第三槽（person+scene 官方组合）
+    scene_ref = None
+    for cid in (bound.get("scenes") or [])[:1]:
+        a = get_asset(db, cid)
+        if a is not None and a["kind"] == "scene":
+            mp = _dta(data_dir, a["library_dir"]) / "main.png"
+            if Path(mp).exists():
+                scene_ref = (a, mp)
     extra_chars = ""
-    if 1 <= len(refs) <= 2:
+    scene_img_used = False
+    if 1 <= len(char_refs) <= 2:
         try:
             ref_tmpl = resolve_template(db, "comic_page_ref")
         except Exception as exc:
@@ -135,16 +169,32 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
             ref_tmpl = None
         if ref_tmpl is not None:
             tmpl = ref_tmpl
-            images = [{"slot": "base", "path": str(refs[0][1])}]
+            # v1.1 多图槽：char1 必填；char2 双角色；scene 第三槽——缺省槽白图
+            # 占位（filler 全槽上传，提示词不提的图号被模型忽略）
+            from .paths import data_to_abs as _dta2
+            blank = _dta2(data_dir, "_cache/blank_ref.png")
+            if not Path(blank).exists():
+                blank = _ensure_blank(data_dir)
+            images = [
+                {"slot": "char1", "path": str(char_refs[0][1])},
+                {"slot": "char2", "path": str(char_refs[1][1]) if len(char_refs) == 2 else str(blank)},
+                {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(blank)},
+            ]
+            scene_img_used = scene_ref is not None
             params["denoise"] = float(
                 (get_setting(db, "comfy") or {}).get("page_ref_denoise", 0.9))
-            if len(refs) == 2:
-                a2 = refs[1][0]
-                rows = [ln.strip() for ln in (a2["appearance_json"] or "").splitlines()
-                        if ln.strip() and not ln.strip().endswith("无")]
-                extra_chars = f"{a2['name']}（{'；'.join(rows)}）" if rows else a2["name"]
+            if len(char_refs) == 2:
+                a2 = char_refs[1][0]
+                extra_chars = a2["name"]  # 双角色真参考（图2）——文字锚只需名字
     prompt = build_comic_prompt(db, proj, shot,
-                                scene_mode=bool(images), extra_chars=extra_chars)
+                                scene_mode=bool(images), extra_chars=extra_chars,
+                                scene_img=scene_img_used)
+    comfy_cfg = get_setting(db, "comfy") or {}
+    lightning = float(comfy_cfg.get("page_ref_lightning", 1.0))
+    if tmpl.id == "zimage_page_ref" and lightning > 0:
+        params["lightning_strength"] = lightning
+        params["steps"] = 4                      # Lightning 蒸馏 4 步（质量档步数不适用）
+        params["cfg"] = float(comfy_cfg.get("page_ref_cfg", 2.5))
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
         params=params,

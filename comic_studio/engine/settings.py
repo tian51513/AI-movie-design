@@ -50,7 +50,9 @@ DEFAULT_SETTINGS = {
     "comfy": {"base_url": "http://127.0.0.1:8188", "min_free_vram_gb": 8,
               "merge_xfade": False, "merge_grade": False,  # C6 段间交叉淡化/统一调色（2026-09-01）
               "director_batch_frames": 512,
-              "page_ref_denoise": 0.9,  # 二期人物场景化幅度（2026-09-13，真机可调）,
+              "page_ref_denoise": 0.9,  # 二期人物场景化幅度（2026-09-13，真机可调）
+              "page_ref_lightning": 1.0,  # v1.1 Lightning 4步加速 LoRA 强度（0=关闭）
+              "page_ref_cfg": 2.5,  # v1.1 Lightning 蒸馏下的 cfg（真机调优）,
               # 导演台性能开关（2026-08-28 需求）：段间清显存+重预热每镜多几十秒，
               # 12GB 专跑默认关；OOM 时打开。源帧对比图导出默认关。
               "director_clear_vram": False, "director_export_source": False,

@@ -1000,10 +1000,12 @@
                   :disabled="assetBusy(a)"
                   :title="assetBusy(a) ? '该资产正在生成中' : '用新的随机种子重新生成这张参考图（不改动资产文本）'">
             {{ assetBusy(a) ? '生成中…' : '重新生成图' }}</button>
-          <template v-if="a.kind==='character'">
-            <button @click="regenAsset(a, 'main')" :disabled="assetBusy(a)"
+          <button @click="regenAsset(a, 'main')" :disabled="assetBusy(a)"
                     style="margin-top:6px;margin-left:4px;font-size:12px;padding:3px 8px"
-                    title="仅重新生成主图（三视图保持不变，不触发分镜 stale）">主图</button>
+                    :title="a.kind==='character'
+                      ? '仅重新生成主图（三视图保持不变，不触发分镜 stale）'
+                      : '生成场景/道具主图（漫画项目：绑定该场景的页会注入为图3 场景参考——想要场景跨页视觉一致就生成它）'">主图</button>
+          <template v-if="a.kind==='character'">
             <button @click="regenAsset(a, 'views')" :disabled="assetBusy(a)"
                     style="margin-top:6px;margin-left:4px;font-size:12px;padding:3px 8px"
                     title="仅以当前主图为种子重新派生三视图（主图不变）">三视图</button>
