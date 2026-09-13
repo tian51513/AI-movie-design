@@ -1780,7 +1780,12 @@ const methods = {
     _kreaPrompt() {
       const styles = this.kreaLibs[this.kreaLib] || [];
       const s = styles.find(x => x.name === this.kreaName);
-      return s ? s.prompt : '';
+      return s ? this._kreaClean(s.prompt) : '';
+    },
+    _kreaClean(p) {
+      // 剥 Krea2 模板占位尾巴（「.. Subject:{prompt}」是 Krea2 工作流模板系统的
+      // 占位符，拼接式用法里是死文本——2026-09-13 真机混入画风判例）
+      return (p || '').replace(/\.*\s*Subject:\s*\{prompt\}\s*$/i, '').trim();
     },
     toggleStylePanel() {
       this.styleOpen = !this.styleOpen;
@@ -1819,8 +1824,10 @@ const methods = {
         this.kreaLib = this.spLib;
         this.kreaName = s.name;
       } else {
-        this.styleEditStyle = s.prompt;
-        if (!this.styleEditVis.trim()) this.styleEditVis = s.prompt;
+        // 换风格两字段同时跟随（2026-09-13 真机判例：style_vis 仅空时才填 →
+        // 用户换画风后图像端（主图/漫画页优先吃 style_vis）永远吃旧风格）
+        this.styleEditStyle = this._kreaClean(s.prompt);
+        this.styleEditVis = this._kreaClean(s.prompt);
       }
       this.stylePickerOpen = false;
     },
