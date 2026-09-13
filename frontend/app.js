@@ -235,12 +235,13 @@ const methods = {
     fd.append('novel', this.newFile);
     fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0
     fd.append('target_duration', this.newTotalDur || 0);
-    const resp = await fetch('/api/projects', { method: 'POST', body: fd });
-    this.creating = false;
-    if (!resp.ok) { alert(await resp.text()); return; }  // L19：失败保留表单可改后重试
-    this.newName = ''; this.newFile = null;
-    this.createOpen = false;
-    await this.refresh();
+    try {
+      const resp = await fetch('/api/projects', { method: 'POST', body: fd });
+      if (!resp.ok) { alert(await resp.text()); return; }  // L19：失败保留表单可改后重试
+      this.newName = ''; this.newFile = null;
+      this.createOpen = false;
+      await this.refresh();
+    } catch (e) { alert('创建失败：' + e); } finally { this.creating = false; }
   },
   async loadThemes() {
     if (this.themes.length) return;
@@ -562,8 +563,7 @@ const methods = {
       else { this.newName = ''; this.newProtagonist = ''; this.newThemeId = '';
              this.newWordCount = ''; this.newExtraPrompt = ''; this.themePreview = '';
              this.createOpen = false; }
-    } catch (e) { alert('生成失败：' + e); }
-    this.creating = false;
+    } catch (e) { alert('生成失败：' + e); } finally { this.creating = false; }
     await this.refresh();
   },
 
@@ -1430,8 +1430,7 @@ const methods = {
       if (!resp.ok) { alert(await resp.text()); return; }
       this.newName = ''; this.comicFiles = []; this.createOpen = false;
       await this.refresh();
-    } catch (e) { alert('导入失败：' + e); }
-    this.creating = false;
+    } catch (e) { alert('导入失败：' + e); } finally { this.creating = false; }
   },
   async fromAudio() {  // P10A 有声书：上传源音频 → 后端建项目并入队 transcribe
     if (!this.audioFile) return;
@@ -1450,8 +1449,7 @@ const methods = {
       if (!resp.ok) { alert(await resp.text()); return; }  // L19：失败保留表单可改后重试
       this.newName = ''; this.audioFile = null; this.createOpen = false;
       await this.refresh();
-    } catch (e) { alert('上传失败：' + e); }
-    this.creating = false;
+    } catch (e) { alert('上传失败：' + e); } finally { this.creating = false; }
   },
   guideCreate(type, mode) {  // 导引卡「➕ 去创建」：预选类型+入口，跳回项目页开创建弹窗
     this.view = 'projects';
@@ -1497,8 +1495,7 @@ const methods = {
       if (!resp.ok) { alert(await resp.text()); return; }
       this.newName = ''; this.comicAudioFile = null; this.createOpen = false;
       await this.refresh();
-    } catch (e) { alert('创建失败：' + e); }
-    this.creating = false;
+    } catch (e) { alert('创建失败：' + e); } finally { this.creating = false; }
   },
   async createComicTheme() {  // 🎨 主题生成→漫画（Part A）：preview 正文 text 直传
     this.creating = true;
@@ -1512,8 +1509,7 @@ const methods = {
       this.newName = ''; this.newProtagonist = ''; this.newThemeId = '';
       this.newWordCount = ''; this.newExtraPrompt = ''; this.themePreview = '';
       this.createOpen = false;
-    } catch (e) { alert('创建失败：' + e); }
-    this.creating = false;
+    } catch (e) { alert('创建失败：' + e); } finally { this.creating = false; }
     await this.refresh();
   },
   async createComicNovel() {  // 📖 小说转漫画（2026-09-12）：正文 + 漫画参数 → comic_output 项目
@@ -1527,8 +1523,7 @@ const methods = {
       if (!resp.ok) { alert(await resp.text()); return; }  // L19：失败保留表单可改后重试
       this.newName = ''; this.comicNovelFile = null; this.createOpen = false;
       await this.refresh();
-    } catch (e) { alert('创建失败：' + e); }
-    this.creating = false;
+    } catch (e) { alert('创建失败：' + e); } finally { this.creating = false; }
   },
   async extractCharacters() {
     if (!confirm('VLM 读前3页漫画提取角色？（建资产后可生成参考图，ref2va 渲染需要）')) return;
