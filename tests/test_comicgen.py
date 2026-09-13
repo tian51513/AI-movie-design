@@ -1300,3 +1300,32 @@ def test_gen_comic_page_ref_injection(tmp_path, monkeypatch):
         assert any(u.endswith("__scene.png") for u in ups4), ups4
         val4 = m4.prompts[0]["prompt"]["28"]["inputs"]["value"]
         assert "图3中的场景" in val4
+
+
+def test_generate_comic_mains_api(tmp_path):
+    """手动批量主图（2026-09-13 验收反馈）：缺 main 的角色入队 gen_ref
+    stage=main；已有/在飞/场景道具跳过；非 comic_output 422。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.settings import set_setting
+    from pathlib import Path as _P
+
+    db, pid, ids = _comic_output_main_assets(tmp_path, with_main=False)
+    # 给第一个角色补主图（验证跳过）
+    row = db.connect().execute("SELECT library_dir FROM assets WHERE id=?",
+                               (ids[0],)).fetchone()
+    d = _P(str(tmp_path / "data")) / row["library_dir"]
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "main.png").write_bytes(PNG)
+    set_setting(db, "comfy", {"base_url": "http://mock:8188"})
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post(f"/api/projects/{pid}/generate-comic-mains")
+        assert r.status_code == 202 and r.json() == {"enqueued": 1}  # 只补缺的
+        # 在飞跳过
+        r = c.post(f"/api/projects/{pid}/generate-comic-mains")
+        assert r.json() == {"enqueued": 0}
+        # 非漫画项目 422
+        from comic_studio.engine.projects import create_project
+        vid = create_project(db, tmp_path / "data", "视频剧", "9:16", "正文" * 100)["id"]
+        assert c.post(f"/api/projects/{vid}/generate-comic-mains").status_code == 422

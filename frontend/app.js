@@ -171,6 +171,11 @@ const computed = {
   comicDonePages() {  // 已生成页数（无效镜不计数，与补页/导出过滤同口径）
     return this.comicPageShots.filter(s => !s.disabled && s.status === 'comic_ready').length;
   },
+  allComicMainsReady() {  // 全部角色资产有主图（views[0]=「主图 main」）
+    const chars = this.assets.filter(a => a.kind === 'character');
+    return chars.length > 0 && chars.every(
+      a => ((this.views[a.id] || [])[0] || {}).name === '主图 main');
+  },
   genRefsBusy() {  // 参考图生成在飞（主图停等按钮在生成期间不露出）
     return ((this.queue && this.queue.jobs) || []).some(
       j => j.type === 'gen_ref' && (j.status === 'pending' || j.status === 'running'));
@@ -1069,6 +1074,13 @@ const methods = {
   togglePageSelAll(e) {  // 漫画页全选/清空（仅生效页）
     const ids = this.comicPageShots.filter(s => !s.disabled).map(s => s.id);
     this.shotSel = e.target.checked ? ids : [];
+  },
+  async genComicMains() {  // 手动批量生成角色主图（验收反馈 2026-09-13）
+    const r = await fetch(`/api/projects/${this.project.id}/generate-comic-mains`,
+                          { method: 'POST' });
+    if (!r.ok) { alert(await r.text()); return; }
+    const b = await r.json();
+    if (!b.enqueued) alert('没有缺主图的角色（或全部在飞）');
   },
   async confirmComicRefs() {  // 二期主图停等放行（2026-09-13）：进入拆解出页
     const r = await fetch(`/api/projects/${this.project.id}/confirm-comic-refs`,

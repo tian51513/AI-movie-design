@@ -1029,9 +1029,15 @@
               @click="confirmComicAssets" style="background:#16a34a"
               title="确认角色名册无误（可先在上方检查/编辑/删除资产）——跳过参考图生成直接拆解出页">
         ✓ 确认资产，继续出片</button>
-      <!-- 二期主图停等（2026-09-13）：主图齐后检查满意放行（可重生/上传替换） -->
+      <!-- 二期主图阶段（2026-09-13 验收反馈）：缺主图→批量生成按钮；
+           主图齐→停等检查放行（不再误显示——主图没生成也亮「满意」） -->
       <button v-if="isComicOutput && project.stage==='analyzed' && project.comic_assets_confirmed
-                    && !project.comic_refs_done && !genRefsBusy"
+                    && !project.comic_refs_done && !allComicMainsReady && !genRefsBusy"
+              @click="genComicMains" style="background:#0e7490"
+              title="给缺主图的角色批量入队生成（每角色 ~15s；也可单卡「主图」逐个生成/重生/上传替换）">
+        🖼 生成角色主图</button>
+      <button v-if="isComicOutput && project.stage==='analyzed' && project.comic_assets_confirmed
+                    && !project.comic_refs_done && allComicMainsReady && !genRefsBusy"
               @click="confirmComicRefs" style="background:#16a34a"
               title="主图是页面身份参考（每页注入）——重生/上传替换到满意后放行拆解出页">
         ✓ 主图满意，继续出片</button>

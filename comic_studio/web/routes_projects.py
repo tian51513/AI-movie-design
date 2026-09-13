@@ -564,6 +564,40 @@ def confirm_comic_assets(request: Request, project_id: int):
     return {"confirmed": True}
 
 
+@router.post("/{project_id}/generate-comic-mains", status_code=202)
+def generate_comic_mains(request: Request, project_id: int):
+    """手动批量生成角色主图（2026-09-13 验收反馈）：漫画项目主图阶段的手动
+    入口——缺 main.png 的角色逐个入队 gen_ref stage=main（与 autopilot 分支
+    同口径）；已有/在飞/场景道具跳过。autopilot 开着也不冲突（在飞互斥）。"""
+    db = request.app.state.db
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    if (proj["comic_mode"] if "comic_mode" in proj.keys() else "") != "comic_output":
+        raise HTTPException(422, "仅漫画成品项目（comic_output）有主图批量生成")
+    from ..engine.settings import ensure_comfy_configured
+    try:
+        ensure_comfy_configured(db)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
+    from ..engine.jobs import enqueue_job
+    from ..engine.paths import data_to_abs
+    from ..engine.assets import list_project_assets
+    n = 0
+    queued = {r["asset_id"] for r in db.connect().execute(
+        "SELECT DISTINCT asset_id FROM jobs WHERE type='gen_ref' "
+        "AND asset_id IS NOT NULL AND status IN ('pending','running')")}
+    for a in list_project_assets(db, project_id):
+        if a["kind"] != "character" or a["id"] in queued:
+            continue
+        if (data_to_abs(request.app.state.data_dir, a["library_dir"]) / "main.png").exists():
+            continue
+        enqueue_job(db, "gen_ref", project_id=project_id, asset_id=a["id"],
+                    resource="gpu_comfy", payload={"asset_id": a["id"], "stage": "main"})
+        n += 1
+    return {"enqueued": n}
+
+
 @router.post("/{project_id}/confirm-comic-refs", status_code=202)
 def confirm_comic_refs(request: Request, project_id: int):
     """二期主图停等放行（2026-09-13）：用户检查角色主图满意后点「✓ 主图满意」
