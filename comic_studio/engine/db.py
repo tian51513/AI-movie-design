@@ -212,6 +212,9 @@ MIGRATIONS: list[str] = [
     ALTER TABLE projects ADD COLUMN target_pages INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE projects ADD COLUMN image_size TEXT NOT NULL DEFAULT '1024x1536';
     ALTER TABLE projects ADD COLUMN quality_tier TEXT NOT NULL DEFAULT 'standard';""",
+    # 37 气泡渲染（2026-09-13 二期①）：bubble_style JSON（opacity 只作用底色/
+    # font_color/font_size 0=随页宽自适应）——空串=默认样式
+    """ALTER TABLE projects ADD COLUMN bubble_style TEXT NOT NULL DEFAULT '';""",
 ]
 
 

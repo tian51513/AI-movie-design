@@ -226,11 +226,13 @@ def test_gen_comic_page_e2e(tmp_path, monkeypatch):
     from comic_studio.engine.shots import list_shots
     s = list_shots(db, pid)[0]
     assert s["status"] == "comic_ready"
-    # 提示词要素：场景描述 + 对白（bubble）+ 画风
+    # 提示词要素：场景描述 + 禁字指令（2026-09-13 气泡渲染反转：对白不再进
+    # 提示词——t2i 画中文=乱码，气泡由 Pillow 后处理画）+ 画风
     assert len(m.prompts) == 1
     text = m.prompts[0]["prompt"]["57:27"]["inputs"]["text"]
     assert "单格漫画插画" in text and "少年推门" in text
-    assert "少年说「我回来了」" in text
+    assert "我回来了" not in text          # 对白不进提示词
+    assert "不要画任何文字" in text        # bubble 模式禁字指令
     assert "画风：日漫风" in text
     # 审计快照
     import json
@@ -758,3 +760,153 @@ def test_comic_small_size_presets(tmp_path):
                    files={"novel": ("n.txt", "正文。" * 100, "text/plain")})
         assert r.status_code == 201, r.text
         assert r.json()["image_size"] == "512x768"
+
+
+# ---- 气泡渲染（2026-09-13 二期①）：Pillow 后处理画真气泡 + 样式三参数 ----
+
+def test_migration_37_bubble_style(tmp_path):
+    """bubble_style JSON 列（透明度/字色/字号）——空串=默认样式。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    cols = {c[1] for c in db.connect().execute("PRAGMA table_info(projects)")}
+    assert "bubble_style" in cols
+    from comic_studio.engine.projects import create_project, get_project
+    pid = create_project(db, tmp_path / "data", "气泡剧", "9:16", "正文" * 50,
+                         comic_mode="comic_output",
+                         bubble_style='{"opacity":100,"font_color":"#ff0000","font_size":24}')["id"]
+    p = get_project(db, pid)
+    assert p["bubble_style"] == '{"opacity":100,"font_color":"#ff0000","font_size":24}'
+
+
+def test_bubble_style_parse(tmp_path):
+    """_bubble_style 解析容错：空/坏 JSON→默认；缺键补默认；opacity 钳 0~100。"""
+    from comic_studio.engine.comicgen import _bubble_style
+    d = _bubble_style("")
+    assert d == {"opacity": 85, "font_color": "#222222", "font_size": 0}
+    assert _bubble_style("not json") == d
+    assert _bubble_style('{"opacity":150}')["opacity"] == 100
+    assert _bubble_style('{"opacity":-5}')["opacity"] == 0
+    assert _bubble_style('{"font_size":30}')["font_size"] == 30
+
+
+class _StubFont:
+    """确定性字体：每字固定 15px 宽（load_default 无 CJK 字形，度量不可控）。"""
+    size = 28
+    def getlength(self, s):
+        return 15 * len(s)
+
+
+def test_bubble_layout_adaptive_and_staggered():
+    """布局纯函数：宽度随内容自适应（短句窄）；上限 40% 页宽；
+    奇数句靠左、偶数句靠右；y 垂直递增不越界；长句折行。"""
+    from comic_studio.engine.comicgen import _bubble_layout
+    font = _StubFont()
+    W, H = 1024, 1536
+    boxes, dropped = _bubble_layout(W, H, [
+        {"speaker": "甲", "line": "好"},                      # 3 字 → 45px+pad
+        {"speaker": "乙", "line": "今" * 40},                 # 42 字 → 折行顶 40% 上限
+        {"speaker": "甲", "line": "行"},
+        {"speaker": "乙", "line": "那走吧"},
+    ], font)
+    assert dropped == 0 and len(boxes) == 4
+    short_w = boxes[0][2]
+    x, y, long_w, long_h, lines = boxes[1]
+    assert short_w < long_w                     # 短句气泡更窄（自适应）
+    assert long_w <= W * 0.4 + 1                # 上限 40%
+    assert len(lines) > 1                       # 42 字在 40% 宽内必然折行
+    assert boxes[0][0] < W * 0.5 <= boxes[1][0]  # 奇左偶右
+    assert boxes[1][1] == boxes[0][1]           # 同排左右齐头（双列游标）
+    gap = int(H * 0.015)
+    # 同左列堆叠：3 号气泡在 1 号底部 + 间隙 + 尾巴 14 之下（不受对侧挤压）
+    assert boxes[2][1] >= boxes[0][1] + boxes[0][3] + gap + 14
+    assert all(b[1] + b[3] < H for b in boxes)  # 不越界
+
+
+def test_bubble_layout_caps_bubbles():
+    """防爆：超 4 句只取前 4（返回带截断数）。"""
+    from PIL import ImageFont
+    from comic_studio.engine.comicgen import _bubble_layout
+    font = ImageFont.load_default(20)
+    dlg = [{"speaker": "甲", "line": f"第{i}句话"} for i in range(7)]
+    out = _bubble_layout(1024, 1536, dlg, font)
+    boxes, dropped = out if isinstance(out, tuple) else (out, 0)
+    assert len(boxes) == 4 and dropped == 3
+
+
+def test_draw_bubbles_renders(tmp_path):
+    """绘制冒烟：落盘被改、尺寸不变；opacity=100 背景全透明但文字仍在。"""
+    from PIL import Image
+    from comic_studio.engine.comicgen import _draw_bubbles
+    p = tmp_path / "page.png"
+    Image.new("RGB", (768, 1024), (200, 180, 160)).save(p)
+    ok = _draw_bubbles(p, [{"speaker": "少年", "line": "我回来了"}],
+                       {"opacity": 100, "font_color": "#222222", "font_size": 0})
+    assert ok
+    img = Image.open(p)
+    assert img.size == (768, 1024)
+    # 文字仍在：页面顶部区域应出现与底色不同的像素（透明底+深字）
+    px = list(img.convert("RGB").crop((0, 0, 768, 300)).getdata())
+    assert any(c != (200, 180, 160) for c in px)
+
+
+def test_comic_prompt_bubble_no_dialogue(tmp_path):
+    """提示词反转：bubble 不再拼对白（模型画中文=乱码），改注入禁字指令；
+    footer/none 本就不注入。"""
+    from comic_studio.engine.comicgen import build_comic_prompt
+    from comic_studio.engine.projects import get_project
+    db, pid = _comic_project(tmp_path)
+    proj = get_project(db, pid)
+    from types import SimpleNamespace as NS
+    shot = {"description": "室内场景",
+            "ledger_json": '{"dialogue":[{"speaker":"少年","line":"我回来了"}]}'}
+    p = build_comic_prompt(db, proj, shot)
+    assert "我回来了" not in p and "少年说" not in p   # 对白不进提示词
+    assert "不要画任何文字" in p or "无文字" in p        # 禁字指令在
+    # footer/none：同样无对白、且无禁字指令（footer 画面本就无字约束非必须）
+    db2, pid2 = _comic_project(tmp_path / "f", dialogue_mode="footer")
+    p2 = build_comic_prompt(db2, get_project(db2, pid2), shot)
+    assert "我回来了" not in p2
+
+
+def test_postprocess_dialogue_bubble_branch(tmp_path):
+    """_postprocess_dialogue 分流：bubble 走气泡（真绘制）、footer 走字幕条。"""
+    from PIL import Image
+    from comic_studio.engine.comicgen import _postprocess_dialogue
+    dlg = [{"speaker": "甲", "line": "你好"}]
+    for mode, tag in (("bubble", "b"), ("footer", "f")):
+        p = tmp_path / f"page_{tag}.png"
+        Image.new("RGB", (768, 1024), (200, 180, 160)).save(p)
+        ok = _postprocess_dialogue(p, dlg, mode,
+                                   style={"opacity": 85, "font_color": "#222222", "font_size": 0})
+        assert ok, mode
+        img = Image.open(p)
+        assert img.size == (768, 1024)
+
+
+def test_from_comic_novel_bubble_style_and_patch(tmp_path):
+    """from-comic-novel 透传 bubble_style；PATCH dialogue_mode/bubble_style 生效；
+    非法值 422。"""
+    import json as _json
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post("/api/projects/from-comic-novel",
+                   data={"name": "气泡", "bubble_style": '{"opacity":100}'},
+                   files={"novel": ("n.txt", "正文。" * 80, "text/plain")})
+        assert r.status_code == 201, r.text
+        pid = r.json()["id"]
+        assert r.json()["bubble_style"] == '{"opacity":100}'
+        # PATCH：对白呈现 + 气泡样式
+        r = c.patch(f"/api/projects/{pid}", json={"dialogue_mode": "footer"})
+        assert r.status_code == 200, r.text
+        r = c.patch(f"/api/projects/{pid}", json={"bubble_style": '{"opacity":40,"font_size":26}'})
+        assert r.status_code == 200, r.text
+        body = c.get("/api/projects").json()
+        proj = next(p for p in (body["projects"] if isinstance(body, dict) else body)
+                    if p["id"] == pid)
+        assert proj["dialogue_mode"] == "footer"
+        assert _json.loads(proj["bubble_style"]) == {"opacity": 40, "font_size": 26}
+        # 非法：dialogue_mode 枚举、bubble_style 坏 JSON、opacity 越界
+        assert c.patch(f"/api/projects/{pid}", json={"dialogue_mode": "loud"}).status_code == 422
+        assert c.patch(f"/api/projects/{pid}", json={"bubble_style": "{bad"}).status_code == 422
+        assert c.patch(f"/api/projects/{pid}", json={"bubble_style": '{"opacity":300}'}).status_code == 422

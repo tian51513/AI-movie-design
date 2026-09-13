@@ -75,11 +75,11 @@
 
 **适用**：小说正文直接出漫画成书（页面即交付物，**无视频渲染/门3/合成链**；终态 `comic_ready`，autopilot done 自动关）。前半链与小说共用（分析→参考图→门1→拆解），拆解走漫画页分支（场景+人物+对白，禁运镜/声音/时长；workflow_type 机械固定 'comic'，**拆解即填 prompt=description 不烧视频提示词**）。
 
-1. **创建**：创建弹窗「📖 漫画」tab——正文 .txt（UTF-8）+ 页数（0=按剧情密度自动）/尺寸（四预设）/质量档（fast8·standard12·high20 步）/对白呈现（bubble/footer/none）；画风可选 Krea2 风格库
+1. **创建**：创建弹窗「📖 漫画」tab——正文 .txt（UTF-8）+ 页数（0=按剧情密度自动）/尺寸（10 档含 512/768 小尺寸）/质量档（fast8·standard12·high20 步）/对白呈现（bubble/footer/none）；画风可选 Krea2 风格库
 2. **🚀 一键出片**：分析→参考图→门1→拆解→逐页 t2i（`gen_comic_page`→`pages/page_NNN.png`，模板=template_map.comic_page 可切）→「漫画就绪」自动停
 3. **浏览/补页**：详情「漫画页」页签（x/N 就绪 pill、点击放大、对白行）；缺页/失败页「🖼 生成缺失页」（autopilot 失败守卫解除入口；跳过已有/在飞/无效镜）
 4. **导出**：📄 导出 PDF（Pillow 多页，需 `pip install -e ".[pdf]"`）/ 📜 导出长图（ffmpeg vstack 竖拼）→ `output/comic.pdf|comic_strip.png` 同名覆盖；无效镜/已删残页不进导出
-5. **对白呈现**：footer=底部字幕条（Pillow 画字，换行+字体回退）；bubble/none 现为占位/跳过（气泡二期）
+5. **对白呈现**：bubble=顶部左右交错真气泡（Pillow 后处理：白底圆角+描边+尾巴，宽度内容自适应上限 40% 页宽；透明度只作用底色、字色/字号项目级可配——参数面板或创建时）；footer=底部字幕条（Pillow 画字，换行+字体回退）；none=不呈现。**改呈现/样式后：删对应页 →「🖼 生成缺失页」重出**（提示词禁字指令与后处理都吃新值）
 
 **注意**：角色参考图分析/生成照跑但页面生成不消费（角色一致性=二期参考图注入）；gen_comic_page 不在重启重排白名单——重启丢在跑页任务用手动补页；subtitles 恒 0（对白页面自呈）。
 

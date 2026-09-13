@@ -814,6 +814,45 @@
       <label>LoRA
         <input type="number" min="0" max="1" step="0.05" :value="project.lora_realism"
                @change="patchVideoParam('lora_realism', Number($event.target.value))" style="width:56px"></label>
+      <!-- 漫画参数（2026-09-13 气泡渲染）：对白呈现/页数/尺寸/质量档 + 气泡样式 -->
+      <template v-if="project.comic_mode==='comic_output'">
+      <label>对白呈现
+        <select :value="project.dialogue_mode" @change="patchComicParam('dialogue_mode', $event.target.value)">
+          <option value="bubble">气泡（画在格内）</option>
+          <option value="footer">底部字幕条</option>
+          <option value="none">不呈现</option></select></label>
+      <label>页数
+        <input type="number" min="0" max="200" :value="project.target_pages"
+               @focus="editingProject=true" @blur="editingProject=false"
+               @change="patchComicParam('target_pages', Number($event.target.value))" style="width:52px"
+               title="0=按剧情密度自动；重拆分镜时生效"></label>
+      <label>尺寸
+        <select :value="project.image_size" @change="patchComicParam('image_size', $event.target.value)"
+                title="小尺寸出图快（512 档像素量约为 1024 档 1/4）">
+          <option v-for="s in ['512x768','768x1024','832x1216','1024x1536','512x512','1024x1024','768x512','1024x768','1536x1024']" :value="s">{{ s }}</option>
+        </select></label>
+      <label>质量档
+        <select :value="project.quality_tier" @change="patchComicParam('quality_tier', $event.target.value)"
+                title="采样步数：步数越多越细腻越慢">
+          <option value="fast">快速（8 步）</option>
+          <option value="standard">标准（12 步）</option>
+          <option value="high">高质量（20 步）</option></select></label>
+      <template v-if="project.dialogue_mode==='bubble'">
+      <label title="只作用气泡底色；100%=背景全透明只剩描边与文字（字永远清晰）">气泡透明度
+        <input type="number" min="0" max="100" :value="bubbleStyle().opacity"
+               @focus="editingProject=true" @blur="editingProject=false"
+               @change="patchBubbleStyle('opacity', Number($event.target.value))" style="width:46px">%</label>
+      <label>气泡字色
+        <input type="color" :value="bubbleStyle().font_color"
+               @change="patchBubbleStyle('font_color', $event.target.value)"
+               style="width:36px;height:24px;padding:0"></label>
+      <label title="0=随页宽自适应">气泡字号
+        <input type="number" min="0" max="80" :value="bubbleStyle().font_size"
+               @focus="editingProject=true" @blur="editingProject=false"
+               @change="patchBubbleStyle('font_size', Number($event.target.value))" style="width:46px"></label>
+      </template>
+      <span class="muted" style="font-size:12px">改对白呈现/样式后：删对应页 →「🖼 生成缺失页」重出（提示词/后处理都吃新值）</span>
+      </template>
     </div>
     <p style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button @click="switchDetailMode('assets')"
@@ -1397,6 +1436,11 @@
                <option value="footer">底部字幕条</option>
                <option value="none">不呈现</option></select>
              <span class="muted" style="font-size:12px">分镜对白按所选方式呈现到页面</span></p>
+          <p v-if="comicDialogueMode==='bubble'" style="margin:2px 0 0;font-size:13px">
+             <span class="muted" style="font-size:12px" title="透明度只作用气泡底色（100%=背景全透明只剩描边与文字）；字号 0=随页宽自适应">气泡样式</span>
+             透明度<input type="number" min="0" max="100" v-model.number="comicBubbleOpacity" style="width:46px">%
+             字色<input type="color" v-model="comicBubbleColor" style="width:34px;height:22px;padding:0;vertical-align:middle">
+             字号<input type="number" min="0" max="80" v-model.number="comicBubbleFontSize" style="width:46px"></p>
         </template>
 
         <form v-if="newMode==='comic'" @submit.prevent="createFromComic">

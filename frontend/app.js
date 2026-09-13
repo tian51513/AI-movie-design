@@ -43,6 +43,7 @@ function data() {
     comicQuality: 'standard', comicDialogueMode: 'bubble',
     // Part A（2026-09-13）：类型选择层（video=视频/comic=漫画成品；文本小说/有声小说规划占位）
     newProjType: 'video', comicAudioFile: null,
+    comicBubbleOpacity: 85, comicBubbleColor: '#222222', comicBubbleFontSize: 0,
     exportingComic: false, comicExportUrl: '', comicExportName: '',
     _pagesStamp: 0,  // 漫画页缓存戳：进页/补页后翻新，杜绝重生成后吃旧图缓存
     comicMode: 'motion_comic',
@@ -1262,6 +1263,9 @@ const methods = {
     fd.append('target_pages', Number(this.comicTargetPages) || 0);  // 空串/NaN 兜 0（0=自动）
     fd.append('image_size', this.comicImageSize);
     fd.append('quality_tier', this.comicQuality);
+    fd.append('bubble_style', JSON.stringify({  // 气泡样式三参数（2026-09-13 二期①）
+      opacity: this.comicBubbleOpacity, font_color: this.comicBubbleColor,
+      font_size: Number(this.comicBubbleFontSize) || 0 }));
     fd.append('video_megapixels', this.newMegapixels);
     fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
     fd.append('default_shot_duration', Number(this.newSegDur) || 0);
@@ -1437,6 +1441,22 @@ const methods = {
       body: JSON.stringify({render_mode: mode})});
     if (r.ok) { await this.loadDetail(); await this.loadShots(); }
     else alert(await r.text());
+  },
+  bubbleStyle() {  // 项目 bubble_style 解析（容错默认，2026-09-13 气泡渲染）
+    const d = { opacity: 85, font_color: '#222222', font_size: 0 };
+    try { Object.assign(d, JSON.parse(this.project.bubble_style || '{}')); } catch (e) {}
+    return d;
+  },
+  async patchBubbleStyle(key, val) {
+    const st = this.bubbleStyle(); st[key] = val;
+    await this.patchComicParam('bubble_style', JSON.stringify(st));
+  },
+  async patchComicParam(key, value) {  // 漫画参数 PATCH（对白呈现/页数/尺寸/质量档/气泡样式）
+    const r = await fetch(`/api/projects/${this.project.id}`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({[key]: value})});
+    if (r.ok) { Object.assign(this.project, await r.json()); }
+    else { alert(await r.text()); await this.loadDetail(); }
   },
   async patchVideoParam(key, value) {
     const r = await fetch(`/api/projects/${this.project.id}`, {

@@ -35,18 +35,16 @@ def _ledger(shot) -> dict:
 
 
 def build_comic_prompt(db, proj, shot) -> str:
-    """漫画页提示词：场景 + 对白 + 画风。
+    """漫画页提示词：场景 + 画风。
 
-    对白仅 bubble 模式进提示词（由图像模型画气泡）；footer/none 保持
-    画面无字——footer 的对白由后处理字幕条呈现，none 直接丢弃。
+    对白一律不进提示词（2026-09-13 气泡渲染反转：t2i 画中文=乱码）——
+    bubble 模式注入「上方留白+禁字」指令，气泡由 Pillow 后处理画；
+    footer 的对白由后处理字幕条呈现，none 直接丢弃。
     """
     detail = (shot["description"] or "").strip() or "按分镜描述生成"
     prompt = f"单格漫画插画：{detail[:200]}"
     if (proj["dialogue_mode"] or "bubble") == "bubble":
-        for d in (_ledger(shot).get("dialogue") or [])[:2]:
-            sp, ln = d.get("speaker", ""), d.get("line", "")
-            if sp and ln:
-                prompt += f"。{sp}说「{ln[:50]}」"
+        prompt += "。画面上方适当留白，不要画任何文字、对话气泡、字幕"
     style = ((proj["style_vis"] or proj["style"]) or "").strip()
     if style:
         prompt += f"。画风：{style}"
@@ -103,7 +101,8 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     # 对白后处理（dialogue_mode: bubble/footer/none）
     dialogue = _ledger(shot).get("dialogue") or []
     mode = proj["dialogue_mode"] or "bubble"
-    if mode != "none" and not _postprocess_dialogue(dest, dialogue, mode) and dialogue:
+    style = _bubble_style((proj["bubble_style"] if "bubble_style" in proj.keys() else "") or "")
+    if mode != "none" and not _postprocess_dialogue(dest, dialogue, mode, style=style) and dialogue:
         emit_log(db, "comfy", "warn",
                  f"漫画页 {shot['seq']} 对白后处理未生效（缺 Pillow 或图片异常），页面无字幕条",
                  project_id=proj["id"], job_id=job["id"])
@@ -114,14 +113,18 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     return dest
 
 
-def _postprocess_dialogue(page_png, dialogue, mode) -> bool:
-    """对白后处理：footer=底部字幕条（Pillow，可选依赖）。
+def _postprocess_dialogue(page_png, dialogue, mode, style: dict | None = None) -> bool:
+    """对白后处理：bubble=顶部交错气泡 / footer=底部字幕条（Pillow 可选依赖）。
 
-    bubble=提示词层已画气泡（无需处理）；none=不呈现。返回 False 表示
-    需要处理但未成功（Pillow 缺失/图片异常）——调用方负责 warn 透明。
+    none=不呈现。返回 False 表示需要处理但未成功（Pillow 缺失/图片
+    异常）——调用方负责 warn 透明。
     """
-    if mode != "footer" or not dialogue:
+    if not dialogue or mode == "none":
         return True  # 无需处理 ≠ 失败
+    if mode == "bubble":
+        return _draw_bubbles(page_png, dialogue, style or {})
+    if mode != "footer":
+        return True
     try:
         from PIL import Image, ImageDraw
     except ImportError:
@@ -157,6 +160,8 @@ def _postprocess_dialogue(page_png, dialogue, mode) -> bool:
 _FOOTER_FONT_CANDIDATES = (
     "msyh.ttc",  # Windows 微软雅黑
     "C:/Windows/Fonts/msyh.ttc",
+    "/mnt/c/Windows/Fonts/msyh.ttc",  # WSL 挂 Windows 盘（与生产同字形）
+    "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",  # Debian/WSL 文泉驿正黑
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",  # Debian/WSL
     "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",  # Arch 系
     "/System/Library/Fonts/PingFang.ttc",  # macOS 苹方
@@ -191,3 +196,116 @@ def _wrap_footer(text: str, font, max_width: int) -> list[str]:
     if cur:
         lines.append(cur)
     return lines
+
+
+# ---- 气泡渲染（2026-09-13 二期①）：Pillow 顶部交错真气泡 ----
+# 设计定稿：宽度随内容自适应（上限 40% 页宽）；透明度只作用气泡底色
+# （100%=背景全透明只剩描边+文字，字永远清晰）；字号 0=随页宽自适应。
+
+_BUBBLE_DEFAULT = {"opacity": 85, "font_color": "#222222", "font_size": 0}
+
+
+def _bubble_style(raw) -> dict:
+    """解析 projects.bubble_style JSON（容错：空/坏 JSON/缺键→默认；opacity 钳 0~100）。"""
+    try:
+        d = json.loads(raw) if raw else {}
+        if not isinstance(d, dict):
+            raise ValueError
+    except (ValueError, TypeError):
+        d = {}
+    out = dict(_BUBBLE_DEFAULT)
+    if isinstance(d.get("opacity"), (int, float)):
+        out["opacity"] = min(100, max(0, int(d["opacity"])))
+    if isinstance(d.get("font_color"), str) and d["font_color"]:
+        out["font_color"] = d["font_color"]
+    if isinstance(d.get("font_size"), (int, float)) and int(d["font_size"]) > 0:
+        out["font_size"] = int(d["font_size"])
+    return out
+
+
+def _hex_rgba(hex_color: str) -> tuple:
+    """'#rrggbb' → (r,g,b,255)；非法回落默认深灰。"""
+    h = (hex_color or "").strip().lstrip("#")
+    if len(h) == 6:
+        try:
+            return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), 255)
+        except ValueError:
+            pass
+    return (34, 34, 34, 255)
+
+
+_BUBBLE_PAD_X, _BUBBLE_PAD_Y = 14, 10
+
+
+def _bubble_layout(page_w, page_h, dialogue, font, max_ratio=0.4):
+    """纯布局：每句一气泡，宽度随内容自适应（上限 max_ratio*页宽），
+    奇数句靠左、偶数句靠右。左右双列各自维护 y 游标（同列间距 =
+    气泡高 + 间隙 + 尾巴 14px，不受对侧气泡高度挤压——单侧连发时
+    视觉不贴脸，2026-09-13 样张视检修正）。返回 (boxes, 截断数)：
+    boxes = [(x, y, w, h, lines)]。最多 4 气泡防爆（同 footer 8 行思路）。
+    横向安全：双列气泡各 ≤40% 宽，x 区间不可能相交（6%+40% < 94%-40%）。"""
+    size = getattr(font, "size", None) or 28
+    line_h = int(size * 1.45)
+    max_w = int(page_w * max_ratio)
+    items = []
+    for d in dialogue[:4]:
+        line = f"{d.get('speaker', '')}：{d.get('line', '')}".lstrip("：").strip()
+        if not line:
+            continue
+        lines = _wrap_footer(line, font, max_w - 2 * _BUBBLE_PAD_X)
+        w = int(min(max(font.getlength(t) for t in lines) + 2 * _BUBBLE_PAD_X, max_w))
+        h = len(lines) * line_h + 2 * _BUBBLE_PAD_Y
+        items.append((w, h, lines))
+    dropped = max(0, len(dialogue) - 4)
+    y_top = int(page_h * 0.04)
+    gap = int(page_h * 0.015)
+    col_y = [y_top, y_top]  # 左右两列各自的下一个可用 y
+    boxes = []
+    for i, (w, h, lines) in enumerate(items):
+        col = i % 2
+        x = int(page_w * 0.06) if col == 0 else int(page_w * 0.94) - w
+        y = col_y[col]
+        boxes.append((x, y, w, h, lines))
+        col_y[col] = y + h + gap + 14  # 同列间隔含尾巴高度
+    return boxes, dropped
+
+
+def _draw_bubbles(page_png, dialogue, style) -> bool:
+    """画气泡：白底圆角矩形+描边+底边小三角尾（透明度只作用底色），
+    文字颜色/字号按 style。返回 False=Pillow 缺失/图片异常。"""
+    try:
+        from PIL import Image, ImageDraw
+    except ImportError:
+        return False
+    try:
+        img = Image.open(page_png).convert("RGBA")
+    except Exception:
+        return False
+    page_w, page_h = img.size
+    st = _bubble_style(style if isinstance(style, (str, dict)) and style else None) \
+        if not isinstance(style, dict) else {**_BUBBLE_DEFAULT, **(style or {})}
+    fsize = st.get("font_size") or max(16, min(34, page_w // 36))
+    font = _footer_font(fsize)
+    line_h = int((getattr(font, "size", None) or fsize) * 1.45)
+    boxes, dropped = _bubble_layout(page_w, page_h, dialogue, font)
+    bg_alpha = int(255 * (100 - st.get("opacity", 85)) / 100)  # 100% → 0（全透明）
+    fill = (255, 255, 255, bg_alpha)
+    edge = (35, 35, 35, 255)  # 描边不透明近黑（漫画风粗边）——透明底时描边+文字构成轮廓气泡
+    overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    for x, y, w, h, _lines in boxes:
+        od.rounded_rectangle([x, y, x + w, y + h], radius=14, fill=fill,
+                             outline=edge, width=4)
+        cx = x + w // 2  # 底边中央小尾巴指向画面主体
+        od.polygon([(cx - 9, y + h - 2), (cx + 9, y + h - 2), (cx, y + h + 14)],
+                   fill=fill, outline=edge)
+    img = Image.alpha_composite(img, overlay)
+    draw = ImageDraw.Draw(img)
+    color = _hex_rgba(st.get("font_color"))
+    for x, y, w, h, lines in boxes:
+        ty = y + _BUBBLE_PAD_Y
+        for t in lines:
+            draw.text((x + _BUBBLE_PAD_X, ty), t, fill=color, font=font)
+            ty += line_h
+    img.convert("RGB").save(page_png)
+    return True

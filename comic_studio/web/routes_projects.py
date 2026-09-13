@@ -41,7 +41,9 @@ _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", 
                     "prompt_mode", "lora_realism", "target_duration", "autopilot",
                     "redraw_characters", "redraw_done",
                     # 迁移 36（2026-09-12 小说转漫画）：前端详情页消费
-                    "dialogue_mode", "target_pages", "image_size", "quality_tier")
+                    "dialogue_mode", "target_pages", "image_size", "quality_tier",
+                    # 迁移 37（2026-09-13 气泡渲染）：样式三参数 JSON
+                    "bubble_style")
 
 
 @router.post("/{project_id}/retry-transcribe", status_code=202)
@@ -220,6 +222,26 @@ def _validate_comic_output_params(dialogue_mode, target_pages, image_size, quali
         raise HTTPException(422, "target_pages 需在 0~200（0=按剧情密度自动）")
 
 
+def _validate_bubble_style(raw) -> str:
+    """bubble_style JSON 422 校验（2026-09-13 气泡渲染）：需为对象；opacity
+    0~100、font_size ≥0。合法返回原样字符串（引擎读取时补默认，存原样
+    保证「只写 opacity」的形状不被默认值撑爆）。"""
+    import json as _json
+    try:
+        d = _json.loads(raw)
+    except (ValueError, TypeError):
+        raise HTTPException(422, "bubble_style 需为 JSON 对象，如 {\"opacity\":85}")
+    if not isinstance(d, dict):
+        raise HTTPException(422, "bubble_style 需为 JSON 对象")
+    if "opacity" in d and not (isinstance(d["opacity"], (int, float))
+                               and 0 <= d["opacity"] <= 100):
+        raise HTTPException(422, "opacity 需在 0~100（百分比，只作用气泡底色）")
+    if "font_size" in d and not (isinstance(d["font_size"], (int, float))
+                                 and d["font_size"] >= 0):
+        raise HTTPException(422, "font_size 需 ≥0（0=随页宽自适应）")
+    return raw
+
+
 @router.post("/from-comic-novel", status_code=201)
 def create_from_comic_novel(request: Request,
                             name: str = Form(...),
@@ -231,6 +253,7 @@ def create_from_comic_novel(request: Request,
                             target_pages: int = Form(0),
                             image_size: str = Form("1024x1536"),
                             quality_tier: str = Form("standard"),
+                            bubble_style: str = Form(""),
                             video_megapixels: float = Form(0.4),
                             video_multiple: int = Form(32),
                             video_speed: str = Form("标准"),
@@ -247,6 +270,8 @@ def create_from_comic_novel(request: Request,
     if aspect_ratio not in ASPECT_RATIOS:
         raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
     _validate_comic_output_params(dialogue_mode, target_pages, image_size, quality_tier)
+    if bubble_style:
+        bubble_style = _validate_bubble_style(bubble_style)
     if novel is not None:
         try:
             novel_text = novel.file.read().decode("utf-8")
@@ -261,6 +286,7 @@ def create_from_comic_novel(request: Request,
                           comic_mode="comic_output",
                           dialogue_mode=dialogue_mode, target_pages=target_pages,
                           image_size=image_size, quality_tier=quality_tier,
+                          bubble_style=bubble_style,
                           video_megapixels=video_megapixels,
                           video_multiple=video_multiple, video_speed=video_speed,
                           default_shot_duration=default_shot_duration,
@@ -277,6 +303,7 @@ def create_from_comic_audio(request: Request, name: str = Form(...),
                             target_pages: int = Form(0),
                             image_size: str = Form("1024x1536"),
                             quality_tier: str = Form("standard"),
+                            bubble_style: str = Form(""),
                             video_megapixels: float = Form(0.4),
                             video_multiple: int = Form(32), video_speed: str = Form("标准"),
                             default_shot_duration: float = Form(0.0),
@@ -290,6 +317,8 @@ def create_from_comic_audio(request: Request, name: str = Form(...),
     if aspect_ratio not in ASPECT_RATIOS:
         raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
     _validate_comic_output_params(dialogue_mode, target_pages, image_size, quality_tier)
+    if bubble_style:
+        bubble_style = _validate_bubble_style(bubble_style)
     data = audio.file.read()
     if len(data) > 200 * 1024 * 1024:
         raise HTTPException(422, "音频超过 200MB 上限（请先切分）")
@@ -309,6 +338,7 @@ def create_from_comic_audio(request: Request, name: str = Form(...),
                           comic_mode="comic_output",
                           dialogue_mode=dialogue_mode, target_pages=target_pages,
                           image_size=image_size, quality_tier=quality_tier,
+                          bubble_style=bubble_style,
                           video_megapixels=video_megapixels,
                           video_multiple=video_multiple, video_speed=video_speed,
                           default_shot_duration=default_shot_duration,
@@ -742,6 +772,43 @@ def patch_style(request: Request, project_id: int, body: dict):
         conn.execute("UPDATE projects SET render_mode=? WHERE id=?",
                      (mode, project_id))
         conn.commit()
+
+    # 漫画项目参数（迁移 36/37，2026-09-13 气泡渲染）：dialogue_mode/bubble_style
+    # 等可后改——改完删对应页 →「🖼 生成缺失页」重出（提示词/后处理都吃新值）
+    if any(k in body for k in ("dialogue_mode", "target_pages", "image_size",
+                               "quality_tier", "bubble_style")):
+        cur = get_project(db, project_id)
+        if (cur["comic_mode"] if "comic_mode" in cur.keys() else "") != "comic_output":
+            raise HTTPException(422, "仅漫画成品项目（comic_output）有漫画参数")
+        vals = {}
+        if "dialogue_mode" in body:
+            vals["dialogue_mode"] = body["dialogue_mode"]
+        if "target_pages" in body:
+            try:
+                vals["target_pages"] = int(body["target_pages"])
+            except (TypeError, ValueError):
+                raise HTTPException(422, "target_pages 需为整数")
+        if "image_size" in body:
+            vals["image_size"] = body["image_size"]
+        if "quality_tier" in body:
+            vals["quality_tier"] = body["quality_tier"]
+        if vals:
+            _validate_comic_output_params(
+                vals.get("dialogue_mode", cur["dialogue_mode"]),
+                vals.get("target_pages", cur["target_pages"]),
+                vals.get("image_size", cur["image_size"]),
+                vals.get("quality_tier", cur["quality_tier"]))
+            conn = db.connect()
+            conn.execute(
+                f"UPDATE projects SET {', '.join(f'{k}=?' for k in vals)} WHERE id=?",
+                (*vals.values(), project_id))
+            conn.commit()
+        if "bubble_style" in body:
+            raw = _validate_bubble_style(str(body["bubble_style"]))
+            conn = db.connect()
+            conn.execute("UPDATE projects SET bubble_style=? WHERE id=?",
+                         (raw, project_id))
+            conn.commit()
 
     # Handle era override (时代背景；检测错了可手动纠正，空串=清除)
     if "era" in body:

@@ -34,7 +34,8 @@ def create_project(db: Database, data_dir: Path, name: str,
                    dialogue_mode: str = "bubble",  # 迁移 36；小说转漫画对白呈现
                    target_pages: int = 0,  # 迁移 36；页数(0=自动)
                    image_size: str = "1024x1536",  # 迁移 36；尺寸预设
-                   quality_tier: str = "standard") -> sqlite3.Row:  # 迁移 36；质量档
+                   quality_tier: str = "standard",  # 迁移 36；质量档
+                   bubble_style: str = "") -> sqlite3.Row:  # 迁移 37；气泡样式 JSON
     assert aspect_ratio in ASPECT_RATIOS, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}"
     conn = db.connect()
     base = slugify(name) or "project"
@@ -48,8 +49,8 @@ def create_project(db: Database, data_dir: Path, name: str,
     from .chapters import parse_chapters
     chapters_json = json.dumps(parse_chapters(novel_text), ensure_ascii=False)
     conn.execute(
-        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, style_vis, chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration, subtitles, render_mode, redraw_characters, dialogue_mode, target_pages, image_size, quality_tier) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), style_vis.strip(), chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration, subtitles, render_mode, int(redraw_characters), dialogue_mode, int(target_pages), image_size, quality_tier))
+        "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, style_vis, chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration, subtitles, render_mode, redraw_characters, dialogue_mode, target_pages, image_size, quality_tier, bubble_style) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), style_vis.strip(), chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration, subtitles, render_mode, int(redraw_characters), dialogue_mode, int(target_pages), image_size, quality_tier, bubble_style))
     conn.commit()
     return get_project(db, conn.execute("SELECT last_insert_rowid() id").fetchone()["id"])
 
