@@ -709,6 +709,35 @@ def convert_to_video(request: Request, project_id: int, body: dict | None = None
             emit_log(db, "autopilot", "info",
                      f"已切换 {_swapped} 页为无气泡干净副本（首尾帧不带字）",
                      project_id=project_id)
+        # 首尾帧接线（2026-09-14 用户需求：动态漫首尾帧=原漫画页，绝不自动
+        # 生成新帧——此前未接线，fl2v 发现 kf 缺失 t2i 生成了与漫画零关联的
+        # 全新画面）：页 i=镜 i 首帧、页 i+1=镜 i 尾帧（翻页链同导入约定，
+        # 末镜无尾帧渲染降级 i2v 仅首帧）；只接干净副本、只补缺失镜（重转化
+        # 幂等，用户手工放过的 kf 不覆盖）
+        if video_mode == "motion":
+            from ..engine.shots import list_shots as _ls
+            _pages = {p.stem: p for p in _pd.glob("page_*.png")} if _pd.is_dir() else {}
+            _wired = 0
+            for _s in _ls(db, project_id):
+                if _s["disabled"]:
+                    continue
+                _src = _pages.get(f"page_{_s['seq']:03d}")
+                if _src is None:
+                    continue
+                _sd = _dta3(request.app.state.data_dir,
+                            f"projects/{proj['slug']}/shots/{_s['seq']}")
+                _sd.mkdir(parents=True, exist_ok=True)
+                _ks, _ke = _sd / "kf_start.png", _sd / "kf_end.png"
+                if not _ks.exists():
+                    _ks.write_bytes(_src.read_bytes())
+                    _wired += 1
+                _nxt = _pages.get(f"page_{_s['seq'] + 1:03d}")
+                if _nxt is not None and not _ke.exists():
+                    _ke.write_bytes(_nxt.read_bytes())
+            if _wired:
+                emit_log(db, "autopilot", "info",
+                         f"首尾帧已从漫画页接线 {_wired} 镜（页 i=镜 i 首帧、"
+                         "页 i+1=尾帧；不自动生成新帧）", project_id=project_id)
     from ..engine.projects import set_stage
     set_stage(db, project_id, "storyboard_ready")
     emit_log(db, "autopilot", "info",

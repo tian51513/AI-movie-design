@@ -2247,3 +2247,45 @@ def test_converted_motion_uses_descriptions_not_vlm(tmp_path):
     set_stage(db2, pid2, "storyboard_ready")
     act2 = next_action(db2, tmp2 := tmp_path / "imp" / "data", pid2)
     assert act2["action"] == "describe_shots"
+
+
+def test_convert_motion_wires_kf_from_pages(tmp_path):
+    """动态漫转化首尾帧=原漫画页（2026-09-14 用户需求：只用完成提示词，
+    首尾帧直接用漫画项目图片，不自动生成新的）。页 i=镜 i 首帧、页 i+1=
+    镜 i 尾帧（最后一镜无尾帧→渲染降级 i2v 仅首帧，翻页链约定同导入）；
+    用干净副本（无气泡）接帧。"""
+    from PIL import Image
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project, set_stage
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.shots import persist_shots
+
+    db, pid = _comic_project(tmp_path)
+    cam = {"景别": "中景", "机位": "平视", "运镜": "固定", "转场": "切"}
+    persist_shots(db, pid, [NS(
+        text_span=f"p{i}", description=f"第{i}页", shot_type="", camera=cam,
+        duration=5.0, workflow_type="comic", ledger={"dialogue": []},
+        character_ids=[], scene_ids=[], prop_ids=[], depends_on=None, prompt="x")
+        for i in (1, 2)])
+    set_stage(db, pid, "comic_ready")
+    slug = get_project(db, pid)["slug"]
+    pages = tmp_path / "data" / "projects" / slug / "pages"
+    pages.mkdir(parents=True)
+    for i in (1, 2):
+        Image.new("RGB", (64, 64), (i * 40, 0, 0)).save(pages / f"page_00{i}_clean.png")
+        Image.new("RGB", (64, 64), (255, 255, 255)).save(pages / f"page_00{i}.png")
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post(f"/api/projects/{pid}/convert-to-video",
+                   json={"video_mode": "motion"})
+        assert r.status_code == 200, r.text
+    from PIL import Image as I
+    shots_dir = tmp_path / "data" / "projects" / slug / "shots"
+    s1s = I.open(shots_dir / "1" / "kf_start.png").getpixel((2, 2))
+    s1e = I.open(shots_dir / "1" / "kf_end.png").getpixel((2, 2))
+    s2s = I.open(shots_dir / "2" / "kf_start.png").getpixel((2, 2))
+    assert s1s == (40, 0, 0)      # 镜1首帧=页1干净副本（非白气泡版）
+    assert s1e == (80, 0, 0)      # 镜1尾帧=页2（翻页链）
+    assert s2s == (80, 0, 0)
+    assert not (shots_dir / "2" / "kf_end.png").exists()   # 末镜无尾帧（i2v 降级）
