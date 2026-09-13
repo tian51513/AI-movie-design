@@ -1329,3 +1329,22 @@ def test_generate_comic_mains_api(tmp_path):
         from comic_studio.engine.projects import create_project
         vid = create_project(db, tmp_path / "data", "视频剧", "9:16", "正文" * 100)["id"]
         assert c.post(f"/api/projects/{vid}/generate-comic-mains").status_code == 422
+
+
+def test_stylepresets_zh_from_name_cn(tmp_path):
+    """中文名（2026-09-13 用户指正）：库 JSON 原生 name_cn 字段（3948/3948
+    全覆盖，ComfyUI 节点显示的就是它）→ entry.zh；无 name_cn 零影响。"""
+    import json as _json
+    from comic_studio.engine import stylepresets as SP
+    libdir = tmp_path / "templates" / "styles" / "krea2"
+    libdir.mkdir(parents=True)
+    (libdir / "krea2_test_测试.json").write_text(_json.dumps(
+        [{"name": "Ethereal Impressionist Motion", "name_cn": "空灵印象派运动",
+          "prompt": "p1"},
+         {"name": "No Mapping Style", "prompt": "p2"}], ensure_ascii=False))
+    SP._CACHE = None
+    libs = SP.list_style_libs(tmp_path)
+    zh = {s["name"]: s.get("zh") for s in libs["test_测试"]}
+    assert zh["Ethereal Impressionist Motion"] == "空灵印象派运动"
+    assert zh["No Mapping Style"] is None
+    SP._CACHE = None

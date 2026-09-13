@@ -125,10 +125,16 @@ const computed = {
     return mo[this.moTemplate];
   },
   projTotalPages() { return Math.max(1, Math.ceil(this.projects.length / this.projPageSize)); },
-  spFiltered() {  // 风格选择弹窗：当前库 + 名字过滤（只渲染选中库，防 3946 图全铺）
+  spFiltered() {  // 风格选择弹窗：当前库 + 名字过滤（中英文都搜，2026-09-13 zh=name_cn）
     const styles = this.kreaLibs[this.spLib] || [];
     const q = (this.spSearch || '').toLowerCase();
-    return q ? styles.filter(s => s.name.toLowerCase().includes(q)) : styles;
+    return q ? styles.filter(s => s.name.toLowerCase().includes(q)
+                                || (s.zh || '').includes(this.spSearch || '')) : styles;
+  },
+  kreaNameZh() {  // 创建流选中徽章显示中文名（查不到回落英文）
+    const styles = this.kreaLibs[this.kreaLib] || [];
+    const s = styles.find(x => x.name === this.kreaName);
+    return (s && s.zh) || this.kreaName;
   },
   spSelPrompt() {
     const s = (this.kreaLibs[this.spLib] || []).find(x => x.name === this.spSel);

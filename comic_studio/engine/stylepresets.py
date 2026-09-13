@@ -33,8 +33,14 @@ def list_style_libs(repo_root: Path | None = None) -> dict:
             for s in items:
                 if not (isinstance(s, dict) and (s.get("prompt") or "").strip()):
                     continue
+                # name=英文主键（查重/内部引用），zh=name_cn 中文名（库 JSON
+                # 原生携带 3948/3948 全覆盖——2026-09-13 用户指正：ComfyUI 节点
+                # 显示的就是它，此前扫描器优先 name 把中文丢了）
                 entry = {"name": str(s.get("name") or s.get("name_cn") or ""),
                          "prompt": str(s.get("prompt") or "")}
+                _cn = str(s.get("name_cn") or "").strip()
+                if _cn:
+                    entry["zh"] = _cn
                 # 缩略图（2026-09-12 预览面板）：JSON 引用 samples/xxx.webp，
                 # 文件在才给 URL（/styles 静态挂载直出）
                 thumb = str(s.get("thumbnail") or "").strip()
