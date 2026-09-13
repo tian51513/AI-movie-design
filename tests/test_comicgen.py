@@ -983,7 +983,10 @@ def test_confirm_comic_assets_api(tmp_path):
         r = c.post(f"/api/projects/{pid}/confirm-comic-assets")
         assert r.status_code == 202, r.text
         p = get_project(db, pid)
-        assert p["comic_assets_confirmed"] == 1 and p["stage"] == "assets_ready"
+        assert p["comic_assets_confirmed"] == 1
+        # 二期后确认不再直进 assets_ready——autopilot 接管主图阶段
+        # （直接 set 会绕过「生成主图→停等检查」，真机验收前抓出）
+        assert p["stage"] == "analyzed"
         # 幂等重放
         assert c.post(f"/api/projects/{pid}/confirm-comic-assets").status_code == 202
         # 非漫画项目 422

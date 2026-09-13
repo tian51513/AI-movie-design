@@ -540,8 +540,9 @@ def describe_shots_route(project_id: int, request: Request,
 @router.post("/{project_id}/confirm-comic-assets", status_code=202)
 def confirm_comic_assets(request: Request, project_id: int):
     """B1 漫画链资产停等确认（2026-09-13）：用户检查/改名/删减名册后放行——
-    落 comic_assets_confirmed=1 并直进 assets_ready（跳过参考图生成与门1：
-    漫画页不消费参考图）。幂等：重复确认 no-op。"""
+    落 comic_assets_confirmed=1。二期（同日）后确认不再直进 assets_ready：
+    autopilot 接管「生成角色主图 → 停等检查 → confirm-comic-refs」——
+    确认路由直接 set assets_ready 会绕过主图阶段（页面注入参考源）。幂等。"""
     db = request.app.state.db
     proj = get_project(db, project_id)
     if proj is None:
@@ -554,11 +555,8 @@ def confirm_comic_assets(request: Request, project_id: int):
         conn.execute("UPDATE projects SET comic_assets_confirmed=1 WHERE id=?",
                      (project_id,))
         conn.commit()
-        emit_log(db, "autopilot", "info", "资产名册已确认，继续拆解出页",
+        emit_log(db, "autopilot", "info", "资产名册已确认，进入主图生成",
                  project_id=project_id)
-        if proj["stage"] == "analyzed":
-            from ..engine.projects import set_stage
-            set_stage(db, project_id, "assets_ready")
     return {"confirmed": True}
 
 
