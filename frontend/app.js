@@ -191,6 +191,14 @@ const computed = {
       j => j.type === 'gen_comic_page' && (j.status === 'pending' || j.status === 'running'));
     // 忙→闲边沿翻新缓存戳：重出的新页不吃浏览器旧图缓存
     if (this._comicBusySeen && !busy) this._pagesStamp = Date.now();
+    // 闲→忙边沿自动跳「漫画页」页签（2026-09-13 验收反馈：用户停在资产页签
+    // 看不到逐页生成效果）——仅项目详情视图且不在分镜编辑态
+    if (!this._comicBusySeen && busy && this.project && this.view === 'projects'
+        && this.detailMode !== 'pages' && !this.editingShot) {
+      this.detailMode = 'pages';
+      this._pagesStamp = Date.now();
+      this.loadShots();
+    }
     this._comicBusySeen = busy;
     return busy;
   },
