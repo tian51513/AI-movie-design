@@ -220,6 +220,9 @@ MIGRATIONS: list[str] = [
     """ALTER TABLE projects ADD COLUMN comic_assets_confirmed INTEGER NOT NULL DEFAULT 0;""",
     # 39 二期参考注入（2026-09-13）：主图停等检查标记（用户点过「主图满意」）
     """ALTER TABLE projects ADD COLUMN comic_refs_done INTEGER NOT NULL DEFAULT 0;""",
+    # 40 双角色处理模式（2026-09-13 用户决策：两方案并存可切换）：
+    # stitch=拼接合成参考（默认·单次出图·快）/ chain=链式逐人插入（官方方案）
+    """ALTER TABLE projects ADD COLUMN comic_dual_mode TEXT NOT NULL DEFAULT 'stitch';""",
 ]
 
 

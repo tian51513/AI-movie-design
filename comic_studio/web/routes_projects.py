@@ -47,7 +47,9 @@ _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", 
                     # 迁移 38（2026-09-13 B1）：资产停等确认标记
                     "comic_assets_confirmed",
                     # 迁移 39（2026-09-13 二期）：主图停等检查标记
-                    "comic_refs_done")
+                    "comic_refs_done",
+                    # 迁移 40（2026-09-13）：双角色处理模式 stitch/chain
+                    "comic_dual_mode")
 
 
 @router.post("/{project_id}/retry-transcribe", status_code=202)
@@ -219,9 +221,10 @@ def _validate_comic_output_params(dialogue_mode, target_pages, image_size, quali
         raise HTTPException(422, "dialogue_mode 只能是 bubble（气泡）/footer（底部字幕条）/none（不呈现）")
     if quality_tier not in ("fast", "standard", "high"):
         raise HTTPException(422, "quality_tier 只能是 fast/standard/high")
-    from ..engine.comicgen import SIZE_PRESETS  # 惰性导入：不拉 queue.worker 注册链
-    if image_size not in SIZE_PRESETS:
-        raise HTTPException(422, f"image_size 只能是 {'/'.join(sorted(SIZE_PRESETS))}")
+    from ..engine.comicgen import MP_TIERS, SIZE_PRESETS  # 惰性：不拉注册链
+    if image_size not in MP_TIERS and image_size not in SIZE_PRESETS:
+        raise HTTPException(422, f"image_size 只能是百万像素档 {'/'.join(MP_TIERS)}"
+                                 f"（旧 WxH 值兼容）")
     if target_pages < 0 or target_pages > 200:
         raise HTTPException(422, "target_pages 需在 0~200（0=按剧情密度自动）")
 
@@ -255,7 +258,7 @@ def create_from_comic_novel(request: Request,
                             style: str = Form(""), style_vis: str = Form(""),
                             dialogue_mode: str = Form("bubble"),
                             target_pages: int = Form(0),
-                            image_size: str = Form("1024x1536"),
+                            image_size: str = Form("0.8"),
                             quality_tier: str = Form("standard"),
                             bubble_style: str = Form(""),
                             video_megapixels: float = Form(0.4),
@@ -305,7 +308,7 @@ def create_from_comic_audio(request: Request, name: str = Form(...),
                             style: str = Form(""), style_vis: str = Form(""),
                             dialogue_mode: str = Form("bubble"),
                             target_pages: int = Form(0),
-                            image_size: str = Form("1024x1536"),
+                            image_size: str = Form("0.8"),
                             quality_tier: str = Form("standard"),
                             bubble_style: str = Form(""),
                             video_megapixels: float = Form(0.4),
@@ -883,7 +886,7 @@ def patch_style(request: Request, project_id: int, body: dict):
     # 漫画项目参数（迁移 36/37，2026-09-13 气泡渲染）：dialogue_mode/bubble_style
     # 等可后改——改完删对应页 →「🖼 生成缺失页」重出（提示词/后处理都吃新值）
     if any(k in body for k in ("dialogue_mode", "target_pages", "image_size",
-                               "quality_tier", "bubble_style")):
+                               "quality_tier", "bubble_style", "comic_dual_mode")):
         cur = get_project(db, project_id)
         if (cur["comic_mode"] if "comic_mode" in cur.keys() else "") != "comic_output":
             raise HTTPException(422, "仅漫画成品项目（comic_output）有漫画参数")
@@ -899,6 +902,10 @@ def patch_style(request: Request, project_id: int, body: dict):
             vals["image_size"] = body["image_size"]
         if "quality_tier" in body:
             vals["quality_tier"] = body["quality_tier"]
+        if "comic_dual_mode" in body:
+            if body["comic_dual_mode"] not in ("stitch", "chain"):
+                raise HTTPException(422, "comic_dual_mode 只能是 stitch（拼接·默认）/chain（链式逐人）")
+            vals["comic_dual_mode"] = body["comic_dual_mode"]
         if vals:
             _validate_comic_output_params(
                 vals.get("dialogue_mode", cur["dialogue_mode"]),

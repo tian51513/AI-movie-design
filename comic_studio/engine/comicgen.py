@@ -17,14 +17,42 @@ from .shots import get_shot, update_shot
 # 质量档位 → 采样步数
 QUALITY_STEPS = {"fast": 8, "standard": 12, "high": 20}
 
-# 尺寸预设 → (width, height)。2026-09-13 用户需求补小尺寸档（512/768 系，
-# 均 32 倍数对齐——t2i latent 兼容）：小档像素量约为 1024 档 1/4，出图约快 4 倍
+# 百万像素档（2026-09-13 用户决策：项目尺寸设置=百万像素，输出结构随模板
+# 原生走——Krea2 编辑模式跟输入图形状，纯 t2i 按 MP×项目画幅推导）
+MP_TIERS = ["0.3", "0.4", "0.6", "0.8", "1.0", "1.2", "1.6"]
+
+# 旧 WxH 预设（存量值兼容换算用）
 SIZE_PRESETS = {
     "512x512": (512, 512), "512x768": (512, 768), "768x512": (768, 512),
     "768x768": (768, 768), "768x1024": (768, 1024), "1024x768": (1024, 768),
     "832x1216": (832, 1216), "1024x1024": (1024, 1024),
     "1024x1536": (1024, 1536), "1536x1024": (1536, 1024),
 }
+
+
+def parse_image_mp(image_size: str) -> float:
+    """image_size → 百万像素。新值 '0.4' 直读；旧 WxH 换算；兜 1.0。"""
+    v = (image_size or "").strip().lower().rstrip("mp")
+    try:
+        return max(0.1, min(4.0, float(v)))
+    except ValueError:
+        pass
+    if image_size in SIZE_PRESETS:
+        w, h = SIZE_PRESETS[image_size]
+        return round(w * h / 1e6, 2)
+    return 1.0
+
+
+def mp_to_wh(mp: float, aspect_ratio: str) -> tuple[int, int]:
+    """MP × 画幅（a:b）→ (width, height)，32 对齐（t2i latent 兼容）。"""
+    try:
+        aw, ah = (int(x) for x in (aspect_ratio or "9:16").split(":"))
+    except ValueError:
+        aw, ah = 9, 16
+    total = mp * 1e6
+    w = (total * aw / ah) ** 0.5
+    h = w * ah / aw
+    return (max(64, int(round(w / 32)) * 32), max(64, int(round(h / 32)) * 32))
 
 
 def _ensure_blank(data_dir, name="blank_ref.png", rgb=(255, 255, 255)) -> str:
@@ -56,6 +84,33 @@ def _ledger(shot) -> dict:
         return json.loads(shot["ledger_json"] or "{}")
     except json.JSONDecodeError:
         return {}
+
+
+def _stitch_mains(data_dir, paths) -> str:
+    """双角色主图左右拼接（等高）进人物槽——用户定案方案（2026-09-13）：
+    2角色+场景时拼两人为一张参考（图2），场景进图1；提示词说明左右身份。
+    mtime 哈希缓存（主图不变即复用）；无 Pillow/图损退第一张。"""
+    import hashlib
+    key = hashlib.md5("|".join(f"{p}:{Path(p).stat().st_mtime_ns}"
+                               for p in map(str, paths)).encode()).hexdigest()[:12]
+    out = Path(data_dir) / "_cache" / f"stitch_{key}.png"
+    if out.exists():
+        return str(out)
+    try:
+        from PIL import Image
+        imgs = [Image.open(p).convert("RGB") for p in paths]
+        hgt = min(i.height for i in imgs)
+        rs = [i.resize((max(1, int(i.width * hgt / i.height)), hgt)) for i in imgs]
+        canvas = Image.new("RGB", (sum(i.width for i in rs), hgt), (128, 128, 128))
+        x = 0
+        for i in rs:
+            canvas.paste(i, (x, 0))
+            x += i.width
+        out.parent.mkdir(parents=True, exist_ok=True)
+        canvas.save(out)
+        return str(out)
+    except Exception:
+        return str(paths[0])
 
 
 def _anchor_detail(raw: str) -> str:
@@ -125,9 +180,16 @@ def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
             # Krea2 快道方言：图1=场景 / 图2=人物（槽序固定）。单次出图
             # （用户决策 2026-09-13：双角色不做链式两段——第一人入图2 参考，
             # 第二人文字锚）
-            who = f"图2 参考中的人物（{krea_names[0]}），外貌与图2 保持一致"
-            if second_anchor:
-                who += f"；画面中同时出现 {second_anchor}"
+            if len(krea_names) == 2 and scene_img:
+                # 拼接模式：图2=两人合成参考
+                who = (f"图2 参考中的两位人物（左侧是{krea_names[0]}，"
+                       f"右侧是{krea_names[1]}），两人外貌与图2 保持一致")
+            elif len(krea_names) == 2:
+                # 2角色+0场景直种：图1=第二人物参考（无场景图时占场景槽）
+                who = (f"图2 参考中的人物（{krea_names[0]}）与图1 参考中的人物"
+                       f"（{krea_names[1]}），两人外貌分别与各自参考图保持一致")
+            else:
+                who = f"图2 参考中的人物（{krea_names[0]}），外貌与图2 保持一致"
             where = "图1 的场景" if scene_img else "按描述构建的场景"
             prompt = (f"{scene_anchor}画面内容：{detail[:200]}。"
                       f"将{who}置于{where}。"
@@ -172,7 +234,10 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     proj = get_project(db, shot["project_id"])
     tmpl = resolve_template(db, "comic_page")
 
-    w, h = SIZE_PRESETS.get(proj["image_size"] or "1024x1536", (1024, 1536))
+    mp = parse_image_mp(proj["image_size"])
+    w, h = mp_to_wh(mp, proj["aspect_ratio"])   # 纯 t2i 用（krea 道直传 MP）
+    dual_mode = ((proj["comic_dual_mode"] if "comic_dual_mode" in proj.keys()
+                  else "") or "stitch")          # stitch 默认 / chain 链式
     steps = QUALITY_STEPS.get(proj["quality_tier"] or "standard", 12)
     params = {"seed": random.randint(0, 2**31 - 1), "steps": steps,
               "width": w, "height": h}
@@ -186,9 +251,9 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     for cid in (bound.get("characters") or []):
         a = get_asset(db, cid)
         if a is not None and a["kind"] == "character":
-            mp = _dta(data_dir, a["library_dir"]) / "main.png"
-            if Path(mp).exists():
-                char_refs.append((a, mp))
+            main_png = _dta(data_dir, a["library_dir"]) / "main.png"
+            if Path(main_png).exists():
+                char_refs.append((a, main_png))
         if len(char_refs) >= 2:
             break
     # v1.2 场景参考：绑定场景资产有 main.png 即入第三槽（person+scene 官方组合）；
@@ -199,9 +264,9 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
         a = get_asset(db, cid)
         if a is not None and a["kind"] == "scene":
             scene_name = a["name"]
-            mp = _dta(data_dir, a["library_dir"]) / "main.png"
-            if Path(mp).exists():
-                scene_ref = (a, mp)
+            scene_png = _dta(data_dir, a["library_dir"]) / "main.png"
+            if Path(scene_png).exists():
+                scene_ref = (a, scene_png)
     extra_chars = ""
     scene_img_used = False
     krea_names = []
@@ -227,18 +292,31 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
         if krea_tmpl is not None:
             tmpl = krea_tmpl
             krea_names = [c[0]["name"] for c in char_refs]
-            if len(char_refs) == 2:
-                # 第二角色文字锚（用户决策 2026-09-13：单次出图，不做链式两段）
-                a2 = char_refs[1][0]
-                rows = [ln.strip() for ln in _anchor_detail(a2["appearance_json"]).splitlines()
-                        if ln.strip() and not ln.strip().endswith("无")][:3]
-                second_anchor = f"{a2['name']}（{'；'.join(rows)}）" if rows else a2["name"]
-            images = [
-                {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(gray)},
-                {"slot": "char", "path": str(char_refs[0][1])},
-            ]
+            # 用户定案（2026-09-13 终版）：分镜资产总数（角色主图+场景图）>2
+            # 才特殊处理（stitch 拼接默认 / chain 链式可切，comic_dual_mode）；
+            # ≤2 直接种槽——2角色+0场景时第二角色主图直进图1（提示词注明），
+            # 1角色照常（图2 人物+图1 场景或灰）
+            total_refs = len(char_refs) + (1 if scene_ref else 0)
+            if total_refs > 2 and len(char_refs) == 2 \
+                    and dual_mode == "stitch":
+                char_path = _stitch_mains(data_dir,
+                                          [char_refs[0][1], char_refs[1][1]])
+                images = [
+                    {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(gray)},
+                    {"slot": "char", "path": char_path},
+                ]
+            elif len(char_refs) == 2 and not scene_ref:
+                images = [  # 2角色+0场景：直种双槽（图1=第二人物参考）
+                    {"slot": "scene", "path": str(char_refs[1][1])},
+                    {"slot": "char", "path": str(char_refs[0][1])},
+                ]
+            else:
+                images = [
+                    {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(gray)},
+                    {"slot": "char", "path": str(char_refs[0][1])},
+                ]
             scene_img_used = scene_ref is not None
-            params["megapixels"] = round(w * h / 1e6, 2)   # 百万像素按项目尺寸档
+            params["megapixels"] = mp                      # 百万像素直传
             # 步数固定 10（2026-09-13 用户实测 4 步=10 步=30s——瓶颈在接地/编码
             # 等固定开销，步数非耗时项；质量档映射对 krea 道无意义）
             params["steps"] = 10
@@ -314,9 +392,35 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
                        out_path)
         return _wf
 
-    # 单次出图（用户决策 2026-09-13「排除重复出图」）：双角色页不做链式两段——
-    # 第一角色主图入图2 参考槽，第二角色文字锚（外貌行）进提示词
-    wf = _submit_pass(prompt, images, dest)
+    if tmpl.id == "comic_page_krea2" and dual_mode == "chain" \
+            and len(char_refs) == 2 and (len(char_refs) + (1 if scene_ref else 0)) > 2:
+        # 链式两段（comic_dual_mode=chain，2026-09-13 用户决策保留可切）：
+        # P1 场景+A → 中间产物作 P2 的图1 再插 B（tag 严禁含 /——上传名即路径）
+        mid = pages_dir / f".chain_{shot['seq']:03d}.png"
+        p1 = build_comic_prompt(db, proj, shot, scene_mode=True, extra_chars="",
+                                scene_img=scene_img_used, scene_name=scene_name,
+                                krea_names=[krea_names[0]] if krea_names else None)
+        _submit_pass(p1, images, mid, tag="-链1")
+        p2_images = [{"slot": "scene", "path": str(mid)},
+                     {"slot": "char", "path": str(char_refs[1][1])}]
+        import re as _re2
+        p2_detail = _re2.sub(r"[（(]id=\d+[）)]", "",
+                             (shot["description"] or "").strip())
+        p2 = (f"在图1 的画面基础上加入图2 参考中的人物（{krea_names[1]}）："
+              f"{p2_detail[:180]}。图1 中已有的人物与场景保持不变，"
+              f"{krea_names[1]} 的外貌与图2 保持一致，按描述安排其位置与动作，"
+              "画面高清锐利、细节清晰")
+        st = ((proj["style_vis"] or proj["style"]) or "").strip()
+        if st:
+            p2 += f"。画风（严格执行）：{st}"
+        if (proj["dialogue_mode"] or "bubble") == "bubble":
+            p2 += "。画面上方适当留白，不要画任何文字、对话气泡、字幕"
+        wf = _submit_pass(p2, p2_images, dest,
+                          seed=random.randint(0, 2**31 - 1), tag="-链2")
+        prompt = p2
+        mid.unlink(missing_ok=True)
+    else:
+        wf = _submit_pass(prompt, images, dest)
     if job is not None:
         attach_snapshot(db, job["id"], prompt=prompt, workflow=wf, template_id=tmpl.id)
 

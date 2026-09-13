@@ -879,6 +879,11 @@
           <option value="fast">快速（8 步）</option>
           <option value="standard">标准（12 步）</option>
           <option value="high">高质量（20 步）</option></select></label>
+      <label title="双角色+场景（3 参考图）时的处理：拼接=两人合成一张参考（默认·单次出图·快）；链式=先放 A 再插 B（官方方案·两段出图）">双角色处理
+        <select :value="project.comic_dual_mode || 'stitch'"
+                @change="patchComicParam('comic_dual_mode', $event.target.value)">
+          <option value="stitch">拼接（默认·快）</option>
+          <option value="chain">链式逐人（官方）</option></select></label>
       <template v-if="project.dialogue_mode==='bubble'">
       <label title="只作用气泡底色；100%=背景全透明只剩描边与文字（字永远清晰）">气泡透明度
         <input type="number" min="0" max="100" :value="bubbleStyle().opacity"

@@ -258,8 +258,8 @@ def test_gen_comic_page_default_template_and_size(tmp_path, monkeypatch):
     with comfy_server("ok") as m:
         handle_gen_comic_page(db, tmp_path / "data", job, ComfyClient(m.base_url))
     wf = m.prompts[0]["prompt"]
-    assert wf["57:13"]["inputs"]["width"] == 1024
-    assert wf["57:13"]["inputs"]["height"] == 1536
+    assert wf["57:13"]["inputs"]["width"] == 1664  # MP×画幅推导（1.57MP×16:9）
+    assert wf["57:13"]["inputs"]["height"] == 928   # MP×画幅推导
     assert wf["57:3"]["inputs"]["steps"] == 12
     assert 0 <= wf["57:3"]["inputs"]["seed"] <= 2**31 - 1
     # 无对白镜提示词不带对白段
@@ -1266,8 +1266,10 @@ def test_gen_comic_page_ref_injection(tmp_path, monkeypatch):
     # v1.4：Lightning 默认关——质量档步数（standard=12）+ cfg 3.5 + denoise 1.0
     assert k["steps"] == 12 and k["cfg"] == 3.5 and k["denoise"] == 1.0
     assert m.prompts[0]["prompt"]["9001"]["inputs"]["strength_model"] == 0.0
+    # v2：宽高=MP×项目画幅推导（1024x1536→1.57MP × 16:9 → 1664×928）
+    from comic_studio.engine.comicgen import mp_to_wh
     assert (m.prompts[0]["prompt"]["45"]["inputs"]["width"],
-            m.prompts[0]["prompt"]["45"]["inputs"]["height"]) == (1024, 1536)
+            m.prompts[0]["prompt"]["45"]["inputs"]["height"]) == mp_to_wh(1.57, "16:9")
     from comic_studio.engine.shots import list_shots
     assert list_shots(db, pid)[0]["status"] == "comic_ready"
 
@@ -1487,8 +1489,8 @@ def test_gen_comic_page_krea2_fast_lane(tmp_path, monkeypatch):
         snap = json.loads(db.connect().execute(
             "SELECT snapshot_json FROM jobs WHERE id=?", (jid,)).fetchone()["snapshot_json"])
         assert snap["template"] == "comic_page_krea2"
-        # 单次出图（用户决策 2026-09-13「排除重复出图」）：双角色不做链式两段
-        # ——第一人（少年）主图入 char 槽，第二人（老者）文字锚进提示词
+        # 用户定案（2026-09-13 终版）：总数≤2 直种——本用例 2角色+0场景，
+        # 第二角色主图直进 scene 槽（不拼接！）；单次出图
         assert len(m.prompts) == 1, "应单次提交"
         ups = [u for u in m.uploads if u.endswith(".png") and "__" in u]
         assert any(u.endswith("__scene.png") for u in ups), ups
@@ -1498,8 +1500,8 @@ def test_gen_comic_page_krea2_fast_lane(tmp_path, monkeypatch):
         assert "宽度" not in g or (g.get("宽度"), g.get("高度")) == (1024, 1024)  # 原生结构不注入
         assert g["步数"] == 10   # krea 道固定 10（步数非瓶颈实测）
         v1 = m.prompts[0]["prompt"]["28"]["inputs"]["value"]
-        assert "少年" in v1 and "图2" in v1                     # 第一人参考锚
-        assert "老者" in v1 and "同时出现" in v1                 # 第二人文字锚
+        assert "少年" in v1 and "图2" in v1 and "老者" in v1
+        assert "图1 参考中的人物" in v1                          # 2角色直种双槽说明
 
     # Krea2 模板缺失 → 回落 zimage_page_ref（文件级 fallback）
     import shutil, tempfile
@@ -1600,3 +1602,101 @@ def test_upload_retry_and_error_body(tmp_path):
     finally:
         srv2.shutdown()
         CC._UPLOAD_RETRY_DELAYS = [5, 15]
+
+
+def test_megapixel_tiers_and_legacy_parse(tmp_path, monkeypatch):
+    """尺寸档改百万像素语义（2026-09-13 用户决策）：image_size 存 MP 值
+    （'0.4' 等）；旧 WxH 值自动换算兼容；纯 t2i 按 MP×项目画幅推 W/H。"""
+    from comic_studio.engine.comicgen import (MP_TIERS, parse_image_mp,
+                                              mp_to_wh)
+    assert "0.4" in MP_TIERS and "1.0" in MP_TIERS
+    assert abs(parse_image_mp("0.4") - 0.4) < 1e-6
+    assert abs(parse_image_mp("512x768") - 0.393) < 0.01   # 旧值换算
+    assert abs(parse_image_mp("1024x1536") - 1.573) < 0.01
+    w, h = mp_to_wh(0.4, "9:16")
+    assert abs(w * h / 1e6 - 0.4) < 0.05 and h > w           # 竖幅
+    w2, h2 = mp_to_wh(0.4, "16:9")
+    assert w2 > h2                                            # 横幅
+
+
+def test_krea_uses_mp_directly(tmp_path, monkeypatch):
+    """krea 道：image_size='0.4' → megapixels=0.4 直传（原生结构不锁宽高）。"""
+    from pathlib import Path
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.comicgen import handle_gen_comic_page
+    from comic_studio.engine.jobs import enqueue_job
+
+    db, pid, sid, ids = _ref_project_with_shot(tmp_path, mains=1, bound=True)
+    conn = db.connect()
+    conn.execute("UPDATE projects SET image_size='0.4' WHERE id=?", (pid,))
+    conn.commit()
+    with comfy_server("ok") as m:
+        set_setting(db, "comfy", {"base_url": m.base_url})
+        jid = enqueue_job(db, "gen_comic_page", project_id=pid, shot_id=sid,
+                          resource="gpu_comfy", payload={"shot_id": sid})
+        job = db.connect().execute("SELECT * FROM jobs WHERE id=?",
+                                   (jid,)).fetchone()
+        handle_gen_comic_page(db, tmp_path / "data", job, ComfyClient(m.base_url))
+        g = m.prompts[0]["prompt"]["2001"]["inputs"]
+        assert abs(g["百万像素"] - 0.4) < 1e-6
+
+
+def test_dual_mode_stitch_and_chain(tmp_path, monkeypatch):
+    """comic_dual_mode（迁移 40·用户决策两方案并存）：总数>2 时生效——
+    stitch 默认（拼接参考+左右说明）；chain 两段链式（P1 只放 A、P2 插 B）。
+    总数≤2 时两模式都直种不特殊处理。"""
+    from pathlib import Path
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.comicgen import handle_gen_comic_page
+    from comic_studio.engine.jobs import enqueue_job
+
+    def _run(tag, mode):
+        db, pid, sid, ids = _ref_project_with_shot(tmp_path / tag, mains=2, bound=True)
+        # 补场景参考图 → 总数 3（2角色+1场景）
+        from comic_studio.engine.assets import persist_assets as _pa
+        from comic_studio.engine.llm.schemas import AssetsAnalysis as _AA, SceneAsset as _SA
+        _pa(db, tmp_path / tag / "data", pid, _AA(
+            characters=[], scenes=[_SA(name="卧室", description="昏暗卧室")], props=[]))
+        row = db.connect().execute(
+            "SELECT id, library_dir FROM assets WHERE kind='scene' LIMIT 1").fetchone()
+        d = tmp_path / tag / "data" / row["library_dir"]
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "main.png").write_bytes(PNG)
+        led = json.loads(db.connect().execute(
+            "SELECT ledger_json FROM shots WHERE id=?", (sid,)).fetchone()["ledger_json"])
+        led["assets"]["scenes"] = [row["id"]]
+        from comic_studio.engine.shots import update_shot as _us
+        _us(db, sid, {"ledger_json": json.dumps(led, ensure_ascii=False)})
+        conn = db.connect()
+        conn.execute("UPDATE projects SET comic_dual_mode=? WHERE id=?", (mode, pid))
+        conn.commit()
+        with comfy_server("ok") as m:
+            set_setting(db, "comfy", {"base_url": m.base_url})
+            jid = enqueue_job(db, "gen_comic_page", project_id=pid, shot_id=sid,
+                              resource="gpu_comfy", payload={"shot_id": sid})
+            job = db.connect().execute("SELECT * FROM jobs WHERE id=?",
+                                       (jid,)).fetchone()
+            handle_gen_comic_page(db, tmp_path / tag / "data", job,
+                                  ComfyClient(m.base_url))
+            return m
+
+    # stitch 默认：单次 + 拼接参考（char 槽是合成图）+ 左右说明
+    m1 = _run("st", "stitch")
+    assert len(m1.prompts) == 1
+    v = m1.prompts[0]["prompt"]["28"]["inputs"]["value"]
+    assert "左侧" in v and "右侧" in v
+    # chain：两段链式
+    m2 = _run("ch", "chain")
+    assert len(m2.prompts) == 2
+    v1 = m2.prompts[0]["prompt"]["28"]["inputs"]["value"]
+    v2 = m2.prompts[1]["prompt"]["28"]["inputs"]["value"]
+    assert "老者" not in v1 and "少年" in v1     # P1 只放 A
+    assert "老者" in v2 and "加入" in v2          # P2 插 B
