@@ -770,6 +770,11 @@
         <span v-if="project.video_megapixels && isVideoChain" class="pill" style="cursor:pointer"
               title="点击展开/收起视频参数面板"
               @click="paramsOpen=!paramsOpen">{{ videoParamsLabel() }}</span>
+        <span v-else-if="isComicOutput" class="pill" style="cursor:pointer;background:#422006;color:#facc15"
+              title="点击展开/收起漫画参数面板（尺寸/质量档/页数/对白呈现/气泡样式——改完重出页面生效）"
+              @click="paramsOpen=!paramsOpen">📖 {{ project.image_size }} ·
+          {{ {fast:'快速',standard:'标准',high:'高质量'}[project.quality_tier] || project.quality_tier }} ·
+          {{ {bubble:'气泡',footer:'字幕条',none:'无对白'}[project.dialogue_mode] || project.dialogue_mode }}</span>
         <span v-if="project.autopilot" class="pill" style="background:#7c2d12;color:#fdba74"
               :title="'autopilot 当前动作：' + (project.autopilot_action?.detail || '')">⚡ {{ autopilotActionLabel() }}</span>
         <button v-if="project.autopilot && project.stage!=='merged'" @click="setAutopilot(project, false)"
@@ -1014,9 +1019,14 @@
         </div>
     </div>
     <p v-if="['analyzed','assets_ready','storyboard_ready'].includes(project.stage)">
-      <button @click="genAllRefs">批量生成参考图</button>
-      <button v-if="allHaveViews && project.stage==='analyzed'" @click="passGate1" style="background:#16a34a">
+      <button v-if="isVideoChain" @click="genAllRefs">批量生成参考图</button>
+      <button v-if="allHaveViews && project.stage==='analyzed' && isVideoChain" @click="passGate1" style="background:#16a34a">
         ✓ 确认资产（过门1）</button><!-- N1：门1 仅 analyzed 可过，其他阶段露出必 409 -->
+      <!-- B1 漫画链停等确认（2026-09-13）：检查/改名/删减名册后放行拆解 -->
+      <button v-if="isComicOutput && project.stage==='analyzed' && !project.comic_assets_confirmed"
+              @click="confirmComicAssets" style="background:#16a34a"
+              title="确认角色名册无误（可先在上方检查/编辑/删除资产）——跳过参考图生成直接拆解出页">
+        ✓ 确认资产，继续出片</button>
     </p>
     </template>
     <p><span class="muted" :title="failedTooltip()">运行 {{queue.running}} · 排队 {{queue.pending}} · 失败 {{queue.failed}}
@@ -1240,6 +1250,23 @@
               ? 'background:#14532d;color:#86efac' : ''">{{ comicDonePages }}/{{ comicPageShots.length }} 页就绪
           <template v-if="comicDonePages===comicPageShots.length && comicPageShots.length">✓</template></span>
         <span v-if="comicGenBusy" class="pill" style="background:#7c2d12;color:#fdba74">🖼 生成中…（队列驱动自动刷新）</span>
+        <button v-if="comicDonePages" @click="regenComicPages('all')" :disabled="comicGenBusy"
+                title="按当前最新参数（尺寸/画风/对白呈现/气泡样式）重出全部页面——已有页覆盖；尺寸混档会影响长图导出，全部重出可对齐">🔄 全部重出</button>
+        <template v-if="shotSel.length">
+          <span class="pill" style="border:1px solid #f59e0b;color:#f59e0b">已选 {{ shotSel.length }} 页</span>
+          <button @click="regenComicPages(shotSel.slice())" :disabled="comicGenBusy"
+                  style="font-size:12px;padding:3px 8px;background:#0e7490"
+                  title="重出选中页面（按当前最新参数，新 seed 覆盖）">🔄 重出所选</button>
+          <button @click="batchShots('disable')" style="font-size:12px;padding:3px 8px;background:#7c3aed"
+                  title="无效页不进导出">批量无效</button>
+          <button @click="batchShots('enable')" style="font-size:12px;padding:3px 8px">批量生效</button>
+          <button @click="batchShots('delete')" style="font-size:12px;padding:3px 8px;background:#dc2626">批量删除</button>
+          <button @click="shotSel=[]" style="font-size:12px;padding:3px 8px">取消选择</button>
+        </template>
+        <label v-if="comicPageShots.length" style="font-size:12px;cursor:pointer"
+               title="全选/清空（仅生效页参与重出）">
+          <input type="checkbox" :checked="shotSel.length === comicPageShots.filter(s=>!s.disabled).length && comicPageShots.some(s=>!s.disabled)"
+                 @change="togglePageSelAll"> 全选</label>
         <button v-if="project.stage==='storyboard_ready' || project.stage==='comic_ready'"
                 @click="genComicPages" :disabled="comicGenBusy"
                 :title="comicGenBusy ? '生成任务进行中' : '为缺页分镜入队 t2i 生成（autopilot「上次失败请手动发起」的落点）'">
@@ -1255,9 +1282,14 @@
         <div class="card" v-for="s in comicPageShots" :key="s.id"
              :style="s.disabled ? 'opacity:.45' : ''">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <label v-if="!s.disabled" style="cursor:pointer" title="勾选参与批量操作">
+              <input type="checkbox" :value="s.id" v-model="shotSel"></label>
             <b>第 {{ s.seq }} 页</b>
             <span v-if="s.disabled" class="pill" style="border:1px solid #7c3aed;color:#c084fc">无效</span>
             <span class="pill">{{ comicPageStatusLabel(s) }}</span>
+            <button v-if="!s.disabled" @click="regenComicPages([s.id])" :disabled="comicGenBusy"
+                    style="font-size:11px;padding:1px 8px;background:#0e7490"
+                    title="按当前最新参数重出此页（新 seed 覆盖）">🔄 重出</button>
           </div>
           <template v-if="s.status==='comic_ready' && !s.disabled">
             <img :src="comicPageUrl(s)" loading="lazy" @click="lightbox=comicPageUrl(s)"

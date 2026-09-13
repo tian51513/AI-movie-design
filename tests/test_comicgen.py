@@ -1015,3 +1015,51 @@ def test_comic_prompt_character_scene_anchor(tmp_path):
     shot2 = {"description": "空镜", "ledger_json": '{"dialogue": []}'}
     p2 = build_comic_prompt(db, proj, shot2)
     assert "外貌锚" not in p2 and "外貌参考" not in p2
+
+
+# ---- A（2026-09-13）：重生成——force 全部 / 指定 shot_ids（读最新参数新 seed 覆盖） ----
+
+def test_generate_comic_pages_force_and_ids(tmp_path):
+    """force=1：已有页也入队（全部重出）；body.shot_ids：指定镜重出；
+    disabled/在飞仍跳过；shot_ids 含他项目镜 422。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.settings import set_setting
+
+    db, pid = _comic_project(tmp_path)
+    sids = _comic_shot_ids(db, pid, dialogue=False)
+    assert len(sids) == 1
+    set_stage(db, pid, "storyboard_ready")
+    set_setting(db, "comfy", {"base_url": "http://mock:8188"})
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        # 基线：已有页 → 0（现状语义）
+        pages = (tmp_path / "data") / "projects" / _slug(db, pid) / "pages"
+        pages.mkdir(parents=True)
+        (pages / "page_001.png").write_bytes(PNG)
+        r = c.post(f"/api/projects/{pid}/generate-comic-pages")
+        assert r.json() == {"enqueued": 0}
+        # force=1：已有页也入队
+        r = c.post(f"/api/projects/{pid}/generate-comic-pages?force=1")
+        assert r.status_code == 202 and r.json() == {"enqueued": 1}
+        # 在飞跳过（上一轮已入队）
+        r = c.post(f"/api/projects/{pid}/generate-comic-pages?force=1")
+        assert r.json() == {"enqueued": 0}
+        # shot_ids 指定：已有页也重出（显式覆盖语义——真机单卡重出被
+        # 「已有页跳过」拦下 enqueued 0 的修复回归锚）
+        conn = db.connect()
+        conn.execute("UPDATE jobs SET status='done' WHERE type='gen_comic_page'")
+        conn.commit()
+        r = c.post(f"/api/projects/{pid}/generate-comic-pages",
+                   json={"shot_ids": [sids[0]]})
+        assert r.status_code == 202 and r.json() == {"enqueued": 1}
+        # shot_ids 指定：他项目镜 422
+        r = c.post(f"/api/projects/{pid}/generate-comic-pages",
+                   json={"shot_ids": [9999]})
+        assert r.status_code == 422
+
+
+def _slug(db, pid):
+    from comic_studio.engine.projects import get_project
+    return get_project(db, pid)["slug"]

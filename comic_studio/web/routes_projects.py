@@ -561,11 +561,16 @@ def confirm_comic_assets(request: Request, project_id: int):
 
 
 @router.post("/{project_id}/generate-comic-pages", status_code=202)
-def generate_comic_pages(request: Request, project_id: int):
-    """手动补页（2026-09-12 Task 6）：缺页镜逐个入队 gen_comic_page——
-    非 autopilot 用户的生成入口，也是 autopilot「上次漫画页生成失败，
-    重试请手动发起」守卫的落点。已有页/在飞镜/无效镜跳过（与
-    autopilot tick gen_comic_pages 分支同口径）。"""
+def generate_comic_pages(request: Request, project_id: int,
+                         force: bool = False, body: dict | None = None):
+    """手动补页/重出（2026-09-12 Task 6；2026-09-13 A 扩 force/shot_ids）：
+    缺页镜逐个入队 gen_comic_page——非 autopilot 用户的生成入口，也是
+    autopilot「上次漫画页生成失败，重试请手动发起」守卫的落点。
+
+    force=1：已有页也入队（全部重出——改尺寸/画风/对白呈现后用）；
+    body.shot_ids：只重出指定镜（单页/所选）。已有页/在飞镜/无效镜跳过
+    （force 只解除「已有页」跳过）；handler 每次运行读项目行最新参数、
+    同名覆盖 page_NNN.png。"""
     db = request.app.state.db
     proj = get_project(db, project_id)
     if proj is None:
@@ -582,16 +587,28 @@ def generate_comic_pages(request: Request, project_id: int):
     from ..engine.jobs import enqueue_job
     from ..engine.paths import data_to_abs
     from ..engine.shots import list_shots
+    shots = list_shots(db, project_id)
+    only_ids = None
+    if body and body.get("shot_ids"):
+        only_ids = set(body["shot_ids"])
+        own = {s["id"] for s in shots}
+        if not only_ids <= own:
+            raise HTTPException(422, f"shot_ids 含不属于本项目的镜: {sorted(only_ids - own)}")
     pages_dir = data_to_abs(request.app.state.data_dir,
                             f"projects/{proj['slug']}/pages")
     queued = {r["shot_id"] for r in db.connect().execute(
         "SELECT DISTINCT shot_id FROM jobs WHERE type='gen_comic_page' "
         "AND shot_id IS NOT NULL AND status IN ('pending','running')")}
     n = 0
-    for s in list_shots(db, project_id):
+    for s in shots:
         if s["disabled"] or s["id"] in queued:
             continue
-        if (pages_dir / f"page_{s['seq']:03d}.png").exists():
+        if only_ids is not None and s["id"] not in only_ids:
+            continue
+        # 已有页跳过只对「补缺」语义生效——shot_ids（重出所选）与 force 都
+        # 是显式覆盖意图（2026-09-13 真机：单卡重出被此拦下 enqueued 0）
+        if (only_ids is None and not force
+                and (pages_dir / f"page_{s['seq']:03d}.png").exists()):
             continue
         enqueue_job(db, "gen_comic_page", project_id=project_id, shot_id=s["id"],
                     resource="gpu_comfy", payload={"shot_id": s["id"]})

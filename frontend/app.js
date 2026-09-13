@@ -172,8 +172,12 @@ const computed = {
     return this.comicPageShots.filter(s => !s.disabled && s.status === 'comic_ready').length;
   },
   comicGenBusy() {  // 漫画页生成在飞（队列驱动，生成中徽章 + 补页按钮防抖）
-    return ((this.queue && this.queue.jobs) || []).some(
+    const busy = ((this.queue && this.queue.jobs) || []).some(
       j => j.type === 'gen_comic_page' && (j.status === 'pending' || j.status === 'running'));
+    // 忙→闲边沿翻新缓存戳：重出的新页不吃浏览器旧图缓存
+    if (this._comicBusySeen && !busy) this._pagesStamp = Date.now();
+    this._comicBusySeen = busy;
+    return busy;
   },
   hasActiveJobs() {
     return this.directorBusy || (this.queue && (this.queue.pending > 0 || this.queue.running > 0));
@@ -1057,6 +1061,33 @@ const methods = {
     if (s.disabled) return '无效';
     // pending=拆解后初始态（漫画项目不走 gen_prompts，直到 comic_ready 才变）
     return { comic_ready: '已生成', ready: '待生成', pending: '待生成', stale: '待重生成' }[s.status] || s.status;
+  },
+  togglePageSelAll(e) {  // 漫画页全选/清空（仅生效页）
+    const ids = this.comicPageShots.filter(s => !s.disabled).map(s => s.id);
+    this.shotSel = e.target.checked ? ids : [];
+  },
+  async confirmComicAssets() {  // B1 资产确认（2026-09-13）：放行停等 → 直进拆解
+    const r = await fetch(`/api/projects/${this.project.id}/confirm-comic-assets`,
+                          { method: 'POST' });
+    if (!r.ok) { alert(await r.text()); return; }
+    await this.loadDetail();
+  },
+  async regenComicPages(ids = null) {  // 重出（2026-09-13 A）：读最新参数新 seed 覆盖
+    if (this.comicGenBusy) return;
+    let url = `/api/projects/${this.project.id}/generate-comic-pages`;
+    let body = null;
+    if (ids === 'all') {
+      if (!confirm('按当前最新参数重出全部页面？（尺寸/画风/对白呈现/气泡样式的修改将生效；已有页会被覆盖）')) return;
+      url += '?force=1';
+    } else if (Array.isArray(ids) && ids.length) {
+      body = { shot_ids: ids };
+    } else return;
+    const r = await fetch(url, { method: 'POST',
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined });
+    if (!r.ok) { alert(await r.text()); return; }
+    const b = await r.json();
+    if (!b.enqueued) alert('没有可入队的页面（可能全部在飞）');
   },
   async genComicPages() {  // 手动补页：POST 202 入队，进度由队列轮询驱动（comicGenBusy）
     if (this.comicGenBusy) return;
