@@ -1271,6 +1271,9 @@
         <span v-if="comicGenBusy" class="pill" style="background:#7c2d12;color:#fdba74">🖼 生成中…（队列驱动自动刷新）</span>
         <button v-if="comicDonePages" @click="regenComicPages('all')" :disabled="comicGenBusy"
                 title="按当前最新参数（尺寸/画风/对白呈现/气泡样式）重出全部页面——已有页覆盖；尺寸混档会影响长图导出，全部重出可对齐">🔄 全部重出</button>
+        <button v-if="comicDonePages" @click="rebubbleComic" :disabled="comicGenBusy"
+                style="background:#0e7490"
+                title="改对白呈现/气泡样式后从干净副本本地重排（秒级，不重出图画面零变化）——旧页无备份会跳过（重出一次即有）">💬 重排对白</button>
         <button v-if="project.stage==='comic_ready'" @click="convertToVideo"
                 style="background:#7c3aed"
                 title="漫画→视频：复用分镜/对白/角色资产，分镜描述自动生成视频提示词（不读图）→渲染→配音字幕→合成；漫画页保留可导出；提示词不行可手动强制重读">🎬 转视频</button>

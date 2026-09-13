@@ -1142,6 +1142,15 @@ const methods = {
     } catch (e) { alert('转化失败：' + e); }
     this.c2vBusy = false;
   },
+  async rebubbleComic() {  // 💬 对白重排（2026-09-13）：干净副本本地重排，不重出图
+    const r = await fetch(`/api/projects/${this.project.id}/rebubble-comic`,
+                          { method: 'POST' });
+    if (!r.ok) { alert(await r.text()); return; }
+    const b = await r.json();
+    this._pagesStamp = Date.now();   // 翻新缓存戳
+    alert(`重排 ${b.rebubbled} 页` + (b.skipped ? `（${b.skipped} 页无备份跳过——重出一次即有）` : ''));
+    await this.loadShots();
+  },
   async confirmComicAssets() {  // B1 资产确认（2026-09-13）：放行停等 → 直进拆解
     const r = await fetch(`/api/projects/${this.project.id}/confirm-comic-assets`,
                           { method: 'POST' });

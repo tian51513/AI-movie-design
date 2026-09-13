@@ -445,6 +445,13 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     if job is not None:
         attach_snapshot(db, job["id"], prompt=prompt, workflow=wf, template_id=tmpl.id)
 
+    # 干净副本（2026-09-13 用户建议）：后处理前存 page_NNN_clean.png——
+    # 对白重排（改模式/气泡样式秒级本地重排不重出）+ 未来动态漫首尾帧源
+    clean = pages_dir / f"page_{shot['seq']:03d}_clean.png"
+    try:
+        clean.write_bytes(dest.read_bytes())
+    except OSError:
+        pass  # 副本失败不拦主流程
     # 对白后处理（dialogue_mode: bubble/footer/none）
     dialogue = _ledger(shot).get("dialogue") or []
     mode = proj["dialogue_mode"] or "bubble"

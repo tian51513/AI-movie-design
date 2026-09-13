@@ -567,6 +567,45 @@ def confirm_comic_assets(request: Request, project_id: int):
     return {"confirmed": True}
 
 
+@router.post("/{project_id}/rebubble-comic")
+def rebubble_comic(request: Request, project_id: int):
+    """对白重排（2026-09-13 用户建议·干净副本）：改 dialogue_mode/气泡样式后
+    从 page_NNN_clean.png 本地重排（Pillow 秒级）——不重出图不烧 ComfyUI、
+    画面零变化。无干净副本的页（旧页）跳过并计数（重出一次即有备份）。"""
+    db = request.app.state.db
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    if (proj["comic_mode"] if "comic_mode" in proj.keys() else "") != "comic_output":
+        raise HTTPException(422, "仅漫画成品项目（comic_output）可重排对白")
+    from ..engine.comicgen import _postprocess_dialogue, _bubble_style
+    from ..engine.paths import data_to_abs
+    from ..engine.shots import list_shots
+    pages_dir = data_to_abs(request.app.state.data_dir,
+                            f"projects/{proj['slug']}/pages")
+    mode = proj["dialogue_mode"] or "bubble"
+    style = _bubble_style((proj["bubble_style"] if "bubble_style" in proj.keys() else "") or "")
+    import json as _json
+    n = skipped = 0
+    for s in list_shots(db, project_id):
+        if s["disabled"]:
+            continue
+        clean = pages_dir / f"page_{s['seq']:03d}_clean.png"
+        active = pages_dir / f"page_{s['seq']:03d}.png"
+        if not clean.exists() or not active.exists():
+            skipped += 1
+            continue
+        active.write_bytes(clean.read_bytes())
+        led = _json.loads(s["ledger_json"] or "{}")
+        _postprocess_dialogue(active, led.get("dialogue") or [], mode, style=style)
+        n += 1
+    emit_log(db, "comic", "info",
+             f"对白重排完成：{n} 页（{mode} 模式）"
+             + (f"，{skipped} 页无干净副本跳过（重出一次即有）" if skipped else ""),
+             project_id=project_id)
+    return {"rebubbled": n, "skipped": skipped}
+
+
 @router.post("/{project_id}/convert-to-video")
 def convert_to_video(request: Request, project_id: int, body: dict | None = None):
     """漫画→视频转化（2026-09-13 用户需求）：comic_ready 后变身视频项目，

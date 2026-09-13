@@ -1931,3 +1931,72 @@ def test_comic_page_continuity_prompt_and_seed(tmp_path, monkeypatch):
         seed_node = wf.get("2001") or wf.get("57:3") or {}
         si = seed_node.get("inputs", {})
         assert si.get("种子", si.get("seed")) == 114  # 字段名随模板方言
+
+
+# ---- 干净副本 + 对白重排（2026-09-13 用户建议：无气泡备份页） ----
+
+def test_gen_page_saves_clean_copy(tmp_path, monkeypatch):
+    """落盘顺序：先存 page_NNN_clean.png（无对白干净副本）再做气泡后处理
+    ——活动页带气泡（成品），干净副本供重排/未来动态漫首尾帧。"""
+    from pathlib import Path
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.comicgen import handle_gen_comic_page
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.projects import get_project
+
+    db, pid = _comic_project(tmp_path)   # 默认 bubble
+    (sid,) = _comic_shot_ids(db, pid)
+    set_setting(db, "template_map", {"comic_page": "comic_page"})
+    jid = enqueue_job(db, "gen_comic_page", project_id=pid, shot_id=sid,
+                      resource="gpu_comfy", payload={"shot_id": sid})
+    job = db.connect().execute("SELECT * FROM jobs WHERE id=?", (jid,)).fetchone()
+    with comfy_server("ok") as m:
+        set_setting(db, "comfy", {"base_url": m.base_url})
+        handle_gen_comic_page(db, tmp_path / "data", job, ComfyClient(m.base_url))
+    slug = get_project(db, pid)["slug"]
+    pages = tmp_path / "data" / "projects" / slug / "pages"
+    clean = pages / "page_001_clean.png"
+    active = pages / "page_001.png"
+    assert clean.exists() and active.exists()   # 副本在（内容差异由 rebubble 测真图覆盖）
+
+
+def test_rebubble_comic_api(tmp_path):
+    """POST rebubble-comic：从干净副本重排对白——改 dialogue_mode/气泡样式
+    后秒级本地重排（不再重出图烧 ComfyUI）；无干净副本的页跳过计数。"""
+    from PIL import Image
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project
+
+    db, pid = _comic_project(tmp_path, dialogue_mode="footer")
+    (sid,) = _comic_shot_ids(db, pid)
+    slug = get_project(db, pid)["slug"]
+    pages = tmp_path / "data" / "projects" / slug / "pages"
+    pages.mkdir(parents=True)
+    Image.new("RGB", (512, 768), (120, 140, 160)).save(pages / "page_001_clean.png")
+    Image.new("RGB", (512, 768), (120, 140, 160)).save(pages / "page_001.png")
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        # 切 bubble 模式重排（项目建为 footer，先 patch）
+        c.patch(f"/api/projects/{pid}", json={"dialogue_mode": "bubble"})
+        r = c.post(f"/api/projects/{pid}/rebubble-comic")
+        assert r.status_code == 200 and r.json()["rebubbled"] == 1, r.text
+        img = Image.open(pages / "page_001.png").convert("RGB")
+        # 气泡画过：顶部区域出现白底色块（区别于纯底色）
+        top = list(img.crop((0, 0, 512, 200)).getdata())
+        assert any(p != (120, 140, 160) for p in top)
+        # 再切 footer 重排：底部出现黑字幕条
+        c.patch(f"/api/projects/{pid}", json={"dialogue_mode": "footer"})
+        r2 = c.post(f"/api/projects/{pid}/rebubble-comic")
+        assert r2.json()["rebubbled"] == 1
+        img2 = Image.open(pages / "page_001.png").convert("RGB")
+        bottom = list(img2.crop((0, 700, 512, 768)).getdata())
+        assert any(p[0] < 100 for p in bottom)   # 半透明黑条
+        # 非漫画项目 422
+        from comic_studio.engine.projects import create_project
+        vid = create_project(db, tmp_path / "data", "视频剧", "9:16", "正文" * 100)["id"]
+        assert c.post(f"/api/projects/{vid}/rebubble-comic").status_code == 422
