@@ -819,8 +819,13 @@ def generate_comic_pages(request: Request, project_id: int,
         if (only_ids is None and not force
                 and (pages_dir / f"page_{s['seq']:03d}.png").exists()):
             continue
+        # force/shot_ids=显式重出语义 → 换新 seed（真机判例：库值 seed 优先
+        # 让重出输出雷同「没变化」）；autopilot 补缺路径不带 → 连续性 seed 照用
+        _pl = {"shot_id": s["id"]}
+        if force or only_ids is not None:
+            _pl["reshuffle_seed"] = True
         enqueue_job(db, "gen_comic_page", project_id=project_id, shot_id=s["id"],
-                    resource="gpu_comfy", payload={"shot_id": s["id"]})
+                    resource="gpu_comfy", payload=_pl)
         n += 1
     return {"enqueued": n}
 

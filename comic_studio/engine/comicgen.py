@@ -252,8 +252,15 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     mp = parse_image_mp(proj["image_size"])
     w, h = mp_to_wh(mp, proj["aspect_ratio"])   # 纯 t2i 用（krea 道直传 MP）
     # seed 库值优先（2026-09-13 页间连续性③：拆解时延续组 +3 已算好——同组页
-    # 渲染风格/人物样貌更稳；无库值才随机）
-    _seed = shot["seed"] if "seed" in shot.keys() and shot["seed"] else None
+    # 渲染风格/人物样貌更稳；无库值才随机）。**显式重出例外（reshuffle_seed，
+    # 真机「点重出没变化」判例：同 seed 同提示词输出雷同）**——随机新 seed
+    # 并回写库值，连续链从新值续
+    _reshuffle = bool(payload.get("reshuffle_seed"))
+    if _reshuffle:
+        _seed = random.randint(0, 2**31 - 1)
+        update_shot(db, shot["id"], {"seed": _seed})
+    else:
+        _seed = shot["seed"] if "seed" in shot.keys() and shot["seed"] else None
     dual_mode = ((proj["comic_dual_mode"] if "comic_dual_mode" in proj.keys()
                   else "") or "stitch")          # stitch 默认 / chain 链式
     steps = QUALITY_STEPS.get(proj["quality_tier"] or "standard", 12)

@@ -2151,3 +2151,42 @@ def test_rebubble_single_and_drag_position(tmp_path):
         # 404
         assert c.post("/api/shots/9999/bubble-pos",
                       json={"positions": []}).status_code == 404
+
+
+def test_reroll_uses_new_seed(tmp_path, monkeypatch):
+    """重出换新 seed（2026-09-13 真机：点重出没变化——seed 库值优先误伤
+    重出语义，同 seed 同提示词输出雷同）。显式重出（force/shot_ids）→
+    随机新 seed 并回写库值（连续链从新 seed 续）；正常 autopilot 生成仍用
+    库值保连续。"""
+    from pathlib import Path
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.comicgen import handle_gen_comic_page
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.shots import get_shot
+
+    db, pid = _comic_project(tmp_path)
+    (sid,) = _comic_shot_ids(db, pid)
+    conn = db.connect()
+    conn.execute("UPDATE shots SET seed=777 WHERE id=?", (sid,))
+    conn.commit()
+    seeds = []
+    with comfy_server("ok") as m:
+        set_setting(db, "comfy", {"base_url": m.base_url})
+        for _ in range(2):   # 两次显式重出
+            jid = enqueue_job(db, "gen_comic_page", project_id=pid, shot_id=sid,
+                              resource="gpu_comfy",
+                              payload={"shot_id": sid, "reshuffle_seed": True})
+            job = db.connect().execute("SELECT * FROM jobs WHERE id=?",
+                                       (jid,)).fetchone()
+            handle_gen_comic_page(db, tmp_path / "data", job, ComfyClient(m.base_url))
+            wf = m.prompts[-1]["prompt"]
+            g = wf.get("2001") or wf.get("57:3")
+            si = g["inputs"]
+            seeds.append(si.get("种子", si.get("seed")))
+        # 重出后库值也被更新（新 seed 入库，连续链从新值续）
+        assert get_shot(db, sid)["seed"] == seeds[-1]
+    assert seeds[0] != 777 and seeds[1] != 777 and seeds[0] != seeds[1]

@@ -65,7 +65,7 @@ def get_shot(db: Database, shot_id: int) -> sqlite3.Row | None:
 
 _UPDATE_WHITELIST = {"description", "shot_type", "camera_json", "duration",
                      "workflow_type", "ledger_json", "prompt", "status",
-                     "video_path"}
+                     "video_path", "seed"}   # seed：显式重出换新值回写（2026-09-13）
 
 
 def update_shot(db: Database, shot_id: int, fields: dict) -> None:
