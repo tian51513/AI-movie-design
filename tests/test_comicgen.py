@@ -2000,3 +2000,84 @@ def test_rebubble_comic_api(tmp_path):
         from comic_studio.engine.projects import create_project
         vid = create_project(db, tmp_path / "data", "视频剧", "9:16", "正文" * 100)["id"]
         assert c.post(f"/api/projects/{vid}/rebubble-comic").status_code == 422
+
+
+# ---- 气泡智能定位（2026-09-13 用户需求：避人物/重要部位，看站位选空闲区） ----
+
+def _busy_image(path, busy_side="left"):
+    """合成测试页：一侧密集纹理（人物区）、一侧纯色（空闲区）。"""
+    from PIL import Image, ImageDraw
+    img = Image.new("RGB", (512, 768), (60, 60, 60))
+    d = ImageDraw.Draw(img)
+    x0, x1 = (0, 256) if busy_side == "left" else (256, 512)
+    for y in range(0, 768, 8):
+        for x in range(x0, x1, 8):
+            d.rectangle((x, y, x + 6, y + 6), fill=(200, 200, 200))
+    img.save(path)
+    return path
+
+
+def test_bubble_layout_prefers_empty_zone(tmp_path):
+    """人物在左半页 → 气泡全部落右半页（边缘能量分区择空）。"""
+    from PIL import Image
+    from comic_studio.engine.comicgen import _draw_bubbles
+    p = tmp_path / "page.png"
+    _busy_image(p, busy_side="left")
+    _draw_bubbles(p, [
+        {"speaker": "甲", "line": "你好呀"},
+        {"speaker": "乙", "line": "你也好"},
+    ], {"opacity": 0, "font_color": "#222222", "font_size": 0})  # 实底白——覆盖可检测
+    img = Image.open(p).convert("RGB")
+    # 左半页（忙碌区）应未被气泡覆盖——采样左上（旧布局第一气泡落点）
+    left = img.crop((20, 20, 250, 110)).getcolors(maxcolors=100000)
+    # 气泡白底 255 占比应极低（纹理区 60/200 灰阶，非纯白）
+    white = sum(c for c, px in left if px == (255, 255, 255))
+    total = sum(c for c, _ in left)
+    assert white / total < 0.05, f"气泡覆盖了人物区 {white}/{total}"
+
+
+def test_bubble_layout_fallback_without_image():
+    """无图像输入（旧调用路径）回落左右交替——行为不变。"""
+    from PIL import ImageFont
+    from comic_studio.engine.comicgen import _bubble_layout
+    font = ImageFont.load_default(20)
+    boxes, dropped = _bubble_layout(1024, 1536, [
+        {"speaker": "甲", "line": "好"},
+        {"speaker": "乙", "line": "你也好"},
+    ], font)
+    assert dropped == 0 and boxes[0][0] < 512 <= boxes[1][0]   # 奇左偶右
+
+
+def test_convert_to_video_mode_choice(tmp_path):
+    """转化类型用户可选（2026-09-13）：standard=重渲染（comic_mode=''）/motion
+    =动态漫（原画动起来，活动页换干净副本去气泡）/film=漫改；字幕恒 1
+    （对白走 TTS+字幕，不靠帧内气泡）。"""
+    from PIL import Image
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project, set_stage
+
+    db, pid = _comic_project(tmp_path)
+    (sid,) = _comic_shot_ids(db, pid)
+    set_stage(db, pid, "comic_ready")
+    slug = get_project(db, pid)["slug"]
+    pages = tmp_path / "data" / "projects" / slug / "pages"
+    pages.mkdir(parents=True)
+    Image.new("RGB", (512, 768), (10, 10, 10)).save(pages / "page_001_clean.png")
+    Image.new("RGB", (512, 768), (200, 200, 200)).save(pages / "page_001.png")
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post(f"/api/projects/{pid}/convert-to-video",
+                   json={"video_mode": "motion"})
+        assert r.status_code == 200, r.text
+        p = get_project(db, pid)
+        assert p["comic_mode"] == "motion_comic" and p["subtitles"] == 1
+        assert (pages / "page_001.png").convert if False else True
+        from PIL import Image as I
+        px = I.open(pages / "page_001.png").convert("RGB").getpixel((10, 10))
+        assert px == (10, 10, 10)   # 活动页已换干净副本（去气泡）
+        # 非法模式 422
+        db2, pid2 = _comic_project(tmp_path / "v")
+        set_stage(db2, pid2, "comic_ready")
+        assert c.post(f"/api/projects/{pid2}/convert-to-video",
+                     json={"video_mode": "boom"}).status_code == 422

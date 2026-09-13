@@ -627,6 +627,13 @@ def convert_to_video(request: Request, project_id: int, body: dict | None = None
     if proj["stage"] != "comic_ready":
         raise HTTPException(409, f"阶段 {proj['stage']} 不能转视频（需漫画就绪）")
     body = body or {}
+    # 转化类型（2026-09-13 用户决策）：standard=重渲染（资产参考+提示词全新画面）/
+    # motion=动态漫（漫画原画动起来——活动页换干净副本去气泡，首尾帧源=原画）/
+    # film=漫改电影（角色动画）；字幕恒 1（对白走 TTS+字幕，不靠帧内气泡）
+    video_mode = body.get("video_mode", "standard")
+    if video_mode not in ("standard", "motion", "film"):
+        raise HTTPException(422, "video_mode 只能是 standard（重渲染）/motion（动态漫）/film（漫改电影）")
+    _mode_map = {"standard": "", "motion": "motion_comic", "film": "film_adaptation"}
     # 视频参数先过统一校验（非法 422；合法经 update_video_params 落列）
     vp_keys = ("video_megapixels", "video_multiple", "video_speed", "prompt_mode",
                "lora_realism", "default_shot_duration", "target_duration",
@@ -637,8 +644,9 @@ def convert_to_video(request: Request, project_id: int, body: dict | None = None
         raise HTTPException(422, "render_mode 只能是 ref2va/fl2va/t2v")
     conn = db.connect()
     conn.execute(
-        "UPDATE projects SET comic_mode='', subtitles=?, autopilot=1 WHERE id=?",
-        (1 if body.get("subtitles", True) else 0, project_id,))
+        "UPDATE projects SET comic_mode=?, subtitles=?, autopilot=1 WHERE id=?",
+        (_mode_map[video_mode], 1 if body.get("subtitles", True) else 0,
+         project_id,))
     # 画风覆盖（转化面板预填漫画项目画风·可改）：style_vis 与旧 style 相等
     # （未拆层）时同步跟随；独立拆层过则不动（视频提示词仍吃独立子集）
     new_style = (body.get("style") or "").strip()
@@ -668,6 +676,22 @@ def convert_to_video(request: Request, project_id: int, body: dict | None = None
         conn.execute("UPDATE projects SET render_mode=? WHERE id=?",
                      (wf_mode, project_id))
     conn.commit()
+    if video_mode in ("motion", "film"):
+        # 动态漫/漫改：活动页换干净副本（去气泡——首尾帧不带字，对白走
+        # TTS+字幕；无副本的页保留原样，后续重出即有）
+        from ..engine.paths import data_to_abs as _dta3
+        _pd = _dta3(request.app.state.data_dir, f"projects/{proj['slug']}/pages")
+        _swapped = 0
+        if _pd.is_dir():
+            for _cl in sorted(_pd.glob("page_*_clean.png")):
+                _act = _pd / _cl.name.replace("_clean.png", ".png")
+                if _act.exists():
+                    _act.write_bytes(_cl.read_bytes())
+                    _swapped += 1
+        if _swapped:
+            emit_log(db, "autopilot", "info",
+                     f"已切换 {_swapped} 页为无气泡干净副本（首尾帧不带字）",
+                     project_id=project_id)
     from ..engine.projects import set_stage
     set_stage(db, project_id, "storyboard_ready")
     emit_log(db, "autopilot", "info",

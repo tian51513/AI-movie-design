@@ -45,7 +45,7 @@ function data() {
     newProjType: 'video', comicAudioFile: null,
     comicBubbleOpacity: 85, comicBubbleColor: '#222222', comicBubbleFontSize: 0,
     exportingComic: false, comicExportUrl: '', comicExportName: '',
-    c2vOpen: false, c2vBusy: false, c2vStyle: '', c2vRatio: '9:16', c2vMP: 0.4,
+    c2vOpen: false, c2vBusy: false, c2vMode: 'standard', c2vStyle: '', c2vRatio: '9:16', c2vMP: 0.4,
     c2vMul: 32, c2vSpeed: '标准', c2vSubs: true, c2vRender: '', c2vPromptMode: 'D',
     _pagesStamp: 0,  // 漫画页缓存戳：进页/补页后翻新，杜绝重生成后吃旧图缓存
     comicMode: 'motion_comic',
@@ -1122,13 +1122,14 @@ const methods = {
     this.c2vSpeed = this.project.video_speed || '标准';
     this.c2vSubs = true;
     this.c2vRender = '';
+    this.c2vMode = 'standard';
     this.c2vPromptMode = this.project.prompt_mode || 'D';
     this.c2vOpen = true;
   },
   async doConvertToVideo() {  // 提交转化（面板参数随转化落列）
     this.c2vBusy = true;
     try {
-      const body = { aspect_ratio: this.c2vRatio, video_megapixels: this.c2vMP,
+      const body = { video_mode: this.c2vMode, aspect_ratio: this.c2vRatio, video_megapixels: this.c2vMP,
                      video_multiple: this.c2vMul, video_speed: this.c2vSpeed,
                      subtitles: !!this.c2vSubs, prompt_mode: this.c2vPromptMode,
                      style: this.c2vStyle || undefined };

@@ -605,13 +605,45 @@ def _hex_rgba(hex_color: str) -> tuple:
 _BUBBLE_PAD_X, _BUBBLE_PAD_Y = 14, 10
 
 
-def _bubble_layout(page_w, page_h, dialogue, font, max_ratio=0.4):
-    """纯布局：每句一气泡，宽度随内容自适应（上限 max_ratio*页宽），
-    奇数句靠左、偶数句靠右。左右双列各自维护 y 游标（同列间距 =
-    气泡高 + 间隙 + 尾巴 14px，不受对侧气泡高度挤压——单侧连发时
-    视觉不贴脸，2026-09-13 样张视检修正）。返回 (boxes, 截断数)：
-    boxes = [(x, y, w, h, lines)]。最多 4 气泡防爆（同 footer 8 行思路）。
-    横向安全：双列气泡各 ≤40% 宽，x 区间不可能相交（6%+40% < 94%-40%）。"""
+# 气泡候选分区（x0,y0,x1,y1 比例）——智能定位在分区里挑最空的落（2026-09-13
+# 用户需求：避人物/重要部位，看站位选空闲区——左上/中部常空）
+_BUBBLE_ZONES = (
+    (0.04, 0.03, 0.46, 0.30),   # 左上
+    (0.54, 0.03, 0.96, 0.30),   # 右上
+    (0.04, 0.33, 0.46, 0.62),   # 左中
+    (0.54, 0.33, 0.96, 0.62),   # 右中
+    (0.04, 0.65, 0.46, 0.92),   # 左下
+    (0.54, 0.65, 0.96, 0.92),   # 右下
+)
+
+
+def _zone_energies(img):
+    """各分区边缘能量（人物/细节=高频）升序——Pillow FIND_EDGES 缩到 64x96
+    求和，纯函数可测、毫秒级。img=None → None（回落旧布局）。"""
+    try:
+        from PIL import ImageFilter
+        small = img.convert("L").resize((64, 96))
+        edges = small.filter(ImageFilter.FIND_EDGES)
+        px = edges.load()
+        out = []
+        for zx0, zy0, zx1, zy1 in _BUBBLE_ZONES:
+            x0, y0 = int(zx0 * 64), int(zy0 * 96)
+            x1, y1 = int(zx1 * 64), int(zy1 * 96)
+            tot = sum(px[x, y] for y in range(y0, y1) for x in range(x0, x1))
+            out.append(tot / max(1, (x1 - x0) * (y1 - y0)))
+        return out
+    except Exception:
+        return None
+
+
+def _bubble_layout(page_w, page_h, dialogue, font, max_ratio=0.4, page_img=None):
+    """纯布局：每句一气泡，宽度随内容自适应（上限 max_ratio*页宽）。
+
+    智能定位（2026-09-13 用户需求：气泡别盖人物/重要部位——低透明度时
+    挡脸）：page_img 在场时按六分区边缘能量升序落位（最空的分区先放，
+    分区用尽再按能量序叠加）；无图回落左右交替顶部流（旧行为）。
+    返回 (boxes, 截断数)：boxes = [(x, y, w, h, lines)]。
+    最多 4 气泡防爆（同 footer 8 行思路）。"""
     size = getattr(font, "size", None) or 28
     line_h = int(size * 1.45)
     max_w = int(page_w * max_ratio)
@@ -625,16 +657,36 @@ def _bubble_layout(page_w, page_h, dialogue, font, max_ratio=0.4):
         h = len(lines) * line_h + 2 * _BUBBLE_PAD_Y
         items.append((w, h, lines))
     dropped = max(0, len(dialogue) - 4)
+
+    energies = _zone_energies(page_img) if page_img is not None else None
+    if energies is not None:
+        order = sorted(range(len(_BUBBLE_ZONES)), key=lambda i: energies[i])
+        zone_y = {}   # 分区内 y 游标（同分区多气泡纵向堆叠）
+        boxes = []
+        for i, (w, h, lines) in enumerate(items):
+            zi = order[i % len(order)]
+            zx0, zy0, zx1, zy1 = _BUBBLE_ZONES[zi]
+            zx0, zy0 = int(zx0 * page_w), int(zy0 * page_h)
+            zx1, zy1 = int(zx1 * page_w), int(zy1 * page_h)
+            x = min(zx0, max(zx0, zx1 - w))
+            y = zone_y.get(zi, zy0)
+            if y + h > zy1:      # 分区放不下→回顶部（防爆越界）
+                y = zy0
+            boxes.append((x, y, w, h, lines))
+            zone_y[zi] = y + h + int(page_h * 0.015) + 14
+        return boxes, dropped
+
+    # 无图回落：左右双列顶部流（同列间距含尾巴，2026-09-13 样张视检修正）
     y_top = int(page_h * 0.04)
     gap = int(page_h * 0.015)
-    col_y = [y_top, y_top]  # 左右两列各自的下一个可用 y
+    col_y = [y_top, y_top]
     boxes = []
     for i, (w, h, lines) in enumerate(items):
         col = i % 2
         x = int(page_w * 0.06) if col == 0 else int(page_w * 0.94) - w
         y = col_y[col]
         boxes.append((x, y, w, h, lines))
-        col_y[col] = y + h + gap + 14  # 同列间隔含尾巴高度
+        col_y[col] = y + h + gap + 14
     return boxes, dropped
 
 
@@ -655,7 +707,7 @@ def _draw_bubbles(page_png, dialogue, style) -> bool:
     fsize = st.get("font_size") or max(16, min(34, page_w // 36))
     font = _footer_font(fsize)
     line_h = int((getattr(font, "size", None) or fsize) * 1.45)
-    boxes, dropped = _bubble_layout(page_w, page_h, dialogue, font)
+    boxes, dropped = _bubble_layout(page_w, page_h, dialogue, font, page_img=img)
     bg_alpha = int(255 * (100 - st.get("opacity", 85)) / 100)  # 100% → 0（全透明）
     fill = (255, 255, 255, bg_alpha)
     edge = (35, 35, 35, 255)  # 描边不透明近黑（漫画风粗边）——透明底时描边+文字构成轮廓气泡
