@@ -980,6 +980,9 @@ def test_confirm_comic_assets_api(tmp_path):
     app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
     with TestClient(app) as c:
         assert c.post("/api/projects/9999/confirm-comic-assets").status_code == 404
+        conn = db.connect()
+        conn.execute("UPDATE projects SET autopilot=0 WHERE id=?", (pid,))
+        conn.commit()
         r = c.post(f"/api/projects/{pid}/confirm-comic-assets")
         assert r.status_code == 202, r.text
         p = get_project(db, pid)
@@ -987,6 +990,9 @@ def test_confirm_comic_assets_api(tmp_path):
         # 二期后确认不再直进 assets_ready——autopilot 接管主图阶段
         # （直接 set 会绕过「生成主图→停等检查」，真机验收前抓出）
         assert p["stage"] == "analyzed"
+        # 「继续出片」语义：确认即自动开一键出片（真机验收 2026-09-13——
+        # 手动流确认后主图不动，用户困惑「要人工点吗」）
+        assert p["autopilot"] == 1
         # 幂等重放
         assert c.post(f"/api/projects/{pid}/confirm-comic-assets").status_code == 202
         # 非漫画项目 422
@@ -1152,10 +1158,14 @@ def test_confirm_comic_refs_api(tmp_path):
     db, pid, _ids = _comic_output_main_assets(tmp_path, with_main=True)
     app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
     with TestClient(app) as c:
+        conn = db.connect()
+        conn.execute("UPDATE projects SET autopilot=0 WHERE id=?", (pid,))
+        conn.commit()
         r = c.post(f"/api/projects/{pid}/confirm-comic-refs")
         assert r.status_code == 202, r.text
         p = get_project(db, pid)
         assert p["comic_refs_done"] == 1 and p["stage"] == "assets_ready"
+        assert p["autopilot"] == 1  # 确认即续跑（同 confirm-comic-assets）
         assert c.post(f"/api/projects/{pid}/confirm-comic-refs").status_code == 202
         from comic_studio.engine.projects import create_project
         vid = create_project(db, tmp_path / "data", "视频剧", "9:16", "正文" * 100)["id"]

@@ -554,8 +554,12 @@ def confirm_comic_assets(request: Request, project_id: int):
         conn = db.connect()
         conn.execute("UPDATE projects SET comic_assets_confirmed=1 WHERE id=?",
                      (project_id,))
+        # 「继续出片」语义兑现：确认即自动开一键出片（真机验收 2026-09-13——
+        # 手动流点确认后主图不动，「要人工点哪个角色吗」困惑根因）
+        conn.execute("UPDATE projects SET autopilot=1 WHERE id=? AND autopilot=0",
+                     (project_id,))
         conn.commit()
-        emit_log(db, "autopilot", "info", "资产名册已确认，进入主图生成",
+        emit_log(db, "autopilot", "info", "资产名册已确认，进入主图生成（已开启一键出片）",
                  project_id=project_id)
     return {"confirmed": True}
 
@@ -574,8 +578,10 @@ def confirm_comic_refs(request: Request, project_id: int):
             if "comic_refs_done" in proj.keys() else 0):
         conn = db.connect()
         conn.execute("UPDATE projects SET comic_refs_done=1 WHERE id=?", (project_id,))
+        conn.execute("UPDATE projects SET autopilot=1 WHERE id=? AND autopilot=0",
+                     (project_id,))
         conn.commit()
-        emit_log(db, "autopilot", "info", "角色主图已确认，进入拆解出页",
+        emit_log(db, "autopilot", "info", "角色主图已确认，进入拆解出页（已开启一键出片）",
                  project_id=project_id)
         if proj["stage"] == "analyzed":
             from ..engine.projects import set_stage
