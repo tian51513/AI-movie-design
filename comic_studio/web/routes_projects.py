@@ -661,7 +661,7 @@ def convert_to_video(request: Request, project_id: int, body: dict | None = None
         raise HTTPException(422, "render_mode 只能是 ref2va/fl2va/t2v")
     conn = db.connect()
     conn.execute(
-        "UPDATE projects SET comic_mode=?, subtitles=?, autopilot=1 WHERE id=?",
+        "UPDATE projects SET comic_mode=?, subtitles=?, autopilot=1, comic_converted=1 WHERE id=?",
         (_mode_map[video_mode], 1 if body.get("subtitles", True) else 0,
          project_id,))
     # 画风覆盖（转化面板预填漫画项目画风·可改）：style_vis 与旧 style 相等

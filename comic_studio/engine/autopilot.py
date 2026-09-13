@@ -348,6 +348,15 @@ def _comic_flow(db, data_dir, project_id, proj) -> dict:
         # ① VLM 读图（重绘项目此时名册已就位，subject_definitions 命名受约束）
         missing = _missing_prompt_shot_ids(db, project_id)
         if missing:
+            # 转化项目跳 VLM（2026-09-14 用户决策：漫画流转的视频项目描述/对白
+            # 已在库——读图=二手倒推一手；「🔄强制重读」留手动兜底），描述直生成
+            if (proj["comic_converted"] if "comic_converted" in proj.keys() else 0):
+                if _has_active_job(db, project_id, "gen_prompt"):
+                    return {"action": "wait", "detail": f"提示词生成中（缺 {len(missing)} 镜）"}
+                if _latest_failed(db, project_id, "gen_prompt"):
+                    return {"action": "wait", "detail": "上次提示词生成失败，重试请手动发起"}
+                return {"action": "gen_prompts",
+                        "detail": f"缺 {len(missing)} 条提示词（按分镜描述生成）"}
             if _has_active_job(db, project_id, "describe_shots"):
                 return {"action": "wait", "detail": f"VLM 读图+角色提取中（缺 {len(missing)} 镜）"}
             if _latest_failed(db, project_id, "describe_shots"):

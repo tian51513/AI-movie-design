@@ -223,6 +223,9 @@ MIGRATIONS: list[str] = [
     # 40 双角色处理模式（2026-09-13 用户决策：两方案并存可切换）：
     # stitch=拼接合成参考（默认·单次出图·快）/ chain=链式逐人插入（官方方案）
     """ALTER TABLE projects ADD COLUMN comic_dual_mode TEXT NOT NULL DEFAULT 'stitch';""",
+    # 41 转化标记（2026-09-14）：漫画→视频转化的项目跳 VLM 读图（描述直生成
+    # 提示词）；正常漫画导入项目不受影响
+    """ALTER TABLE projects ADD COLUMN comic_converted INTEGER NOT NULL DEFAULT 0;""",
 ]
 
 

@@ -2214,3 +2214,36 @@ def test_convert_to_video_full_params(tmp_path):
         assert p["default_shot_duration"] == 5   # 总时长不传→不触发均摊同步
         assert p["redraw_characters"] == 1 and p["video_multiple"] == 16
         assert p["subtitles"] == 0
+
+
+def test_converted_motion_uses_descriptions_not_vlm(tmp_path):
+    """转化项目跳 VLM 读图（2026-09-14 用户决策：漫画流转的视频项目描述/
+    对白已在库——VLM 读图=二手倒推一手；「🔄强制重读」留手动兜底）。
+    正常漫画导入项目（comic_converted=0）仍走 describe_shots 原流程。"""
+    from comic_studio.engine.autopilot import next_action
+    from comic_studio.engine.projects import set_stage
+
+    db, pid = _comic_project(tmp_path)
+    (sid,) = _comic_shot_ids(db, pid)
+    conn = db.connect()
+    # 转化后形态：motion_comic + comic_converted=1 + prompt 清空
+    conn.execute("""UPDATE projects SET comic_mode='motion_comic',
+        comic_converted=1, autopilot=1 WHERE id=?""", (pid,))
+    conn.execute("UPDATE shots SET prompt='', workflow_type='fl2v' WHERE id=?",
+                 (sid,))
+    conn.commit()
+    set_stage(db, pid, "storyboard_ready")
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "gen_prompts"   # 描述直生成，非 describe_shots
+
+    # 对照：正常导入的 motion 项目（未转化）缺提示词 → describe_shots 原流程
+    db2, pid2 = _comic_project(tmp_path / "imp")
+    (sid2,) = _comic_shot_ids(db2, pid2)
+    conn2 = db2.connect()
+    conn2.execute("""UPDATE projects SET comic_mode='motion_comic',
+        autopilot=1 WHERE id=?""", (pid2,))
+    conn2.execute("UPDATE shots SET prompt='' WHERE id=?", (sid2,))
+    conn2.commit()
+    set_stage(db2, pid2, "storyboard_ready")
+    act2 = next_action(db2, tmp2 := tmp_path / "imp" / "data", pid2)
+    assert act2["action"] == "describe_shots"
