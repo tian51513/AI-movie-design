@@ -120,12 +120,9 @@ def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
         where = "图3中的场景" if scene_img else "新场景"
         scene_anchor = f"场景：{scene_name}，" if scene_name else ""
         if krea_names:
-            # Krea2 快道方言：图1=场景 / 图2=人物（双角色拼接时说明左右身份）
-            if len(krea_names) == 2:
-                who = (f"图2 参考中的两位人物（左侧是{krea_names[0]}，"
-                       f"右侧是{krea_names[1]}），两人外貌与图2 保持一致")
-            else:
-                who = f"图2 参考中的人物（{krea_names[0]}），外貌与图2 保持一致"
+            # Krea2 快道方言：图1=场景 / 图2=人物（槽序固定）。单角色单段；
+            # 双角色链式两段——本函数只写 P1（放第一人），P2 由 handler 内联
+            who = f"图2 参考中的人物（{krea_names[0]}），外貌与图2 保持一致"
             where = "图1 的场景" if scene_img else "按描述构建的场景"
             prompt = (f"{scene_anchor}画面内容：{detail[:200]}。"
                       f"将{who}置于{where}。"
