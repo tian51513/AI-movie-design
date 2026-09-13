@@ -568,7 +568,7 @@ def confirm_comic_assets(request: Request, project_id: int):
 
 
 @router.post("/{project_id}/rebubble-comic")
-def rebubble_comic(request: Request, project_id: int):
+def rebubble_comic(request: Request, project_id: int, body: dict | None = None):
     """对白重排（2026-09-13 用户建议·干净副本）：改 dialogue_mode/气泡样式后
     从 page_NNN_clean.png 本地重排（Pillow 秒级）——不重出图不烧 ComfyUI、
     画面零变化。无干净副本的页（旧页）跳过并计数（重出一次即有备份）。"""
@@ -586,9 +586,12 @@ def rebubble_comic(request: Request, project_id: int):
     mode = proj["dialogue_mode"] or "bubble"
     style = _bubble_style((proj["bubble_style"] if "bubble_style" in proj.keys() else "") or "")
     import json as _json
+    body = body or {}
+    only = set(body.get("shot_ids") or [])
+    reset_pos = bool(body.get("reset_positions"))
     n = skipped = 0
     for s in list_shots(db, project_id):
-        if s["disabled"]:
+        if s["disabled"] or (only and s["id"] not in only):
             continue
         clean = pages_dir / f"page_{s['seq']:03d}_clean.png"
         active = pages_dir / f"page_{s['seq']:03d}.png"
@@ -597,7 +600,14 @@ def rebubble_comic(request: Request, project_id: int):
             continue
         active.write_bytes(clean.read_bytes())
         led = _json.loads(s["ledger_json"] or "{}")
-        _postprocess_dialogue(active, led.get("dialogue") or [], mode, style=style)
+        pos = led.get("bubble_pos")
+        if reset_pos and pos:
+            led.pop("bubble_pos", None)
+            from ..engine.shots import update_shot as _us
+            _us(db, s["id"], {"ledger_json": _json.dumps(led, ensure_ascii=False)})
+            pos = None
+        _postprocess_dialogue(active, led.get("dialogue") or [], mode, style=style,
+                              positions=pos)
         n += 1
     emit_log(db, "comic", "info",
              f"对白重排完成：{n} 页（{mode} 模式）"

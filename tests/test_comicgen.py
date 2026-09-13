@@ -2081,3 +2081,73 @@ def test_convert_to_video_mode_choice(tmp_path):
         set_stage(db2, pid2, "comic_ready")
         assert c.post(f"/api/projects/{pid2}/convert-to-video",
                      json={"video_mode": "boom"}).status_code == 422
+
+
+def test_bubble_avoids_skin_face_zone(tmp_path):
+    """真机判例（2026-09-13 第4页：气泡落在鼻子下挡脸，右上明明空）：
+    动漫脸=大面积平滑肤色块，纯边缘能量比细致背景还低→被误判最空。
+    修：能量模型加肤色占比惩罚（r>g>b 皮肤启发式）+ 中心区位置权重。"""
+    from PIL import Image, ImageDraw
+    from comic_studio.engine.comicgen import _draw_bubbles
+    p = tmp_path / "page.png"
+    img = Image.new("RGB", (512, 768), (200, 200, 190))       # 浅色平背景
+    d = ImageDraw.Draw(img)
+    # （脸在纹理后画，见下）
+    # 全页中等背景纹理（真实页面背景铺满）——脸是全页唯一平滑低能量区，
+    # 复现真机第4页：旧纯边缘模型误选脸区为「最空」
+    import random as _rnd
+    _rnd.seed(7)
+    for y in range(6, 762, 9):
+        for x in range(6, 506, 9):
+            if (x * 7 + y * 3) % 4:
+                d.line((x, y, x + 5, y + 4), fill=(110, 110, 105), width=2)
+    d.ellipse((300, 300, 480, 520), fill=(235, 190, 160))   # 脸最后盖掉纹理
+    img.save(p)
+    _draw_bubbles(p, [{"speaker": "甲", "line": "你好"}],
+                  {"opacity": 0, "font_color": "#222222", "font_size": 0})
+    out = Image.open(p).convert("RGB")
+    # 脸区及上方落位带（280-490, 240-520）不应被白底气泡覆盖
+    face = out.crop((280, 240, 490, 520)).getcolors(maxcolors=100000)
+    white = sum(c for c, px in face if px == (255, 255, 255))
+    total = sum(c for c, _ in face)
+    assert white / total < 0.05, f"气泡盖脸 {white}/{total}"
+
+
+def test_rebubble_single_and_drag_position(tmp_path):
+    """单页重排（shot_ids）+ 手动拖位（bubble-pos）：拖拽坐标存 ledger
+    覆盖自动布局——保存即从干净副本重排生效，不再重出图。"""
+    from PIL import Image
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project
+
+    db, pid = _comic_project(tmp_path)
+    (sid,) = _comic_shot_ids(db, pid)
+    slug = get_project(db, pid)["slug"]
+    pages = tmp_path / "data" / "projects" / slug / "pages"
+    pages.mkdir(parents=True)
+    Image.new("RGB", (512, 768), (60, 60, 60)).save(pages / "page_001_clean.png")
+    Image.new("RGB", (512, 768), (60, 60, 60)).save(pages / "page_001.png")
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        # 手动拖位：第 0 个气泡放到 (350, 600)（右下）
+        r = c.post(f"/api/shots/{sid}/bubble-pos",
+                   json={"positions": [[350, 600]]})
+        assert r.status_code == 200, r.text
+        led = json.loads(db.connect().execute(
+            "SELECT ledger_json FROM shots WHERE id=?", (sid,)).fetchone()["ledger_json"])
+        assert led.get("bubble_pos") == [[350, 600]]
+        img = Image.open(pages / "page_001.png").convert("RGB")
+        region = img.crop((350, 600, 470, 660)).getcolors(maxcolors=100000)
+        # 默认透明度 85 非纯白——判定「该区域被气泡改动过」（非原底色）
+        assert any(px != (60, 60, 60) for _, px in region), "气泡未落在拖拽坐标"
+        # 单页重排（清覆盖位回落自动布局）
+        r2 = c.post(f"/api/projects/{pid}/rebubble-comic",
+                    json={"shot_ids": [sid], "reset_positions": True})
+        assert r2.json()["rebubbled"] == 1
+        led2 = json.loads(db.connect().execute(
+            "SELECT ledger_json FROM shots WHERE id=?", (sid,)).fetchone()["ledger_json"])
+        assert "bubble_pos" not in led2 or not led2.get("bubble_pos")
+        # 404
+        assert c.post("/api/shots/9999/bubble-pos",
+                      json={"positions": []}).status_code == 404

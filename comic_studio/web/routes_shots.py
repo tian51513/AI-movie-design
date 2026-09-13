@@ -115,6 +115,45 @@ def start_split(request: Request, project_id: int, body: dict | None = Body(defa
     return {"job_id": jid}
 
 
+@router.post("/api/shots/{shot_id}/bubble-pos")
+def set_bubble_pos(request: Request, shot_id: int, body: dict | None = None):
+    """手动拖位气泡（2026-09-13 用户需求：自动定位不满意时人工拖到指定
+    位置）：positions=[[x,y],…]（页像素坐标，按对白序号）存 ledger.
+    bubble_pos → 立即从干净副本重排生效（不重出图）。"""
+    from ..engine.comicgen import _postprocess_dialogue, _bubble_style
+    from ..engine.paths import data_to_abs
+    from ..engine.projects import get_project
+    from ..engine.shots import get_shot, list_shots, update_shot
+    db = request.app.state.db
+    shot = get_shot(db, shot_id)
+    if shot is None:
+        raise HTTPException(404, "分镜不存在")
+    proj = get_project(db, shot["project_id"])
+    if proj is None or (proj["comic_mode"] if "comic_mode" in proj.keys() else "") != "comic_output":
+        raise HTTPException(422, "仅漫画成品项目可调气泡位置")
+    positions = (body or {}).get("positions") or []
+    if not isinstance(positions, list):
+        raise HTTPException(422, "positions 需为 [[x,y],…] 数组")
+    pages_dir = data_to_abs(request.app.state.data_dir,
+                            f"projects/{proj['slug']}/pages")
+    clean = pages_dir / f"page_{shot['seq']:03d}_clean.png"
+    active = pages_dir / f"page_{shot['seq']:03d}.png"
+    if not clean.exists() or not active.exists():
+        raise HTTPException(409, "该页无干净副本（重出一次即有）")
+    led = json.loads(shot["ledger_json"] or "{}")
+    if positions:
+        led["bubble_pos"] = positions
+    else:
+        led.pop("bubble_pos", None)
+    update_shot(db, shot_id, {"ledger_json": json.dumps(led, ensure_ascii=False)})
+    active.write_bytes(clean.read_bytes())
+    mode = proj["dialogue_mode"] or "bubble"
+    style = _bubble_style((proj["bubble_style"] if "bubble_style" in proj.keys() else "") or "")
+    _postprocess_dialogue(active, led.get("dialogue") or [], mode, style=style,
+                          positions=led.get("bubble_pos"))
+    return {"saved": len(positions)}
+
+
 @router.post("/api/projects/{project_id}/shots/batch")
 def shots_batch(request: Request, project_id: int, body: dict = Body(...)):
     """批量处理分镜（2026-08-27 需求）：disable/enable 置无效/生效，delete 删除。"""

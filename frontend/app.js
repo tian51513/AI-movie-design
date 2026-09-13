@@ -46,6 +46,7 @@ function data() {
     comicBubbleOpacity: 85, comicBubbleColor: '#222222', comicBubbleFontSize: 0,
     exportingComic: false, comicExportUrl: '', comicExportName: '',
     c2vOpen: false, c2vBusy: false, c2vMode: 'standard', c2vStyle: '', c2vRatio: '9:16', c2vMP: 0.4,
+    bubEdit: null, _bubDrag: null,
     c2vMul: 32, c2vSpeed: '标准', c2vSubs: true, c2vRender: '', c2vPromptMode: 'D',
     _pagesStamp: 0,  // 漫画页缓存戳：进页/补页后翻新，杜绝重生成后吃旧图缓存
     comicMode: 'motion_comic',
@@ -1150,6 +1151,74 @@ const methods = {
     const b = await r.json();
     this._pagesStamp = Date.now();   // 翻新缓存戳
     alert(`重排 ${b.rebubbled} 页` + (b.skipped ? `（${b.skipped} 页无备份跳过——重出一次即有）` : ''));
+    await this.loadShots();
+  },
+  async rebubbleOne(shot) {  // 单页重排对白（2026-09-13）：干净副本秒级
+    const r = await fetch(`/api/projects/${this.project.id}/rebubble-comic`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shot_ids: [shot.id] }) });
+    if (!r.ok) { alert(await r.text()); return; }
+    this._pagesStamp = Date.now();
+    await this.loadShots();
+  },
+  openBubbleEditor(shot) {  // ✥ 拖拽编辑（2026-09-13）：初始位=当前布局估算
+    const led = shot.ledger || {};
+    const dlg = (led.dialogue || []).filter(d => d.line);
+    if (!dlg.length) { alert('本页无对白'); return; }
+    // 估算初始框（页宽 512 基准——渲染端真实尺寸未知时拿缩略图自然尺寸）
+    const img = new Image();
+    img.onload = () => {
+      const natW = img.naturalWidth || 512, natH = img.naturalHeight || 768;
+      const led2 = shot.ledger || {};
+      const pos = led2.bubble_pos || [];
+      const items = dlg.map((d, i) => {
+        const p = pos[i] || [40 + (i % 2) * (natW * 0.5), 30 + Math.floor(i / 2) * 90];
+        return { x: p[0], y: p[1], w: Math.min(natW * 0.4, 220), h: 60,
+                 text: (d.speaker ? d.speaker + '：' : '') + d.line };
+      });
+      const dispW = Math.min(520, window.innerWidth - 40);
+      this.bubEdit = { shot, items, natW, natH, scale: dispW / natW, dispW,
+        cleanUrl: this.comicPageUrl(shot).replace(/page_\d+/, m => m.replace('.png', '_clean.png')) };
+    };
+    img.src = this.comicPageUrl(shot);
+  },
+  bubDragStart(ev, i) {
+    const b = this.bubEdit.items[i];
+    this._bubDrag = { i, sx: ev.clientX, sy: ev.clientY, ox: b.x, oy: b.y,
+                      scale: this.bubEdit.scale };
+    const move = e => {
+      if (!this._bubDrag) return;
+      const d = this._bubDrag, it = this.bubEdit.items[d.i];
+      it.x = Math.max(0, Math.min(this.bubEdit.natW - it.w,
+                   d.ox + (e.clientX - d.sx) / d.scale));
+      it.y = Math.max(0, Math.min(this.bubEdit.natH - it.h,
+                   d.oy + (e.clientY - d.sy) / d.scale));
+    };
+    const up = () => { this._bubDrag = null;
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    ev.preventDefault();
+  },
+  async saveBubblePos() {  // 💾 保存拖拽位 → 后端落 ledger+立即重排
+    const be = this.bubEdit;
+    const r = await fetch(`/api/shots/${be.shot.id}/bubble-pos`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ positions: be.items.map(b => [Math.round(b.x), Math.round(b.y)]) }) });
+    if (!r.ok) { alert(await r.text()); return; }
+    this.bubEdit = null;
+    this._pagesStamp = Date.now();
+    await this.loadShots();
+  },
+  async resetBubblePos() {  // ↺ 清手动位回落自动
+    const be = this.bubEdit;
+    const r = await fetch(`/api/shots/${be.shot.id}/bubble-pos`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ positions: [] }) });
+    if (!r.ok) { alert(await r.text()); return; }
+    this.bubEdit = null;
+    this._pagesStamp = Date.now();
     await this.loadShots();
   },
   async confirmComicAssets() {  // B1 资产确认（2026-09-13）：放行停等 → 直进拆解

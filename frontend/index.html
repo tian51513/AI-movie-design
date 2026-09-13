@@ -1315,6 +1315,12 @@
             <button v-if="!s.disabled" @click="regenComicPages([s.id])" :disabled="comicGenBusy"
                     style="font-size:11px;padding:1px 8px;background:#0e7490"
                     title="按当前最新参数重出此页（新 seed 覆盖）">🔄 重出</button>
+            <button v-if="!s.disabled && ['comic_ready','stale'].includes(s.status)"
+                    @click="rebubbleOne(s)" style="font-size:11px;padding:1px 8px;background:#155e75"
+                    title="单页重排对白（从干净副本，秒级不重出图）">💬</button>
+            <button v-if="!s.disabled && ['comic_ready','stale'].includes(s.status)"
+                    @click="openBubbleEditor(s)" style="font-size:11px;padding:1px 8px;background:#1e3a5f"
+                    title="拖动气泡到指定位置（自动定位不满意时人工微调；保存即生效不重出图）">✥ 拖气泡</button>
           </div>
           <template v-if="['comic_ready','stale'].includes(s.status) && !s.disabled">
             <img :src="comicPageUrl(s)" loading="lazy" @click="openComicViewer(s)"
@@ -1671,6 +1677,29 @@
                 :disabled="c2vBusy">{{ c2vBusy ? '转化中…' : '🎬 开始转化（自动出片）' }}</button>
         <button @click="c2vOpen=false">取消</button></p>
     </div>
+  </div>
+
+  <!-- ✥ 气泡拖拽编辑（2026-09-13）：自动定位不满意时人工拖到指定位置 -->
+  <div v-if="bubEdit" @click.self="bubEdit=null"
+       style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:118;display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <p style="color:#ddd;margin:0 0 6px;font-size:14px">✥ 拖动气泡到合适位置（避开人物/重要部位）
+      <button @click="bubEdit=null" style="float:right;font-size:12px;padding:2px 8px;margin-left:12px">✕ 关闭</button></p>
+    <div ref="bubStage" style="position:relative;line-height:0;touch-action:none"
+         :style="{width: bubEdit.dispW + 'px'}">
+      <img :src="bubEdit.cleanUrl" draggable="false"
+           style="width:100%;pointer-events:none;border-radius:6px;border:1px solid #334155">
+      <div v-for="(b, i) in bubEdit.items" :key="i"
+           @pointerdown="bubDragStart($event, i)"
+           :style="{position:'absolute', left:(b.x * bubEdit.scale)+'px', top:(b.y * bubEdit.scale)+'px',
+                    width:(b.w * bubEdit.scale)+'px', minHeight:(b.h * bubEdit.scale)+'px',
+                    background:'rgba(255,255,255,.92)', color:'#222', border:'2px solid #464646',
+                    borderRadius:'10px', padding:'6px 10px', fontSize:(13*bubEdit.scale*1.4)+'px',
+                    cursor:'move', userSelect:'none', lineHeight:'1.4', whiteSpace:'pre-wrap'}">{{ b.text }}</div>
+    </div>
+    <p style="margin:10px 0 0;display:flex;gap:8px">
+      <button style="background:#16a34a" @click="saveBubblePos">💾 保存位置</button>
+      <button @click="resetBubblePos(s2 = null)" title="清掉手动位置回落自动定位">↺ 回落自动</button>
+    </p>
   </div>
 
   <div v-if="editAssetOpen" @click.self="editAssetOpen=false"
