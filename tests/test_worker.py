@@ -144,8 +144,12 @@ def test_llm_job_frees_comfy_vram_first(tmp_path):
     db = Database(tmp_path / "s.db"); db.migrate()
     pid = create_project(db, tmp_path / "data", "p", "9:16", "t")["id"]
     freed = []
+    # 起手=半卡被渲染模型占（有驻留场景）
+    stats = {"vram_total": 12 * 2**30, "vram_free": 6 * 2**30}
 
     class FakeComfy:
+        def health(self):
+            return {"devices": [dict(stats)]}
         def free(self, unload_models=True):
             freed.append(unload_models)
 
@@ -164,7 +168,26 @@ def test_llm_job_frees_comfy_vram_first(tmp_path):
         time.sleep(0.05)
     stop.set(); w.join(timeout=2)
     assert get_job(db, jid)["status"] == "done"
-    assert freed, "gpu_llm_local 任务前未释放 ComfyUI 显存"
+    assert freed, "ComfyUI 有驻留时未先清显存"
+
+    # ComfyUI 空闲（无驻留）→ 不调用清理（用户要求检查式，非无脑 free）
+    freed.clear()
+    stats["vram_free"] = 12 * 2**30   # 恢复空闲
+
+    @register("llm_idle_test")
+    def handle3(db, data_dir, job, comfy):
+        pass
+    stop3 = threading.Event()
+    w3 = Worker(db.path, tmp_path / "data", None, stop3, poll_interval=0.05,
+                handler_types=("llm_idle_test",), comfy_factory=lambda: FakeComfy())
+    w3.start()
+    jid3 = enqueue_job(db, "llm_idle_test", project_id=pid, resource="gpu_llm_local")
+    for _ in range(100):
+        if get_job(db, jid3)["status"] == "done":
+            break
+        time.sleep(0.05)
+    stop3.set(); w3.join(timeout=2)
+    assert not freed, "ComfyUI 空闲时不应调用清理"
 
     # 非 gpu_llm_local 任务不触发（普通任务不打扰 ComfyUI 缓存）
     freed.clear()

@@ -87,8 +87,16 @@ class Worker(threading.Thread):
                 if comfy is not None and job["resource"] == "gpu_llm_local":
                     # 让位双向化（2026-09-13 真机判例：拆分切 27B 重度秒 504——
                     # ComfyUI 渲染模型跑完驻留显存，重 LLM 装不下；旧让位只有
-                    # LLM→Comfy 单向）。gpu 组互斥保证此刻无渲染在跑，free 安全
-                    comfy.free()
+                    # LLM→Comfy 单向）。检查式管控（对齐 ensure_vram_for_comfy，
+                    # 用户要求）：查 /system_stats，>10% 显存被占=有驻留才清；
+                    # gpu 组互斥保证此刻无渲染在跑，free 安全；ComfyUI 离线不拦
+                    try:
+                        _dev = (comfy.health().get("devices") or [{}])[0]
+                        _total = float(_dev.get("vram_total") or 0)
+                        if _total > 0 and float(_dev.get("vram_free") or 0) < _total * 0.9:
+                            comfy.free()
+                    except ComfyUnreachable:
+                        pass
                 HANDLERS[job["type"]](db, self.data_dir, job, comfy)
                 finish_job(db, job["id"], None)
             except ComfyUnreachable as e:
