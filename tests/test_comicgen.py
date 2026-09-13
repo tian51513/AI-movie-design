@@ -1819,3 +1819,30 @@ def test_convert_to_video_style_override(tmp_path):
         c.post(f"/api/projects/{pid2}/convert-to-video", json={"style": "赛博朋克"})
         p2 = get_project(db, pid2)
         assert p2["style"] == "赛博朋克" and p2["style_vis"] == "水墨视觉子集"
+
+
+def test_last_page_advances_comic_ready(tmp_path, monkeypatch):
+    """终态推进不依赖 autopilot（2026-09-13 真机判例：手动批量重出全部页齐
+    但 stage 停 storyboard_ready——「转视频」按钮/路由按 comic_ready 门控，
+    用户看不到入口）。最后一页落盘即推进 comic_ready + 日志。"""
+    from pathlib import Path
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.comicgen import handle_gen_comic_page
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.projects import get_project, set_stage
+
+    db, pid = _comic_project(tmp_path)
+    (sid,) = _comic_shot_ids(db, pid)
+    set_stage(db, pid, "storyboard_ready")
+    with comfy_server("ok") as m:
+        set_setting(db, "comfy", {"base_url": m.base_url})
+        jid = enqueue_job(db, "gen_comic_page", project_id=pid, shot_id=sid,
+                          resource="gpu_comfy", payload={"shot_id": sid})
+        job = db.connect().execute("SELECT * FROM jobs WHERE id=?",
+                                   (jid,)).fetchone()
+        handle_gen_comic_page(db, tmp_path / "data", job, ComfyClient(m.base_url))
+    assert get_project(db, pid)["stage"] == "comic_ready"   # 最后一页即终态

@@ -436,6 +436,20 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     update_shot(db, shot["id"], {"status": "comic_ready"})
     emit_log(db, "comfy", "info", f"漫画页 {shot['seq']} 已生成落盘",
              project_id=proj["id"], job_id=job["id"])
+    # 终态推进不依赖 autopilot（2026-09-13 真机判例：手动批量重出全部页齐但
+    # stage 停 storyboard_ready——「转视频/导出完成」语义按 comic_ready 门控，
+    # 用户看不到入口）。最后一页落盘即 comic_ready + 日志收工
+    if (proj["comic_mode"] if "comic_mode" in proj.keys() else "") == "comic_output" \
+            and proj["stage"] == "storyboard_ready":
+        from .shots import list_shots
+        missing = [s["id"] for s in list_shots(db, shot["project_id"])
+                   if not s["disabled"]
+                   and not (pages_dir / f"page_{s['seq']:03d}.png").exists()]
+        if not missing:
+            from .projects import set_stage
+            set_stage(db, shot["project_id"], "comic_ready")
+            emit_log(db, "autopilot", "info", "全部漫画页就绪——漫画完成（可导出 PDF/长图，或「🎬 转视频」）",
+                     project_id=proj["id"], job_id=job["id"])
     return dest
 
 
