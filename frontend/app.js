@@ -159,6 +159,12 @@ const computed = {
     return ((this.queue && this.queue.jobs) || []).some(
       j => j.type === 'describe_shots' && (j.status === 'pending' || j.status === 'running'));
   },
+  isComicOutput() {  // 小说转漫画（comic_output）：页面即交付物，无视频链
+    return (this.project?.comic_mode || '') === 'comic_output';
+  },
+  isVideoChain() {  // 视频链（小说/主题/有声书/漫画导入）——按钮门控用
+    return (this.project?.comic_mode || '') !== 'comic_output';
+  },
   comicPageShots() {  // 漫画页 = comic 类型镜（seq 即页号，pages/page_NNN.png）
     return this.shots.filter(s => s.workflow_type === 'comic');
   },
@@ -1249,6 +1255,17 @@ const methods = {
       await this.refresh();
     } catch (e) { alert('上传失败：' + e); }
     this.creating = false;
+  },
+  guideCreate(type, mode) {  // 导引卡「➕ 去创建」：预选类型+入口，跳回项目页开创建弹窗
+    this.view = 'projects';
+    this.setProjType(type);
+    this.newMode = mode;
+    if (mode === 'theme' || mode === 'comictheme') this.loadThemes();
+    if (type === 'video') {
+      this.newSubtitles = mode !== 'comic';
+      if (mode === 'comic') this.comicRedraw = false;
+    }
+    this.createOpen = true;
   },
   setProjType(t) {  // 类型选择层（2026-09-13 Part A）：mode 重置为该类型首个入口
     this.newProjType = t;

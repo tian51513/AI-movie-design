@@ -117,18 +117,20 @@
   <main v-if="view==='guide'" style="max-width:960px;margin:0 auto;padding:20px">
     <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);border-radius:16px;padding:32px 28px;margin-bottom:20px;border:1px solid #2a2a4a;box-shadow:0 8px 32px rgba(0,0,0,.4)">
       <h1 style="margin:0;font-size:28px;background:linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🎬 漫剧工坊</h1>
-      <p style="margin:8px 0 0;font-size:15px;color:#94a3b8">小说 / 主题 / 漫画 / 有声书 → 全自动漫剧视频生产线</p>
+      <p style="margin:8px 0 0;font-size:15px;color:#94a3b8">两大产物线：小说 / 主题 / 漫画 / 有声书 → 🎬 漫剧视频 · 📖 漫画成书（页即交付）</p>
       <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
         <span style="background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#60a5fa">📚 小说改编</span>
         <span style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#a78bfa">🎨 主题生成</span>
         <span style="background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#f472b6">🖼 漫画转视频</span>
         <span style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#34d399">🎧 有声书转视频</span>
+        <span style="background:rgba(250,204,21,.15);border:1px solid rgba(250,204,21,.3);border-radius:8px;padding:4px 12px;font-size:13px;color:#facc15">📖 小说转漫画成书</span>
       </div>
     </div>
 
     <!-- 三种项目类型 -->
     <h2 style="color:#e2e8f0;border-left:4px solid #60a5fa;padding-left:12px;margin:24px 0 12px">📁 项目类型与操作流程</h2>
-    <!-- 四种项目类型（2026-09-05 增🎧有声书） -->
+    <!-- 2026-09-13 按产物类型分两大区：先定产物（视频/漫画成书）再选数据源入口 -->
+    <h3 style="color:#60a5fa;margin:16px 0 8px">🎬 视频项目（终态：合成成片 epNNN.mp4）</h3>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:24px">
       <!-- 小说改编 -->
@@ -149,6 +151,7 @@
           💡 支持<b>多章节</b>（第X章切分）和<b>分镜数</b>指定
         </div>
       </div>
+        <button @click="guideCreate('video','upload')" style="margin-top:8px;background:#166534;font-size:12px;padding:4px 12px">➕ 去创建</button>
 
       <!-- 有声书导入（P10A 2026-09-05） -->
       <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:12px;padding:18px;border-top:3px solid #34d399">
@@ -165,6 +168,7 @@
           💡 需装 asr extra；<b>转写期间全队列串行</b>（长书先切分）；转写未完成点一键出片会被拦
         </div>
       </div>
+        <button @click="guideCreate('video','audio')" style="margin-top:8px;background:#166534;font-size:12px;padding:4px 12px">➕ 去创建</button>
 
       <!-- 主题生成 -->
       <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:12px;padding:18px;border-top:3px solid #a78bfa">
@@ -181,6 +185,7 @@
           💡 内置<b>短剧结构规范</b>：黄金3秒钩子 / 情绪流变 / 断章卡点 / 对白语速公式
         </div>
       </div>
+        <button @click="guideCreate('video','theme')" style="margin-top:8px;background:#166534;font-size:12px;padding:4px 12px">➕ 去创建</button>
 
       <!-- 漫画 -->
       <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:12px;padding:18px;border-top:3px solid #f472b6">
@@ -201,6 +206,29 @@
         <div style="margin-top:10px;padding:8px;background:rgba(244,114,182,.08);border-radius:6px;font-size:12px;color:#f9a8d4">
           💡 漫改自动<b>画风转换</b>（二次元↔真人）+ <b>多角色</b>识别
         </div>
+      </div>
+        <button @click="guideCreate('video','comic')" style="margin-top:8px;background:#166534;font-size:12px;padding:4px 12px">➕ 去创建</button>
+    </div>
+
+    <!-- 📖 漫画项目（2026-09-13）：三数据源共用一条漫画成书链 -->
+    <h3 style="color:#facc15;margin:16px 0 8px">📖 漫画项目（终态：漫画就绪，页面即交付物，无视频链）</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:24px">
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:12px;padding:18px;border-top:3px solid #facc15">
+        <h3 style="margin:0 0 10px;color:#facc15">📖 小说转漫画成书</h3>
+        <div style="font-size:13px;color:#cbd5e1;line-height:2">
+          <div style="color:#facc15;font-weight:bold">三种数据源（任选其一）</div>
+          <div>📎 文本小说——上传 .txt 正文（UTF-8）</div>
+          <div>🎧 有声小说——音频自动转写回填（需 asr extra）</div>
+          <div>🎨 主题生成——选主题 → LLM 生成正文</div>
+          <div style="color:#64748b">─────────</div>
+          <div>② LLM 分析角色（拆解上下文用）→ 拆成<b>漫画页</b>（每镜=一页：场景+人物+对白；可指定页数）</div>
+          <div>③ 🚀 一键出片：逐页 t2i 出图 →「<b>漫画就绪</b>」自动停</div>
+          <div>④ 「漫画页」页签浏览 · 缺页「🖼 生成缺失页」补 · 📄 导出 PDF / 📜 导出长图</div>
+        </div>
+        <div style="margin-top:10px;padding:8px;background:rgba(250,204,21,.08);border-radius:6px;font-size:12px;color:#fde68a">
+          💡 对白呈现三式：气泡（透明度/字色/字号可调）/底部字幕条/不呈现；尺寸 10 档（512 小尺寸约 4 倍快）；质量档=采样步数（快速8·标准12·高质量20）
+        </div>
+        <button @click="guideCreate('comic','comicnovel')" style="margin-top:8px;background:#166534;font-size:12px;padding:4px 12px">➕ 去创建</button>
       </div>
     </div>
 
@@ -224,8 +252,13 @@
       </div>
       <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:10px;padding:14px">
         <div style="font-size:20px;margin-bottom:6px">🎙</div>
-        <b style="color:#06b6d4">配音+字幕</b>
+        <b style="color:#06b6d4">配音+字幕（视频项目）</b>
         <div style="font-size:12px;color:#94a3b8;margin-top:4px">未绑音色走 Edge-TTS 按性别；绑了音色保 H3 原声；SRT 字幕烧录</div>
+      </div>
+      <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:10px;padding:14px">
+        <div style="font-size:20px;margin-bottom:6px">📖</div>
+        <b style="color:#facc15">漫画成书</b>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">小说直出漫画：拆页→逐页 t2i→气泡/字幕条对白→PDF/长图导出（页面即交付物）</div>
       </div>
       <div style="background:#1a1f27;border:1px solid #2c3540;border-radius:10px;padding:14px">
         <div style="font-size:20px;margin-bottom:6px">🖱</div>
@@ -734,7 +767,7 @@
         <span v-if="project.era" class="pill" style="cursor:pointer;background:#1e3a5f;color:#93c5fd"
               title="分析时自动检测的时代背景（提示词自动附加时代限制）；点击修改/清除"
               @click="editEra">⛩ {{ project.era }}</span>
-        <span v-if="project.video_megapixels" class="pill" style="cursor:pointer"
+        <span v-if="project.video_megapixels && isVideoChain" class="pill" style="cursor:pointer"
               title="点击展开/收起视频参数面板"
               @click="paramsOpen=!paramsOpen">{{ videoParamsLabel() }}</span>
         <span v-if="project.autopilot" class="pill" style="background:#7c2d12;color:#fdba74"
@@ -760,6 +793,9 @@
     </div>
     <div v-if="paramsOpen" class="card"
          style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:8px 0;padding:10px 14px">
+      <!-- 视频参数（2026-09-13 链路门控）：漫画成书项目无视频链，整组隐藏——
+           漫画参数（对白呈现/页数/尺寸/质量档/气泡样式）在下方 comic_output 段 -->
+      <template v-if="isVideoChain">
       <label>画幅
         <select :value="project.aspect_ratio" @change="patchVideoParam('aspect_ratio', $event.target.value)"
                 title="渲染时按此画幅出片；已渲染的旧尺寸视频保留，重渲即出新尺寸（混幅合成可能有黑边）">
@@ -814,6 +850,7 @@
       <label>LoRA
         <input type="number" min="0" max="1" step="0.05" :value="project.lora_realism"
                @change="patchVideoParam('lora_realism', Number($event.target.value))" style="width:56px"></label>
+      </template>
       <!-- 漫画参数（2026-09-13 气泡渲染）：对白呈现/页数/尺寸/质量档 + 气泡样式 -->
       <template v-if="project.comic_mode==='comic_output'">
       <label>对白呈现
@@ -874,10 +911,11 @@
           : (project.stage==='analyzed' ? '🔄 重新分析资产' : 'LLM 分析资产') }}</button>
       <span v-if="analyzeState.status==='failed'" style="color:#f87171">
         失败：{{ analyzeState.error }}</span>
-      <button v-if="project.comic_mode && assets.length" @click="purgeComicAssets"
+      <button v-if="(project.comic_mode==='motion_comic' || project.comic_mode==='film_adaptation') && assets.length"
+              @click="purgeComicAssets"
               style="background:#dc2626;font-size:12px;padding:3px 10px"
               title="删除全部读图提取的资产（含参考图目录与分镜绑定）——动态漫不需要角色资产，误提取的旁白/叙述垃圾用它清理">🗑 清理提取资产</button>
-      <button @click="toggleVoicePanel" style="font-size:12px;padding:3px 10px;background:#0e7490"
+      <button v-if="isVideoChain" @click="toggleVoicePanel" style="font-size:12px;padding:3px 10px;background:#0e7490"
               title="逐角色：试听当前音色 / 换绑预设或自定义 / 按声线描述生成专属音色 / 满意晋升全局">🎭 角色配音</button>
     </p>
     <!-- 🎭 角色配音面板（2026-09-02 音色系统）：按角色各自绑定，非项目级单一音色 -->
@@ -1009,13 +1047,13 @@
       <span class="muted" v-if="splitRunning">正在拆解分镜，请稍候…</span>
     </p>
     <p v-if="shots.length" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <button @click="genAllPrompts"
+      <button v-if="isVideoChain" @click="genAllPrompts"
               :disabled="!['assets_ready','storyboard_ready'].includes(project.stage)"
               :title="['assets_ready','storyboard_ready'].includes(project.stage) ? '为缺提示词的镜头批量入队' : `阶段 ${stageName(project.stage)} 不能生成提示词（需 资产就绪后拆完分镜）`">
         批量生成提示词</button>
       <button v-if="allShotsReady && project.stage==='assets_ready'" @click="passGate2" style="background:#16a34a">✓ 确认分镜（过门2）</button>
-      <button v-if="project.stage==='storyboard_ready'" @click="renderAll">批量渲染</button>
-      <button v-if="project.stage==='storyboard_ready'" @click="renderDirector" style="background:#7c3aed"
+      <button v-if="project.stage==='storyboard_ready' && isVideoChain" @click="renderAll">批量渲染</button>
+      <button v-if="project.stage==='storyboard_ready' && isVideoChain" @click="renderDirector" style="background:#7c3aed"
               :disabled="directorBusy"
               :title="directorBusy ? '整段渲染进行中——分批提交 ComfyUI，日志实时滚动' : '整段快车道（P7-D）：全部生效镜打包提交导演台，段间 latent 运动上下文连贯；产整片直达合成（v1 不混配音字幕）'">
         {{ directorBusy ? '🚄 整段渲染中…' : '🚄 整段快车道' }}</button>
@@ -1023,17 +1061,17 @@
             title="分批提交（批内 latent 连贯），完成直达成片">⚡ 快车道运行中</span>
       <button v-if="hasActiveJobs" @click="stopJobs" style="background:#dc2626;font-size:12px;padding:3px 10px"
               title="取消本项目全部待跑任务 + ComfyUI 清队中断在跑的（不影响其他项目）">⏹ 停止任务</button>
-      <button @click="generateTts" style="font-size:12px;padding:3px 8px"
+      <button v-if="isVideoChain" @click="generateTts" style="font-size:12px;padding:3px 8px"
               title="从台词生成 TTS 配音 + SRT 字幕（合成时自动混入）">🎙 生成配音</button>
       <button @click="autoBind" title="扫描描述文本自动补绑提到的角色" style="font-size:12px;padding:3px 8px">🔗 补绑角色</button>
-      <button @click="describeShots" :disabled="batchVlmBusy"
+      <button v-if="isVideoChain" @click="describeShots" :disabled="batchVlmBusy"
               title="P8 漫画项目：VLM 读首/尾帧自动生成缺失的视频提示词"
               style="font-size:12px;padding:3px 8px;background:#0e7490">
         {{ batchVlmBusy ? '⏳ 读图中…' : '👁 读图生成提示词' }}</button>
-      <button @click="describeShots(true)" :disabled="batchVlmBusy"
+      <button v-if="isVideoChain" @click="describeShots(true)" :disabled="batchVlmBusy"
               title="覆盖全部镜的已有提示词（对白、时长同步重估）——改画风/换模型后整批重生成"
               style="font-size:12px;padding:3px 8px;background:#155e75">🔄 强制重读</button>
-      <button @click="reestimateDurations" :disabled="batchVlmBusy"
+      <button v-if="isVideoChain" @click="reestimateDurations" :disabled="batchVlmBusy"
               title="对白镜时长按字数基准重估（4~15s）——只刷时长不重读图不烧 VLM；修完时长直接重新合成即可"
               style="font-size:12px;padding:3px 8px;background:#0f766e">⏱ 只重估时长</button>
       <button v-if="project.comic_mode==='motion_comic' && project.redraw_characters"
