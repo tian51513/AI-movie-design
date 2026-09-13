@@ -949,10 +949,21 @@ def test_comic_autopilot_waits_asset_confirm(tmp_path):
 
 
 def test_comic_autopilot_confirmed_skips_refs(tmp_path):
-    """已确认 → 跳过 gen_refs/门1 直落 assets_ready（参考图无消费方不烧）。"""
+    """已确认 + 主图齐 + 已检查 → 跳过 gen_refs 三视图/门1 直落 assets_ready
+    （二期后语义：确认→主图→停等检查→放行；此测覆盖终态放行分支）。"""
     from comic_studio.engine.autopilot import next_action, tick
     from comic_studio.engine.projects import get_project
     db, pid = _analyzed_with_asset(tmp_path, confirmed=1)
+    # 主图齐 + 已检查（二期参考注入前置完成）
+    row = db.connect().execute(
+        "SELECT library_dir FROM assets WHERE source_project=? LIMIT 1", (pid,)).fetchone()
+    from pathlib import Path as _P
+    d = _P(str(tmp_path / "data")) / row["library_dir"]
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "main.png").write_bytes(PNG)
+    conn = db.connect()
+    conn.execute("UPDATE projects SET comic_refs_done=1 WHERE id=?", (pid,))
+    conn.commit()
     act = next_action(db, tmp_path / "data", pid)
     assert act["action"] == "comic_skip_refs"
     tick(db, tmp_path / "data", pid)
@@ -1063,3 +1074,177 @@ def test_generate_comic_pages_force_and_ids(tmp_path):
 def _slug(db, pid):
     from comic_studio.engine.projects import get_project
     return get_project(db, pid)["slug"]
+
+
+# ---- 二期（2026-09-13）：角色参考图注入 ----
+
+def test_migration_39_comic_refs_done(tmp_path):
+    db = Database(tmp_path / "s.db"); db.migrate()
+    cols = {c[1] for c in db.connect().execute("PRAGMA table_info(projects)")}
+    assert "comic_refs_done" in cols
+
+
+def _comic_output_main_assets(tmp_path, with_main=True, confirmed=1):
+    """analyzed + 已确认 + 2 角色资产（可选主图）的漫画项目。"""
+    from pathlib import Path as _P
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.assets import persist_assets
+    from comic_studio.engine.llm.schemas import AssetsAnalysis, CharacterAsset
+    db, pid = _comic_project(tmp_path)
+    conn = db.connect()
+    conn.execute("UPDATE projects SET comic_assets_confirmed=? WHERE id=?",
+                 (confirmed, pid))
+    conn.commit()
+    ids = persist_assets(db, tmp_path / "data", pid, AssetsAnalysis(
+        characters=[CharacterAsset(name="少年", role="主角", appearance="性别：男\n服装：青衣"),
+                    CharacterAsset(name="老者", role="配角", appearance="性别：男\n服装：灰袍")],
+        scenes=[], props=[]))
+    if with_main:
+        from comic_studio.engine.projects import get_project
+        for i, aid in enumerate(ids):
+            a = db.connect().execute("SELECT library_dir FROM assets WHERE id=?",
+                                     (aid,)).fetchone()
+            d = _P(str(tmp_path / "data")) / a["library_dir"]
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "main.png").write_bytes(PNG)
+    set_stage(db, pid, "analyzed")
+    return db, pid, ids
+
+
+def test_autopilot_comic_refs_stages(tmp_path):
+    """autopilot 主图阶段三分支：缺主图→gen_ref(main)入队；主图齐+未检查
+    →停等（无「失败」子串）；refs_done→assets_ready。"""
+    from comic_studio.engine.autopilot import next_action, tick
+    from comic_studio.engine.projects import get_project, set_stage
+
+    # ① 缺主图 → gen_refs
+    db, pid, ids = _comic_output_main_assets(tmp_path, with_main=False)
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "gen_refs"
+    tick(db, tmp_path / "data", pid)
+    jobs = db.connect().execute(
+        "SELECT payload_json FROM jobs WHERE type='gen_ref' AND status='pending'").fetchall()
+    assert len(jobs) == 2 and all('"main"' in j["payload_json"] for j in jobs)
+
+    # ② 主图齐 + 未检查 → 停等
+    db2, pid2, ids2 = _comic_output_main_assets(tmp_path, with_main=True)
+    act2 = next_action(db2, tmp_path / "data", pid2)
+    assert act2["action"] == "wait" and "主图" in act2["detail"] and "失败" not in act2["detail"]
+
+    # ③ refs_done → assets_ready
+    conn = db2.connect()
+    conn.execute("UPDATE projects SET comic_refs_done=1 WHERE id=?", (pid2,))
+    conn.commit()
+    act3 = next_action(db2, tmp_path / "data", pid2)
+    assert act3["action"] == "comic_skip_refs"
+    tick(db2, tmp_path / "data", pid2)
+    assert get_project(db2, pid2)["stage"] == "assets_ready"
+
+
+def test_confirm_comic_refs_api(tmp_path):
+    """POST confirm-comic-refs：落 done + assets_ready；非 comic_output 422；幂等。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project
+    db, pid, _ids = _comic_output_main_assets(tmp_path, with_main=True)
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post(f"/api/projects/{pid}/confirm-comic-refs")
+        assert r.status_code == 202, r.text
+        p = get_project(db, pid)
+        assert p["comic_refs_done"] == 1 and p["stage"] == "assets_ready"
+        assert c.post(f"/api/projects/{pid}/confirm-comic-refs").status_code == 202
+        from comic_studio.engine.projects import create_project
+        vid = create_project(db, tmp_path / "data", "视频剧", "9:16", "正文" * 100)["id"]
+        assert c.post(f"/api/projects/{vid}/confirm-comic-refs").status_code == 422
+
+def test_comic_page_ref_template_registered(tmp_path, monkeypatch):
+    """zimage_page_ref 模板注册：槽位/参数注入点齐备（registry 扫描）。"""
+    from comic_studio.engine.workflows import registry
+    from pathlib import Path
+    from comic_studio.engine.settings import set_setting
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    db = Database(tmp_path / "s.db"); db.migrate()
+    t = registry.resolve_template(db, "comic_page_ref")
+    assert t.id == "zimage_page_ref"
+    assert t.inject_images and t.inject_images[0]["slot"] == "base"
+    for p in ("seed", "steps", "denoise", "width", "height"):
+        assert p in t.inject_params, p
+
+
+def _ref_project_with_shot(tmp_path, mains=1, bound=True):
+    """漫画项目 + 绑定 2 角色（mains 个有 main.png）+ 1 comic 镜。"""
+    from types import SimpleNamespace as NS
+    from pathlib import Path as _P
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.assets import persist_assets
+    from comic_studio.engine.llm.schemas import AssetsAnalysis, CharacterAsset
+    from comic_studio.engine.shots import persist_shots
+    db, pid = _comic_project(tmp_path)
+    ids = persist_assets(db, tmp_path / "data", pid, AssetsAnalysis(
+        characters=[CharacterAsset(name="少年", role="主角", appearance="性别：男"),
+                    CharacterAsset(name="老者", role="配角", appearance="性别：男")],
+        scenes=[], props=[]))
+    for i, aid in enumerate(ids[:mains]):
+        row = db.connect().execute("SELECT library_dir FROM assets WHERE id=?",
+                                   (aid,)).fetchone()
+        d = _P(str(tmp_path / "data")) / row["library_dir"]
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "main.png").write_bytes(PNG)
+    set_stage(db, pid, "assets_ready")
+    import json as _json
+    led = {"assets": {"characters": list(ids) if bound else [],
+                      "scenes": [], "props": []}}
+    cam = {"景别": "中景", "机位": "平视", "运镜": "固定", "转场": "切"}
+    sids = persist_shots(db, pid, [NS(
+        text_span="x", description="山顶云海，少年眺望", shot_type="", camera=cam,
+        duration=5.0, workflow_type="comic", ledger=led,
+        character_ids=(list(ids) if bound else []), scene_ids=[], prop_ids=[],
+        depends_on=None, prompt="x")])
+    return db, pid, sids[0], ids
+
+
+def test_gen_comic_page_ref_injection(tmp_path, monkeypatch):
+    """单/双绑定 + 有主图 → zimage_page_ref 模板 + base 上传 + 场景化提示词 +
+    denoise 注入；无绑定/主图缺 → 退纯 t2i（无上传，文字锚兜底）。"""
+    from pathlib import Path
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.comicgen import handle_gen_comic_page
+    from comic_studio.engine.jobs import enqueue_job
+
+    def _run(tag, mains, bound):
+        db, pid, sid, ids = _ref_project_with_shot(tmp_path / tag, mains=mains, bound=bound)
+        with comfy_server("ok") as m:
+            set_setting(db, "comfy", {"base_url": m.base_url})
+            jid = enqueue_job(db, "gen_comic_page", project_id=pid, shot_id=sid,
+                              resource="gpu_comfy", payload={"shot_id": sid})
+            job = db.connect().execute("SELECT * FROM jobs WHERE id=?",
+                                       (jid,)).fetchone()
+            handle_gen_comic_page(db, tmp_path / tag / "data", job, ComfyClient(m.base_url))
+            return db, pid, m
+
+    # ① 双绑定 + 2 主图 → 参考注入：base 上传 + 场景化措辞 + denoise 0.9
+    db, pid, m = _run("m2", mains=2, bound=True)
+    assert any(u.endswith("__base.png") for u in m.uploads), m.uploads
+    val = m.prompts[0]["prompt"]["28"]["inputs"]["value"]
+    assert "将" in val and "保持" in val and "面部" in val   # 场景化保身份措辞
+    assert "山顶云海" in val                                  # 场景来自描述
+    assert m.prompts[0]["prompt"]["4"]["inputs"]["denoise"] == 0.9
+    assert (m.prompts[0]["prompt"]["45"]["inputs"]["width"],
+            m.prompts[0]["prompt"]["45"]["inputs"]["height"]) == (1024, 1536)
+    from comic_studio.engine.shots import list_shots
+    assert list_shots(db, pid)[0]["status"] == "comic_ready"
+
+    # ② 无绑定 → 纯 t2i：无上传、comic_page 模板（prompt 节点 57:27）
+    _db2, _p2, m2 = _run("m0b", mains=2, bound=False)
+    assert not [u for u in m2.uploads if u.endswith("__base.png")]
+    assert "57:27" in m2.prompts[0]["prompt"]
+
+    # ③ 绑定但主图缺 → 退纯 t2i
+    _db3, _p3, m3 = _run("m0", mains=0, bound=True)
+    assert not [u for u in m3.uploads if u.endswith("__base.png")]
+    assert "57:27" in m3.prompts[0]["prompt"]

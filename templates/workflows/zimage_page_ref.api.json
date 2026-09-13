@@ -1,0 +1,154 @@
+{
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "Qwen_Image_Edit_2511_FP8_ComfyUI_FP8.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "2": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors_..safetensors",
+   "type": "qwen_image",
+   "device": "default"
+  }
+ },
+ "3": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "qwen_image_vae.safetensors"
+  }
+ },
+ "23": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "page.png"
+  }
+ },
+ "45": {
+  "class_type": "ImageResizeKJv2",
+  "inputs": {
+   "image": [
+    "23",
+    0
+   ],
+   "width": 1024,
+   "height": 1024,
+   "upscale_method": "lanczos",
+   "keep_proportion": "resize",
+   "pad_color": "0, 0, 0",
+   "crop_position": "center",
+   "divisible_by": 16
+  }
+ },
+ "28": {
+  "class_type": "PrimitiveStringMultiline",
+  "inputs": {
+   "value": ""
+  }
+ },
+ "2002": {
+  "class_type": "TextEncodeQwenImageEdit",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "prompt": [
+    "28",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ],
+   "image": [
+    "45",
+    0
+   ]
+  }
+ },
+ "1029": {
+  "class_type": "ConditioningZeroOut",
+  "inputs": {
+   "conditioning": [
+    "2002",
+    0
+   ]
+  }
+ },
+ "1085": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "45",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "1034": {
+  "class_type": "ModelSamplingAuraFlow",
+  "inputs": {
+   "shift": 3.1,
+   "model": [
+    "1",
+    0
+   ]
+  }
+ },
+ "4": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "1034",
+    0
+   ],
+   "positive": [
+    "2002",
+    0
+   ],
+   "negative": [
+    "1029",
+    0
+   ],
+   "latent_image": [
+    "1085",
+    0
+   ],
+   "seed": 12345,
+   "steps": 8,
+   "cfg": 3.5,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "denoise": 1.0
+  }
+ },
+ "8": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "4",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  }
+ },
+ "10": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "filename_prefix": "cs/{project}/{asset}",
+   "images": [
+    "8",
+    0
+   ]
+  }
+ }
+}

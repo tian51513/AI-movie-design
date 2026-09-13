@@ -57,16 +57,27 @@ def _anchor_lines(shot, db, project_id) -> str:
     return "；".join(parts)
 
 
-def build_comic_prompt(db, proj, shot) -> str:
+def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None) -> str:
     """漫画页提示词：场景 + 外貌锚 + 画风。
 
     对白一律不进提示词（2026-09-13 气泡渲染反转：t2i 画中文=乱码）——
     bubble 模式注入「上方留白+禁字」指令，气泡由 Pillow 后处理画；
     footer 的对白由后处理字幕条呈现，none 直接丢弃。
+
+    scene_mode（二期参考注入 2026-09-13）：base=角色主图时改人物场景化指令
+    ——「将图中人物置于{场景}」+ 面部发型服装保持一致（Edit-2511 训练分布）；
+    extra_chars=base 之外仍需出现的角色（文字锚）。
     """
     detail = (shot["description"] or "").strip() or "按分镜描述生成"
-    prompt = f"单格漫画插画：{detail[:200]}"
+    if scene_mode:
+        prompt = (f"将图中人物置于新场景并按描述重新构图：{detail[:200]}。"
+                  "人物的五官、面部特征、发型与服装与原图保持完全一致，"
+                  "只改变姿势、场景与环境")
+    else:
+        prompt = f"单格漫画插画：{detail[:200]}"
     anchor = _anchor_lines(shot, db, proj["id"])
+    if extra_chars:
+        anchor = "；".join(x for x in [extra_chars, anchor] if x)
     if anchor:
         prompt += f"。角色外貌锚（各角色严格保持一致）：{anchor}"
     if (proj["dialogue_mode"] or "bubble") == "bubble":
@@ -97,12 +108,47 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
 
     w, h = SIZE_PRESETS.get(proj["image_size"] or "1024x1536", (1024, 1536))
     steps = QUALITY_STEPS.get(proj["quality_tier"] or "standard", 12)
-    prompt = build_comic_prompt(db, proj, shot)
+    params = {"seed": random.randint(0, 2**31 - 1), "steps": steps,
+              "width": w, "height": h}
+    images = []
+    # 二期参考注入分流（2026-09-13）：绑定角色 ≤2 且有 main.png → 人物场景化
+    # 模板（base=第一角色主图；第二角色文字锚）。无绑定/主图缺/>2 → 纯 t2i。
+    from .assets import get_asset
+    from .paths import data_to_abs as _dta
+    refs = []
+    for cid in (_ledger(shot).get("assets") or {}).get("characters") or []:
+        a = get_asset(db, cid)
+        if a is not None and a["kind"] == "character":
+            mp = _dta(data_dir, a["library_dir"]) / "main.png"
+            if Path(mp).exists():
+                refs.append((a, mp))
+        if len(refs) >= 2:
+            break
+    extra_chars = ""
+    if 1 <= len(refs) <= 2:
+        try:
+            ref_tmpl = resolve_template(db, "comic_page_ref")
+        except Exception as exc:
+            emit_log(db, "comfy", "warn",
+                     f"参考注入模板不可用，本页退纯文生图：{exc}",
+                     project_id=proj["id"], job_id=job["id"])
+            ref_tmpl = None
+        if ref_tmpl is not None:
+            tmpl = ref_tmpl
+            images = [{"slot": "base", "path": str(refs[0][1])}]
+            params["denoise"] = float(
+                (get_setting(db, "comfy") or {}).get("page_ref_denoise", 0.9))
+            if len(refs) == 2:
+                a2 = refs[1][0]
+                rows = [ln.strip() for ln in (a2["appearance_json"] or "").splitlines()
+                        if ln.strip() and not ln.strip().endswith("无")]
+                extra_chars = f"{a2['name']}（{'；'.join(rows)}）" if rows else a2["name"]
+    prompt = build_comic_prompt(db, proj, shot,
+                                scene_mode=bool(images), extra_chars=extra_chars)
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
-        params={"seed": random.randint(0, 2**31 - 1), "steps": steps,
-                "width": w, "height": h},
-        images=[],
+        params=params,
+        images=images,
         output_ctx={"project": proj["slug"], "asset": f"page-{shot['seq']}"},
         model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))
     for up in uploads:
@@ -110,7 +156,8 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     if job is not None:
         attach_snapshot(db, job["id"], prompt=prompt, workflow=wf, template_id=tmpl.id)
     emit_log(db, "comfy", "info",
-             f"漫画页 {shot['seq']} 提交（模板 {tmpl.id}，{w}×{h}，{steps}步）",
+             f"漫画页 {shot['seq']} 提交（模板 {tmpl.id}，{w}×{h}，{steps}步"
+             + ("，角色参考注入" if images else "") + "）",
              project_id=proj["id"], job_id=job["id"])
     results = comfy.wait_and_collect(
         comfy.submit(wf, client_id=f"cs-comic-{shot['id']}"), stall_seconds=600)

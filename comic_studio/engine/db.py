@@ -218,6 +218,8 @@ MIGRATIONS: list[str] = [
     # 38 漫画链资产停等确认（2026-09-13 B1）：分析后用户确认名册才拆解出页；
     # 确认同时跳过参考图生成/门1（漫画页不消费参考图）
     """ALTER TABLE projects ADD COLUMN comic_assets_confirmed INTEGER NOT NULL DEFAULT 0;""",
+    # 39 二期参考注入（2026-09-13）：主图停等检查标记（用户点过「主图满意」）
+    """ALTER TABLE projects ADD COLUMN comic_refs_done INTEGER NOT NULL DEFAULT 0;""",
 ]
 
 

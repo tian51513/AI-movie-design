@@ -171,6 +171,10 @@ const computed = {
   comicDonePages() {  // 已生成页数（无效镜不计数，与补页/导出过滤同口径）
     return this.comicPageShots.filter(s => !s.disabled && s.status === 'comic_ready').length;
   },
+  genRefsBusy() {  // 参考图生成在飞（主图停等按钮在生成期间不露出）
+    return ((this.queue && this.queue.jobs) || []).some(
+      j => j.type === 'gen_ref' && (j.status === 'pending' || j.status === 'running'));
+  },
   comicGenBusy() {  // 漫画页生成在飞（队列驱动，生成中徽章 + 补页按钮防抖）
     const busy = ((this.queue && this.queue.jobs) || []).some(
       j => j.type === 'gen_comic_page' && (j.status === 'pending' || j.status === 'running'));
@@ -1065,6 +1069,12 @@ const methods = {
   togglePageSelAll(e) {  // 漫画页全选/清空（仅生效页）
     const ids = this.comicPageShots.filter(s => !s.disabled).map(s => s.id);
     this.shotSel = e.target.checked ? ids : [];
+  },
+  async confirmComicRefs() {  // 二期主图停等放行（2026-09-13）：进入拆解出页
+    const r = await fetch(`/api/projects/${this.project.id}/confirm-comic-refs`,
+                          { method: 'POST' });
+    if (!r.ok) { alert(await r.text()); return; }
+    await this.loadDetail();
   },
   async confirmComicAssets() {  // B1 资产确认（2026-09-13）：放行停等 → 直进拆解
     const r = await fetch(`/api/projects/${this.project.id}/confirm-comic-assets`,

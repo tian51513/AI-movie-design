@@ -1,0 +1,46 @@
+id: zimage_page_ref
+type: t2i
+name: 漫画页角色参考（Qwen-Edit-2511 人物场景化，2026-09-13 二期 v1）
+file: zimage_page_ref.api.json
+prompt_format: '{detail}'
+inject:
+  prompt:
+    node: '28'
+    field: value
+  params:
+    seed:
+      node: '4'
+      field: seed
+    steps:
+      node: '4'
+      field: steps
+    denoise:
+      node: '4'
+      field: denoise
+    width:
+      node: '45'
+      field: width
+    height:
+      node: '45'
+      field: height
+  # base=角色主图（人物场景化：底=人物，指令「将此人置于{场景}」——保身份
+  # 的构图重绘，Edit-2511 训练分布内）。结构与 v4 整页重绘同源（LoadImage→
+  # Resize→VAEEncode 图条件），仅槽语义与提示词不同
+  images:
+  - node: '23'
+    field: image
+    slot: base
+outputs:
+- node: '10'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- comfyui-kjnodes
+models:
+- {label: unet, node: '1', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet（Edit-2511）}
+- {label: clip, node: '2', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器（qwen2.5-vl）}
+- {label: vae, node: '3', field: vae_name, cls: VAELoader, label_cn: VAE（qwen_image_vae）}
+
+# 二期 v1（2026-09-13）：单角色场景化（双角色=base 主角+第二角色文字锚；
+# IPAdapter 叠加待真机验证单角色效果后升级 v1.1）。采样链同 v4 万物迁移
+# 实测（AuraFlow shift 3.1 / 8 步 / cfg 3.5 / euler-simple）；denoise 由
+# handler 注入（comfy.page_ref_denoise，人物场景化 0.9 起步真机调）

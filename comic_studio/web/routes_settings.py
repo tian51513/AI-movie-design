@@ -46,7 +46,8 @@ class ComfyConfig(BaseModel):
 
 
 TEMPLATE_MAP_KEYS = {"character_views", "t2i", "ref2va", "fl2v", "t2v", "i2v",
-                     "keyframe", "director", "page_redraw", "comic_page"}
+                     "keyframe", "director", "page_redraw", "comic_page",
+                     "comic_page_ref"}
 
 
 class SettingsUpdate(BaseModel):

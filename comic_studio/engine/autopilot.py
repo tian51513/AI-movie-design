@@ -218,8 +218,33 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
                     if "comic_assets_confirmed" in proj.keys() else 0):
                 return {"action": "wait",
                         "detail": "请检查角色资产名册（可改名/删减）后点「✓ 确认资产，继续出片」"}
+            # 二期参考注入（2026-09-13）：确认后生成角色主图（页面身份注入的
+            # 参考源，gen_ref stage="main" 只烧主图）→ 停等检查 → 放行拆解。
+            # 无角色资产的项目无主图可检，直通。
+            from .assets import list_project_assets as _lpa
+            _chars = [a for a in _lpa(db, project_id) if a["kind"] == "character"]
+            if _chars:
+                from .paths import data_to_abs as _dta
+                from pathlib import Path as _P
+                _missing = []
+                for a in _chars:
+                    _d = _dta(data_dir, a["library_dir"])
+                    if not (_P(_d) / "main.png").exists():
+                        _missing.append(a)
+                if _missing:
+                    if _has_active_job(db, project_id, "gen_ref"):
+                        return {"action": "wait", "detail": "角色主图生成中"}
+                    if _latest_failed(db, project_id, "gen_ref"):
+                        return {"action": "wait",
+                                "detail": "上次主图生成未成功，重试请在资产卡点「主图」"}
+                    return {"action": "gen_refs",
+                            "detail": f"生成角色主图 {len(_missing)} 张（页面身份参考）"}
+                if not (proj["comic_refs_done"]
+                        if "comic_refs_done" in proj.keys() else 0):
+                    return {"action": "wait",
+                            "detail": "请检查角色主图（可重生/上传替换），满意后点「✓ 主图满意，继续出片」"}
             return {"action": "comic_skip_refs",
-                    "detail": "资产已确认，跳过参考图直接拆解"}
+                    "detail": "资产就绪，进入拆解"}
         if _all_assets_have_sheets(db, data_dir, project_id):
             return {"action": "gate1", "detail": "资产齐全，过门1"}
         if _has_active_job(db, project_id, "gen_ref"):
@@ -423,12 +448,15 @@ def tick(db, data_dir, project_id) -> dict:
                      project_id=project_id)
             return act
         n = 0
-        # 重绘模式只烧 main.png（2026-09-09 决策 6）；漫改/小说链保持 has_views 全套
+        # 重绘模式只烧 main.png（2026-09-09 决策 6）；漫画成品项目同款（二期
+        # 参考注入 2026-09-13：页面身份参考源=角色主图，三视图/场景道具全不烧）；
+        # 漫改/小说链保持 has_views 全套
         _p = get_project(db, project_id)
         _rw = (_p is not None and "comic_mode" in _p.keys()
-               and _p["comic_mode"] == "motion_comic"
-               and "redraw_characters" in _p.keys()
-               and bool(_p["redraw_characters"]))
+               and ((_p["comic_mode"] == "motion_comic"
+                     and "redraw_characters" in _p.keys()
+                     and bool(_p["redraw_characters"]))
+                    or _p["comic_mode"] == "comic_output"))
         from .pipeline_gates import has_views
         for a in list_project_assets(db, project_id):
             if _rw:
