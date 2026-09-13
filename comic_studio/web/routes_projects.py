@@ -567,6 +567,76 @@ def confirm_comic_assets(request: Request, project_id: int):
     return {"confirmed": True}
 
 
+@router.post("/{project_id}/convert-to-video")
+def convert_to_video(request: Request, project_id: int, body: dict | None = None):
+    """漫画→视频转化（2026-09-13 用户需求）：comic_ready 后变身视频项目，
+    复用全链数据——分镜/对白（ledger）原样、角色资产+主图白捡、正文/章节在。
+    提示词策略（用户决策）：不 VLM 读图，清空后由 gen_prompts 从分镜描述生成
+    H3 视频提示词（对白本在 ledger 不丢）；提示词不行可手动「🔄 强制重读」。
+    漫画页保留 pages/（可回看/导出 PDF）。
+
+    body 可选视频参数（用户需求：同漫画导入设置面板，画风缺省继承漫画项目）：
+    video_megapixels/video_multiple/video_speed/prompt_mode/subtitles/
+    render_mode（覆写全部镜 workflow_type）/lora_realism/default_shot_duration/
+    target_duration/aspect_ratio。"""
+    db = request.app.state.db
+    proj = get_project(db, project_id)
+    if proj is None:
+        raise HTTPException(404, "项目不存在")
+    if (proj["comic_mode"] if "comic_mode" in proj.keys() else "") != "comic_output":
+        raise HTTPException(422, "仅漫画成品项目（comic_output）可转视频（或已转化）")
+    if proj["stage"] != "comic_ready":
+        raise HTTPException(409, f"阶段 {proj['stage']} 不能转视频（需漫画就绪）")
+    body = body or {}
+    # 视频参数先过统一校验（非法 422；合法经 update_video_params 落列）
+    vp_keys = ("video_megapixels", "video_multiple", "video_speed", "prompt_mode",
+               "lora_realism", "default_shot_duration", "target_duration",
+               "aspect_ratio")
+    kwargs = {k: body[k] for k in vp_keys if k in body}
+    wf_mode = body.get("render_mode", "")
+    if wf_mode and wf_mode not in ("ref2va", "fl2v", "t2v"):
+        raise HTTPException(422, "render_mode 只能是 ref2va/fl2va/t2v")
+    conn = db.connect()
+    conn.execute(
+        "UPDATE projects SET comic_mode='', subtitles=?, autopilot=1 WHERE id=?",
+        (1 if body.get("subtitles", True) else 0, project_id,))
+    # 画风覆盖（转化面板预填漫画项目画风·可改）：style_vis 与旧 style 相等
+    # （未拆层）时同步跟随；独立拆层过则不动（视频提示词仍吃独立子集）
+    new_style = (body.get("style") or "").strip()
+    if new_style and new_style != (proj["style"] or ""):
+        _vis = (proj["style_vis"] or "")
+        if not _vis or _vis == (proj["style"] or ""):  # 空/未拆层 → 同步
+            conn.execute("UPDATE projects SET style=?, style_vis=? WHERE id=?",
+                         (new_style, new_style, project_id))
+        else:
+            conn.execute("UPDATE projects SET style=? WHERE id=?",
+                         (new_style, project_id))
+    conn.commit()
+    if kwargs:
+        from ..engine.projects import update_video_params
+        try:
+            update_video_params(db, project_id, **kwargs)
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+    # 镜复位：清漫画占位 prompt（走 gen_prompts 重生视频提示词）+
+    # workflow_type 'comic'→渲染模式（'comic' 会让视频渲染缺模板炸）；
+    # 对白/绑定/时长原样
+    conn = db.connect()
+    conn.execute(
+        "UPDATE shots SET prompt='', workflow_type=?, status='ready' "
+        "WHERE project_id=?", (wf_mode or "ref2va", project_id))
+    if wf_mode:
+        conn.execute("UPDATE projects SET render_mode=? WHERE id=?",
+                     (wf_mode, project_id))
+    conn.commit()
+    from ..engine.projects import set_stage
+    set_stage(db, project_id, "storyboard_ready")
+    emit_log(db, "autopilot", "info",
+             "已转化为视频项目：分镜描述将生成视频提示词（autopilot 接管渲染→合成），"
+             "漫画页保留在 pages/ 可导出", project_id=project_id)
+    return _public(get_project(db, project_id))
+
+
 @router.post("/{project_id}/generate-comic-mains", status_code=202)
 def generate_comic_mains(request: Request, project_id: int):
     """手动批量生成角色主图（2026-09-13 验收反馈）：漫画项目主图阶段的手动

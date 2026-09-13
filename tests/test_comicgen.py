@@ -1700,3 +1700,122 @@ def test_dual_mode_stitch_and_chain(tmp_path, monkeypatch):
     v2 = m2.prompts[1]["prompt"]["28"]["inputs"]["value"]
     assert "老者" not in v1 and "少年" in v1     # P1 只放 A
     assert "老者" in v2 and "加入" in v2          # P2 插 B
+
+
+# ---- 视频转化（2026-09-13 用户需求：comic_ready 后转视频项目，复用全链数据） ----
+
+def test_convert_to_video_api(tmp_path):
+    """POST convert-to-video：comic_mode→''、stage→storyboard_ready、
+    shots 清 prompt+workflow_type→ref2va（'comic' 会让视频渲染缺模板）、
+    subtitles→1（视频画面无气泡文字）、autopilot=1；守卫 404/422/409。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project, set_stage
+    from comic_studio.engine.shots import list_shots
+
+    db, pid = _comic_project(tmp_path)
+    (sid,) = _comic_shot_ids(db, pid)
+    set_stage(db, pid, "comic_ready")
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        assert c.post("/api/projects/9999/convert-to-video").status_code == 404
+        # 非 comic_ready 阶段 409
+        set_stage(db, pid, "storyboard_ready")
+        assert c.post(f"/api/projects/{pid}/convert-to-video").status_code == 409
+        set_stage(db, pid, "comic_ready")
+        r = c.post(f"/api/projects/{pid}/convert-to-video")
+        assert r.status_code == 200, r.text
+        p = get_project(db, pid)
+        assert p["comic_mode"] == "" and p["stage"] == "storyboard_ready"
+        assert p["subtitles"] == 1 and p["autopilot"] == 1
+        s = list_shots(db, pid)[0]
+        assert s["prompt"] == "" and s["workflow_type"] == "ref2va"
+        # 幂等重放：非 comic_output 已转化 → 422
+        assert c.post(f"/api/projects/{pid}/convert-to-video").status_code == 422
+
+
+def test_convert_to_video_autopilot_flow(tmp_path):
+    """转化后 autopilot 走 gen_prompts（分镜描述→H3 视频提示词，不 VLM 读图
+    ——用户决策），提示词齐后进渲染分支。"""
+    from comic_studio.engine.autopilot import next_action
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.shots import list_shots, update_shot
+
+    db, pid = _comic_project(tmp_path)
+    (sid,) = _comic_shot_ids(db, pid)
+    set_stage(db, pid, "comic_ready")
+    conn = db.connect()
+    conn.execute("UPDATE projects SET comic_mode='', subtitles=1, autopilot=1 WHERE id=?",
+                 (pid,))
+    conn.execute("UPDATE shots SET prompt='', workflow_type='ref2va' WHERE id=?", (sid,))
+    conn.commit()
+    set_stage(db, pid, "storyboard_ready")
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "gen_prompts"      # 描述→视频提示词（非 describe_shots）
+    # 提示词补齐 → 渲染缺口
+    update_shot(db, sid, {"prompt": "视频提示词"})
+    act2 = next_action(db, tmp_path / "data", pid)
+    assert act2["action"] == "render"
+
+
+def test_convert_to_video_with_params(tmp_path):
+    """转化带参数（用户需求：同漫画导入设置面板）：视频参数（兆像素/倍速/
+    质量档/提示词模式/字幕/渲染模式）可设；画风缺省继承漫画项目（不传不动）。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project, set_stage
+
+    db, pid = _comic_project(tmp_path, style="水墨画风")
+    _comic_shot_ids(db, pid)
+    set_stage(db, pid, "comic_ready")
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.post(f"/api/projects/{pid}/convert-to-video", json={
+            "video_megapixels": 0.8, "video_multiple": 16, "prompt_mode": "E",
+            "subtitles": False, "render_mode": "fl2v"})
+        assert r.status_code == 200, r.text
+        p = get_project(db, pid)
+        assert p["video_megapixels"] == 0.8 and p["video_multiple"] == 16
+        assert p["prompt_mode"] == "E" and p["subtitles"] == 0
+        assert p["style"] == "水墨画风"          # 画风缺省继承
+        from comic_studio.engine.shots import list_shots
+        assert list_shots(db, pid)[0]["workflow_type"] == "fl2v"  # render_mode 覆写镜
+        # 非法值 422
+        db2, pid2 = _comic_project(tmp_path / "v")
+        set_stage(db2, pid2, "comic_ready")
+        r2 = c.post(f"/api/projects/{pid2}/convert-to-video", json={"render_mode": "boom"})
+        assert r2.status_code == 422
+
+
+def test_convert_to_video_style_override(tmp_path):
+    """转化面板画风覆盖：未拆层（style_vis==style）同步双字段；独立拆层不动 vis。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.projects import get_project, set_stage
+
+    db, pid = _comic_project(tmp_path, style="水墨")   # 未传 style_vis → 同值
+    _comic_shot_ids(db, pid)
+    set_stage(db, pid, "comic_ready")
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        c.post(f"/api/projects/{pid}/convert-to-video", json={"style": "赛博朋克"})
+        p = get_project(db, pid)
+        assert p["style"] == "赛博朋克" and p["style_vis"] == "赛博朋克"  # 同步
+
+        # 拆层项目（同库另建）：只动 style
+        from comic_studio.engine.projects import create_project
+        pid2 = create_project(db, tmp_path / "v2" / "data", "拆层剧", "9:16", "正文" * 50,
+                              comic_mode="comic_output", style="水墨",
+                              style_vis="水墨视觉子集")["id"]
+        led = {"dialogue": []}
+        from types import SimpleNamespace as NS
+        from comic_studio.engine.shots import persist_shots
+        persist_shots(db, pid2, [NS(
+            text_span="x", description="d", shot_type="",
+            camera={"景别": "中景", "机位": "平视", "运镜": "固定", "转场": "切"},
+            duration=5.0, workflow_type="comic", ledger=led,
+            character_ids=[], scene_ids=[], prop_ids=[], depends_on=None, prompt="x")])
+        set_stage(db, pid2, "comic_ready")
+        c.post(f"/api/projects/{pid2}/convert-to-video", json={"style": "赛博朋克"})
+        p2 = get_project(db, pid2)
+        assert p2["style"] == "赛博朋克" and p2["style_vis"] == "水墨视觉子集"
