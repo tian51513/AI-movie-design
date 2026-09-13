@@ -1430,3 +1430,13 @@ def test_comic_split_dedupes_adjacent_identical_descriptions(tmp_path, monkeypat
         assert a != b, (a, b)
     # 首页保持原描述（无变化注入）
     assert descs[0] == "母亲侧头贴着儿子腰，手压其胯骨"
+
+
+def test_comic_split_rules_pin_narrative_beat_basis(tmp_path, monkeypatch):
+    """2026-09-13 用户拆分基准：剧情内容为基准（非对白）——一格可承载多句
+    对白（2~4 句常态，不影响观看），禁一句台词一格；仅台词过密或细微表情
+    值得独立特写才因台词/表情多拆；剧情连续性优先。钉版防回退。"""
+    from comic_studio.engine.llm.storyboard import COMIC_SPLIT_RULES
+    assert "剧情" in COMIC_SPLIT_RULES and "连续性" in COMIC_SPLIT_RULES
+    assert "一句台词" in COMIC_SPLIT_RULES            # 明令禁止一句一格
+    assert "多句对白" in COMIC_SPLIT_RULES            # 一格多句对白合法
