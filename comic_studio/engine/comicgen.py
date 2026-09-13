@@ -61,20 +61,35 @@ def _anchor_lines(shot, db, project_id) -> str:
     同一角色每页靠这段保持发型/服装一致）。上限 3 角色/2 场景防爆。"""
     led = _ledger(shot)
     bound = led.get("assets") or {}
+
+    def _detail(raw: str) -> str:
+        """appearance_json 可能是 {"detail": 行模板} 包装（2026-09-13 真机判例：
+        不拆包整段 JSON 泄漏进提示词成噪声）——拆包失败回落原文。"""
+        try:
+            d = json.loads(raw or "")
+            if isinstance(d, dict):
+                return str(d.get("detail") or "")
+        except (ValueError, TypeError):
+            pass
+        return raw or ""
+
     from .assets import get_asset
     parts = []
     for cid in (bound.get("characters") or [])[:3]:
         a = get_asset(db, cid)
         if a is None or a["kind"] != "character":
             continue
-        rows = [ln.strip() for ln in (a["appearance_json"] or "").splitlines() if ln.strip()]
+        rows = [ln.strip() for ln in _detail(a["appearance_json"]).splitlines()
+                if ln.strip()]
         rows = [ln for ln in rows if not ln.endswith("无")]  # 「无」行零信息
         if rows:
             parts.append(f"{a['name']}（{'；'.join(rows)}）")
     for sid in (bound.get("scenes") or [])[:2]:
         a = get_asset(db, sid)
-        if a is not None and a["kind"] == "scene" and a["appearance_json"]:
-            parts.append(f"场景{a['name']}：{a['appearance_json'][:60]}")
+        if a is not None and a["kind"] == "scene":
+            d = _detail(a["appearance_json"])
+            if d:
+                parts.append(f"场景{a['name']}：{d[:60]}")
     return "；".join(parts)
 
 
@@ -90,25 +105,30 @@ def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
     ——「将图中人物置于{场景}」+ 面部发型服装保持一致（Edit-2511 训练分布）；
     extra_chars=base 之外仍需出现的角色（文字锚）。
     """
-    detail = (shot["description"] or "").strip() or "按分镜描述生成"
+    import re as _re
+    # 剥拆解绑定引用「（id=N）」——对图像模型是无意义 token（2026-09-13 真机泄漏）
+    detail = _re.sub(r"[（(]id=\d+[）)]", "",
+                     (shot["description"] or "").strip()) or "按分镜描述生成"
+    style = ((proj["style_vis"] or proj["style"]) or "").strip()
     if scene_mode:
+        # 参考路径：身份由图锚定，文字锚降为名字映射（全行锚与「保持一致」
+        # 指令重复堆叠，挤占分镜场景与画风遵循——2026-09-13 真机判例）
         who = "图1中的人物" if not extra_chars else f"图1中的人物与图2中的人物（{extra_chars}）"
         where = "图3中的场景" if scene_img else "新场景"
-        prompt = (f"将{who}置于{where}并按描述重新构图：{detail[:200]}。"
-                  "每个人物的五官、面部特征、发型与服装与各自参考图保持完全一致，"
-                  "只改变姿势、构图与环境")
+        prompt = (f"严格按场景描述重新构图：{detail[:200]}。"
+                  f"将{who}置于{where}，人物五官/发型/服装与参考图保持一致，"
+                  "按描述改变姿势、构图与环境")
+        if style:
+            prompt += f"。画风（严格执行）：{style}"   # 画风前置加重（尾部被淹没判例）
     else:
         prompt = f"单格漫画插画：{detail[:200]}"
-    anchor = _anchor_lines(shot, db, proj["id"])
-    if extra_chars:
-        anchor = "；".join(x for x in [extra_chars, anchor] if x)
-    if anchor:
-        prompt += f"。角色外貌锚（各角色严格保持一致）：{anchor}"
+        anchor = _anchor_lines(shot, db, proj["id"])
+        if anchor:
+            prompt += f"。角色外貌锚（各角色严格保持一致）：{anchor}"
+        if style:
+            prompt += f"。画风：{style}"
     if (proj["dialogue_mode"] or "bubble") == "bubble":
         prompt += "。画面上方适当留白，不要画任何文字、对话气泡、字幕"
-    style = ((proj["style_vis"] or proj["style"]) or "").strip()
-    if style:
-        prompt += f"。画风：{style}"
     return prompt
 
 

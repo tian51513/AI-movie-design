@@ -1348,3 +1348,40 @@ def test_stylepresets_zh_from_name_cn(tmp_path):
     assert zh["Ethereal Impressionist Motion"] == "空灵印象派运动"
     assert zh["No Mapping Style"] is None
     SP._CACHE = None
+
+
+def test_comic_prompt_clean_anchor_and_ids(tmp_path):
+    """2026-09-13 真机判例三修：①外貌锚拆 {"detail":…} 包装（JSON 整包泄漏
+    成噪声）②剥分镜 description 的（id=N）绑定引用 ③scene_mode 参考图已
+    锚定身份——文字锚降为名字映射，不与「保持一致」指令重复堆叠挤占场景。"""
+    from comic_studio.engine.comicgen import build_comic_prompt
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.assets import persist_assets
+    from comic_studio.engine.llm.schemas import AssetsAnalysis, CharacterAsset, SceneAsset
+    import json as _json
+
+    db, pid = _comic_project(tmp_path)
+    set_stage(db, pid, "analyzed")
+    ids = persist_assets(db, tmp_path / "data", pid, AssetsAnalysis(
+        characters=[CharacterAsset(name="少年", role="主角",
+                                   appearance="性别：男\n体型：身材高挑")],
+        scenes=[SceneAsset(name="山顶", description="云海山巅")], props=[]))
+    shot = {"description": "少年（id=%d）在山顶眺望云海，衣角翻飞" % ids[0],
+            "ledger_json": _json.dumps({"assets": {
+                "characters": [ids[0]], "scenes": [ids[1]], "props": []}})}
+    proj = None
+    from comic_studio.engine.projects import get_project
+    proj = get_project(db, pid)
+
+    # 纯 t2i：锚行模板（拆包后）+ id 剥离
+    p = build_comic_prompt(db, proj, shot)
+    assert '{"detail"' not in p and '"detail"' not in p   # JSON 不泄漏
+    assert "id=" not in p                                  # 绑定引用剥离
+    assert "体型：身材高挑" in p and "云海山巅" in p        # 拆包后行锚生效
+
+    # scene_mode（参考图路径）：锚降为名字映射，不再拼全行锚
+    p2 = build_comic_prompt(db, proj, shot, scene_mode=True, extra_chars="老者",
+                            scene_img=True)
+    assert "体型：" not in p2                               # 全行锚不进参考路径
+    assert "图1中的人物" in p2 and "老者" in p2 and "图3中的场景" in p2
+    assert "衣角翻飞" in p2                                 # 分镜描述保留
