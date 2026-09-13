@@ -94,7 +94,10 @@ def condense_appearance(detail: str) -> str:
         if label in ("", "性别", "年龄", "发色发型", "服装"):
             continue
         if fields.get(label) == value:
-            s += "，" + value
+            # 保留「标签：值」（2026-09-13 真机判例：体型调高挑后主图仍偏胖——
+            # 裸值夹在肤色后是弱约束噪声；中文流（Z-Image qwen 编码器）标签即
+            # 语义锚。性别/年龄/发型/服装仍并自然短句不动）
+            s += f"，{label}：{value}"
     return s.strip("，")
 
 

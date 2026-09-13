@@ -388,3 +388,17 @@ def test_prop_scene_forbid_persons_double():
     s = build_gen_prompt(dict(row, kind="scene",
                               appearance_json='{"detail":"学校保健室"}'))[0]
     assert s.count("无人物") + s.count("禁止出现任何人物") >= 2
+
+
+def test_condense_appearance_keeps_labels_for_body_fields():
+    """剩余字段保留「标签：值」（2026-09-13 真机判例：体型调高挑后主图仍偏胖
+    ——裸值「前凸后翘，身材高挑，大胸」夹在肤色后对模型是弱约束噪声，中文流
+    标签即语义锚）。性别/年龄/发型/服装仍并自然短句。"""
+    from comic_studio.engine.genref import condense_appearance
+    detail = ("性别：女\n年龄：36\n发色发型：黑色短发\n瞳色：深褐色\n"
+              "肤色：白皙\n体型：身材高挑，纤瘦\n服装：白裙\n配饰：无")
+    out = condense_appearance(detail)
+    assert "体型：身材高挑，纤瘦" in out      # 标签保留=语义锚
+    assert "瞳色：深褐色" in out and "肤色：白皙" in out
+    assert "36岁" in out and "女性" in out    # 自然短句部分不变
+    assert "配饰" not in out                  # 无值行仍丢
