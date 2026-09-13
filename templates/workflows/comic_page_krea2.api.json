@@ -1,0 +1,108 @@
+{
+ "90": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "Krea2\\Krea2-Moody-Mix-premium_int8_convrot.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "91": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen3vl_4b_fp8_scaled.safetensors",
+   "type": "krea2",
+   "device": "default"
+  }
+ },
+ "93": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "qwen_image_vae.safetensors"
+  }
+ },
+ "23": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "page.png"
+  }
+ },
+ "100": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "char1.png"
+  }
+ },
+ "28": {
+  "class_type": "PrimitiveStringMultiline",
+  "inputs": {
+   "value": ""
+  }
+ },
+ "2000": {
+  "class_type": "LazyKreaWorkbench",
+  "inputs": {
+   "风格库": "none",
+   "风格": "none",
+   "图片数据": "[]",
+   "提示词数据": "[{\"text\":\"\",\"on\":true}]",
+   "图像1": [
+    "23",
+    0
+   ],
+   "图像2": [
+    "100",
+    0
+   ],
+   "提示词": [
+    "28",
+    0
+   ]
+  }
+ },
+ "2001": {
+  "class_type": "LazyKreaGenerate",
+  "inputs": {
+   "模型": [
+    "90",
+    0
+   ],
+   "底模": [
+    "90",
+    0
+   ],
+   "文本编码": [
+    "91",
+    0
+   ],
+   "VAE": [
+    "93",
+    0
+   ],
+   "Krea包": [
+    "2000",
+    0
+   ],
+   "种子": 12345,
+   "步数": 10,
+   "CFG": 1.0,
+   "采样器": "euler",
+   "调度器": "simple",
+   "宽度": 1024,
+   "高度": 1024,
+   "双图顺序": "图1场景+图2人物",
+   "编辑LoRA": "Krea2\\Krea2-编辑identity_edit_v1_2.safetensors",
+   "编辑LoRA强度": 1.0,
+   "百万像素": 0.4
+  }
+ },
+ "10": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "filename_prefix": "cs/{project}/{asset}",
+   "images": [
+    "2001",
+    0
+   ]
+  }
+ }
+}

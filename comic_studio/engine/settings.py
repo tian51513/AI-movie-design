@@ -27,6 +27,8 @@ DEFAULT_SETTINGS = {
         "comic_page": "comic_page",
         # 二期参考注入（2026-09-13）：绑定角色镜走人物场景化模板
         "comic_page_ref": "zimage_page_ref",
+        # Krea2 快道（2026-09-13 用户实测 20-30s/页·风格原生贴合）
+        "comic_page_krea2": "comic_page_krea2",
     },
     "llm_providers": {
         "local": {"base_url": "http://localhost:11434/v1", "api_key": "ollama",

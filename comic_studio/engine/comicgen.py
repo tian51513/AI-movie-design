@@ -51,6 +51,34 @@ def _ensure_blank(data_dir, name="blank_ref.png", rgb=(255, 255, 255)) -> str:
     return str(p)
 
 
+def _stitch_mains(data_dir, paths) -> str:
+    """双角色主图左右拼接（等高）——Krea2 identity_edit 双图上限的合法手法：
+    图2 喂「两人同框」合成参考，prompt 说明左侧/右侧身份。缓存
+    data/_cache/stitch_<hash>.png（主图内容不变即复用）。"""
+    import hashlib
+    key = hashlib.md5("|".join(f"{p}:{Path(p).stat().st_mtime_ns}"
+                               for p in map(str, paths)).encode()).hexdigest()[:12]
+    out = Path(data_dir) / "_cache" / f"stitch_{key}.png"
+    if out.exists():
+        return str(out)
+    try:
+        from PIL import Image
+        imgs = [Image.open(p).convert("RGB") for p in paths]
+        hgt = min(i.height for i in imgs)
+        rs = [i.resize((max(1, int(i.width * hgt / i.height)), hgt)) for i in imgs]
+        canvas = Image.new("RGB", (sum(i.width for i in rs), hgt), (128, 128, 128))
+        x = 0
+        for i in rs:
+            canvas.paste(i, (x, 0))
+            x += i.width
+        out.parent.mkdir(parents=True, exist_ok=True)
+        canvas.save(out)
+        return str(out)
+    except Exception:
+        # 无 Pillow / 参考图损坏（测试假 PNG）退单图——双角色只剩文字锚兜底
+        return str(paths[0])
+
+
 def _ledger(shot) -> dict:
     try:
         return json.loads(shot["ledger_json"] or "{}")
@@ -97,7 +125,7 @@ def _anchor_lines(shot, db, project_id) -> str:
 
 
 def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
-                       scene_img=False, scene_name="") -> str:
+                       scene_img=False, scene_name="", krea_names=None) -> str:
     """漫画页提示词：场景 + 外貌锚 + 画风。
 
     对白一律不进提示词（2026-09-13 气泡渲染反转：t2i 画中文=乱码）——
@@ -119,11 +147,25 @@ def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
         who = "图1中的人物" if not extra_chars else f"图1中的人物与图2中的人物（{extra_chars}）"
         where = "图3中的场景" if scene_img else "新场景"
         scene_anchor = f"场景：{scene_name}，" if scene_name else ""
-        prompt = (f"严格按场景描述重新构图：{scene_anchor}{detail[:200]}。"
-                  f"将{who}置于{where}，人物五官/发型/服装与参考图保持一致。"
-                  "画面构图（全身/半身/特写/机位）严格按描述执行，人物完整按描述呈现。"
-                  "场所与光线严格按描述（室内就是室内，室外就是室外），"
-                  "画面高清锐利、细节清晰")
+        if krea_names:
+            # Krea2 快道方言：图1=场景 / 图2=人物（双角色拼接时说明左右身份）
+            if len(krea_names) == 2:
+                who = (f"图2 参考中的两位人物（左侧是{krea_names[0]}，"
+                       f"右侧是{krea_names[1]}），两人外貌与图2 保持一致")
+            else:
+                who = f"图2 参考中的人物（{krea_names[0]}），外貌与图2 保持一致"
+            where = "图1 的场景" if scene_img else "按描述构建的场景"
+            prompt = (f"{scene_anchor}画面内容：{detail[:200]}。"
+                      f"将{who}置于{where}。"
+                      "画面构图（全身/半身/特写/机位）严格按描述执行。"
+                      "场所与光线严格按描述（室内就是室内，室外就是室外），"
+                      "画面高清锐利、细节清晰")
+        else:
+            prompt = (f"严格按场景描述重新构图：{scene_anchor}{detail[:200]}。"
+                      f"将{who}置于{where}，人物五官/发型/服装与参考图保持一致。"
+                      "画面构图（全身/半身/特写/机位）严格按描述执行，人物完整按描述呈现。"
+                      "场所与光线严格按描述（室内就是室内，室外就是室外），"
+                      "画面高清锐利、细节清晰")
         if style:
             prompt += f"。画风（严格执行）：{style}"   # 画风前置加重（尾部被淹没判例）
     else:
@@ -188,42 +230,66 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
                 scene_ref = (a, mp)
     extra_chars = ""
     scene_img_used = False
+    krea_names = []
     if 1 <= len(char_refs) <= 2:
+        from .paths import data_to_abs as _dta2
+        blank = _dta2(data_dir, "_cache/blank_ref.png")
+        if not Path(blank).exists():
+            blank = _ensure_blank(data_dir)
+        gray = _dta2(data_dir, "_cache/blank_gray.png")
+        if not Path(gray).exists():
+            gray = _ensure_blank(data_dir, "blank_gray.png", (128, 128, 128))
+        # Krea2 快道优先（2026-09-13 用户实测 20-30s/页·风格原生贴合）：
+        # 图1=场景 / 图2=人物（双角色左右拼接合成参考——identity_edit LoRA
+        # 双图训练上限，拼接是社区合法手法）；缺失回落 zimage_page_ref
+        krea_tmpl = None
         try:
-            ref_tmpl = resolve_template(db, "comic_page_ref")
-        except Exception as exc:
-            emit_log(db, "comfy", "warn",
-                     f"参考注入模板不可用，本页退纯文生图：{exc}",
-                     project_id=proj["id"], job_id=job["id"])
-            ref_tmpl = None
-        if ref_tmpl is not None:
-            tmpl = ref_tmpl
-            # v1.1 多图槽：char1 必填；char2 双角色；scene 第三槽。v1.4：缺省槽
-            # 中性灰占位（白图偏亮把「新场景」带偏户外——真机判例：室内出成室外）
-            from .paths import data_to_abs as _dta2
-            blank = _dta2(data_dir, "_cache/blank_ref.png")
-            if not Path(blank).exists():
-                blank = _ensure_blank(data_dir)
-            gray = _dta2(data_dir, "_cache/blank_gray.png")
-            if not Path(gray).exists():
-                gray = _ensure_blank(data_dir, "blank_gray.png", (128, 128, 128))
-            # v1.3：canvas=空白画布作 latent 底（不锁构图——旧版 char1 直作底图
-            # 把半身构图与摄影风格一并锁死，2026-09-13 真机判例）
+            krea_tmpl = resolve_template(db, "comic_page_krea2")
+        except Exception:
+            krea_tmpl = None
+        if krea_tmpl is not None:
+            tmpl = krea_tmpl
+            if len(char_refs) == 2:
+                char_path = _stitch_mains(data_dir, [char_refs[0][1], char_refs[1][1]])
+                krea_names = [char_refs[0][0]["name"], char_refs[1][0]["name"]]
+            else:
+                char_path = str(char_refs[0][1])
+                krea_names = [char_refs[0][0]["name"]]
             images = [
-                {"slot": "char1", "path": str(char_refs[0][1])},
-                {"slot": "char2", "path": str(char_refs[1][1]) if len(char_refs) == 2 else str(gray)},
                 {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(gray)},
-                {"slot": "canvas", "path": str(blank)},
+                {"slot": "char", "path": char_path},
             ]
             scene_img_used = scene_ref is not None
-            params["denoise"] = float(
-                (get_setting(db, "comfy") or {}).get("page_ref_denoise", 1.0))
-            if len(char_refs) == 2:
-                a2 = char_refs[1][0]
-                extra_chars = a2["name"]  # 双角色真参考（图2）——文字锚只需名字
+            params["megapixels"] = round(w * h / 1e6, 2)   # 百万像素按项目尺寸档
+        else:
+            try:
+                ref_tmpl = resolve_template(db, "comic_page_ref")
+            except Exception as exc:
+                emit_log(db, "comfy", "warn",
+                         f"参考注入模板不可用，本页退纯文生图：{exc}",
+                         project_id=proj["id"], job_id=job["id"])
+                ref_tmpl = None
+            if ref_tmpl is not None:
+                tmpl = ref_tmpl
+                # v1.1 多图槽：char1 必填；char2 双角色；scene 第三槽。v1.4：缺省槽
+                # 中性灰占位（白图偏亮把「新场景」带偏户外——真机判例：室内出成室外）
+                # v1.3：canvas=空白画布作 latent 底（不锁构图——旧版 char1 直作底图
+                # 把半身构图与摄影风格一并锁死，2026-09-13 真机判例）
+                images = [
+                    {"slot": "char1", "path": str(char_refs[0][1])},
+                    {"slot": "char2", "path": str(char_refs[1][1]) if len(char_refs) == 2 else str(gray)},
+                    {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(gray)},
+                    {"slot": "canvas", "path": str(blank)},
+                ]
+                scene_img_used = scene_ref is not None
+                params["denoise"] = float(
+                    (get_setting(db, "comfy") or {}).get("page_ref_denoise", 1.0))
+                if len(char_refs) == 2:
+                    extra_chars = char_refs[1][0]["name"]  # 双角色真参考——文字锚只需名字
     prompt = build_comic_prompt(db, proj, shot,
                                 scene_mode=bool(images), extra_chars=extra_chars,
-                                scene_img=scene_img_used, scene_name=scene_name)
+                                scene_img=scene_img_used, scene_name=scene_name,
+                                krea_names=krea_names)
     comfy_cfg = get_setting(db, "comfy") or {}
     # v1.4：Lightning 默认关（4 步蒸馏画面糊·真机判例）——质量档步数 + cfg 3.5
     # （v4 锐利基线）；设 1.0 走 4 步草稿加速档（cfg 建议 2.5）

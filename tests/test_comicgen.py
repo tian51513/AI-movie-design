@@ -1,5 +1,7 @@
 # tests/test_comicgen.py
 """小说转漫画（2026-09-12）：第五种项目类型。"""
+import json
+
 from comic_studio.engine.db import Database
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
@@ -1221,9 +1223,17 @@ def test_gen_comic_page_ref_injection(tmp_path, monkeypatch):
     """单/双绑定 + 有主图 → zimage_page_ref 模板 + base 上传 + 场景化提示词 +
     denoise 注入；无绑定/主图缺 → 退纯 t2i（无上传，文字锚兜底）。"""
     from pathlib import Path
+    import shutil, tempfile
     from comic_studio.engine.settings import set_setting
     from comic_studio.engine.workflows import registry
-    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    # Krea2 快道上线后 zimage_page_ref 是回落道——本测试隔离到无 krea2 模板
+    # 的目录强制走 zimage 道（快道/回落链路见 test_gen_comic_page_krea2_fast_lane）
+    _tdir = Path(tempfile.mkdtemp()) / "workflows"
+    _tdir.mkdir()
+    for f in Path("templates/workflows").glob("*"):
+        if f.is_file() and "comic_page_krea2" not in f.name:
+            shutil.copy(f, _tdir / f.name)
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", _tdir)
     from tests.comfy_mock import comfy_server
     from comic_studio.engine.comfy.client import ComfyClient
     from comic_studio.engine.comicgen import handle_gen_comic_page
@@ -1450,3 +1460,62 @@ def test_page_ref_quality_defaults_and_scene_anchor(tmp_path, monkeypatch):
     from comic_studio.engine.settings import DEFAULT_SETTINGS
     assert DEFAULT_SETTINGS["comfy"]["page_ref_lightning"] == 0.0
     assert DEFAULT_SETTINGS["comfy"]["page_ref_cfg"] == 3.5
+
+
+def test_gen_comic_page_krea2_fast_lane(tmp_path, monkeypatch):
+    """Krea2 快道（2026-09-13 用户实测 20-30s/页）：参考页优先 comic_page_krea2
+    （图1场景/图2人物，双角色左右拼接合成参考）；百万像素按尺寸档换算；
+    步数走质量档；Krea2 模板缺失回落 zimage_page_ref。"""
+    from pathlib import Path
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.comicgen import handle_gen_comic_page
+    from comic_studio.engine.jobs import enqueue_job
+
+    db, pid, sid, ids = _ref_project_with_shot(tmp_path, mains=2, bound=True)
+    with comfy_server("ok") as m:
+        set_setting(db, "comfy", {"base_url": m.base_url})
+        jid = enqueue_job(db, "gen_comic_page", project_id=pid, shot_id=sid,
+                          resource="gpu_comfy", payload={"shot_id": sid})
+        job = db.connect().execute("SELECT * FROM jobs WHERE id=?",
+                                   (jid,)).fetchone()
+        handle_gen_comic_page(db, tmp_path / "data", job, ComfyClient(m.base_url))
+        wf = m.prompts[0]["prompt"]
+        snap = json.loads(db.connect().execute(
+            "SELECT snapshot_json FROM jobs WHERE id=?", (jid,)).fetchone()["snapshot_json"])
+        assert snap["template"] == "comic_page_krea2"
+        # 双参考上传：scene 槽（灰，无场景参考）+ char 槽（双角色拼接合成图）
+        ups = [u for u in m.uploads if u.endswith(".png") and "__" in u]
+        assert any(u.endswith("__scene.png") for u in ups), ups
+        assert any(u.endswith("__char.png") for u in ups), ups
+        g = wf["2001"]["inputs"]
+        assert abs(g["百万像素"] - 1024 * 1536 / 1e6) < 0.1   # 按项目尺寸档换算
+        assert g["步数"] == 12                                  # 质量档
+        val = wf["28"]["inputs"]["value"]
+        assert "图2" in val and "左侧" in val                    # 双角色拼接说明
+
+    # Krea2 模板缺失 → 回落 zimage_page_ref（文件级 fallback）
+    import shutil, tempfile
+    with tempfile.TemporaryDirectory() as td:
+        tdir = Path(td) / "workflows"
+        tdir.mkdir()
+        for f in Path("templates/workflows").glob("*"):
+            if f.is_file() and "krea2" not in f.name:
+                shutil.copy(f, tdir / f.name)
+        monkeypatch.setattr(registry, "TEMPLATE_ROOT", tdir)
+        db2, pid2, sid2, _ = _ref_project_with_shot(tmp_path / "fb", mains=1, bound=True)
+        with comfy_server("ok") as m2:
+            set_setting(db2, "comfy", {"base_url": m2.base_url})
+            jid2 = enqueue_job(db2, "gen_comic_page", project_id=pid2, shot_id=sid2,
+                               resource="gpu_comfy", payload={"shot_id": sid2})
+            job2 = db2.connect().execute("SELECT * FROM jobs WHERE id=?",
+                                         (jid2,)).fetchone()
+            handle_gen_comic_page(db2, tmp_path / "fb" / "data", job2,
+                                  ComfyClient(m2.base_url))
+            snap2 = json.loads(db2.connect().execute(
+                "SELECT snapshot_json FROM jobs WHERE id=?",
+                (jid2,)).fetchone()["snapshot_json"])
+            assert snap2["template"] == "zimage_page_ref"

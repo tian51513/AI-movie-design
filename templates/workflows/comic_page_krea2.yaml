@@ -1,0 +1,36 @@
+id: comic_page_krea2
+name: 漫画页·Krea2 快道（Lazy_Krea2 全模式工作台·双图分工，2026-09-13 用户实测 20-30s/页）
+file: comic_page_krea2.api.json
+type: t2i
+prompt_format: '{detail}'
+inject:
+  prompt:
+    node: '28'
+    field: value
+  params:
+    seed: {node: '2001', field: 种子}
+    steps: {node: '2001', field: 步数}
+    megapixels: {node: '2001', field: 百万像素}
+  # 图1=场景（scene 槽：场景参考图，无则中性灰）；图2=人物（char 槽：角色主图；
+  # 双角色页左右拼接合成参考——identity_edit LoRA 双图训练上限，拼接是社区
+  # 合法手法，prompt 说明「图2 左侧 X 右侧 Y」）
+  images:
+  - node: '23'
+    field: image
+    slot: scene
+  - node: '100'
+    field: image
+    slot: char
+outputs:
+- node: '10'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- ComfyUI_Lazybuxuexi
+models:
+- {label: unet, node: '90', field: unet_name, cls: UNETLoader, label_cn: 主模型（Krea2）}
+- {label: clip, node: '91', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器（qwen3vl）}
+
+# 2026-09-13 用户实测定稿：Lazy_Krea2 全模式工作台 + 百万像素 0.4（原 1.0 时
+# 双参考 90s/单参考 50s；0.4 后 30s/20s 且质量满意、风格贴合——Krea2 是风格库
+# 原生底模）。步数/CFG/采样器沿用 v8 实测（10 步 CFG1 euler-simple），
+# 步数按质量档注入；百万像素按项目尺寸档换算（512x768≈0.39 即 0.4 手感）。
