@@ -105,3 +105,14 @@ def test_optimize_logs_prompt_and_reply(client):
             "SELECT prompt_text, reply_text FROM llm_calls ORDER BY id DESC LIMIT 1").fetchone()
         assert "他走进屋里" in row["prompt_text"]
         assert "优化后的描述文本" in row["reply_text"]
+
+
+def test_appearance_optimizer_pins_constraint_reinforcement():
+    """外貌优化器约束强化（2026-09-13 真机判例：「体型：前凸后翘，身材高挑，
+    大胸」仍生成偏胖——补「身材高挑纤细，四肢修长，体脂低」才跟随；模糊词
+    必须由优化器自动扩为同向强约束）。提示词钉版测试（同 test_prompts_pin
+    惯例）：系统词缺失强化规则即失败。"""
+    from comic_studio.web.routes_llm import _KIND_SYSTEMS
+    sysp = _KIND_SYSTEMS["appearance"]
+    assert "体型" in sysp and "强化" in sysp
+    assert "四肢修长" in sysp or "体脂" in sysp   # 具体强化词示例在
