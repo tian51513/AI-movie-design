@@ -1846,3 +1846,31 @@ def test_last_page_advances_comic_ready(tmp_path, monkeypatch):
                                    (jid,)).fetchone()
         handle_gen_comic_page(db, tmp_path / "data", job, ComfyClient(m.base_url))
     assert get_project(db, pid)["stage"] == "comic_ready"   # 最后一页即终态
+
+
+def test_stale_linkage_skips_comic_output_with_hint(tmp_path):
+    """comic_output 不做 stale 标记（页面是成品不因外貌编辑失效——2026-09-13
+    真机：编辑儿子外貌 → 27 镜标 stale → 漫画页 UI 只剩 2 页可见，用户以为
+    数据丢了）。改为提示日志：绑定 N 个漫画页+页号，建议重出。"""
+    from comic_studio.engine.shots import mark_stale_for_asset, list_shots
+    db, pid = _comic_project(tmp_path)
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.assets import persist_assets
+    from comic_studio.engine.llm.schemas import AssetsAnalysis, CharacterAsset
+    set_stage(db, pid, "assets_ready")
+    aid = persist_assets(db, tmp_path / "data", pid, AssetsAnalysis(
+        characters=[CharacterAsset(name="儿子", role="主角", appearance="性别：男")],
+        scenes=[], props=[]))[0]
+    (sid,) = _comic_shot_ids(db, pid)
+    led = json.loads(db.connect().execute(
+        "SELECT ledger_json FROM shots WHERE id=?", (sid,)).fetchone()["ledger_json"])
+    led["assets"] = {"characters": [aid], "scenes": [], "props": []}
+    from comic_studio.engine.shots import update_shot
+    update_shot(db, sid, {"ledger_json": json.dumps(led, ensure_ascii=False),
+                          "status": "comic_ready"})
+    n = mark_stale_for_asset(db, aid)
+    assert n == 0  # 不标
+    assert list_shots(db, pid)[0]["status"] == "comic_ready"  # 状态不动
+    logs = db.connect().execute(
+        "SELECT message FROM logs WHERE message LIKE '%建议重出%'").fetchall()
+    assert any("1 个漫画页" in l["message"] for l in logs)  # 提示在

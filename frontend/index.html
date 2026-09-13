@@ -1313,7 +1313,7 @@
                     style="font-size:11px;padding:1px 8px;background:#0e7490"
                     title="按当前最新参数重出此页（新 seed 覆盖）">🔄 重出</button>
           </div>
-          <template v-if="s.status==='comic_ready' && !s.disabled">
+          <template v-if="['comic_ready','stale'].includes(s.status) && !s.disabled">
             <img :src="comicPageUrl(s)" loading="lazy" @click="openComicViewer(s)"
                  style="width:100%;margin-top:6px;cursor:zoom-in;border-radius:6px;border:1px solid #2c3540"
                  title="点击放大 · ← → 前后页切换">

@@ -107,7 +107,30 @@ def delete_shots_batch(db: Database, project_id: int, ids: list[int]) -> int:
 
 
 def mark_stale_for_asset(db: Database, asset_id: int) -> int:
-    """资产参考图重生后，引用它的分镜标 stale（spec §5 回退规则，不自动重跑）。"""
+    """资产参考图重生后，引用它的分镜标 stale（spec §5 回退规则，不自动重跑）。
+
+    comic_output 项目豁免（2026-09-13 真机判例：编辑角色外貌 → 27 镜标
+    stale → 漫画页 UI 只剩 2 页可见，用户以为数据丢了）——页面是成品不因
+    资产更新失效，改为提示日志（绑定 N 个漫画页+页号，建议重出）。"""
+    from .logbus import emit as _emit
+    from .projects import get_project as _gp
+    conn0 = db.connect()
+    _proj_row = conn0.execute(
+        "SELECT project_id FROM project_assets WHERE asset_id=? LIMIT 1",
+        (asset_id,)).fetchone()
+    if _proj_row is not None:
+        _p = _gp(db, _proj_row["project_id"])
+        if _p is not None and "comic_mode" in _p.keys() \
+                and _p["comic_mode"] == "comic_output":
+            _seqs = [str(r["seq"]) for r in conn0.execute(
+                "SELECT seq FROM shots WHERE project_id=? AND disabled=0 "
+                "AND ledger_json LIKE ?", (_p["id"], f'%{asset_id}%'))]
+            _emit(db, "storyboard", "info",
+                  f"资产已更新（{asset_id}）：绑定 {len(_seqs)} 个漫画页"
+                  + (f"（页 {'、'.join(_seqs[:12])}{'…' if len(_seqs) > 12 else ''}）" if _seqs else "")
+                  + "——建议重出以保持形象一致（页面文件未受影响）",
+                  project_id=_p["id"])
+            return 0
     n = 0
     conn = db.connect()
     for shot in conn.execute("SELECT id, ledger_json FROM shots").fetchall():

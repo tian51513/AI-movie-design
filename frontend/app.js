@@ -1092,8 +1092,10 @@ const methods = {
   },
   comicPageStatusLabel(s) {
     if (s.disabled) return '无效';
-    // pending=拆解后初始态（漫画项目不走 gen_prompts，直到 comic_ready 才变）
-    return { comic_ready: '已生成', ready: '待生成', pending: '待生成', stale: '待重生成' }[s.status] || s.status;
+    // pending=拆解后初始态（漫画项目不走 gen_prompts，直到 comic_ready 才变）；
+    // stale=资产更新联动（页面文件在，显示图+建议重出标签，不藏图）
+    return { comic_ready: '已生成', ready: '待生成', pending: '待生成',
+             stale: '资产已更新·建议重出' }[s.status] || s.status;
   },
   togglePageSelAll(e) {  // 漫画页全选/清空（仅生效页）
     const ids = this.comicPageShots.filter(s => !s.disabled).map(s => s.id);
