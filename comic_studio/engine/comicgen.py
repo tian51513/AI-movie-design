@@ -152,9 +152,18 @@ def _anchor_lines(shot, db, project_id) -> str:
     return "；".join(parts)
 
 
+def _prev_page_summary(db, shot) -> str:
+    """上一页（seq-1，生效镜）的动作/姿势摘要——页间连续性注入用
+    （2026-09-13 用户需求：坐着→躺着突兀跳变）。"""
+    row = db.connect().execute(
+        "SELECT description FROM shots WHERE project_id=? AND seq=? AND disabled=0",
+        (shot["project_id"], shot["seq"] - 1)).fetchone()
+    return (row["description"] or "").strip()[:80] if row else ""
+
+
 def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
                        scene_img=False, scene_name="", krea_names=None,
-                       second_anchor="") -> str:
+                       second_anchor="", prev_summary="", continuity="") -> str:
     """漫画页提示词：场景 + 外貌锚 + 画风。
 
     对白一律不进提示词（2026-09-13 气泡渲染反转：t2i 画中文=乱码）——
@@ -211,6 +220,12 @@ def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
             prompt += f"。角色外貌锚（各角色严格保持一致）：{anchor}"
         if style:
             prompt += f"。画风：{style}"
+    # 页间连续性（2026-09-13 用户需求：前后页姿势/构图突变）：continuity∈
+    # {全程继承,微变延续} 的页注入上一页姿势摘要——模型知道上一格人物什么
+    # 姿态，本页在描述变化之外保持衔接；场景断点页不注入（合法跳变）
+    if prev_summary and continuity in ("全程继承", "微变延续"):
+        prompt += (f"。与上一页画面连续：上一格{prev_summary}——"
+                   "人物姿势与位置在此基础上衔接变化，不要突兀跳变")
     if (proj["dialogue_mode"] or "bubble") == "bubble":
         prompt += "。画面上方适当留白，不要画任何文字、对话气泡、字幕"
     return prompt
@@ -236,11 +251,14 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
 
     mp = parse_image_mp(proj["image_size"])
     w, h = mp_to_wh(mp, proj["aspect_ratio"])   # 纯 t2i 用（krea 道直传 MP）
+    # seed 库值优先（2026-09-13 页间连续性③：拆解时延续组 +3 已算好——同组页
+    # 渲染风格/人物样貌更稳；无库值才随机）
+    _seed = shot["seed"] if "seed" in shot.keys() and shot["seed"] else None
     dual_mode = ((proj["comic_dual_mode"] if "comic_dual_mode" in proj.keys()
                   else "") or "stitch")          # stitch 默认 / chain 链式
     steps = QUALITY_STEPS.get(proj["quality_tier"] or "standard", 12)
-    params = {"seed": random.randint(0, 2**31 - 1), "steps": steps,
-              "width": w, "height": h}
+    params = {"seed": _seed if _seed is not None else random.randint(0, 2**31 - 1),
+              "steps": steps, "width": w, "height": h}
     images = []
     # 二期参考注入分流（2026-09-13）：绑定角色 ≤2 且有 main.png → 人物场景化
     # 模板（base=第一角色主图；第二角色文字锚）。无绑定/主图缺/>2 → 纯 t2i。
@@ -348,7 +366,10 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     prompt = build_comic_prompt(db, proj, shot,
                                 scene_mode=bool(images), extra_chars=extra_chars,
                                 scene_img=scene_img_used, scene_name=scene_name,
-                                krea_names=krea_names, second_anchor=second_anchor)
+                                krea_names=krea_names, second_anchor=second_anchor,
+                                prev_summary=_prev_page_summary(db, shot),
+                                continuity=(shot["continuity"]
+                                            if "continuity" in shot.keys() else ""))
     comfy_cfg = get_setting(db, "comfy") or {}
     # v1.4：Lightning 默认关（4 步蒸馏画面糊·真机判例）——质量档步数 + cfg 3.5
     # （v4 锐利基线）；设 1.0 走 4 步草稿加速档（cfg 建议 2.5）

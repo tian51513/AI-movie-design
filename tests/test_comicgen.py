@@ -1874,3 +1874,60 @@ def test_stale_linkage_skips_comic_output_with_hint(tmp_path):
     logs = db.connect().execute(
         "SELECT message FROM logs WHERE message LIKE '%建议重出%'").fetchall()
     assert any("1 个漫画页" in l["message"] for l in logs)  # 提示在
+
+
+# ---- 页间连续性三件套（2026-09-13 用户需求：前后页姿势/构图突变） ----
+
+def test_comic_split_rules_pin_pose_continuity():
+    """①拆解规则：同场景延续页描述必须写明姿势/位置衔接（突变仅限场景断点页）。"""
+    from comic_studio.engine.llm.storyboard import COMIC_SPLIT_RULES
+    assert "衔接" in COMIC_SPLIT_RULES and ("姿势" in COMIC_SPLIT_RULES
+                                            or "位置" in COMIC_SPLIT_RULES)
+
+
+def test_comic_page_continuity_prompt_and_seed(tmp_path, monkeypatch):
+    """②③生成时连续性：continuity∈{全程继承,微变延续} 的页提示词注入
+    「与上一页画面连续：{上页摘要}」；seed 库值优先（延续组 +3 已算好），
+    无库值才随机。"""
+    from pathlib import Path
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.comicgen import handle_gen_comic_page
+    from comic_studio.engine.jobs import enqueue_job
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.shots import persist_shots
+
+    db, pid = _comic_project(tmp_path)
+    set_stage(db, pid, "assets_ready")
+    cam = {"景别": "中景", "机位": "平视", "运镜": "固定", "转场": "切"}
+    sids = persist_shots(db, pid, [
+        NS(text_span="a", description="少年坐在床沿，低头看书", shot_type="",
+           camera=cam, duration=5.0, workflow_type="comic",
+           ledger={"dialogue": []}, character_ids=[], scene_ids=[], prop_ids=[],
+           depends_on=None, prompt="x", continuity="场景断点", seed=111),
+        NS(text_span="b", description="少年抬头看向门口", shot_type="",
+           camera=cam, duration=5.0, workflow_type="comic",
+           ledger={"dialogue": []}, character_ids=[], scene_ids=[], prop_ids=[],
+           depends_on=None, prompt="x", continuity="全程继承", seed=114),
+    ])
+    set_stage(db, pid, "storyboard_ready")
+    with comfy_server("ok") as m:
+        set_setting(db, "comfy", {"base_url": m.base_url})
+        jid = enqueue_job(db, "gen_comic_page", project_id=pid, shot_id=sids[1],
+                          resource="gpu_comfy", payload={"shot_id": sids[1]})
+        job = db.connect().execute("SELECT * FROM jobs WHERE id=?",
+                                   (jid,)).fetchone()
+        handle_gen_comic_page(db, tmp_path / "data", job, ComfyClient(m.base_url))
+        snap = json.loads(db.connect().execute(
+            "SELECT snapshot_json FROM jobs WHERE id=?", (jid,)).fetchone()["snapshot_json"])
+        val = snap["prompt"]                                   # 最终注入提示词
+        assert "与上一页画面连续" in val and "坐在床沿" in val  # 上页姿势摘要注入
+        # seed 库值优先：提交的工作流种子节点（57:3 t2i / 2001 krea）
+        wf = m.prompts[0]["prompt"]
+        seed_node = wf.get("2001") or wf.get("57:3") or {}
+        si = seed_node.get("inputs", {})
+        assert si.get("种子", si.get("seed")) == 114  # 字段名随模板方言
