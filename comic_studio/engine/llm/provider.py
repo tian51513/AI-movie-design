@@ -76,12 +76,14 @@ class LLMClient:
         # 且 ask_validated 会把失败输出追加进消息进一步挤占空间（真机 2026-08-27 job 582）
         finish = getattr(choices[0], "finish_reason", None)
         if finish == "length":
-            raise LLMError(
+            err = LLMError(
                 "输出被长度上限截断（finish_reason=length）：请减小单次输入（如缩小分块）"
                 "或提高模型上下文窗口；若为思考型模型，思考会先烧满窗口——"
                 "Ollama 可在设置里为该 provider 配 extra_body "
                 '{"reasoning_effort":"none"} 屏蔽（2026-09-02 实测，'
                 "think:false 不彻底、chat_template_kwargs 无效）")
+            err.kind = "length"  # 2026-09-13：调用方可按 kind 降级（merge 减载重试）
+            raise err
         message = choices[0].message
         text = _THINK_RE.sub("", message.content or "").strip()
         if not text:

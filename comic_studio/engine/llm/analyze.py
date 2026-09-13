@@ -69,12 +69,22 @@ voice_description 只给**有台词的说话角色**；不出声的角色一律�
 MERGE_SYSTEM = """合并多段小说文本的资产分析结果。规则：
 - 同名（或明显同一人的别名，如"萧炎/炎少爷"）合并为一条，appearance 取信息最丰富的描述并可融合细节；
 - 同一场景不同叫法合并；tags 取并集；
-- 保留所有不同条目，不丢项。
+- 合并即精选：条目很多时优先保留主角与重要配角，appearance 不扩写；
+  只在末尾露过一面的路人角色、无关紧要的场景/道具可以丢弃——
+  宁可少而精，不可为了保全面输出超长清单。
 - 角色的 suggested_voice / voice_description 必须保留（取非空者；都空则留空）——
   这是后续配音绑定的依据，丢了会导致角色无声线。
 输出与输入相同结构的 JSON：{"characters":[...],"scenes":[...],"props":[...]}，
 其中每条角色含 name/role/appearance/tags/suggested_voice/voice_description，
 场景与道具含 name/description/tags。"""
+
+# length 截断的极限压缩版（2026-09-13 防御层①）：输入已超墙时保树收敛
+_MERGE_COMPACT_SYSTEM = """合并多段小说文本的资产分析结果（极限压缩模式——上次输出被长度上限截断）。
+- 同名/别名合并为一条；
+- 只保留主角与重要配角（role=主角/配角），appearance 压缩到 40 字以内；
+- 场景只保留反复出现的主要地点（至多 5 个），道具只保留剧情关键物（至多 5 个）；
+- 路人角色与一次性场景一律丢弃。
+输出与输入相同结构的 JSON：{"characters":[...],"scenes":[...],"props":[...]}。"""
 
 ClientFactory = Callable[[str], LLMClient]
 
@@ -100,11 +110,55 @@ def _results_payload(results: list[AssetsAnalysis]) -> str:
         ensure_ascii=False)
 
 
+def _cap_analysis(result: AssetsAnalysis, budget_chars: int) -> AssetsAnalysis:
+    """机械量控（2026-09-13 玉麟传奇 62 块真机）：按 主角>配角>路人 与
+    角色>场景>道具 的优先级逐条累加裸字符到预算，超出丢弃——LLM 不守输出
+    预算时的硬护栏，保证合并树每层减半、下层贪心永远装得下两份。"""
+    def role_w(c):
+        return {"主角": 0, "配角": 1}.get(c.role, 2)
+    ordered = (sorted(result.characters, key=role_w)
+               + list(result.scenes) + list(result.props))
+    kept, used = [], 0
+    for it in ordered:
+        s = len(json.dumps(it.model_dump(exclude_defaults=True), ensure_ascii=False))
+        if kept and used + s > budget_chars:
+            continue  # 预算满：后面的（更次要）全跳过
+        kept.append(it)
+        used += s
+    return AssetsAnalysis(
+        characters=[i for i in kept if i in result.characters],
+        scenes=[i for i in kept if i in result.scenes],
+        props=[i for i in kept if i in result.props])
+
+
+def _merge_call(client: LLMClient, batch: list[AssetsAnalysis]):
+    """带 length 截断防御的合并调用：常规版 →（截断）极限压缩版 →（仍炸）
+    机械取批内首份保树收敛（2026-09-13 真机：分析 50 分钟成果不再整轮报废）。"""
+    from .provider import LLMError
+    payload = _results_payload(batch)
+    try:
+        return ask_validated(client, MERGE_SYSTEM, payload, AssetsAnalysis)
+    except LLMError as e:
+        if getattr(e, "kind", "") != "length":
+            raise
+    try:
+        return ask_validated(client, _MERGE_COMPACT_SYSTEM, payload, AssetsAnalysis)
+    except LLMError as e:
+        if getattr(e, "kind", "") != "length":
+            raise
+    return batch[0], Usage(0, 0)
+
+
 def merge_analyses(client: LLMClient, results: list[AssetsAnalysis],
                    max_payload_chars: int = 8000, on_progress=None
                    ) -> tuple[AssetsAnalysis, Usage]:
     """树状归并（真机 2026-08-25 教训：56 块拼单请求 53928 tok 爆 16k 上下文）。
-    每轮按 max_payload_chars 贪心分批合并，直到剩单结果；用量累计返回。"""
+    每轮按 max_payload_chars 贪心分批合并，直到剩单结果；用量累计返回。
+
+    2026-09-13 输出量控（玉麟传奇 62 块真机事故）：中间轮产物机械压到半预算
+    ——旧版「不丢项」让中间产物贴满预算，下轮贪心装不下两份全走强制两两，
+    16k chars 批（≈13k tok）在 16k 上下文下思考+输出必撞 finish_reason=length，
+    整轮分析 fatal 后 attempts 又从 chunk 1 重跑 50 分钟。"""
     total_prompt = total_completion = 0
     level = list(results)
     rnd = 0
@@ -114,6 +168,7 @@ def merge_analyses(client: LLMClient, results: list[AssetsAnalysis],
     # 末轮易剩两份各近预算，触发强制两两合并击穿 max_payload_chars。
     _WRAP = len('{"characters": [], "scenes": [], "props": []}')
     budget = max_payload_chars - 40  # 逗号与少量富余（精确计费后无需大余量）
+    half = (budget - _WRAP) // 2     # 中间产物上限：保下层一批装得下两份
     while len(level) > 1:
         rnd += 1
         sizes = [len(_results_payload([r])) - _WRAP for r in level]
@@ -133,11 +188,13 @@ def merge_analyses(client: LLMClient, results: list[AssetsAnalysis],
             if len(batch) == 1:
                 nxt.append(batch[0])  # 单结果直通（不可再分）
                 continue
-            merged, usage = ask_validated(client, MERGE_SYSTEM,
-                                          _results_payload(batch), AssetsAnalysis)
+            merged, usage = _merge_call(client, batch)
             total_prompt += usage.prompt_tokens
             total_completion += usage.completion_tokens
             nxt.append(merged)
+        # 量控：中间轮压半预算（树下层健康）；最终产物压全预算（超长篇全量
+        # 资产清单对拆解上下文注入也是爆炸——精选主要条目）
+        nxt = [_cap_analysis(r, half if len(nxt) > 1 else budget) for r in nxt]
         if on_progress:
             on_progress(f"合并第 {rnd} 轮：{len(batches)} 批 → {len(nxt)} 份")
         level = nxt

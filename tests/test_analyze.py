@@ -416,3 +416,120 @@ def test_extract_logs_prompt_and_reply_text():
         "WHERE task='extract_assets' ORDER BY id DESC LIMIT 1").fetchone()
     assert rows[0] > 0, "prompt_text 应有内容（系统词+用户词摘要）"
     assert rows[1] > 0, "reply_text 应有内容（模型输出摘要）"
+
+
+# ---- 2026-09-13 玉麟传奇 62 块真机事故：合并树高层爆上下文 ----
+# 根因：MERGE_SYSTEM「不丢项」+无输出预算 → 中间轮产物贴满 max_payload_chars
+# → 下轮贪心装不下两份走「强制两两」→ 16k chars 批 ≈13k tok → 16k 上下文
+# 思考+输出撞墙 finish_reason=length fatal → attempts 自动从头重跑 62 块。
+
+def test_merge_system_selective_wording():
+    """合并 system 弃「不丢项」承诺，改输出预算/精选措辞（超长篇树收敛前提）。"""
+    assert "不丢项" not in MERGE_SYSTEM
+    assert "精选" in MERGE_SYSTEM or "丢弃" in MERGE_SYSTEM or "保留主要" in MERGE_SYSTEM
+
+
+def test_merge_intermediate_output_capped():
+    """中间轮产物机械量控到半预算（保 主角>配角>路人 权重）——下层贪心
+    永远装得下两份，强制两两分支不再出现 16k chars 爆批。"""
+    import json
+    from comic_studio.engine.llm.analyze import merge_analyses
+    from comic_studio.engine.llm.schemas import AssetsAnalysis
+
+    def item(i, role):
+        return {"name": f"角色名字很长{i:03d}", "role": role,
+                "appearance": "描述" * 30, "tags": []}
+
+    big = AssetsAnalysis.model_validate_json(json.dumps(
+        {"characters": [item(0, "主角"), item(1, "配角")] +
+                        [item(i, "路人") for i in range(2, 30)],
+         "scenes": [], "props": []}, ensure_ascii=False))  # 裸载荷远超半预算
+
+    class OneShotFake(FakeClient):
+        def raw_chat(self, messages, temperature=0.3):
+            # round1 唯一一轮合并：返回超预算产物；level 剩 2 份→再合一轮返回小结果
+            return json.dumps(
+                {"characters": [item(0, "主角"), item(1, "配角")] +
+                 [item(i, "路人") for i in range(2, 30)],
+                 "scenes": [], "props": []}, ensure_ascii=False), Usage(10, 10)
+
+    # 4 份小输入 → round1 两批（各 2 份）→ 每批返回 30 条大产物（中间轮）→
+    # round2 把两份中间产物合一。若无中间量控：round2 载荷 = 2×大产物远超
+    # 1200 预算（这正是 62 块真机强制两两爆批的结构复现）。
+    def small_mk(i):
+        return AssetsAnalysis.model_validate_json(json.dumps(
+            {"characters": [{"name": f"小{i}", "role": "主角",
+                             "appearance": "长" * 420, "tags": []}],
+             "scenes": [], "props": []}, ensure_ascii=False))  # ~450 字：两份/批
+    calls = []
+
+    class BigFake(FakeClient):
+        def raw_chat(self, messages, temperature=0.3):
+            calls.append(len(messages[-1]["content"]))
+            return json.dumps(
+                {"characters": [item(0, "主角"), item(1, "配角")] +
+                 [item(i, "路人") for i in range(2, 30)],
+                 "scenes": [], "props": []}, ensure_ascii=False), Usage(10, 10)
+
+    merged, _u = merge_analyses(BigFake([None]),
+                                [small_mk(i) for i in range(4)], max_payload_chars=1200)
+    assert len(calls) == 3  # round1×2 + round2×1
+    assert all(c <= 1200 for c in calls), calls  # 中间量控后 round2 载荷合规
+    names = [c.name for c in merged.characters]
+    assert "角色名字很长000" in names  # 主角必保
+    assert len(merged.characters) < 30  # 最终产物也被量控（路人丢弃）
+
+
+def test_merge_length_failure_compact_retry():
+    """merge 批遇 finish_reason=length：极限压缩 system 重试一次成功——
+    树继续收敛，analyze 不 fatal。"""
+    import json
+    from comic_studio.engine.llm.provider import LLMError
+    from comic_studio.engine.llm.analyze import merge_analyses
+    from comic_studio.engine.llm.schemas import AssetsAnalysis
+
+    small = AssetsAnalysis.model_validate_json(json.dumps(
+        {"characters": [{"name": "角A", "role": "主角", "appearance": "x", "tags": []}],
+         "scenes": [], "props": []}, ensure_ascii=False))
+    state = {"n": 0, "systems": []}
+
+    class FlakyFake(FakeClient):
+        def raw_chat(self, messages, temperature=0.3):
+            state["systems"].append(messages[0]["content"])
+            state["n"] += 1
+            if state["n"] == 1:
+                e = LLMError("输出被长度上限截断（finish_reason=length）")
+                e.kind = "length"
+                raise e
+            return json.dumps(
+                {"characters": [{"name": "角A", "role": "主角", "appearance": "x", "tags": []}],
+                 "scenes": [], "props": []}, ensure_ascii=False), Usage(5, 5)
+
+    merged, _u = merge_analyses(FlakyFake([None]), [small, small], max_payload_chars=1200)
+    assert len(merged.characters) == 1
+    assert len(state["systems"]) == 2          # 常规版 → 压缩版
+    assert state["systems"][0] != state["systems"][1]  # 第二次换了压缩 system
+
+
+def test_merge_length_double_failure_takes_first():
+    """压缩重试也炸：机械取批内首份保树收敛（warn 透明，不 fatal）。"""
+    import json
+    from comic_studio.engine.llm.provider import LLMError
+    from comic_studio.engine.llm.analyze import merge_analyses
+    from comic_studio.engine.llm.schemas import AssetsAnalysis
+
+    a = AssetsAnalysis.model_validate_json(json.dumps(
+        {"characters": [{"name": "角A", "role": "主角", "appearance": "x", "tags": []}],
+         "scenes": [], "props": []}, ensure_ascii=False))
+    b = AssetsAnalysis.model_validate_json(json.dumps(
+        {"characters": [{"name": "角B", "role": "配角", "appearance": "y", "tags": []}],
+         "scenes": [], "props": []}, ensure_ascii=False))
+
+    class AlwaysLengthFake(FakeClient):
+        def raw_chat(self, messages, temperature=0.3):
+            e = LLMError("输出被长度上限截断（finish_reason=length）")
+            e.kind = "length"
+            raise e
+
+    merged, _u = merge_analyses(AlwaysLengthFake([None]), [a, b], max_payload_chars=1200)
+    assert [c.name for c in merged.characters] == ["角A"]  # 批内首份
