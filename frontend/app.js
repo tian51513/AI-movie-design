@@ -392,6 +392,14 @@ const methods = {
     return s[`kf_${phase}_url`];
   },
   // ===== 分镜媒体查看器（2026-08-30）：全尺寸弹窗 + ← → 连续翻页 =====
+  openComicViewer(shot) {  // 漫画页查看器（2026-09-13 验收需求）：前后页切换
+    const items = this.comicPageShots
+      .filter(s => s.status === 'comic_ready' && !s.disabled)
+      .map(s => ({ url: this.comicPageUrl(s), label: `第 ${s.seq} 页` }));
+    const idx = Math.max(0, items.findIndex(it => it.url === this.comicPageUrl(shot)));
+    this.viewer = { kind: 'image', list: items, idx };
+    window.addEventListener('keydown', this.viewerKeys);
+  },
   openViewer(kind, shot, phase) {
     const items = [];
     if (kind === 'image') {  // 首尾帧拉平成序列：镜1首、镜1尾、镜2首…
