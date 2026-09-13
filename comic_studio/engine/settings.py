@@ -51,8 +51,8 @@ DEFAULT_SETTINGS = {
               "merge_xfade": False, "merge_grade": False,  # C6 段间交叉淡化/统一调色（2026-09-01）
               "director_batch_frames": 512,
               "page_ref_denoise": 1.0,  # v1.3 空白画布纯生成（2026-09-13 底图锁死判例后改 1.0）
-              "page_ref_lightning": 1.0,  # v1.1 Lightning 4步加速 LoRA 强度（0=关闭）
-              "page_ref_cfg": 2.5,  # v1.1 Lightning 蒸馏下的 cfg（真机调优）,
+              "page_ref_lightning": 0.0,  # v1.4 默认关（4步蒸馏画面糊·真机判例）；1.0=草稿加速档
+              "page_ref_cfg": 3.5,  # v1.4 质量基线（v4 重绘同款锐利配置；Lightning 开时建议 2.5,
               # 导演台性能开关（2026-08-28 需求）：段间清显存+重预热每镜多几十秒，
               # 12GB 专跑默认关；OOM 时打开。源帧对比图导出默认关。
               "director_clear_vram": False, "director_export_source": False,

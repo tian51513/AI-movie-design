@@ -1253,8 +1253,9 @@ def test_gen_comic_page_ref_injection(tmp_path, monkeypatch):
     assert "构图" in val and "全身" in val                          # v1.3 构图遵循指令
     assert "山顶云海" in val
     k = m.prompts[0]["prompt"]["4"]["inputs"]
-    assert k["steps"] == 4 and k["cfg"] == 2.5 and k["denoise"] == 1.0  # v1.3 纯生成
-    assert m.prompts[0]["prompt"]["9001"]["inputs"]["strength_model"] == 1.0
+    # v1.4：Lightning 默认关——质量档步数（standard=12）+ cfg 3.5 + denoise 1.0
+    assert k["steps"] == 12 and k["cfg"] == 3.5 and k["denoise"] == 1.0
+    assert m.prompts[0]["prompt"]["9001"]["inputs"]["strength_model"] == 0.0
     assert (m.prompts[0]["prompt"]["45"]["inputs"]["width"],
             m.prompts[0]["prompt"]["45"]["inputs"]["height"]) == (1024, 1536)
     from comic_studio.engine.shots import list_shots
@@ -1440,3 +1441,12 @@ def test_comic_split_rules_pin_narrative_beat_basis(tmp_path, monkeypatch):
     assert "剧情" in COMIC_SPLIT_RULES and "连续性" in COMIC_SPLIT_RULES
     assert "一句台词" in COMIC_SPLIT_RULES            # 明令禁止一句一格
     assert "多句对白" in COMIC_SPLIT_RULES            # 一格多句对白合法
+
+
+def test_page_ref_quality_defaults_and_scene_anchor(tmp_path, monkeypatch):
+    """2026-09-13 真机四张判例：Lightning 默认关（4 步蒸馏画面糊）走质量步数
+    cfg 3.5（v4 锐利基线）；场景槽占位白图→中性灰（白图偏亮带偏室外）；绑定
+    场景名显式锚（室内/室外跟描述）；scene_mode 补锐利度尾。"""
+    from comic_studio.engine.settings import DEFAULT_SETTINGS
+    assert DEFAULT_SETTINGS["comfy"]["page_ref_lightning"] == 0.0
+    assert DEFAULT_SETTINGS["comfy"]["page_ref_cfg"] == 3.5

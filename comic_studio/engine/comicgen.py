@@ -27,16 +27,19 @@ SIZE_PRESETS = {
 }
 
 
-def _ensure_blank(data_dir) -> str:
-    """白图占位（缺省参考槽用）：data/_cache/blank_ref.png，无则生成 64x64。"""
+def _ensure_blank(data_dir, name="blank_ref.png", rgb=(255, 255, 255)) -> str:
+    """占位图（缺省参考槽用）：data/_cache/<name>，无则生成 64x64。
+    v1.4：场景/第二角色缺省槽用中性灰（blank_gray.png）——白图偏亮会把
+    「新场景」带偏户外（真机判例：室内卧室出成室外）。"""
     import struct
     import zlib
     d = Path(data_dir) / "_cache"
     d.mkdir(parents=True, exist_ok=True)
-    p = d / "blank_ref.png"
+    p = d / name
     if not p.exists():
         w = h = 64
-        raw = b"".join(b"\x00" + b"\xff" * (w * 3) for _ in range(h))
+        px = bytes(rgb)
+        raw = b"".join(b"\x00" + px * w for _ in range(h))
         def chunk(tag, data):
             c = struct.pack(">I", len(data)) + tag + data
             return c + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
@@ -94,7 +97,7 @@ def _anchor_lines(shot, db, project_id) -> str:
 
 
 def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
-                       scene_img=False) -> str:
+                       scene_img=False, scene_name="") -> str:
     """漫画页提示词：场景 + 外貌锚 + 画风。
 
     对白一律不进提示词（2026-09-13 气泡渲染反转：t2i 画中文=乱码）——
@@ -115,9 +118,12 @@ def build_comic_prompt(db, proj, shot, scene_mode=False, extra_chars=None,
         # 指令重复堆叠，挤占分镜场景与画风遵循——2026-09-13 真机判例）
         who = "图1中的人物" if not extra_chars else f"图1中的人物与图2中的人物（{extra_chars}）"
         where = "图3中的场景" if scene_img else "新场景"
-        prompt = (f"严格按场景描述重新构图：{detail[:200]}。"
+        scene_anchor = f"场景：{scene_name}，" if scene_name else ""
+        prompt = (f"严格按场景描述重新构图：{scene_anchor}{detail[:200]}。"
                   f"将{who}置于{where}，人物五官/发型/服装与参考图保持一致。"
-                  "画面构图（全身/半身/特写/机位）严格按描述执行，人物完整按描述呈现")
+                  "画面构图（全身/半身/特写/机位）严格按描述执行，人物完整按描述呈现。"
+                  "场所与光线严格按描述（室内就是室内，室外就是室外），"
+                  "画面高清锐利、细节清晰")
         if style:
             prompt += f"。画风（严格执行）：{style}"   # 画风前置加重（尾部被淹没判例）
     else:
@@ -169,11 +175,14 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
                 char_refs.append((a, mp))
         if len(char_refs) >= 2:
             break
-    # v1.2 场景参考：绑定场景资产有 main.png 即入第三槽（person+scene 官方组合）
+    # v1.2 场景参考：绑定场景资产有 main.png 即入第三槽（person+scene 官方组合）；
+    # v1.4 场景名即使无图也可作文字锚（室内/室外跟描述，防白图带偏）
     scene_ref = None
+    scene_name = ""
     for cid in (bound.get("scenes") or [])[:1]:
         a = get_asset(db, cid)
         if a is not None and a["kind"] == "scene":
+            scene_name = a["name"]
             mp = _dta(data_dir, a["library_dir"]) / "main.png"
             if Path(mp).exists():
                 scene_ref = (a, mp)
@@ -189,35 +198,43 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
             ref_tmpl = None
         if ref_tmpl is not None:
             tmpl = ref_tmpl
-            # v1.1 多图槽：char1 必填；char2 双角色；scene 第三槽——缺省槽白图
-            # 占位（filler 全槽上传，提示词不提的图号被模型忽略）
+            # v1.1 多图槽：char1 必填；char2 双角色；scene 第三槽。v1.4：缺省槽
+            # 中性灰占位（白图偏亮把「新场景」带偏户外——真机判例：室内出成室外）
             from .paths import data_to_abs as _dta2
             blank = _dta2(data_dir, "_cache/blank_ref.png")
             if not Path(blank).exists():
                 blank = _ensure_blank(data_dir)
+            gray = _dta2(data_dir, "_cache/blank_gray.png")
+            if not Path(gray).exists():
+                gray = _ensure_blank(data_dir, "blank_gray.png", (128, 128, 128))
             # v1.3：canvas=空白画布作 latent 底（不锁构图——旧版 char1 直作底图
             # 把半身构图与摄影风格一并锁死，2026-09-13 真机判例）
             images = [
                 {"slot": "char1", "path": str(char_refs[0][1])},
-                {"slot": "char2", "path": str(char_refs[1][1]) if len(char_refs) == 2 else str(blank)},
-                {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(blank)},
+                {"slot": "char2", "path": str(char_refs[1][1]) if len(char_refs) == 2 else str(gray)},
+                {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(gray)},
                 {"slot": "canvas", "path": str(blank)},
             ]
             scene_img_used = scene_ref is not None
             params["denoise"] = float(
-                (get_setting(db, "comfy") or {}).get("page_ref_denoise", 0.9))
+                (get_setting(db, "comfy") or {}).get("page_ref_denoise", 1.0))
             if len(char_refs) == 2:
                 a2 = char_refs[1][0]
                 extra_chars = a2["name"]  # 双角色真参考（图2）——文字锚只需名字
     prompt = build_comic_prompt(db, proj, shot,
                                 scene_mode=bool(images), extra_chars=extra_chars,
-                                scene_img=scene_img_used)
+                                scene_img=scene_img_used, scene_name=scene_name)
     comfy_cfg = get_setting(db, "comfy") or {}
-    lightning = float(comfy_cfg.get("page_ref_lightning", 1.0))
+    # v1.4：Lightning 默认关（4 步蒸馏画面糊·真机判例）——质量档步数 + cfg 3.5
+    # （v4 锐利基线）；设 1.0 走 4 步草稿加速档（cfg 建议 2.5）
+    lightning = float(comfy_cfg.get("page_ref_lightning", 0.0))
     if tmpl.id == "zimage_page_ref" and lightning > 0:
         params["lightning_strength"] = lightning
         params["steps"] = 4                      # Lightning 蒸馏 4 步（质量档步数不适用）
         params["cfg"] = float(comfy_cfg.get("page_ref_cfg", 2.5))
+    elif tmpl.id == "zimage_page_ref":
+        params["lightning_strength"] = 0.0
+        params["cfg"] = float(comfy_cfg.get("page_ref_cfg", 3.5))
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
         params=params,
