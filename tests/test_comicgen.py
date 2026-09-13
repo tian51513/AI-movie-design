@@ -1495,7 +1495,7 @@ def test_gen_comic_page_krea2_fast_lane(tmp_path, monkeypatch):
         assert any(u.endswith("__char.png") for u in ups), ups
         g = wf["2001"]["inputs"]
         assert abs(g["百万像素"] - 1024 * 1536 / 1e6) < 0.1   # 按项目尺寸档换算
-        assert g["步数"] == 12                                  # 质量档
+        assert g["步数"] == 10   # krea 道固定 10（步数非瓶颈实测）
         v1 = m.prompts[0]["prompt"]["28"]["inputs"]["value"]
         v2 = m.prompts[1]["prompt"]["28"]["inputs"]["value"]
         assert "少年" in v1 and "老者" not in v1               # 第一段只放 A

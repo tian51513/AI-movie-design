@@ -63,12 +63,12 @@
   "class_type": "LazyKreaGenerate",
   "inputs": {
    "模型": [
-    "90",
+    "4",
     0
    ],
    "底模": [
-    "90",
-    0
+    "4",
+    1
    ],
    "文本编码": [
     "91",
@@ -84,15 +84,19 @@
    ],
    "种子": 12345,
    "步数": 10,
-   "CFG": 1.0,
+   "CFG": 1,
    "采样器": "euler",
    "调度器": "simple",
    "宽度": 1024,
    "高度": 1024,
    "双图顺序": "图1场景+图2人物",
    "编辑LoRA": "Krea2\\Krea2-编辑identity_edit_v1_2.safetensors",
-   "编辑LoRA强度": 1.0,
-   "百万像素": 0.4
+   "编辑LoRA强度": 1,
+   "百万像素": 0.4,
+   "接地像素": 512,
+   "参考强度": 2,
+   "场景强度": 1,
+   "随机种子": true
   }
  },
  "10": {
@@ -103,6 +107,51 @@
     "2001",
     0
    ]
+  }
+ },
+ "4": {
+  "inputs": {
+   "槽位数": 8,
+   "启用_1": true,
+   "LoRA_1": "Krea2\\PornMaster_Detail_Slider_Krea2_V2.safetensors",
+   "强度_1": 1,
+   "类型_1": "默认",
+   "启用_2": true,
+   "LoRA_2": "Krea2\\PornMaster_Krea2_Realism_slider_V1.safetensors",
+   "强度_2": 1,
+   "类型_2": "默认",
+   "启用_3": false,
+   "LoRA_3": "Krea2\\Fascium_nsfw2MERGE_r128.safetensors",
+   "强度_3": 1,
+   "类型_3": "默认",
+   "启用_4": false,
+   "LoRA_4": "Krea2\\krea2-Cc-天魔-身材.safetensors",
+   "强度_4": 1,
+   "类型_4": "默认",
+   "启用_5": false,
+   "LoRA_5": "Krea2\\Krea2Turbo_18_forCharacterLoRAs_v2_r128.safetensors",
+   "强度_5": 1,
+   "类型_5": "默认",
+   "启用_6": false,
+   "LoRA_6": "Krea2\\krea2-Cc风情万种-人像.safetensors",
+   "强度_6": 1,
+   "类型_6": "默认",
+   "启用_7": false,
+   "LoRA_7": "Krea2\\krea2_turbo_4step_rank_64_lora_comfyui.safetensors",
+   "强度_7": 1,
+   "类型_7": "默认",
+   "启用_8": false,
+   "LoRA_8": "Krea2\\star face\\girlslike_krea2_范冰冰.safetensors",
+   "强度_8": 1,
+   "类型_8": "默认",
+   "模型": [
+    "90",
+    0
+   ]
+  },
+  "class_type": "LazyKreaLoraStack",
+  "_meta": {
+   "title": "Lazy Krea 多LoRA"
   }
  }
 }
