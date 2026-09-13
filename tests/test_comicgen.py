@@ -1523,3 +1523,80 @@ def test_gen_comic_page_krea2_fast_lane(tmp_path, monkeypatch):
                 "SELECT snapshot_json FROM jobs WHERE id=?",
                 (jid2,)).fetchone()["snapshot_json"])
             assert snap2["template"] == "zimage_page_ref"
+
+
+def test_upload_retry_and_error_body(tmp_path):
+    """上传 5xx 重试 + 错误正文入消息（2026-09-13 500 判例：ASCII/中文/10MB/
+    同名连传全复现失败——服务端窗口性故障无诊断信息；job 三连重试挤在 3 秒内
+    全灭）。①500→退避重试×2 第二次成功②重试穷尽后异常带响应正文。"""
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    import threading
+    from comic_studio.engine.comfy.client import ComfyClient
+    from pathlib import Path as _P
+
+    state = {"n": 0}
+    body_tail = "Traceback: ValueError: fake server error detail"
+
+    class H(BaseHTTPRequestHandler):
+        def do_POST(self):
+            ln = int(self.headers.get("Content-Length") or 0)
+            self.rfile.read(ln)
+            state["n"] += 1
+            if state["n"] <= 2:  # 前两次 500
+                out = body_tail.encode()
+                self.send_response(500)
+                self.send_header("Content-Length", str(len(out)))
+                self.end_headers()
+                self.wfile.write(out)
+                return
+            out = b'{"name":"ok.png"}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
+
+        def log_message(self, *a):
+            pass
+
+    srv = HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    c = ComfyClient(f"http://127.0.0.1:{srv.server_address[1]}")
+    p = _P(tmp_path) / "x.png"
+    p.write_bytes(b"\x89PNG")
+    import comic_studio.engine.comfy.client as CC
+    CC._UPLOAD_RETRY_DELAYS = [0.05, 0.05]   # 测试压缩退避
+    try:
+        c.upload_image(p, "x.png")
+        assert state["n"] == 3, state  # 两次失败+第三次成功
+    finally:
+        srv.shutdown()
+        CC._UPLOAD_RETRY_DELAYS = [5, 15]
+
+    # 穷尽场景：恒 500 → 异常带正文
+    state2 = {"n": 0}
+
+    class H2(H):
+        def do_POST(self):
+            ln = int(self.headers.get("Content-Length") or 0)
+            self.rfile.read(ln)
+            state2["n"] += 1
+            out = body_tail.encode()
+            self.send_response(500)
+            self.send_header("Content-Length", str(len(out)))
+            self.end_headers()
+            self.wfile.write(out)
+
+    srv2 = HTTPServer(("127.0.0.1", 0), H2)
+    threading.Thread(target=srv2.serve_forever, daemon=True).start()
+    c2 = ComfyClient(f"http://127.0.0.1:{srv2.server_address[1]}")
+    CC._UPLOAD_RETRY_DELAYS = [0.05, 0.05]
+    try:
+        c2.upload_image(p, "x.png")
+        assert False, "应抛异常"
+    except Exception as e:
+        assert "fake server error detail" in str(e), str(e)  # 正文进消息
+        assert state2["n"] == 3
+    finally:
+        srv2.shutdown()
+        CC._UPLOAD_RETRY_DELAYS = [5, 15]

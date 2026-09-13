@@ -35,7 +35,10 @@ def fill_workflow(template, *, prompt: str | None, params: dict,
         # 2026-08-30 音色：上传名保留源文件后缀（音频走 /upload/audio 按后缀分流）
         from pathlib import Path as _P
         suffix = _P(matched["path"]).suffix.lower() or ".png"
-        name = f"cs__{output_ctx['project']}__{output_ctx['asset']}__{spec['slot']}{suffix}"
+        # 上传名即 ComfyUI input 路径——清洗分隔符（2026-09-13 真机判例：
+        # 链式 tag 带 / 被当子目录 → 服务端 open() FileNotFoundError → 500）
+        _safe = lambda x: str(x).replace("/", "-").replace("\\", "-")
+        name = f"cs__{_safe(output_ctx['project'])}__{_safe(output_ctx['asset'])}__{_safe(spec['slot'])}{suffix}"
         set_input(spec["node"], spec["field"], name)
         uploads.append({"path": matched["path"], "name": name})
 

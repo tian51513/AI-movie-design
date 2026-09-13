@@ -43,14 +43,15 @@ class ComfyClient:
 
     def upload_image(self, path: Path, name: str) -> None:
         with self._client() as c:
-            with open(path, "rb") as f:
-                # overwrite 双通道（查询参数+表单字段）：ComfyUI 各版本读取位置
-                # 不一；漏掉时同名上传被静默忽略——重生成为旧图（真机 2026-08-25）
-                resp = c.post(f"{self.base_url}/upload/image",
-                              params={"overwrite": "true"},
-                              data={"overwrite": "true"},
-                              files={"image": (name, f, "image/png")})
-                resp.raise_for_status()
+            # 读字节进内存：重试重发完整内容（句柄复用在 EOF 会发空文件）；
+            # overwrite 双通道（查询参数+表单字段）：ComfyUI 各版本读取位置
+            # 不一；漏掉时同名上传被静默忽略——重生成为旧图（真机 2026-08-25）
+            data = Path(path).read_bytes()
+            _upload_with_retry(lambda: c.post(
+                f"{self.base_url}/upload/image",
+                params={"overwrite": "true"},
+                data={"overwrite": "true"},
+                files={"image": (name, data, "image/png")}))
 
     # Phase 2 音色（2026-08-31 真机教训）：真 ComfyUI 无 /upload/audio 端点（405），
     # 音频同样走 /upload/image 存入 input（LoadAudio 从 input 读）；仅 mime 按后缀给
@@ -61,12 +62,12 @@ class ComfyClient:
         """上传媒体：图片/音频统一走 /upload/image（真机实测音频同端点）。"""
         mime = self._AUDIO_MIMES.get(Path(name).suffix.lower(), "image/png")
         with self._client() as c:
-            with open(path, "rb") as f:
-                resp = c.post(f"{self.base_url}/upload/image",
-                              params={"overwrite": "true"},
-                              data={"overwrite": "true"},
-                              files={"image": (name, f, mime)})
-                resp.raise_for_status()
+            data = Path(path).read_bytes()
+            _upload_with_retry(lambda: c.post(
+                f"{self.base_url}/upload/image",
+                params={"overwrite": "true"},
+                data={"overwrite": "true"},
+                files={"image": (name, data, mime)}))
 
     def submit(self, workflow: dict, client_id: str) -> str:
         with self._client() as c:
@@ -209,3 +210,37 @@ class ComfyClient:
             resp.raise_for_status()
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(resp.content)
+
+
+# 上传 5xx 退避重试（2026-09-13 真机 500 判例：根因是上传名含 / 被当子目录
+# ——同名连传复现全通过才逼出服务端 traceback；重试防的是真·瞬时故障，且
+# job 级三连重试挤在 3 秒内撑不过窗口）
+_UPLOAD_RETRY_DELAYS = [5, 15]
+
+
+def _upload_with_retry(post_fn):
+    """上传共用段：5xx/传输异常按退避表重试（4xx 立即抛——客户端错误重试
+    无意义）；穷尽后异常带响应正文（服务端 traceback 进错误消息——下次发作
+    日志直接可诊断，不用再猜）。"""
+    import time as _time
+    last = None
+    for delay in [0] + _UPLOAD_RETRY_DELAYS:
+        if delay:
+            _time.sleep(delay)
+        try:
+            resp = post_fn()
+            resp.raise_for_status()
+            return resp
+        except Exception as e:
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            if code is not None and code < 500:
+                raise   # 4xx：立即抛
+            body = ""
+            try:
+                body = (getattr(e, "response", None) and e.response.text or "")[:400]
+            except Exception:
+                pass
+            if body:
+                e.args = (f"{e} | 服务端正文: {body}",) + e.args[1:]
+            last = e
+    raise last

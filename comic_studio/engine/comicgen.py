@@ -309,7 +309,7 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
         p1 = build_comic_prompt(db, proj, shot, scene_mode=True, extra_chars="",
                                 scene_img=scene_img_used, scene_name=scene_name,
                                 krea_names=[krea_names[0]])
-        _submit_pass(p1, images, mid, tag="-链1/2")
+        _submit_pass(p1, images, mid, tag="-链1")   # tag 严禁含 /（真机判例：上传名即路径）
         p2_images = [{"slot": "scene", "path": str(mid)},
                      {"slot": "char", "path": str(char_refs[1][1])}]
         p2 = (f"在图1 的画面基础上加入图2 参考中的人物（{krea_names[1]}）："
@@ -322,7 +322,7 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
         if (proj["dialogue_mode"] or "bubble") == "bubble":
             p2 += "。画面上方适当留白，不要画任何文字、对话气泡、字幕"
         wf = _submit_pass(p2, p2_images, dest, seed=random.randint(0, 2**31 - 1),
-                          tag="-链2/2")
+                          tag="-链2")
         chained_final_prompt = p2
         mid.unlink(missing_ok=True)
         prompt = chained_final_prompt
