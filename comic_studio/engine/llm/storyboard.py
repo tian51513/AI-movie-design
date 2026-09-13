@@ -101,7 +101,10 @@ COMIC_SPLIT_RULES = """
 4. dialogue 照旧：[{"speaker":"说话人","line":"原话"}] 逐字照录本格对白，供气泡排版使用
 5. 台账照旧服务跨格画面一致性：must_keep（角色发型/服装/外貌特征）、must_avoid（易错项）；
    泛称群体称谓→白名单具名角色的纪律照旧
-6. 输出 JSON 结构与上述 schema 完全一致（忽略的字段留空/省略即可）"""
+6. 禁止复读（2026-09-13 真机判例：延续场景 22 页描述逐字相同）：相邻页描述
+   不得相同或高度相似——同一场景延续时每页必须换画面信息（景别/机位/动作
+   焦点/情绪中至少一项变化：特写↔近景↔中景↔全景轮换，或动作推进）
+7. 输出 JSON 结构与上述 schema 完全一致（忽略的字段留空/省略即可）"""
 
 
 def comic_split_system(target_pages: int = 0) -> str:
@@ -456,6 +459,20 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     if _comic:
         for s in staged:
             s.workflow_type = "comic"
+        # 相邻复读兜底（2026-09-13 真机判例：42 页中 28 页描述逐字相同——LLM
+        # 对延续场景复读模板；每页对白不同但描述=页面提示词，画面全同只换气泡）。
+        # 相邻完全相同描述自动追加轮换构图变化（同场景换景别是漫画合法手法）；
+        # 规则⑥已在提示词侧防新增，此为漏网兜底
+        _FRAMES = ("构图变化：全身全景，环境展开", "构图变化：面部特写，情绪放大",
+                   "构图变化：侧面中景，动作轮廓", "构图变化：俯视近景，细节聚焦")
+        _prev, _run = None, 0
+        for s in staged:
+            d = (getattr(s, "description", "") or "").strip()
+            if d and d == _prev:
+                s.description = d + f"（{_FRAMES[_run % len(_FRAMES)]}）"
+                _run += 1
+            else:
+                _prev, _run = d, 0
     if n_dur:
         emit_log(db, "storyboard", "info",
                  f"对白镜时长重估：{n_dur} 镜（句数×2.5s，钳 4~15）", project_id=project_id)

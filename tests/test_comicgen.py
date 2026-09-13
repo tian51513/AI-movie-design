@@ -1387,3 +1387,46 @@ def test_comic_prompt_clean_anchor_and_ids(tmp_path):
     assert "体型：" not in p2                               # 全行锚不进参考路径
     assert "图1中的人物" in p2 and "老者" in p2 and "图3中的场景" in p2
     assert "衣角翻飞" in p2                                 # 分镜描述保留
+
+
+def test_comic_split_dedupes_adjacent_identical_descriptions(tmp_path, monkeypatch):
+    """2026-09-13 真机判例：42 页里 28 页描述逐字重复（页5-8 原文切片各不相同
+    但描述相同——拆解 LLM 对延续场景复读模板）。双修：①拆解规则禁相邻页同
+    描述（源头防）②staging 机械兜底：相邻完全相同描述自动追加轮换构图变化
+    （同场景换景别是漫画合法手法，四张一样的图才是废片）。"""
+    import json as _json
+    from comic_studio.engine.llm.provider import Usage
+    from comic_studio.engine.llm.storyboard import split_storyboards, COMIC_SPLIT_RULES
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.shots import list_shots
+
+    # 规则里有防重复条款
+    assert "相邻" in COMIC_SPLIT_RULES and ("相同" in COMIC_SPLIT_RULES
+                                            or "重复" in COMIC_SPLIT_RULES)
+
+    reply = {"shots": [
+        {"text_span": f"第{i}句原文", "description": "母亲侧头贴着儿子腰，手压其胯骨",
+         "shot_type": "", "camera": {}, "duration": 5, "workflow_type": "comic",
+         "dialogue": [{"speaker": "母亲", "line": f"台词{i}"}]}
+        for i in range(1, 5)]}  # 4 页完全相同描述
+
+    class FakeDup:
+        def __init__(self):
+            from comic_studio.engine.llm.provider import LLMClient
+            super(FakeDup, self).__init__.__init__("http://x", "k", "m") if False else None
+            self.base = LLMClient("http://x", "k", "m")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return _json.dumps(reply, ensure_ascii=False), Usage(10, 20)
+
+    monkeypatch.setattr("comic_studio.engine.llm.storyboard.make_split_factory",
+                        lambda db_: (lambda task: FakeDup()))
+    db, pid = _comic_project(tmp_path)
+    set_stage(db, pid, "assets_ready")
+    split_storyboards(db, tmp_path / "data", pid)
+    descs = [s["description"] for s in list_shots(db, pid)]
+    assert len(descs) == 4
+    # 相邻不再完全相同（轮换构图注入）
+    for a, b in zip(descs, descs[1:]):
+        assert a != b, (a, b)
+    # 首页保持原描述（无变化注入）
+    assert descs[0] == "母亲侧头贴着儿子腰，手压其胯骨"
