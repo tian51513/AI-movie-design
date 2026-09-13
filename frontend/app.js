@@ -135,11 +135,6 @@ const computed = {
     return q ? styles.filter(s => s.name.toLowerCase().includes(q)
                                 || (s.zh || '').includes(this.spSearch || '')) : styles;
   },
-  kreaNameZh() {  // 创建流选中徽章显示中文名（查不到回落英文）
-    const styles = this.kreaLibs[this.kreaLib] || [];
-    const s = styles.find(x => x.name === this.kreaName);
-    return (s && s.zh) || this.kreaName;
-  },
   spSelPrompt() {
     const s = (this.kreaLibs[this.spLib] || []).find(x => x.name === this.spSel);
     return s ? s.prompt : '';
@@ -1930,6 +1925,13 @@ const methods = {
       const styles = this.kreaLibs[this.kreaLib] || [];
       const s = styles.find(x => x.name === this.kreaName);
       return s ? this._kreaClean(s.prompt) : '';
+    },
+    kreaNameZh() {  // 创建流选中徽章显示中文名（查不到回落英文）——methods
+    // （模板按函数调用 kreaNameZh()；放 computed 是属性会被解包成字符串
+    // →「not a function」渲染崩溃黑屏，2026-09-14 真机判例）
+    const styles = this.kreaLibs[this.kreaLib] || [];
+    const s = styles.find(x => x.name === this.kreaName);
+    return (s && s.zh) || this.kreaName;
     },
     _kreaClean(p) {
       // 剥 Krea2 模板占位尾巴（「.. Subject:{prompt}」是 Krea2 工作流模板系统的
