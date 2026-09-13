@@ -1487,15 +1487,19 @@ def test_gen_comic_page_krea2_fast_lane(tmp_path, monkeypatch):
         snap = json.loads(db.connect().execute(
             "SELECT snapshot_json FROM jobs WHERE id=?", (jid,)).fetchone()["snapshot_json"])
         assert snap["template"] == "comic_page_krea2"
-        # 双参考上传：scene 槽（灰，无场景参考）+ char 槽（双角色拼接合成图）
+        # 链式两段（官方 workaround：先放 A → 结果作图1 再插 B——拼接合成参考
+        # 有 faces drift 官方确认缺陷，2026-09-13 README 实证改链式）
+        assert len(m.prompts) == 2, "双角色页应两段链式提交"
         ups = [u for u in m.uploads if u.endswith(".png") and "__" in u]
-        assert any(u.endswith("__scene.png") for u in ups), ups
+        assert any(u.endswith("__scene.png") for u in ups), ups   # 两段各有 scene 槽
         assert any(u.endswith("__char.png") for u in ups), ups
         g = wf["2001"]["inputs"]
         assert abs(g["百万像素"] - 1024 * 1536 / 1e6) < 0.1   # 按项目尺寸档换算
         assert g["步数"] == 12                                  # 质量档
-        val = wf["28"]["inputs"]["value"]
-        assert "图2" in val and "左侧" in val                    # 双角色拼接说明
+        v1 = m.prompts[0]["prompt"]["28"]["inputs"]["value"]
+        v2 = m.prompts[1]["prompt"]["28"]["inputs"]["value"]
+        assert "少年" in v1 and "老者" not in v1               # 第一段只放 A
+        assert "老者" in v2 and "加入" in v2                    # 第二段插 B
 
     # Krea2 模板缺失 → 回落 zimage_page_ref（文件级 fallback）
     import shutil, tempfile

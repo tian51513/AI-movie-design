@@ -51,34 +51,6 @@ def _ensure_blank(data_dir, name="blank_ref.png", rgb=(255, 255, 255)) -> str:
     return str(p)
 
 
-def _stitch_mains(data_dir, paths) -> str:
-    """双角色主图左右拼接（等高）——Krea2 identity_edit 双图上限的合法手法：
-    图2 喂「两人同框」合成参考，prompt 说明左侧/右侧身份。缓存
-    data/_cache/stitch_<hash>.png（主图内容不变即复用）。"""
-    import hashlib
-    key = hashlib.md5("|".join(f"{p}:{Path(p).stat().st_mtime_ns}"
-                               for p in map(str, paths)).encode()).hexdigest()[:12]
-    out = Path(data_dir) / "_cache" / f"stitch_{key}.png"
-    if out.exists():
-        return str(out)
-    try:
-        from PIL import Image
-        imgs = [Image.open(p).convert("RGB") for p in paths]
-        hgt = min(i.height for i in imgs)
-        rs = [i.resize((max(1, int(i.width * hgt / i.height)), hgt)) for i in imgs]
-        canvas = Image.new("RGB", (sum(i.width for i in rs), hgt), (128, 128, 128))
-        x = 0
-        for i in rs:
-            canvas.paste(i, (x, 0))
-            x += i.width
-        out.parent.mkdir(parents=True, exist_ok=True)
-        canvas.save(out)
-        return str(out)
-    except Exception:
-        # 无 Pillow / 参考图损坏（测试假 PNG）退单图——双角色只剩文字锚兜底
-        return str(paths[0])
-
-
 def _ledger(shot) -> dict:
     try:
         return json.loads(shot["ledger_json"] or "{}")
@@ -240,8 +212,10 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
         if not Path(gray).exists():
             gray = _ensure_blank(data_dir, "blank_gray.png", (128, 128, 128))
         # Krea2 快道优先（2026-09-13 用户实测 20-30s/页·风格原生贴合）：
-        # 图1=场景 / 图2=人物（双角色左右拼接合成参考——identity_edit LoRA
-        # 双图训练上限，拼接是社区合法手法）；缺失回落 zimage_page_ref
+        # 图1=场景 / 图2=人物（**槽序固定**——README 明示 scene 恒 image1、
+        # person 恒 image2，交换即劣化）。双角色走**链式两段**（官方 workaround：
+        # 先放 A → 结果作 image1 再插 B——拼接合成参考有「两人脸趋同」的
+        # 官方确认缺陷，2026-09-13 README 实证后弃用拼接改链式）；缺失回落
         krea_tmpl = None
         try:
             krea_tmpl = resolve_template(db, "comic_page_krea2")
@@ -249,15 +223,10 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
             krea_tmpl = None
         if krea_tmpl is not None:
             tmpl = krea_tmpl
-            if len(char_refs) == 2:
-                char_path = _stitch_mains(data_dir, [char_refs[0][1], char_refs[1][1]])
-                krea_names = [char_refs[0][0]["name"], char_refs[1][0]["name"]]
-            else:
-                char_path = str(char_refs[0][1])
-                krea_names = [char_refs[0][0]["name"]]
+            krea_names = [c[0]["name"] for c in char_refs]
             images = [
                 {"slot": "scene", "path": str(scene_ref[1]) if scene_ref else str(gray)},
-                {"slot": "char", "path": char_path},
+                {"slot": "char", "path": str(char_refs[0][1])},
             ]
             scene_img_used = scene_ref is not None
             params["megapixels"] = round(w * h / 1e6, 2)   # 百万像素按项目尺寸档
@@ -301,31 +270,66 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     elif tmpl.id == "zimage_page_ref":
         params["lightning_strength"] = 0.0
         params["cfg"] = float(comfy_cfg.get("page_ref_cfg", 3.5))
-    wf, uploads = fill_workflow(
-        tmpl, prompt=prompt,
-        params=params,
-        images=images,
-        output_ctx={"project": proj["slug"], "asset": f"page-{shot['seq']}"},
-        model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))
-    for up in uploads:
-        comfy.upload_image(Path(up["path"]), up["name"])
-    if job is not None:
-        attach_snapshot(db, job["id"], prompt=prompt, workflow=wf, template_id=tmpl.id)
-    emit_log(db, "comfy", "info",
-             f"漫画页 {shot['seq']} 提交（模板 {tmpl.id}，{w}×{h}，{steps}步"
-             + ("，角色参考注入" if images else "") + "）",
-             project_id=proj["id"], job_id=job["id"])
-    results = comfy.wait_and_collect(
-        comfy.submit(wf, client_id=f"cs-comic-{shot['id']}"), stall_seconds=600)
-    img = next((r for r in results if r.get("_kind") == "image"), None)
-    if img is None:
-        raise RuntimeError(f"漫画页 {shot['seq']} 未返回图片")
-
     # 落盘 pages/page_NNN.png（与动态漫 pages/ 目录约定同名不同项目空间）
     pages_dir = Path(data_dir) / "projects" / proj["slug"] / "pages"
     pages_dir.mkdir(parents=True, exist_ok=True)
     dest = pages_dir / f"page_{shot['seq']:03d}.png"
-    comfy.download(img["filename"], img.get("subfolder", ""), img.get("type", "output"), dest)
+
+    def _submit_pass(prompt_text, pass_images, out_path, seed=None, tag=""):
+        """一次 ComfyUI 提交→等图→落盘（链式两段的共用段）。"""
+        _params = dict(params)
+        if seed is not None:
+            _params["seed"] = seed
+        _wf, _ups = fill_workflow(
+            tmpl, prompt=prompt_text,
+            params=_params,
+            images=pass_images,
+            output_ctx={"project": proj["slug"], "asset": f"page-{shot['seq']}{tag}"},
+            model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))
+        for up in _ups:
+            comfy.upload_image(Path(up["path"]), up["name"])
+        emit_log(db, "comfy", "info",
+                 f"漫画页 {shot['seq']}{tag} 提交（模板 {tmpl.id}，{w}×{h}，"
+                 f"{_params.get('steps', steps)}步"
+                 + ("，角色参考注入" if pass_images else "") + "）",
+                 project_id=proj["id"], job_id=job["id"])
+        results = comfy.wait_and_collect(
+            comfy.submit(_wf, client_id=f"cs-comic-{shot['id']}"), stall_seconds=600)
+        img = next((r for r in results if r.get("_kind") == "image"), None)
+        if img is None:
+            raise RuntimeError(f"漫画页 {shot['seq']}{tag} 未返回图片")
+        comfy.download(img["filename"], img.get("subfolder", ""), img.get("type", "output"),
+                       out_path)
+        return _wf
+
+    chained_final_prompt = None
+    if tmpl.id == "comic_page_krea2" and len(char_refs) == 2:
+        # 链式两段（官方 workaround）：P1 场景+A → 中间产物 → P2 以 P1 为图1 插 B
+        mid = pages_dir / f".chain_{shot['seq']:03d}.png"
+        p1 = build_comic_prompt(db, proj, shot, scene_mode=True, extra_chars="",
+                                scene_img=scene_img_used, scene_name=scene_name,
+                                krea_names=[krea_names[0]])
+        _submit_pass(p1, images, mid, tag="-链1/2")
+        p2_images = [{"slot": "scene", "path": str(mid)},
+                     {"slot": "char", "path": str(char_refs[1][1])}]
+        p2 = (f"在图1 的画面基础上加入图2 参考中的人物（{krea_names[1]}）："
+              f"{(shot['description'] or '')[:180]}。图1 中已有的人物与场景保持不变，"
+              f"{krea_names[1]} 的外貌与图2 保持一致，按描述安排其位置与动作，"
+              "画面高清锐利、细节清晰")
+        st = ((proj["style_vis"] or proj["style"]) or "").strip()
+        if st:
+            p2 += f"。画风（严格执行）：{st}"
+        if (proj["dialogue_mode"] or "bubble") == "bubble":
+            p2 += "。画面上方适当留白，不要画任何文字、对话气泡、字幕"
+        wf = _submit_pass(p2, p2_images, dest, seed=random.randint(0, 2**31 - 1),
+                          tag="-链2/2")
+        chained_final_prompt = p2
+        mid.unlink(missing_ok=True)
+        prompt = chained_final_prompt
+    else:
+        wf = _submit_pass(prompt, images, dest)
+    if job is not None:
+        attach_snapshot(db, job["id"], prompt=prompt, workflow=wf, template_id=tmpl.id)
 
     # 对白后处理（dialogue_mode: bubble/footer/none）
     dialogue = _ledger(shot).get("dialogue") or []
