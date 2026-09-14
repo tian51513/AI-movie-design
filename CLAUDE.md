@@ -300,4 +300,5 @@
 - **设置页「工作流模板映射」分组重构（用户：加使用场景+美化）**：三组按产线阶段（🖼 图像生成→🎬 视频渲染→🖌 修整）卡片化，每行=用途名+场景说明｜模板下拉两栏网格（.wf-row，窄屏塌单列 375px 实测零溢出）；**漫画页三槽位首次进 UI**（comic_page_krea2/comic_page_ref/comic_page 映射键此前只能 API 配）；快道下拉按 image_slots 过滤（需 scene+char 双槽——槽名不匹配=参考图静默丢失，前端先拦）；GET /api/settings 的 model_templates 载荷新增 params/image_slots 两字段驱动步数框显隐与槽位过滤
 - **模型切换区按模板步数**：选中模板声明 steps 注入点才显示「步数」输入框（moHasSteps computed）；步数适用范围 tooltip 说明（主图/参考图+快道；纯 t2i/参考注入走质量档）
 - 内置 LoRA 栈=用户 2026-09-13 实测定稿（Detail+Realism 开，3~8 关但文件名留位便于设置页切换）；模板在设置页 t2i 下拉可选（主图/参考图/关键帧槽）
+- **主图生成经多图槽模板的缺槽占位（2026-09-14 21:11 真机 400）**：用户把 template_map.t2i 切到 comic_page_krea2 生成主图——genref 只注入了首槽，char 槽留默认 `char1.png` 引用 → ComfyUI /prompt 校验文件不存在 400。修：`genref._fill_missing_slots` 未提供的图片槽自动上传中性灰占位（data/_cache/blank_gray.png，同 ref2va 音频槽判例）；旧主图注入槽位偏好 **char/char1**（人物语义）而非盲取第一槽（scene 槽）；`_t2i_to_file` 签名加 data_dir。首张主图（无 main.png）仍走 zimage_t2i 纯文生图引导（既有防线不动）
 - 注意：**尺寸不进设置页**（用户问询的决策）：漫画页=项目尺寸档×画幅推导（comicgen 已注入 width/height）；主图=模板默认 1024×1024（krea_t2i.api.json 可直接改宽高字段）；前端 saveSettings 全量发 model_overrides——空串值=合法覆盖（关 LoRA），PUT 白名单只校验键；Vue 判例沿用：模板函数调用助手（kreaLaneTemplates 等）必须进 methods

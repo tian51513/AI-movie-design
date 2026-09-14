@@ -201,11 +201,29 @@ def build_gen_prompt(asset_row, style: str = "", era: str = "",
     return prompt, ctx
 
 
-def _t2i_to_file(db, comfy, tmpl, prompt, dest, ctx, job, label, images=None):
+def _fill_missing_slots(data_dir, tmpl, images):
+    """多图槽模板的缺槽补中性灰占位（2026-09-14 真机 400：comic_page_krea2
+    当主图模板，未提供的 LoadImage 槽留着 char1.png 默认引用——ComfyUI 校验
+    「文件不存在」直接 400。同 ref2va 音频槽静音占位判例）。
+    返回补全后的 images 副本（无缺槽原样返回）。"""
+    provided = {im["slot"] for im in (images or [])}
+    missing = [spec for spec in tmpl.inject_images if spec["slot"] not in provided]
+    if not missing:
+        return images
+    from .comicgen import _ensure_blank
+    gray = _ensure_blank(data_dir, "blank_gray.png", (128, 128, 128))
+    return list(images or []) + [{"slot": spec["slot"], "path": gray}
+                                 for spec in missing]
+
+
+def _t2i_to_file(db, data_dir, comfy, tmpl, prompt, dest, ctx, job, label,
+                 images=None):
     """单段 t2i：组工作流 → 提交 → 等待 → 下载到 dest（主图与回退路径共用）。
-    images：模板声明图片槽时传入（如文+图重绘的 ref 槽）。"""
+    images：模板声明图片槽时传入（如文+图重绘的 ref 槽）；未提供的槽自动
+    补灰占位防 ComfyUI 400。"""
     if comfy is None:
         raise RuntimeError("gen_ref 需要 ComfyUI 端点（settings.comfy.base_url）")
+    images = _fill_missing_slots(data_dir, tmpl, images)
     # 模板级步数（2026-09-14 template_params，设置页模型切换区按模板配）：
     # 0/缺省=模板内置——t2i 步数对耗时影响大（Krea2 文生图等）
     params = {"seed": random.randint(0, 2**31 - 1)}
@@ -281,8 +299,13 @@ def handle_gen_ref(db, data_dir, job, comfy):
             main_images = None
             if main_tmpl.inject_images:
                 if main_png.exists():
-                    main_images = [{"slot": main_tmpl.inject_images[0]["slot"],
-                                    "path": str(main_png)}]
+                    # 槽位偏好（2026-09-14）：旧主图是「人物」参考——多槽模板
+                    # 优先进 char/char1 槽（Krea2 工作台图2=人物、zimage_page_ref
+                    # char1=身份参考）；无人物语义槽才退第一槽（xf_zimage_ti2i）
+                    _slots = [im["slot"] for im in main_tmpl.inject_images]
+                    _pref = next((s for s in ("char", "char1") if s in _slots),
+                                 _slots[0])
+                    main_images = [{"slot": _pref, "path": str(main_png)}]
                 else:
                     from .workflows import registry as _reg
                     boot = _reg.scan_templates(_reg.TEMPLATE_ROOT).get("zimage_t2i")
@@ -294,8 +317,8 @@ def handle_gen_ref(db, data_dir, job, comfy):
                     emit_log(db, "comfy", "info",
                              f"无现有主图，引导用纯文生图 {boot.id} 生成首张主图",
                              project_id=job["project_id"], job_id=job["id"])
-            _t2i_to_file(db, comfy, main_tmpl, main_prompt, main_png, ctx, job,
-                         label=f"资产「{asset['name']}」主图", images=main_images)
+            _t2i_to_file(db, data_dir, comfy, main_tmpl, main_prompt, main_png, ctx,
+                         job, label=f"资产「{asset['name']}」主图", images=main_images)
         if stage in ("all", "views"):
             # 提示词不注入：四视图走工作流内置触发词（用户勘误 2026-08-25——
             # 参数只有主图 body 槽 + 随机 seed，步数等保持工作流默认）
@@ -331,7 +354,7 @@ def handle_gen_ref(db, data_dir, job, comfy):
         _builder = (build_gen_prompt_tags_en
                     if getattr(_tmpl, "prompt_style", "") == "tags_en" else build_gen_prompt)
         prompt, ctx = _builder(asset, style=style, era=era)
-        _t2i_to_file(db, comfy, _tmpl, prompt, dest, ctx, job,
+        _t2i_to_file(db, data_dir, comfy, _tmpl, prompt, dest, ctx, job,
                      label=f"资产「{asset['name']}」参考图")
     if stage == "main":
         return  # 仅换主图：sheet 未变，无需 stale 联动

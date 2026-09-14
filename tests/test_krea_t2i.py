@@ -152,3 +152,63 @@ def test_templates_payload_carries_params_and_slots(tmp_path):
         assert "steps" in tmpls["krea_t2i"]["params"]
         assert set(tmpls["comic_page_krea2"]["image_slots"]) == {"scene", "char"}
         assert tmpls["comic_page"]["image_slots"] == []
+
+
+def _krea_main_setup(tmp_path):
+    """comic_page_krea2 当主图模板 + 已有 main.png 的重生场景
+    （2026-09-14 真机 400：char 槽留 char1.png 默认引用）。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "template_map", {"t2i": "comic_page_krea2"})
+    pid = create_project(db, tmp_path / "data", "主图剧", "9:16", "t")["id"]
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from types import SimpleNamespace as NS
+    from pathlib import Path
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="约翰", appearance="金发男子", tags=[])],
+                      scenes=[], props=[]))
+    asset = list_project_assets(db, pid)[0]
+    main_png = Path(tmp_path / "data" / asset["library_dir"] / "main.png")
+    main_png.parent.mkdir(parents=True, exist_ok=True)
+    main_png.write_bytes(b"\x89PNG fake main")
+    jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                      resource="gpu_comfy",
+                      payload={"asset_id": asset["id"], "stage": "main"})
+    return db, jid
+
+
+def test_gen_ref_krea_workbench_placeholder_fill(tmp_path):
+    """主图重生经 Krea2 快道：main.png 进人物槽（char），未提供的 scene 槽
+    上传中性灰占位——两个 LoadImage 都指向已上传文件，无 char1.png/page.png
+    残留默认引用（真机 400 根因）。"""
+    db, jid = _krea_main_setup(tmp_path)
+    with comfy_server("ok") as m:
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+        wf = m.prompts[0]["prompt"]
+        # 人物槽=已上传的旧主图（cs__ 命名），场景槽=灰占位（cs__ 命名）
+        assert wf["100"]["inputs"]["image"].startswith("cs__")
+        assert wf["100"]["inputs"]["image"] != "char1.png"
+        assert wf["23"]["inputs"]["image"].startswith("cs__")
+        assert wf["23"]["inputs"]["image"] != "page.png"
+        # 占位图确实上传过（两次图片上传：旧主图 + 灰）
+        assert len(m.uploads) >= 2
+
+
+def test_gen_ref_krea_workbench_scene_asset_all_placeholder(tmp_path):
+    """场景资产（单段路径，无 main 注入）：双槽全灰占位，不留默认引用。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "template_map", {"t2i": "comic_page_krea2"})
+    pid = create_project(db, tmp_path / "data", "场景剧", "9:16", "t")["id"]
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from types import SimpleNamespace as NS
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[], scenes=[NS(name="卧室", description="x", tags=[])],
+                      props=[]))
+    asset = list_project_assets(db, pid)[0]
+    jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                      resource="gpu_comfy", payload={"asset_id": asset["id"]})
+    with comfy_server("ok") as m:
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+        wf = m.prompts[0]["prompt"]
+        assert wf["23"]["inputs"]["image"].startswith("cs__")
+        assert wf["100"]["inputs"]["image"].startswith("cs__")
+        assert len(m.uploads) == 2
