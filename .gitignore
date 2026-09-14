@@ -10,3 +10,4 @@ templates/workflows/_raw/
 projects/
 
 .env
+start-prod.log
