@@ -70,8 +70,7 @@ def test_comfy_setting_default(tmp_path):
                                         "page_redraw_h3_duration": 2,
                                         "h3_sla_enabled": True,
                                         "h3_sla_sparsity": 0.9,
-                                        "h3_sla_block_size": "64",
-                                        "t2i_steps": 0}  # 文生图步数覆盖（2026-09-14 krea_t2i；0=模板内置）
+                                        "h3_sla_block_size": "64"}
 
 
 def test_page_redraw_defaults(tmp_path):

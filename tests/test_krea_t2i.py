@@ -77,15 +77,11 @@ def test_model_choices_switchable_current(tmp_path):
             assert "a.safetensors" in slots["lora1"]["choices"]        # mock 枚举
 
 
-def _steps_setup(tmp_path, steps=None):
+def _steps_setup(tmp_path, template_params=None):
     db = Database(tmp_path / "s.db"); db.migrate()
     set_setting(db, "template_map", {"t2i": "krea_t2i"})
-    if steps is not None:
-        comfy = {"t2i_steps": steps}
-        base = db.connect().execute(
-            "SELECT value_json FROM settings WHERE key='comfy'").fetchone()
-        comfy_full = {**json.loads(base["value_json"]), **comfy} if base else comfy
-        set_setting(db, "comfy", comfy_full)
+    if template_params is not None:
+        set_setting(db, "template_params", template_params)
     pid = create_project(db, tmp_path / "data", "步数剧", "9:16", "t")["id"]
     from comic_studio.engine.assets import persist_assets, list_project_assets
     from types import SimpleNamespace as NS
@@ -98,26 +94,61 @@ def _steps_setup(tmp_path, steps=None):
     return db, jid
 
 
-def test_t2i_steps_setting_injected(tmp_path):
-    """comfy.t2i_steps>0 → 注入；0/缺省 → 走模板内置步数。"""
-    db, jid = _steps_setup(tmp_path, steps=20)
+def test_template_params_steps_injected(tmp_path):
+    """template_params 按模板配步数（2026-09-14 用户：模型切换区各模板各自设）：
+    >0 → 注入；0/缺省 → 走模板内置步数。"""
+    db, jid = _steps_setup(tmp_path, {"krea_t2i": {"steps": 20}})
     with comfy_server("ok") as m:
         handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
         assert m.prompts[0]["prompt"]["2001"]["inputs"]["步数"] == 20
 
 
-def test_t2i_steps_zero_keeps_template_default(tmp_path):
-    db, jid = _steps_setup(tmp_path, steps=0)
+def test_template_params_zero_keeps_template_default(tmp_path):
+    db, jid = _steps_setup(tmp_path, {"krea_t2i": {"steps": 0}})
     with comfy_server("ok") as m:
         handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
         assert m.prompts[0]["prompt"]["2001"]["inputs"]["步数"] == 10  # 模板内置
 
 
-def test_t2i_steps_settings_roundtrip(tmp_path):
+def test_template_params_settings_roundtrip(tmp_path):
     db = Database(tmp_path / "s.db"); db.migrate()
     create_project(db, tmp_path / "data", "设置剧", "16:9", "t")
     with TestClient(create_app(tmp_path / "s.db", tmp_path / "data",
                                start_workers=False)) as c:
-        r = c.put("/api/settings", json={"comfy": {"t2i_steps": 15}})
+        r = c.put("/api/settings", json={"template_params": {
+            "krea_t2i": {"steps": 15}}})
         assert r.status_code == 200
-        assert c.get("/api/settings").json()["comfy"]["t2i_steps"] == 15
+        got = c.get("/api/settings").json()["template_params"]
+        assert got["krea_t2i"]["steps"] == 15
+        # 未知模板 / 未知参数键 → 422；空字典=清除该模板参数
+        assert c.put("/api/settings", json={"template_params": {
+            "nope_tmpl": {"steps": 1}}}).status_code == 422
+        assert c.put("/api/settings", json={"template_params": {
+            "krea_t2i": {"bogus": 1}}}).status_code == 422
+        assert c.put("/api/settings", json={"template_params": {
+            "krea_t2i": {}}}).status_code == 200
+        assert not c.get("/api/settings").json()["template_params"].get("krea_t2i")
+
+
+def test_comic_page_krea2_full_lora_slots():
+    """全模式工作台（2026-09-14 用户：漫画页主力道也要设置页可配）：
+    vae + lora1~8 开关槽与 krea_t2i 同权。"""
+    t = _reg()["comic_page_krea2"]
+    slots = {s.label: s for s in t.models}
+    assert slots["vae"].cls == "VAELoader" and slots["vae"].node == "93"
+    assert {s.label for s in t.models if s.switch_field} == \
+        {f"lora{i}" for i in range(1, 9)}
+    assert slots["lora1"].field == "LoRA_1" and slots["lora1"].node == "4"
+
+
+def test_templates_payload_carries_params_and_slots(tmp_path):
+    """GET /api/settings 的 model_templates 带 params/image_slots——
+    前端按此决定「步数」输入框与快道槽位过滤。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    create_project(db, tmp_path / "data", "载荷剧", "16:9", "t")
+    with TestClient(create_app(tmp_path / "s.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        tmpls = {t["id"]: t for t in c.get("/api/settings").json()["model_templates"]}
+        assert "steps" in tmpls["krea_t2i"]["params"]
+        assert set(tmpls["comic_page_krea2"]["image_slots"]) == {"scene", "char"}
+        assert tmpls["comic_page"]["image_slots"] == []

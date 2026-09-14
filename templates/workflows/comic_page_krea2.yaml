@@ -31,6 +31,17 @@ requires:
 models:
 - {label: unet, node: '90', field: unet_name, cls: UNETLoader, label_cn: 主模型（Krea2）}
 - {label: clip, node: '91', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器（qwen3vl）}
+- {label: vae, node: '93', field: vae_name, cls: VAELoader, label_cn: VAE}
+# 8 LoRA 开关槽（2026-09-14 用户：漫画页主力道同权可配——与 krea_t2i 一致，
+# 未覆盖=模板内置栈：Detail+Realism 开，3~8 关但文件名留位）
+- {label: lora1, node: '4', field: LoRA_1, cls: LazyKreaLoraStack, switch: 启用_1, label_cn: LoRA 1}
+- {label: lora2, node: '4', field: LoRA_2, cls: LazyKreaLoraStack, switch: 启用_2, label_cn: LoRA 2}
+- {label: lora3, node: '4', field: LoRA_3, cls: LazyKreaLoraStack, switch: 启用_3, label_cn: LoRA 3}
+- {label: lora4, node: '4', field: LoRA_4, cls: LazyKreaLoraStack, switch: 启用_4, label_cn: LoRA 4}
+- {label: lora5, node: '4', field: LoRA_5, cls: LazyKreaLoraStack, switch: 启用_5, label_cn: LoRA 5}
+- {label: lora6, node: '4', field: LoRA_6, cls: LazyKreaLoraStack, switch: 启用_6, label_cn: LoRA 6}
+- {label: lora7, node: '4', field: LoRA_7, cls: LazyKreaLoraStack, switch: 启用_7, label_cn: LoRA 7}
+- {label: lora8, node: '4', field: LoRA_8, cls: LazyKreaLoraStack, switch: 启用_8, label_cn: LoRA 8}
 
 # 2026-09-13 用户实测定稿：Lazy_Krea2 全模式工作台 + 百万像素 0.4（原 1.0 时
 # 双参考 90s/单参考 50s；0.4 后 30s/20s 且质量满意、风格贴合——Krea2 是风格库

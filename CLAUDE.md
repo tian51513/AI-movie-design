@@ -291,10 +291,13 @@
 - **导引页分链 + 按钮链路门控（2026-09-13）**：导引页按产物类型分两大区（🎬 视频项目四卡 / 📖 漫画项目漫画成书卡——三数据源+链路+参数说明），每卡「➕ 去创建」直跳创建弹窗预选类型+入口（`guideCreate`）；hero/核心功能区补漫画成书；详情页 comic_output 隐藏九项视频链按钮（批量生成提示词/批量渲染/🚄快车道/🎙配音/👁读图/🔄强制重读/⏱重估时长/🎭角色配音/🗑清理提取资产[收窄 motion/film]——逐项安全依据：autopilot 恒走 `_comic_pages_gap`、describe_shots 是导入源页链、音色只被 TTS/H3 消费、comic 资产来自小说分析不可清）+ 参数面板视频参数整组隐藏（`isVideoChain`/`isComicOutput` computed 单源）；通用链按钮保留（拆分分镜/门1门2/参考图/补绑/批量无效/停止/正文）
 - 注意：角色参考图分析/生成照跑（拆解上下文用），但**页面生成不消费资产参考图**（build_comic_prompt 不注入——角色一致性=二期「参考图注入」，spec 决策 6 预留）；gen_comic_page 不在重启重排白名单（重启丢在跑页任务需手动补页——同 describe_shots 约定）
 
-## 模块地图（Krea2 文生图模板 2026-09-14）
+## 模块地图（Krea2 文生图模板 + 模板映射重构 2026-09-14）
 
 - **`templates/workflows/krea_t2i.*`** — 用户导入 `Lazy_Krea2_文生图.json` 接入（type: t2i，与 comic_page_krea2 同族仅文生图）：接线复刻已验证结构（PrimitiveStringMultiline→工作台 提示词、种子直注 Generate、删 SeedNode/easy promptLine 孤儿节点）；**inject 只声明 seed/steps/width/height——百万像素不注入**（t2i 尺寸由宽高决定，MP 仅图生图参考模式缩放基准，用户 2026-09-14）；工作台风格库置 none（画风走提示词段=项目 style/style_vis）
 - **ModelSlot.switch_field（LoRA 开关槽位）**：manifest `switch:` 短写（如 `switch: 启用_1`）；filler 语义三分：覆盖非空→设文件名+开关 true、**空串→只关开关**（文件名保留）、未覆盖→模板默认。models/choices 端点 `switchable` 标志 + current 反映开关态（内置关→空串=前端「（关闭）」选项）——所见即 enforced：前端预填会把全部槽位存成显式覆盖，开关态随显示值走
-- **comfy.t2i_steps（默认 0=不覆盖）**：genref `_t2i_to_file` 注入（>0 时 params["steps"]）——通用适配一切声明 steps 注入点的 t2i 模板；t2i 步数对耗时影响大（用户实测），与图生图 krea 道「步数固定 10」不同；设置页「主图/参考图生成模板」行内输入
+- **`comic_page_krea2` 槽位补齐**：vae + lora1~8（switch）与 krea_t2i 同权——漫画页主力道全可在设置页模型切换区配（用户「没看到全模式工作台配置」反馈）
+- **settings `template_params`（{模板 id: {steps: N}}，步数按模板各自设——用户二次需求取代全局 t2i_steps）**：0/缺省=模板内置；作用于 genref（主图/参考图）与 comicgen Krea2 快道（原硬编码 10）；**漫画页纯 t2i/参考注入仍走项目质量档**（项目级控制不被模板级覆盖）。PUT 校验：未知模板/未知参数键 422、steps 0~60、空字典=清除；前端只发有效正步数
+- **设置页「工作流模板映射」分组重构（用户：加使用场景+美化）**：三组按产线阶段（🖼 图像生成→🎬 视频渲染→🖌 修整）卡片化，每行=用途名+场景说明｜模板下拉两栏网格（.wf-row，窄屏塌单列 375px 实测零溢出）；**漫画页三槽位首次进 UI**（comic_page_krea2/comic_page_ref/comic_page 映射键此前只能 API 配）；快道下拉按 image_slots 过滤（需 scene+char 双槽——槽名不匹配=参考图静默丢失，前端先拦）；GET /api/settings 的 model_templates 载荷新增 params/image_slots 两字段驱动步数框显隐与槽位过滤
+- **模型切换区按模板步数**：选中模板声明 steps 注入点才显示「步数」输入框（moHasSteps computed）；步数适用范围 tooltip 说明（主图/参考图+快道；纯 t2i/参考注入走质量档）
 - 内置 LoRA 栈=用户 2026-09-13 实测定稿（Detail+Realism 开，3~8 关但文件名留位便于设置页切换）；模板在设置页 t2i 下拉可选（主图/参考图/关键帧槽）
-- 注意：**尺寸不进设置页**（用户问询的决策）：漫画页=项目尺寸档×画幅推导（comicgen 已注入 width/height）；主图=模板默认 1024×1024（krea_t2i.api.json 可直接改宽高字段）；前端 saveSettings 全量发 model_overrides——空串值=合法覆盖（关 LoRA），PUT 白名单只校验键
+- 注意：**尺寸不进设置页**（用户问询的决策）：漫画页=项目尺寸档×画幅推导（comicgen 已注入 width/height）；主图=模板默认 1024×1024（krea_t2i.api.json 可直接改宽高字段）；前端 saveSettings 全量发 model_overrides——空串值=合法覆盖（关 LoRA），PUT 白名单只校验键；Vue 判例沿用：模板函数调用助手（kreaLaneTemplates 等）必须进 methods

@@ -342,9 +342,11 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
                 ]
             scene_img_used = scene_ref is not None
             params["megapixels"] = mp                      # 百万像素直传
-            # 步数固定 10（2026-09-13 用户实测 4 步=10 步=30s——瓶颈在接地/编码
-            # 等固定开销，步数非耗时项；质量档映射对 krea 道无意义）
-            params["steps"] = 10
+            # 步数：模板级 template_params.steps 优先（2026-09-14 设置页按模板
+            # 配），否则 10（2026-09-13 用户实测 4 步=10 步=30s——瓶颈在接地/
+            # 编码等固定开销，步数非耗时项；质量档映射对 krea 道无意义）
+            params["steps"] = int(((get_setting(db, "template_params") or {})
+                                   .get(tmpl.id) or {}).get("steps") or 0) or 10
         else:
             try:
                 ref_tmpl = resolve_template(db, "comic_page_ref")

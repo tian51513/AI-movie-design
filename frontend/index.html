@@ -104,6 +104,25 @@
     .voice-row input, .voice-row select { max-width: 100%; }
     .voice-row button { min-height: 32px; }
   }
+  /* 工作流模板映射（2026-09-14 分组重构）：行=用途+场景说明 | 模板下拉；
+     分组按产线阶段（图像生成→视频渲染→修整）编码结构，窄屏塌单列 */
+  .wf-group { border: 1px solid #232b36; border-radius: 8px; padding: 2px 14px 8px;
+              margin: 10px 0; background: #161c24; }
+  .wf-gh { font-size: 13px; color: #60a5fa; padding: 8px 0 6px;
+           border-bottom: 1px solid #232b36; }
+  .wf-gh .muted { margin-left: 6px; }
+  .wf-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 380px);
+            gap: 2px 16px; align-items: center; padding: 8px 0;
+            border-bottom: 1px dashed #212932; }
+  .wf-row:last-child { border-bottom: 0; }
+  .wf-row.wf-full { grid-template-columns: 1fr; display: flex; flex-wrap: wrap;
+                    gap: 4px 14px; border-top: 1px dashed #212932; margin-top: 2px;
+                    padding-top: 8px; }
+  .wf-use b { display: block; font-size: 13px; }
+  .wf-use .muted { display: block; margin-top: 1px; }
+  .wf-ctl { display: flex; gap: 6px; align-items: center; min-width: 0; }
+  .wf-ctl select { width: 100%; min-width: 0; }
+  @media (max-width: 768px) { .wf-row { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -539,81 +558,135 @@
        <input v-model.number="settingsForm.asr.chunk_seconds" type="number" min="60" max="1800"
               style="width:70px" title="长音频按此时长分块独立转写再拼接（防单次输出不全）"></p>
     <h3>工作流模板映射</h3>
-    <p><label class="muted">主图/参考图生成模板：</label>
-       <select v-model="settingsForm.t2i_tm" style="width:300px">
+    <div class="wf-group">
+     <div class="wf-gh">🖼 图像生成 <span class="muted">资产图 / 漫画页</span></div>
+     <div class="wf-row">
+      <div class="wf-use"><b>主图 / 参考图</b>
+        <span class="muted">角色主图与场景/道具参考图——门1 前自动生成、资产卡「主图」按钮；文+图类模板在有主图时自动重绘</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.t2i_tm">
          <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
-                 :title="t.id">{{ t.name }}</option>
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
        </select>
-       <label class="muted" style="margin-left:8px" title="文生图步数：0=不覆盖（走模板内置步数）；>0=注入所有文生图模板。t2i 步数对耗时影响大（Krea2 文生图不同步数耗时差别显著），与图生图参考模式的「步数固定」不同">文生图步数
-         <input type="number" min="0" max="60" v-model.number="settingsForm.comfy.t2i_steps"
-                style="width:56px"></label>
-       <span class="muted">角色主图与场景/道具参考图；文+图类模板会在有主图时自动重绘</span></p>
-    <p><label class="muted">三视图生成模板：</label>
-       <select v-model="settingsForm.cvTm" style="width:300px">
-         <option value="">（不映射——角色回退单段生成）</option>
+       <button @click="testWorkflow(settingsForm.t2i_tm)" style="font-size:12px;padding:3px 8px"
+               title="下载当前主图模板 JSON → 打开 ComfyUI 拖入测试">🧪</button></div>
+     </div>
+     <div class="wf-row">
+      <div class="wf-use"><b>三视图</b>
+        <span class="muted">角色三视图 sheet——主图作种子派生多角度；不映射则角色回退单段生成</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.cvTm">
+         <option value="">（不映射——回退单段）</option>
          <option v-for="t in templatesOfType('character_views')" :key="t.id" :value="t.id"
-                 :title="t.id">{{ t.name }}</option>
-       </select>
-       <span class="muted">角色三视图派生（主图作种子图）</span></p>
-    <p><label class="muted">关键帧图生图模板：</label>
-       <select v-model="settingsForm.kfTm" style="width:300px">
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
+       </select></div>
+     </div>
+     <div class="wf-row">
+      <div class="wf-use"><b>关键帧（首尾帧补生成）</b>
+        <span class="muted">fl2v 渲染缺 kf_start/kf_end 时自动生成首尾对——选图生图类模板（需图片输入槽）</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.kfTm">
          <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
-                 :title="t.id">{{ t.name }}</option>
-       </select>
-       <span class="muted">fl2v 首尾帧生成用（img2img，需有图片输入槽）</span>
-       <button @click="testWorkflow(settingsForm.t2i_tm)" style="font-size:12px;padding:3px 8px;margin-left:4px"
-               title="下载当前主图模板 JSON → 打开 ComfyUI 拖入测试">🧪</button></p>
-    <p><label class="muted">整页重绘模板：</label>
-       <select v-model="settingsForm.prTm" style="width:300px">
-         <option v-for="t in templatesOfType('i2i').concat(templatesOfType('t2i'), templatesOfType('ref2va'))" :key="t.id" :value="t.id"
-                 :title="t.id">{{ t.name }}</option>
-       </select>
-       <span class="muted">动态漫角色重绘整页重绘用（base=漫画原页图；重绘幅度在 ComfyUI 区「page_redraw_denoise」）</span></p>
-    <p><label class="muted">多参生视频模板：</label>
-       <select v-model="settingsForm.r2vaTm" style="width:280px">
-         <option v-for="t in templatesOfType('ref2va')" :key="t.id" :value="t.id">{{ t.name }}</option>
-       </select>
-       <label class="muted" style="margin-left:8px">首尾帧模板：</label>
-       <select v-model="settingsForm.fl2vTm" style="width:280px">
-         <option v-for="t in templatesOfType('fl2v')" :key="t.id" :value="t.id">{{ t.name }}</option>
-       </select>
-    <p><label class="muted">导演台快车道模板：</label>
-       <select v-model="settingsForm.dirTm" style="width:320px">
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
+       </select></div>
+     </div>
+     <div class="wf-row">
+      <div class="wf-use"><b>漫画页 · Krea2 快道</b>
+        <span class="muted">小说转漫画逐页主力道——有角色参考的页走这里（图1=场景 / 图2=人物双槽，20-30s/页）</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.comicKreaTm">
+         <option v-for="t in kreaLaneTemplates()" :key="t.id" :value="t.id"
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
+       </select></div>
+     </div>
+     <div class="wf-row">
+      <div class="wf-use"><b>漫画页 · 参考注入（回落）</b>
+        <span class="muted">快道模板缺失/不可用时回落——Edit-2511 多图人物场景化</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.comicRefTm">
+         <option v-for="t in refLaneTemplates()" :key="t.id" :value="t.id"
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
+       </select></div>
+     </div>
+     <div class="wf-row">
+      <div class="wf-use"><b>漫画页 · 纯文生图</b>
+        <span class="muted">无角色参考的页；输出尺寸=项目尺寸档 × 画幅</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.comicTm">
+         <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
+       </select></div>
+     </div>
+    </div>
+    <div class="wf-group">
+     <div class="wf-gh">🎬 视频渲染 <span class="muted">分镜 → 视频</span></div>
+     <div class="wf-row">
+      <div class="wf-use"><b>多参生视频</b>
+        <span class="muted">角色参考图+音色样本生视频——漫改/漫画转化项目的主力渲染</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.r2vaTm">
+         <option v-for="t in templatesOfType('ref2va')" :key="t.id" :value="t.id"
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
+       </select></div>
+     </div>
+     <div class="wf-row">
+      <div class="wf-use"><b>首尾帧插值</b>
+        <span class="muted">同场景连续动作镜（fl2v）——首帧→尾帧翻页连贯</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.fl2vTm">
+         <option v-for="t in templatesOfType('fl2v')" :key="t.id" :value="t.id"
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
+       </select></div>
+     </div>
+     <div class="wf-row">
+      <div class="wf-use"><b>文生视频</b>
+        <span class="muted">无参考的全新画面（t2v）</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.t2vTm">
+         <option v-for="t in templatesOfType('t2v')" :key="t.id" :value="t.id"
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
+       </select></div>
+     </div>
+     <div class="wf-row">
+      <div class="wf-use"><b>导演台快车道</b>
+        <span class="muted">🚄 一次提交整片（段间 latent 连贯；画布按项目兆像素档）</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.dirTm">
          <option v-for="t in templatesOfType('director')" :key="t.id" :value="t.id"
-                 :title="t.id">{{ t.name }}</option>
-       </select>
-       <span class="muted">🚄 整段快车道用（从视频展示工作流抽离；段间 latent 连贯）</span>
-       <label class="muted" style="margin-left:10px;font-size:12px"
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
+       </select></div>
+     </div>
+     <div class="wf-row wf-full" style="padding-top:2px">
+       <label class="muted" style="font-size:12px"
               title="段间清显存+重预热每镜多几十秒；12GB 专跑默认关，OOM 时打开"><input
               type="checkbox" v-model="settingsForm.comfy.director_clear_vram"> 段间清显存</label>
        <label class="muted" style="font-size:12px"><input
               type="checkbox" v-model="settingsForm.comfy.director_export_source"> 导出源帧图</label>
-       <label class="muted" style="font-size:12px" margin-left="4px"
+       <label class="muted" style="font-size:12px"
               title="批次间用上批末帧作下批首段起始画面（像素级接力，失败自动退化为硬切）"><input
               type="checkbox" v-model="settingsForm.comfy.director_batch_relay"> 批间首帧接力</label>
-       <label class="muted" style="font-size:12px" margin-left="4px"
+       <label class="muted" style="font-size:12px"
               title="成片混 TTS 配音（有台词镜）+ 烧录 SRT 字幕；失败自动退化为纯画面"><input
               type="checkbox" v-model="settingsForm.comfy.director_mix"> 整片混音</label>
        <label class="muted" style="font-size:12px"
               title="无台词镜的 H3 原声不进成片（封死残留杂音；代价是丢水声脚步等自然声）。有台词镜不受影响——配音本来就整轨替换"><input
-              type="checkbox" v-model="settingsForm.comfy.mute_quiet_shots"> 无台词镜静音</label></p>
-       <p><label class="muted" style="font-size:12px"
+              type="checkbox" v-model="settingsForm.comfy.mute_quiet_shots"> 无台词镜静音</label>
+       <label class="muted" style="font-size:12px"
               title="H3SLAAttention 块稀疏注意力（五个 H3 模板 LoRA 后最后一环）。开=Sparse（Sage 自动停用防双实现叠加）；关=回 Sage 稠密基线，A/B 干净"><input
               type="checkbox" v-model="settingsForm.comfy.h3_sla_enabled"> H3 SLA 注意力</label>
-       <label class="muted" style="font-size:12px; margin-left:8px"
+       <label class="muted" style="font-size:12px"
               title="跳过的 key 块比例：0.85=lightx2v 出厂（SLA LoRA 蒸馏基准）；0.90=本机验证值再快约15%；低于0.60比稠密更慢">稀疏度
          <input type="number" step="0.05" min="0" max="0.95"
-                v-model="settingsForm.comfy.h3_sla_sparsity" style="width:64px"></label>
-       <label class="muted" style="font-size:12px; margin-left:8px"
+                v-model.number="settingsForm.comfy.h3_sla_sparsity" style="width:64px"></label>
+       <label class="muted" style="font-size:12px"
               title="音频按 80 行/秒打包：64 块≈0.8s 语音一个注意力模式（干净）；128 块=1.6s（语音易机器人腔），仅无意义音频时用">块大小
          <select v-model="settingsForm.comfy.h3_sla_block_size" style="width:70px">
            <option value="64">64</option>
            <option value="128">128</option>
-         </select></label></p>
-       <label class="muted" style="margin-left:8px">文生视频模板：</label>
-       <select v-model="settingsForm.t2vTm" style="width:280px">
-         <option v-for="t in templatesOfType('t2v')" :key="t.id" :value="t.id">{{ t.name }}</option>
-       </select></p>
+         </select></label>
+     </div>
+    </div>
+    <div class="wf-group">
+     <div class="wf-gh">🖌 修整 <span class="muted">动态漫整页重绘</span></div>
+     <div class="wf-row">
+      <div class="wf-use"><b>整页重绘</b>
+        <span class="muted">动态漫「🖌 批量重绘分镜」逐页换角色/画风（base=漫画原页图；重绘幅度在 ComfyUI 区「page_redraw_denoise」）</span></div>
+      <div class="wf-ctl"><select v-model="settingsForm.prTm">
+         <option v-for="t in templatesOfType('i2i').concat(templatesOfType('t2i'), templatesOfType('ref2va'))" :key="t.id" :value="t.id"
+                 :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
+       </select></div>
+     </div>
+    </div>
     <h3>工作流导入</h3>
     <p><input type="file" accept=".json" @change="e => wfImportFile = e.target.files[0]">
        <button @click="importWorkflow" :disabled="!wfImportFile || wfImporting">
@@ -628,7 +701,11 @@
        <button v-if="moTemplate" @click="testWorkflow(moTemplate)"
                title="下载此工作流 JSON 并打开 ComfyUI 测试" style="font-size:12px;padding:3px 8px">🧪 测试</button>
        <button v-if="moTemplate" @click="resetMO" title="清除该模板全部覆盖，回到工作流内置模型"
-               style="background:#7f1d1d;font-size:12px;padding:3px 8px">恢复默认</button></p>
+               style="background:#7f1d1d;font-size:12px;padding:3px 8px">恢复默认</button>
+       <label v-if="moHasSteps" class="muted" style="margin-left:8px"
+              title="该模板各自的采样步数：0/留空=模板内置；>0=按此值注入。作用于主图/参考图生成与漫画页 Krea2 快道；漫画页纯文生图/参考注入仍走项目「质量档」">步数
+         <input type="number" min="0" max="60" v-model.number="currentTP.steps"
+                style="width:56px"></label></p>
     <p class="muted" style="margin:4px 0 8px">主模型/CLIP/VAE/LoRA 按槽位切换，当前选中即生效值（无覆盖时显示模板内置默认）；LoRA 槽选「（关闭）」=不加载该 LoRA；保存后重渲生效（ComfyUI 需在线以枚举文件）</p>
     <div v-if="modelChoices.length" class="row" style="align-items:center">
       <p v-for="slot in modelChoices" :key="slot.label" style="margin:4px 0">

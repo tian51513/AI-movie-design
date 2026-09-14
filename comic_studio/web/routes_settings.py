@@ -41,7 +41,6 @@ class ComfyConfig(BaseModel):
     h3_sla_enabled: bool = True  # H3 SLA 注意力（2026-09-10）
     h3_sla_sparsity: float = 0.9
     h3_sla_block_size: str = "64"  # COMBO "64"/"128"
-    t2i_steps: int = 0  # 文生图步数覆盖（0=模板内置；t2i 步数影响耗时，2026-09-14）
     min_free_vram_gb: float = 8  # gpu_comfy 前置显存门槛（2026-08-28）
     director_batch_frames: int = 512  # 快车道分批帧数（2026-08-28）
 
@@ -57,6 +56,8 @@ class SettingsUpdate(BaseModel):
     comfy: ComfyConfig | None = None
     template_map: dict[str, str | None] | None = None
     model_overrides: dict[str, dict[str, str]] | None = None
+    # 模板级参数（2026-09-14）：{模板 id: {steps: N}}——目前只支持 steps
+    template_params: dict[str, dict[str, int]] | None = None
     asr: dict | None = None  # P10-D：{engine, chunk_seconds}
     speaker_blacklist: str | None = None  # 2026-09-07 优化#6：净化追加词（逗号分隔）
 
@@ -73,7 +74,11 @@ def read(request: Request):
     from ..engine.workflows import registry
     try:
         treg = registry.scan_templates(registry.TEMPLATE_ROOT)
-        templates = [{"id": t.id, "name": t.name, "type": t.type}
+        templates = [{"id": t.id, "name": t.name, "type": t.type,
+                      # params/image_slots：前端按此出「步数」输入框、
+                      # 过滤快道槽位（2026-09-14）
+                      "params": sorted(t.inject_params),
+                      "image_slots": [im["slot"] for im in t.inject_images]}
                      for t in treg.values()]
     except registry.ManifestError:
         templates = []
@@ -85,6 +90,7 @@ def read(request: Request):
         "speaker_blacklist": get_setting(request.app.state.db, "speaker_blacklist"),
         "template_map": get_setting(request.app.state.db, "template_map"),
         "model_overrides": get_setting(request.app.state.db, "model_overrides") or {},
+        "template_params": get_setting(request.app.state.db, "template_params") or {},
         "model_templates": templates,
     }
 
@@ -160,6 +166,30 @@ def update(request: Request, body: SettingsUpdate):
             else:
                 merged.setdefault(tmpl_id, {}).update(slots)
         set_setting(db, "model_overrides", merged)
+    if body.template_params is not None:
+        from ..engine.workflows import registry
+        reg = registry.scan_templates(registry.TEMPLATE_ROOT)
+        bad_tmpl = set(body.template_params) - set(reg)
+        if bad_tmpl:
+            raise HTTPException(422, f"未知模板: {sorted(bad_tmpl)}，只允许 {sorted(reg)}")
+        merged = get_setting(db, "template_params") or {}
+        for tmpl_id, params in body.template_params.items():
+            bad_keys = set(params) - {"steps"}
+            if bad_keys:
+                raise HTTPException(422, f"模板 {tmpl_id} 不支持参数: {sorted(bad_keys)}（目前只有 steps）")
+            if "steps" in params:
+                try:
+                    steps = int(params["steps"])
+                except (TypeError, ValueError):
+                    raise HTTPException(422, f"模板 {tmpl_id} steps 须为整数")
+                if not 0 <= steps <= 60:
+                    raise HTTPException(422, "steps 须在 0~60（0=模板内置）")
+                params = {**params, "steps": steps}
+            if not params:
+                merged.pop(tmpl_id, None)  # 空字典=清除该模板参数
+            else:
+                merged.setdefault(tmpl_id, {}).update(params)
+        set_setting(db, "template_params", merged)
     return {"status": "ok"}
 
 

@@ -67,7 +67,8 @@ function data() {
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { local: {}, local2: {}, online: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
       comfy: {}, t2i_tm: '', speakerBlacklist: '',
-                    model_overrides: {}, model_templates: [] }, saving: false,
+                    model_overrides: {}, model_templates: [],
+                    comicTm: '', comicRefTm: '', comicKreaTm: '', templateParams: {} }, saving: false,
     moTemplate: '', modelChoices: [], moError: '',
     ollamaModels: [], showThink: false, loadingModels: false,
     activeKind: '全部', perRow: 2, lightbox: null,
@@ -127,6 +128,16 @@ const computed = {
     const mo = this.settingsForm.model_overrides;
     if (!mo[this.moTemplate]) mo[this.moTemplate] = {};
     return mo[this.moTemplate];
+  },
+  currentTP() {  // 模板级参数（步数）——模型切换区当前模板的编辑对象
+    const tp = this.settingsForm.templateParams;
+    if (!tp[this.moTemplate]) tp[this.moTemplate] = {};
+    return tp[this.moTemplate];
+  },
+  moHasSteps() {  // 当前模板是否声明 steps 注入点（决定「步数」输入框显隐）
+    const t = (this.settingsForm.model_templates || [])
+      .find(x => x.id === this.moTemplate);
+    return !!(t && (t.params || []).includes('steps'));
   },
   projTotalPages() { return Math.max(1, Math.ceil(this.projects.length / this.projPageSize)); },
   spFiltered() {  // 风格选择弹窗：当前库 + 名字过滤（中英文都搜，2026-09-13 zh=name_cn）
@@ -269,6 +280,18 @@ const methods = {
   },
   templatesOfType(type) {
     return (this.settingsForm.model_templates || []).filter(t => t.type === type);
+  },
+  // 漫画页 Krea2 快道：需声明 scene+char 双图槽（2026-09-14）——槽名不匹配的
+  // 模板选进快道=参考图静默丢失（filler 按槽名匹配跳过），前端先拦
+  kreaLaneTemplates() {
+    return this.templatesOfType('t2i').filter(t => {
+      const s = t.image_slots || [];
+      return s.includes('scene') && s.includes('char');
+    });
+  },
+  // 漫画页参考注入回落道：任意声明图片槽的 t2i（如 zimage_page_ref）
+  refLaneTemplates() {
+    return this.templatesOfType('t2i').filter(t => (t.image_slots || []).length > 0);
   },
   async loadThemesManage() {
     try { this.themesManage = await (await fetch('/api/themes')).json(); }
@@ -829,7 +852,11 @@ const methods = {
       fl2vTm: s.template_map?.fl2v || 'h3_fl2v',
       t2vTm: s.template_map?.t2v || 'h3_t2v',
       dirTm: s.template_map?.director || 'h3_director',
+      comicTm: s.template_map?.comic_page || '',
+      comicRefTm: s.template_map?.comic_page_ref || '',
+      comicKreaTm: s.template_map?.comic_page_krea2 || '',
       model_overrides: JSON.parse(JSON.stringify(s.model_overrides || {})),
+      templateParams: JSON.parse(JSON.stringify(s.template_params || {})),
       model_templates: s.model_templates || [],
     };
     const ids = (this.settingsForm.model_templates || []).map(t => t.id);
@@ -973,8 +1000,16 @@ const methods = {
                       ref2va: this.settingsForm.r2vaTm || null,
                       fl2v: this.settingsForm.fl2vTm || null,
                       t2v: this.settingsForm.t2vTm || null,
-                      director: this.settingsForm.dirTm || null },
+                      director: this.settingsForm.dirTm || null,
+                      comic_page: this.settingsForm.comicTm || null,
+                      comic_page_ref: this.settingsForm.comicRefTm || null,
+                      comic_page_krea2: this.settingsForm.comicKreaTm || null },
       model_overrides: this.settingsForm.model_overrides,
+      // 模板级参数（2026-09-14）：只发有效正步数——空串/0 不落库（=模板内置）
+      template_params: Object.fromEntries(
+        Object.entries(this.settingsForm.templateParams || {})
+          .map(([tid, p]) => [tid, { steps: parseInt(p && p.steps) }])
+          .filter(([, p]) => Number.isFinite(p.steps) && p.steps > 0)),
     };
     const resp = await fetch('/api/settings', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
