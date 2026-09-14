@@ -215,9 +215,28 @@ const computed = {
 const methods = {
   // ===== 项目列表 =====
   async refresh() { this.projects = await (await fetch('/api/projects')).json(); },
-  openCreate() {
+  openCreate() {  // 打开即初始化（2026-09-14 真机：创建成功/手动关闭后再开，
+    // 面板残留上次表单——文件/主题预览/画风徽章/Krea 选中全没清）
+    this._resetCreateForm();
     this.createOpen = true;
     if (this.newMode === 'theme') this.loadThemes();
+  },
+  _resetCreateForm() {  // 创建弹窗全量复位：mode/名称/文件/主题/画风/高级参数
+    this.newProjType = 'video';
+    this.newMode = 'upload';
+    this.newName = ''; this.newFile = null; this.comicFiles = [];
+    this.audioFile = null; this.comicNovelFile = null; this.comicAudioFile = null;
+    this.newThemeId = ''; this.newProtagonist = ''; this.newWordCount = '';
+    this.newExtraPrompt = ''; this.themePreview = ''; this.themePreviewing = false;
+    this.newStyleKey = ''; this.newStyleText = ''; this.kreaName = ''; this.kreaLib = '';
+    this.comicRedraw = false;
+    this.comicTargetPages = 0; this.comicImageSize = '1024x1536';
+    this.comicQuality = 'standard'; this.comicDialogueMode = 'bubble';
+    this.comicBubbleOpacity = 85; this.comicBubbleColor = '#222222'; this.comicBubbleFontSize = 0;
+    this.advOpen = false; this.newSubtitles = true; this.newRenderMode = '';
+    this.newRatio = '9:16'; this.newSegDur = 0; this.newTotalDur = 0;
+    this.newMegapixels = 0.4; this.newMultiple = 32; this.newSpeed = '标准';
+    this.creating = false;
   },
   setProjectsView(v) {
     this.projectsView = v;
@@ -1453,6 +1472,7 @@ const methods = {
   },
   guideCreate(type, mode) {  // 导引卡「➕ 去创建」：预选类型+入口，跳回项目页开创建弹窗
     this.view = 'projects';
+    this._resetCreateForm();  // 导引跳转同走干净表单（防残留），再定向类型+入口
     this.setProjType(type);
     this.newMode = mode;
     if (mode === 'theme' || mode === 'comictheme') this.loadThemes();
