@@ -226,6 +226,10 @@ MIGRATIONS: list[str] = [
     # 41 转化标记（2026-09-14）：漫画→视频转化的项目跳 VLM 读图（描述直生成
     # 提示词）；正常漫画导入项目不受影响
     """ALTER TABLE projects ADD COLUMN comic_converted INTEGER NOT NULL DEFAULT 0;""",
+    # 42 logs 项目索引（2026-09-14 真机删项目 database is locked：渲染期 logs
+    # 高频写入，DELETE FROM logs WHERE project_id=? 无索引整表扫删——写锁
+    # 持有被拉长，与 worker 提交竞争下 5s 忙等不够即报锁）
+    """CREATE INDEX IF NOT EXISTS idx_logs_project ON logs(project_id, id);""",
 ]
 
 
@@ -240,10 +244,13 @@ class Database:
         conn = getattr(self._local, "conn", None)
         if conn is None:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            conn = sqlite3.connect(self.path)
+            conn = sqlite3.connect(self.path, timeout=30)
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA journal_mode=WAL")
             conn.execute("PRAGMA foreign_keys=ON")
+            # busy_timeout 30s（2026-09-14）：渲染期多线程高频短事务竞争写锁，
+            # 默认 5s 忙等不够——线程本地连接各挂 30s 重试窗，撞锁等待而非报错
+            conn.execute("PRAGMA busy_timeout=30000")
             self._local.conn = conn
         return conn
 
