@@ -65,7 +65,7 @@ function data() {
     styleOpen: false, styleEditStyle: '', styleEditVis: '', styleSaving: false,
     stylePickerOpen: false, spLib: '', spSel: '', spSearch: '', spCtx: 'create',
     analyzeState: { status: '', error: null }, pollTimer: null,
-    settingsForm: { local: {}, online: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
+    settingsForm: { local: {}, local2: {}, online: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
       comfy: {}, t2i_tm: '', speakerBlacklist: '',
                     model_overrides: {}, model_templates: [] }, saving: false,
     moTemplate: '', modelChoices: [], moError: '',
