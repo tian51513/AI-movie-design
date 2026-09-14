@@ -35,6 +35,9 @@ class ModelSlot:
     field: str
     cls: str  # ComfyUI /object_info 的类名（枚举可选文件用）
     label_cn: str = ""  # 设置页中文名（英文标识旁展示）
+    # 开关字段（2026-09-14 LazyKreaLoraStack）：带开关的槽位（如 LoRA_1/启用_1）
+    # 覆盖值非空=设文件名+开、空串=关、未覆盖=模板默认——设置页「（关闭）」选项
+    switch_field: str = ""
 
 
 @dataclass
@@ -61,6 +64,16 @@ class WorkflowTemplate:
         return json.loads((self.dir / self.file).read_text(encoding="utf-8"))
 
 
+def _parse_slots(items) -> list:
+    """manifest models 列表 → ModelSlot。switch 是 manifest 别名（switch_field
+    的短写，yaml 里更顺眼），这里摘出后再展开其余字段。"""
+    slots = []
+    for m in items:
+        m = dict(m)
+        slots.append(ModelSlot(switch_field=m.pop("switch", ""), **m))
+    return slots
+
+
 def load_manifest(path: Path) -> WorkflowTemplate:
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
@@ -81,7 +94,7 @@ def load_manifest(path: Path) -> WorkflowTemplate:
         requires=list(data.get("requires") or []),
         dir=path.parent,
         inject_images=list(inj.get("images") or []),
-        models=[ModelSlot(**m) for m in (data.get("models") or [])],
+        models=_parse_slots(data.get("models") or []),
         prompt_style=data.get("prompt_style") or "natural_zh")
 
 

@@ -97,7 +97,7 @@
 **关键帧**：ensure_keyframes 缺 kf_start/kf_end 时自动生成首尾对（zimage_t2i，同 seed 保构图、成对约束入词、KF_NO_CUT 镜内禁切、fl2v 对齐头）；生成失败降级 h3_i2v。
 **渲染细节**：多版本 video_v{N} 落盘（版本切换即改 video_path）；lora_strength 注入（项目 lora_realism）；远景升兆像素；画幅注入（manifest 不支持回落 16:9）；seed 优先库值；上镜尾帧接力（extract_last_frame→本镜首帧槽）。
 **可靠性**：断点对账（重启先 reattach ComfyUI history 已完成直接落盘，后 requeue）；单镜重渲=force 语义；批量渲染排队去重；jobs 快照审计（attach_snapshot 留提示词+工作流 JSON）。
-**模型切换**：manifest `models:` 槽位 → settings model_overrides（键=模板 id）→ filler 注入；choices 从 /object_info 枚举。
+**模型切换**：manifest `models:` 槽位 → settings model_overrides（键=模板 id）→ filler 注入；choices 从 /object_info 枚举。**LoRA 开关槽**（2026-09-14 krea_t2i 引入）：槽位加 `switch:` 字段（如 `switch: 启用_1`）——设置页选「（关闭）」存空串 → filler 只关开关不换文件名；未覆盖=模板内置。**krea_t2i**（Lazy_Krea2_文生图）：纯文生图道（width/height 注入、百万像素不注入）；8 LoRA 栈+unet/vae/clip 全可切；步数走 `comfy.t2i_steps`（0=模板内置，t2i 步数影响耗时）。
 **🚄 快车道开关**（settings comfy.*）：director_batch_frames（默认 512）、批间首帧接力 director_batch_relay、整片混音 director_mix、清显存/导出源帧；画布按项目兆像素 ×32 ceil 对齐。
 
 ## 8. 音频/音色决策链

@@ -14,10 +14,20 @@ def fill_workflow(template, *, prompt: str | None, params: dict,
     if prompt is not None and template.inject_prompt is not None:
         set_input(template.inject_prompt.node, template.inject_prompt.field, prompt)
     # prompt=None：保留工作流内置提示词（如四视图 LoRA 触发词）——管线只传图/参数
-    # 模型槽位覆盖（settings model_overrides，键=模板 id → {label: 文件名}）
+    # 模型槽位覆盖（settings model_overrides，键=模板 id → {label: 文件名}）。
+    # 带开关字段的槽位（2026-09-14 LazyKreaLoraStack）：覆盖非空=设文件名+开、
+    # 空串=只关开关（文件名保留）、未覆盖=模板默认
     for slot in template.models:
         value = (model_overrides or {}).get(slot.label)
-        if value:
+        if value is None:
+            continue
+        if slot.switch_field:
+            if value:
+                set_input(slot.node, slot.field, value)
+                set_input(slot.node, slot.switch_field, True)
+            else:
+                set_input(slot.node, slot.switch_field, False)
+        elif value:
             set_input(slot.node, slot.field, value)
     for key, point in template.inject_params.items():
         value = params.get(key)

@@ -1,0 +1,45 @@
+id: krea_t2i
+type: t2i
+name: Krea2 文生图（Lazy_Krea2 文生图·8 LoRA 栈）
+file: krea_t2i.api.json
+prompt_format: '{detail}'
+inject:
+  prompt:
+    node: '28'
+    field: value
+  params:
+    seed: {node: '2001', field: 种子}
+    steps: {node: '2001', field: 步数}
+    width: {node: '2001', field: 宽度}
+    height: {node: '2001', field: 高度}
+    # 百万像素不注入（2026-09-14 用户）：t2i 输出尺寸由宽高决定，
+    # 百万像素仅图生图/参考模式的缩放基准
+  # 纯文生图：无图片槽——画风走提示词段（项目 style/style_vis），
+  # 工作台风格库置 none 不额外注入
+outputs:
+- node: '10'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- ComfyUI_Lazybuxuexi
+models:
+- {label: unet, node: '90', field: unet_name, cls: UNETLoader, label_cn: 主模型（Krea2）}
+- {label: clip, node: '91', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器（qwen3vl）}
+- {label: vae, node: '93', field: vae_name, cls: VAELoader, label_cn: VAE}
+# LoRA 槽带开关字段（2026-09-14 用户需求）：设置页只设其中几个，
+# 其余选「（关闭）」→ 启用_N=false；未覆盖=模板内置默认
+# （内置栈=用户 2026-09-13 实测：Detail+Realism 开，其余关但文件名留位便于切换）
+- {label: lora1, node: '4', field: LoRA_1, cls: LazyKreaLoraStack, switch: 启用_1, label_cn: LoRA 1}
+- {label: lora2, node: '4', field: LoRA_2, cls: LazyKreaLoraStack, switch: 启用_2, label_cn: LoRA 2}
+- {label: lora3, node: '4', field: LoRA_3, cls: LazyKreaLoraStack, switch: 启用_3, label_cn: LoRA 3}
+- {label: lora4, node: '4', field: LoRA_4, cls: LazyKreaLoraStack, switch: 启用_4, label_cn: LoRA 4}
+- {label: lora5, node: '4', field: LoRA_5, cls: LazyKreaLoraStack, switch: 启用_5, label_cn: LoRA 5}
+- {label: lora6, node: '4', field: LoRA_6, cls: LazyKreaLoraStack, switch: 启用_6, label_cn: LoRA 6}
+- {label: lora7, node: '4', field: LoRA_7, cls: LazyKreaLoraStack, switch: 启用_7, label_cn: LoRA 7}
+- {label: lora8, node: '4', field: LoRA_8, cls: LazyKreaLoraStack, switch: 启用_8, label_cn: LoRA 8}
+
+# 来源：templates/workflows/_raw/Lazy_Krea2_文生图.json（2026-09-14 用户导入）。
+# 与 comic_page_krea2（全模式工作台）同族仅文生图：接线复刻已验证结构
+# （PrimitiveStringMultiline→工作台 提示词；种子直注 Generate 节点；
+# 删 SeedNode/easy promptLine 孤儿节点）。
+# 步数经 settings comfy.t2i_steps 注入（0=模板内置 10）——t2i 步数对耗时
+# 影响大（用户 2026-09-14），与图生图 krea 道「步数固定 10」不同。

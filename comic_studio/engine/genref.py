@@ -206,9 +206,15 @@ def _t2i_to_file(db, comfy, tmpl, prompt, dest, ctx, job, label, images=None):
     images：模板声明图片槽时传入（如文+图重绘的 ref 槽）。"""
     if comfy is None:
         raise RuntimeError("gen_ref 需要 ComfyUI 端点（settings.comfy.base_url）")
+    # 步数覆盖（2026-09-14 comfy.t2i_steps）：0=不覆盖走模板内置；>0=注入
+    # ——t2i 步数对耗时影响大（Krea2 文生图等），与项目质量档无关的全局手感值
+    params = {"seed": random.randint(0, 2**31 - 1)}
+    _steps = int((get_setting(db, "comfy") or {}).get("t2i_steps") or 0)
+    if _steps > 0:
+        params["steps"] = _steps
     wf, uploads = fill_workflow(
         tmpl, prompt=prompt,
-        params={"seed": random.randint(0, 2**31 - 1)},
+        params=params,
         images=images, output_ctx=ctx,
         model_overrides=(get_setting(db, "model_overrides") or {}).get(tmpl.id))
     for up in uploads:

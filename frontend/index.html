@@ -544,6 +544,9 @@
          <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
                  :title="t.id">{{ t.name }}</option>
        </select>
+       <label class="muted" style="margin-left:8px" title="文生图步数：0=不覆盖（走模板内置步数）；>0=注入所有文生图模板。t2i 步数对耗时影响大（Krea2 文生图不同步数耗时差别显著），与图生图参考模式的「步数固定」不同">文生图步数
+         <input type="number" min="0" max="60" v-model.number="settingsForm.comfy.t2i_steps"
+                style="width:56px"></label>
        <span class="muted">角色主图与场景/道具参考图；文+图类模板会在有主图时自动重绘</span></p>
     <p><label class="muted">三视图生成模板：</label>
        <select v-model="settingsForm.cvTm" style="width:300px">
@@ -626,11 +629,12 @@
                title="下载此工作流 JSON 并打开 ComfyUI 测试" style="font-size:12px;padding:3px 8px">🧪 测试</button>
        <button v-if="moTemplate" @click="resetMO" title="清除该模板全部覆盖，回到工作流内置模型"
                style="background:#7f1d1d;font-size:12px;padding:3px 8px">恢复默认</button></p>
-    <p class="muted" style="margin:4px 0 8px">主模型/CLIP/VAE/LoRA 按槽位切换，当前选中即生效值（无覆盖时显示模板内置默认）；保存后重渲生效（ComfyUI 需在线以枚举文件）</p>
+    <p class="muted" style="margin:4px 0 8px">主模型/CLIP/VAE/LoRA 按槽位切换，当前选中即生效值（无覆盖时显示模板内置默认）；LoRA 槽选「（关闭）」=不加载该 LoRA；保存后重渲生效（ComfyUI 需在线以枚举文件）</p>
     <div v-if="modelChoices.length" class="row" style="align-items:center">
       <p v-for="slot in modelChoices" :key="slot.label" style="margin:4px 0">
         <label :title="`${slot.label}（${slot.cls}.${slot.field}）`">{{ slot.label_cn || slot.label }}：
           <select v-model="currentMO[slot.label]" style="max-width:340px">
+            <option v-if="slot.switchable" value="">（关闭）</option>
             <option v-for="f in slot.choices" :key="f" :value="f">{{ f }}</option>
           </select></label>
       </p>

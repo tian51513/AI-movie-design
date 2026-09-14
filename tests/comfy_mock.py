@@ -76,10 +76,12 @@ def _make_handler(mode: str, video: bool = False, animated_images: bool = False,
                 # 少套类名一层对真机 KeyError，mock 必须还原真实结构防回归）
                 cls = self.path.split("/object_info/")[1]
                 files = ["a.safetensors", "b.safetensors"]
+                # LazyKreaLoraStack：LoRA_N 八槽（2026-09-14 krea_t2i 模板枚举）
+                lora_n = {f"LoRA_{i}": [files] for i in range(1, 9)}
                 self._json({cls: {"input": {"required": {
                     "unet_name": [files], "clip_name": [files],
                     "vae_name": [files], "ckpt_name": [files],
-                    "lora_name": [files]}}}})
+                    "lora_name": [files], **lora_n}}}})
             elif self.path.startswith("/history/"):
                 if mode == "hang":
                     self._json({})

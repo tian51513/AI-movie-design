@@ -75,7 +75,11 @@ DEFAULT_SETTINGS = {
               # LoRA 后最后一环；默认开（0.9=本机验证值/64=音频安全块，节点出厂默认）
               "h3_sla_enabled": True,
               "h3_sla_sparsity": 0.9,
-              "h3_sla_block_size": "64"},
+              "h3_sla_block_size": "64",
+              # 文生图步数覆盖（2026-09-14 Krea2 文生图需求）：0=不覆盖走模板
+              # 内置步数；>0=注入（t2i 步数对耗时影响大，与图生图 krea 道
+              # 「步数固定 10」不同——用户实测 t2i 不同步数耗时差别大）
+              "t2i_steps": 0},
     # 工作流模型槽位覆盖（计划5B 任务6）：{模板 id: {label: 文件名}}
     "model_overrides": {},
 }

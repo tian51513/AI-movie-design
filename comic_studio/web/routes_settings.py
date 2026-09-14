@@ -41,6 +41,7 @@ class ComfyConfig(BaseModel):
     h3_sla_enabled: bool = True  # H3 SLA 注意力（2026-09-10）
     h3_sla_sparsity: float = 0.9
     h3_sla_block_size: str = "64"  # COMBO "64"/"128"
+    t2i_steps: int = 0  # 文生图步数覆盖（0=模板内置；t2i 步数影响耗时，2026-09-14）
     min_free_vram_gb: float = 8  # gpu_comfy 前置显存门槛（2026-08-28）
     director_batch_frames: int = 512  # 快车道分批帧数（2026-08-28）
 
@@ -193,9 +194,14 @@ def model_choices(template: str = Query(...), request: Request = None):
             choices = choices[0]
         except Exception as exc:
             raise HTTPException(502, f"ComfyUI 枚举失败（{slot.cls}.{slot.field}）：{exc}")
-        current = str((wf.get(str(slot.node), {}).get("inputs") or {}).get(slot.field, ""))
+        inputs = (wf.get(str(slot.node), {}).get("inputs") or {})
+        current = str(inputs.get(slot.field, ""))
+        switchable = bool(slot.switch_field)
+        if switchable and not inputs.get(slot.switch_field):
+            current = ""  # 内置关的 LoRA 槽 → 空=「（关闭）」选项（所见即所 enforced）
         out.append({"label": slot.label, "label_cn": slot.label_cn or slot.label,
                     "cls": slot.cls, "field": slot.field, "current": current,
+                    "switchable": switchable,
                     "choices": list(choices or [])})
     return out
 

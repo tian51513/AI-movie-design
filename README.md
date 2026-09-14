@@ -46,7 +46,9 @@
 
 ## 工作流模型切换
 
-设置页「工作流模型切换」：按模板（h3_ref2va / h3_i2v / h3_t2v / t2i_ref）切换 unet/clip/vae 等加载文件——可选项直接从 ComfyUI `/object_info` 枚举，保存后重渲生效；选「（模板默认）」即恢复 manifest 内置值。
+设置页「工作流模型切换」：按模板（h3_ref2va / h3_i2v / h3_t2v / t2i_ref / krea_t2i 等）切换 unet/clip/vae 等加载文件——可选项直接从 ComfyUI `/object_info` 枚举，保存后重渲生效；选「（模板默认）」即恢复 manifest 内置值。带开关的 LoRA 槽（如 krea_t2i 的 8 LoRA 栈）可选「（关闭）」=不加载该 LoRA；文生图步数可在「主图/参考图生成模板」行统一覆盖（`comfy.t2i_steps`，0=模板内置）。
+
+**Krea2 文生图**（2026-09-14）：`krea_t2i` 模板（Lazy_Krea2_文生图）——纯文生图道，尺寸由宽×高决定（百万像素仅图生图参考模式用）；8 LoRA 栈/主模型/VAE/CLIP 全部设置页可切，LoRA 可单独关闭。
 
 ## 提示词四模式（2026-08-24 实测定型）
 
