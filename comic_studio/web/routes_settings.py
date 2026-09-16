@@ -23,6 +23,9 @@ class ProviderConfig(BaseModel):
     # 附加请求参数（透传 chat.completions.create 的 extra_body），如屏蔽思考：
     # {"chat_template_kwargs": {"enable_thinking": false}}——本机 LM Studio 实测无效，留给支持的服务端
     extra_body: dict | None = None
+    # 按模型附加参数覆写（2026-09-17）：{模型名: 参数对象}——路由钉到该模型时
+    # 覆写连接默认 extra_body（思考模型单独关思考不误伤同连接其它模型）
+    extra_body_models: dict[str, dict] | None = None
 
 
 class ComfyConfig(BaseModel):

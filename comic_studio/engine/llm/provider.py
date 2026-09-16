@@ -172,8 +172,16 @@ def client_for_task(db: Database, task: str) -> "LLMClient":
     p = providers[name]
     if not p.get("base_url"):
         raise LLMError(f"线上 LLM 未配置：settings.llm_providers.{name}.base_url 为空")
+    model = model_override or p["model"]
+    # 按模型附加参数覆写（2026-09-17）：钉选/默认模型在 extra_body_models 有条目
+    # → 覆写连接默认（思考模型单独关思考不误伤同连接其它模型）
+    extra = p.get("extra_body")
+    if model:
+        per_model = (p.get("extra_body_models") or {}).get(model)
+        if per_model is not None:
+            extra = per_model
     return LLMClient(base_url=p["base_url"], api_key=p.get("api_key") or "none",
-                     model=model_override or p["model"], extra_body=p.get("extra_body"))
+                     model=model, extra_body=extra)
 
 
 def log_llm_call(db: Database, task: str, provider: str, model: str, usage: Usage,

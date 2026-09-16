@@ -332,4 +332,6 @@
 - **PUT 语义**：子字典 **null=删除连接**（被路由引用 422 拒绝并列任务清单；**护栏按提交后生效路由判断**——同单改路由+删连接是 UI 自然操作序，Playwright 实测曾按库里旧路由误拦）；llm-test 的 provider 放宽为任意非空标签；局部 PUT 增量合并语义不变
 - **判例**：llmTest 读值路径漏改（`settingsForm[provider]`→`llmProviders[provider]`）= 全连接灯灰「未配置」——重构 data 形态时所有 `settingsForm.xxx` 直引点必须同步排查；Vue 生产构建无 `__vueParentComponent`，抓前端真实载荷用 fetch 包装器
 - **存量覆盖死键（2026-09-17 真机：character_views 刷新后 lora_quadview 撞 PUT 校验整单 422）**：GET 载荷按当前 manifest 过滤退役槽键（表单不再回传死键）+ PUT 合并后清洗存储与已删模板——新提交键仍严格 422（防typo护栏不动）；**模板改槽位后设置页保存报「无模型槽位」先想这层**
+- **按模型附加参数覆写 `extra_body_models`（2026-09-17 用户需求：附加参数连接通用会误伤同连接其它模型）**：provider 配置可选 `{模型名: 参数对象}`；`client_for_task` 生效优先级 **模型覆写 > 连接默认 extra_body > 无**（钉选与默认模型同权命中）；UI=连接卡结构化行编辑器（模型下拉+单参数 JSON 输入框，`ebm_rows` 行数组 ↔ 存库 dict 互转）；llm-test 按默认模型的覆写实测（所见即生效）。**不用再加同地址影子连接做参数隔离**
+- **判例（WSL 排障）**：跨 Bash 调用的后台进程 `kill %1` 杀不到（job 表每 shell 独立）→ 反复「重启」全是端口僵尸旧进程在答话（PUT 新字段静默丢=Pydantic 忽略未知键，旧代码 200 假象）；隔离实例清理必须 `pgrep -fa 'port 8191'` 逐个 kill；新旧行为探针=发「本应 422 的坏值」看响应
 - 用法（用户定调）：全部模型挂同一条连接（如 `local:nsfwvision-v3`/`local:qwen…`）即可；extra_body 是连接级参数——要给思考模型关思考又不打哑别的，加一条**同地址**连接单独配 extra_body 再钉选

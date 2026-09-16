@@ -61,3 +61,59 @@ def test_routing_value_can_pin_specific_model(tmp_path):
     set_setting(db, "llm_routing", {"extract_assets": "ghost:m"})
     with pytest.raises(LLMError, match="路由"):
         client_for_task(db, "extract_assets")
+
+
+# ---------- 2026-09-17 按模型附加参数覆写（extra_body_models） ----------
+
+def _ebm_db(tmp_path, extra_body=None, extra_body_models=None):
+    db = _db(tmp_path)
+    prov = {"base_url": "http://localhost:11434/v1", "api_key": "ollama", "model": "默认模型"}
+    if extra_body is not None:
+        prov["extra_body"] = extra_body
+    if extra_body_models is not None:
+        prov["extra_body_models"] = extra_body_models
+    set_setting(db, "llm_providers", {"local": prov})
+    set_setting(db, "llm_routing", {"extract_assets": "local"})
+    return db
+
+
+def test_extra_body_model_override_wins(tmp_path):
+    """钉到有覆写的模型 → 用覆写；连接默认不生效。"""
+    db = _ebm_db(tmp_path, extra_body={"reasoning_effort": "none"},
+                 extra_body_models={"ornith_1.5": {"reasoning_effort": "low"}})
+    set_setting(db, "llm_routing", {"extract_assets": "local:ornith_1.5"})
+    c = client_for_task(db, "extract_assets")
+    assert c.model == "ornith_1.5" and c.extra_body == {"reasoning_effort": "low"}
+
+
+def test_extra_body_fallback_to_connection_default(tmp_path):
+    """钉到无覆写的模型 → 回落连接默认附加参数。"""
+    db = _ebm_db(tmp_path, extra_body={"reasoning_effort": "none"},
+                 extra_body_models={"ornith_1.5": {"reasoning_effort": "low"}})
+    set_setting(db, "llm_routing", {"extract_assets": "local:别的模型"})
+    c = client_for_task(db, "extract_assets")
+    assert c.extra_body == {"reasoning_effort": "none"}
+
+
+def test_extra_body_override_for_default_model(tmp_path):
+    """路由不钉模型（用连接默认模型）时，默认模型的覆写同样生效。"""
+    db = _ebm_db(tmp_path, extra_body={"reasoning_effort": "none"},
+                 extra_body_models={"默认模型": {"reasoning_effort": "low"}})
+    c = client_for_task(db, "extract_assets")
+    assert c.model == "默认模型" and c.extra_body == {"reasoning_effort": "low"}
+
+
+def test_extra_body_override_needs_dict_values(tmp_path):
+    """PUT 校验：extra_body_models 必须是 {模型名: 对象}——值非对象 422。"""
+    from fastapi.testclient import TestClient
+
+    from comic_studio.web.app import create_app
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        r = c.put("/api/settings", json={"llm_providers": {
+            "local": {"extra_body_models": {"m": {"reasoning_effort": "none"}}}}})
+        assert r.status_code == 200, r.text
+        assert c.get("/api/settings").json()["llm_providers"]["local"]["extra_body_models"] == \
+            {"m": {"reasoning_effort": "none"}}
+        assert c.put("/api/settings", json={"llm_providers": {
+            "local": {"extra_body_models": {"m": "not-an-object"}}}}).status_code == 422

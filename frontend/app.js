@@ -829,7 +829,10 @@ const methods = {
     // 服务商动态化（2026-09-17）：llmProviders 键控连接表；类型从 base_url 反推（快捷填地址用）
     this.settingsForm.llmProviders = Object.fromEntries(
       Object.entries(s.llm_providers || {}).map(([k, v]) => [k,
-        { ...(v || {}), extra_body_json: v?.extra_body ? JSON.stringify(v.extra_body) : '' }]));
+        { ...(v || {}), extra_body_json: v?.extra_body ? JSON.stringify(v.extra_body) : '',
+          // 按模型附加参数（2026-09-17）：存库 {模型:对象} → 表单行数组（下拉选模型）
+          ebm_rows: Object.entries(v?.extra_body_models || {}).map(
+            ([m, o]) => ({model: m, json: JSON.stringify(o)})) }]));
     this.providerTypes = Object.fromEntries(Object.keys(this.settingsForm.llmProviders).map(k => {
       const bu = (this.settingsForm.llmProviders[k].base_url || '').toLowerCase();
       return [k, bu.includes('11434') ? 'ollama' : bu.includes('1234') ? 'lmstudio' : bu ? 'custom' : ''];
@@ -912,7 +915,14 @@ const methods = {
       this.llmTestResult[provider] = {ok: false, unconfigured: true, detail: 'base_url 或模型名为空'};
       this.llmTesting = ''; return;
     }
-    const eb = this._parseExtra(p);
+    const eb = (() => {
+      // 所见即生效（2026-09-17）：默认模型有按模型覆写时按覆写测
+      const row = (p.ebm_rows || []).find(r => r.model === (p.model || '').trim());
+      if (row && (row.json || '').trim()) {
+        try { return JSON.parse(row.json); } catch (e) { return undefined; }
+      }
+      return this._parseExtra(p);
+    })();
     if (eb === undefined) {
       this.llmTestResult[provider] = {ok: false, detail: 'extra_body 不是合法 JSON'};
       this.llmTesting = ''; return;
@@ -996,13 +1006,18 @@ const methods = {
     let n = 2;
     while (keys.includes(prefix + n)) n++;
     const key = prefix + n;
-    this.settingsForm.llmProviders[key] = { base_url: '', api_key: '', model: '', extra_body_json: '' };
+    this.settingsForm.llmProviders[key] = { base_url: '', api_key: '', model: '', extra_body_json: '', ebm_rows: [] };
     this.providerTypes[key] = '';
   },
   removeProvider(key) {
     if (!confirm(`删除连接 ${key}？（若任务路由还引用它，保存会被拒绝并提示）`)) return;
     delete this.settingsForm.llmProviders[key];
     if (!this.removedProviders.includes(key)) this.removedProviders.push(key);
+  },
+  addEbmRow(key) {
+    const p = this.settingsForm.llmProviders[key];
+    if (!p.ebm_rows) p.ebm_rows = [];
+    p.ebm_rows.push({model: '', json: ''});
   },
   async saveSettings() {
     // 服务商动态化（2026-09-17）：逐连接校验 extra_body；删除的连接发 null（后端
@@ -1011,8 +1026,22 @@ const methods = {
     for (const [k, p] of Object.entries(this.settingsForm.llmProviders)) {
       const eb = this._parseExtra(p);
       if (eb === undefined) { alert(`连接 ${k} 的附加参数不是合法 JSON`); return; }
+      // 按模型附加参数：行数组 → {模型: 对象}；空行跳过；坏 JSON 点名报错
+      const ebm = {};
+      for (const row of (p.ebm_rows || [])) {
+        const m = (row.model || '').trim();
+        const raw = (row.json || '').trim();
+        if (!m || !raw) continue;
+        let val;
+        try { val = JSON.parse(raw); } catch (e) {
+          alert(`连接 ${k} 模型 ${m} 的按模型参数不是合法 JSON`); return; }
+        if (typeof val !== 'object' || val === null || Array.isArray(val)) {
+          alert(`连接 ${k} 模型 ${m} 的按模型参数须为 JSON 对象`); return; }
+        ebm[m] = val;
+      }
       providers[k] = { base_url: p.base_url || '', api_key: p.api_key || '',
-                       model: p.model || '', extra_body: eb };
+                       model: p.model || '', extra_body: eb,
+                       extra_body_models: Object.keys(ebm).length ? ebm : null };
     }
     for (const k of this.removedProviders) providers[k] = null;
     this.saving = true;      const payload = {

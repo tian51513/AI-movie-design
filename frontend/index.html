@@ -517,6 +517,19 @@
                   placeholder="api_key（本地服务随意）" style="width:90%"></p>
           <p style="margin:0"><input v-model="settingsForm.llmProviders[key].extra_body_json"
                   placeholder="附加参数 JSON（可选，作用于本连接全部调用，如 {&quot;reasoning_effort&quot;:&quot;none&quot;}——会打哑部分模型，慎用）" style="width:90%"></p>
+          <p style="margin:6px 0 2px"><span class="muted" style="font-size:12px">按模型附加参数（只覆写所选模型——如单独给思考模型关思考，不误伤其它）</span></p>
+          <div v-for="(row, i) in (settingsForm.llmProviders[key].ebm_rows || [])" :key="key + 'ebm' + i"
+               style="display:flex;gap:4px;align-items:center;margin:2px 0">
+            <select v-model="row.model" style="flex:1;min-width:0">
+              <option value="">选择模型…</option>
+              <option v-if="row.model && !dispModels(key).includes(row.model)" :value="row.model">{{ row.model }}（清单外，保留）</option>
+              <option v-for="m in dispModels(key)" :key="key + 'ebmo' + m" :value="m">{{ m }}</option>
+            </select>
+            <input v-model="row.json" placeholder='参数 JSON，如 {"reasoning_effort":"none"}' style="flex:1.2;min-width:0">
+            <button @click="settingsForm.llmProviders[key].ebm_rows.splice(i, 1)"
+                    style="background:#7f1d1d;font-size:11px;padding:2px 8px">✕</button>
+          </div>
+          <p style="margin:4px 0 0"><button @click="addEbmRow(key)" style="font-size:11px;padding:2px 10px">➕ 按模型参数</button></p>
         </div>
         <p style="margin:6px 0"><button @click="addProvider('local')" style="font-size:12px;padding:4px 12px">➕ 添加本地服务商</button></p>
         <p><label class="muted"><input type="checkbox" v-model="showThink"> 显示推理模型（含 think）</label></p>
@@ -553,6 +566,19 @@
                   placeholder="api_key" style="width:90%"></p>
           <p style="margin:0"><input v-model="settingsForm.llmProviders[key].extra_body_json"
                   placeholder="附加参数 JSON（可选）" style="width:90%"></p>
+          <p style="margin:6px 0 2px"><span class="muted" style="font-size:12px">按模型附加参数（只覆写所选模型）</span></p>
+          <div v-for="(row, i) in (settingsForm.llmProviders[key].ebm_rows || [])" :key="key + 'ebm' + i"
+               style="display:flex;gap:4px;align-items:center;margin:2px 0">
+            <select v-model="row.model" style="flex:1;min-width:0">
+              <option value="">选择模型…</option>
+              <option v-if="row.model && !dispModels(key).includes(row.model)" :value="row.model">{{ row.model }}（清单外，保留）</option>
+              <option v-for="m in dispModels(key)" :key="key + 'ebmo' + m" :value="m">{{ m }}</option>
+            </select>
+            <input v-model="row.json" placeholder='参数 JSON，如 {"reasoning_effort":"none"}' style="flex:1.2;min-width:0">
+            <button @click="settingsForm.llmProviders[key].ebm_rows.splice(i, 1)"
+                    style="background:#7f1d1d;font-size:11px;padding:2px 8px">✕</button>
+          </div>
+          <p style="margin:4px 0 0"><button @click="addEbmRow(key)" style="font-size:11px;padding:2px 10px">➕ 按模型参数</button></p>
         </div>
         <p style="margin:6px 0"><button @click="addProvider('online')" style="font-size:12px;padding:4px 12px">➕ 添加线上服务商</button></p>
         <p><span class="muted" style="font-size:12px">说话人黑名单（VLM 又造脚手架短语时自添，逗号分隔，读图时生效）</span><br>
