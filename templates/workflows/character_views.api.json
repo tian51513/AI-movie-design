@@ -50,8 +50,8 @@
  },
  "14": {
   "inputs": {
-   "seed": 143268854789775,
-   "steps": 10,
+   "seed": 307803520384387,
+   "steps": 4,
    "cfg": 1,
    "sampler_name": "euler",
    "scheduler": "simple",
@@ -76,20 +76,6 @@
   "class_type": "KSampler",
   "_meta": {
    "title": "K采样器"
-  }
- },
- "16": {
-  "inputs": {
-   "lora_name": "Krea2\\Krea2-四视图QuadView_krea2_v1.safetensors",
-   "strength_model": 1,
-   "model": [
-    "25",
-    0
-   ]
-  },
-  "class_type": "LoraLoaderModelOnly",
-  "_meta": {
-   "title": "LoRA加载器（仅模型）"
   }
  },
  "17": {
@@ -173,7 +159,7 @@
    "ref_boost_a": 1,
    "fit_mode": "fit",
    "model": [
-    "16",
+    "36",
     0
    ],
    "source_latent": [
@@ -215,12 +201,57 @@
  },
  "25": {
   "inputs": {
-   "unet_name": "Krea2\\Krea2-MuseByStable_v30Turbo_fp8.safetensors",
+   "unet_name": "Krea2\\Krea2-Moody-Mix-premium_int8_convrot.safetensors",
    "weight_dtype": "default"
   },
   "class_type": "UNETLoader",
   "_meta": {
    "title": "UNet加载器"
+  }
+ },
+ "36": {
+  "inputs": {
+   "槽位数": 4,
+   "启用_1": true,
+   "LoRA_1": "Krea2\\Krea2-四视图QuadView_krea2_v1.safetensors",
+   "强度_1": 1,
+   "类型_1": "默认",
+   "启用_2": true,
+   "LoRA_2": "Krea2\\PornMaster_Detail_Slider_Krea2_V2.safetensors",
+   "强度_2": 1,
+   "类型_2": "默认",
+   "启用_3": true,
+   "LoRA_3": "Krea2\\PornMaster_Krea2_Realism_slider_V1.safetensors",
+   "强度_3": 1,
+   "类型_3": "默认",
+   "启用_4": true,
+   "LoRA_4": "Krea2\\krea2_turbo_4step_rank_64_lora_comfyui.safetensors",
+   "强度_4": 1,
+   "类型_4": "默认",
+   "启用_5": true,
+   "LoRA_5": "none",
+   "强度_5": 1,
+   "类型_5": "默认",
+   "启用_6": true,
+   "LoRA_6": "none",
+   "强度_6": 1,
+   "类型_6": "默认",
+   "启用_7": true,
+   "LoRA_7": "none",
+   "强度_7": 1,
+   "类型_7": "默认",
+   "启用_8": true,
+   "LoRA_8": "none",
+   "强度_8": 1,
+   "类型_8": "默认",
+   "模型": [
+    "25",
+    0
+   ]
+  },
+  "class_type": "LazyKreaLoraStack",
+  "_meta": {
+   "title": "Lazy Krea 多LoRA"
   }
  }
 }

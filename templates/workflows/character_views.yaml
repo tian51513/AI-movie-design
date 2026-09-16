@@ -26,10 +26,21 @@ outputs:
 requires:
 - comfyui-krea2edit
 - comfyui-kjnodes
+- ComfyUI_Lazybuxuexi
 
 # 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
 models:
 - {label: unet, node: '25', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
 - {label: clip, node: '21', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
 - {label: vae, node: '9', field: vae_name, cls: VAELoader, label_cn: VAE}
-- {label: lora_quadview, node: '16', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 三视图 LoRA}
+# 8 LoRA 开关槽（2026-09-16 刷新 _raw ▶▷MiniMaxH3辅助四视图生成流：单 LoRA 节点
+# 退役改 LazyKreaLoraStack；内置栈=用户实测：QuadView+Detail+Realism+turbo_4step
+# 四开（turbo 档=采样 4 步 cfg 1），5~8 留 none 备切换）
+- {label: lora1, node: '36', field: LoRA_1, cls: LazyKreaLoraStack, switch: 启用_1, label_cn: LoRA 1（四视图）}
+- {label: lora2, node: '36', field: LoRA_2, cls: LazyKreaLoraStack, switch: 启用_2, label_cn: LoRA 2（细节）}
+- {label: lora3, node: '36', field: LoRA_3, cls: LazyKreaLoraStack, switch: 启用_3, label_cn: LoRA 3（真实感）}
+- {label: lora4, node: '36', field: LoRA_4, cls: LazyKreaLoraStack, switch: 启用_4, label_cn: LoRA 4（turbo 加速）}
+- {label: lora5, node: '36', field: LoRA_5, cls: LazyKreaLoraStack, switch: 启用_5, label_cn: LoRA 5}
+- {label: lora6, node: '36', field: LoRA_6, cls: LazyKreaLoraStack, switch: 启用_6, label_cn: LoRA 6}
+- {label: lora7, node: '36', field: LoRA_7, cls: LazyKreaLoraStack, switch: 启用_7, label_cn: LoRA 7}
+- {label: lora8, node: '36', field: LoRA_8, cls: LazyKreaLoraStack, switch: 启用_8, label_cn: LoRA 8}

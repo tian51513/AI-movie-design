@@ -310,3 +310,9 @@
 - 接入三处：routes_projects 两处 novel 上传（POST /api/projects + from-comic-novel）+ routes_themes 的 .md 导入——统一 `decode_text_bytes`，成功后照旧以 UTF-8 落盘 novel.txt（后续链路零改动）
 - 不猜的：无 BOM UTF-16（Windows 存档必带 BOM）、Big5/Shift-JIS（GB18030 解出乱码而非报错，猜错比报错糟）→ 报错引导手动转 UTF-8；不引 chardet/charset-normalizer（标准库够用）
 - 判例：测试里的「二进制拒绝」样本不能用 `\xff\xfe` 开头——那是合法 UTF-16 LE BOM，会被 BOM 链解出乱码 201 而非 422（`b"\x80\x81\x82\xff"` 才是真不可解码：0x80 在 GB18030 单字节区外、0xFF 在双字节引导区外）
+
+## 模块地图（character_views 多 LoRA 栈刷新 2026-09-16）
+
+- **`templates/workflows/character_views.*` 刷新**（源 `_raw/▶▷MiniMaxH3辅助四视图生成流.json` 用户 2026-09-16 导出）：单 `LoraLoaderModelOnly`（旧节点 16，导出里已是孤儿）退役 → **`LazyKreaLoraStack`（节点 36）8 开关槽**；模型链 UNet(25)→LoRA 栈(36)→Krea2EditModelPatch(23)；UNet 换用户现选 `Krea2-Moody-Mix-premium_int8_convrot`；**内置栈 QuadView+Detail+Realism+turbo_4step 四开 → 采样 steps 4 / cfg 1**（turbo 档）
+- manifest：lora1~lora8 均带 `switch: 启用_N`（2026-09-14 开关槽语义：覆盖非空→文件+开、空串→只关、未覆盖→模板默认）；requires 补 `ComfyUI_Lazybuxuexi`；注入点不变（seed/width/height + body 图槽——handler/前端零改动）
+- 设置页「工作流模型切换」选 character_views 即见 8 LoRA 槽（registry 驱动自动出，「（关闭）」=开关 false）；存量 model_overrides 里旧键 `lora_quadview` 无害残留（filler 只注入 manifest 声明槽）

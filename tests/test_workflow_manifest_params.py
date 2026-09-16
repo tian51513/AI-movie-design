@@ -62,3 +62,30 @@ def test_manifest_prompt_optional():
     assert "Character Sheet" in wf["24"]["inputs"]["prompt"]  # 内置词未被覆盖
     assert wf["17"]["inputs"]["image"] == "cs__p__a__body.png"  # 图槽换成上传名
     assert uploads and uploads[0]["path"] == "x.png"
+
+
+def test_character_views_multi_lora_stack():
+    """2026-09-16 刷新（_raw ▶▷MiniMaxH3辅助四视图生成流）：单 LoRA 节点退役，
+    LazyKreaLoraStack 8 开关槽；模型链 UNet(25)→LoRA栈(36)→Edit patch(23)。"""
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.workflows.filler import fill_workflow
+    reg = registry.scan_templates(registry.TEMPLATE_ROOT)
+    t = reg["character_views"]
+    slots = {s.label: s for s in t.models}
+    assert "lora_quadview" not in slots          # 旧单 LoRA 槽退役
+    for i in range(1, 9):
+        s = slots[f"lora{i}"]
+        assert (s.cls, s.node, s.field, s.switch_field) == (
+            "LazyKreaLoraStack", "36", f"LoRA_{i}", f"启用_{i}")
+    api = t.api_json()
+    assert "16" not in api                        # 旧 LoraLoaderModelOnly 孤儿已删
+    assert api["23"]["inputs"]["model"] == ["36", 0]
+    assert api["36"]["inputs"]["模型"] == ["25", 0]
+    assert api["14"]["inputs"]["steps"] == 4      # turbo 4 步 LoRA 随栈启用
+    # 开关槽覆盖语义：换 lora2 文件 → 设文件名+开开关（设置页「当前选中即生效值」）
+    wf, _ = fill_workflow(t, prompt=None, params={"seed": 7},
+                          images=[{"slot": "body", "path": "x.png"}],
+                          output_ctx={"project": "p", "asset": "a"},
+                          model_overrides={"lora2": "Krea2\\new.safetensors"})
+    n = wf["36"]["inputs"]
+    assert n["LoRA_2"] == "Krea2\\new.safetensors" and n["启用_2"] is True
