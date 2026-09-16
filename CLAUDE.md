@@ -331,4 +331,5 @@
 - **任务路由下拉** = 全连接循环组（`连接名 · 默认` + 各模型 `连接名:模型`）；打开设置页 `fetchAllProviderModels` 静默拉所有有效连接清单（失败只是该组无钉选项）；`ollama-models` 端点带 `api_key`（Bearer——线上连接可枚举）
 - **PUT 语义**：子字典 **null=删除连接**（被路由引用 422 拒绝并列任务清单；**护栏按提交后生效路由判断**——同单改路由+删连接是 UI 自然操作序，Playwright 实测曾按库里旧路由误拦）；llm-test 的 provider 放宽为任意非空标签；局部 PUT 增量合并语义不变
 - **判例**：llmTest 读值路径漏改（`settingsForm[provider]`→`llmProviders[provider]`）= 全连接灯灰「未配置」——重构 data 形态时所有 `settingsForm.xxx` 直引点必须同步排查；Vue 生产构建无 `__vueParentComponent`，抓前端真实载荷用 fetch 包装器
+- **存量覆盖死键（2026-09-17 真机：character_views 刷新后 lora_quadview 撞 PUT 校验整单 422）**：GET 载荷按当前 manifest 过滤退役槽键（表单不再回传死键）+ PUT 合并后清洗存储与已删模板——新提交键仍严格 422（防typo护栏不动）；**模板改槽位后设置页保存报「无模型槽位」先想这层**
 - 用法（用户定调）：全部模型挂同一条连接（如 `local:nsfwvision-v3`/`local:qwen…`）即可；extra_body 是连接级参数——要给思考模型关思考又不打哑别的，加一条**同地址**连接单独配 extra_body 再钉选

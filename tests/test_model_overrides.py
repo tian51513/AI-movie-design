@@ -78,3 +78,30 @@ def test_empty_override_dict_clears_template(tmp_path):
             "h3_ref2va": {"unet": "x.safetensors"}}})
         c.put("/api/settings", json={"model_overrides": {"h3_ref2va": {}}})
         assert c.get("/api/settings").json()["model_overrides"].get("h3_ref2va") in (None, {})
+
+
+def test_stale_override_slots_filtered_and_pruned(tmp_path):
+    """模板刷新后存量覆盖里的退役槽键（2026-09-17 真机：character_views
+    lora_quadview→lora1~8）：GET 载荷滤掉死键（表单不再回传）、PUT 合并后从
+    存储清洗——保存不再整单 422；新键严格校验照旧。"""
+    from fastapi.testclient import TestClient
+
+    from comic_studio.engine.settings import get_setting, set_setting
+    from comic_studio.web.app import create_app
+    app = create_app(tmp_path / "s.db", tmp_path / "data", start_workers=False)
+    with TestClient(app) as c:
+        set_setting(app.state.db, "model_overrides", {
+            "character_views": {"lora_quadview": "old.safetensors",
+                                "unet": "keep.safetensors"}})
+        # GET：退役槽键不进载荷
+        body = c.get("/api/settings").json()
+        assert body["model_overrides"]["character_views"] == {"unet": "keep.safetensors"}
+        # PUT 合法新键：200 且存储里死键被清、有效旧键保留
+        r = c.put("/api/settings", json={"model_overrides": {
+            "character_views": {"lora1": "new.safetensors"}}})
+        assert r.status_code == 200, r.text
+        stored = get_setting(app.state.db, "model_overrides")["character_views"]
+        assert stored == {"unet": "keep.safetensors", "lora1": "new.safetensors"}
+        # 拼错的新键仍 422（防typo护栏不动）
+        assert c.put("/api/settings", json={"model_overrides": {
+            "character_views": {"lora_typo": "x.safetensors"}}}).status_code == 422

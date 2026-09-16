@@ -69,6 +69,17 @@ def style_presets():
     return list_style_libs()
 
 
+def _filter_model_overrides(db, treg) -> dict:
+    """存量覆盖按当前 manifest 过滤（2026-09-17 真机：character_views 刷新后
+    lora_quadview 成死键，表单全量回传撞 PUT 校验整单 422）——死键不进载荷；
+    registry 扫描失败（treg 空）时原样返回不拦设置页。"""
+    stored = get_setting(db, "model_overrides") or {}
+    if not treg:
+        return stored
+    return {tid: {k: v for k, v in slots.items() if k in {s.label for s in treg[tid].models}}
+            for tid, slots in stored.items() if tid in treg}
+
+
 @router.get("")
 def read(request: Request):
     from ..engine.workflows import registry
@@ -81,7 +92,7 @@ def read(request: Request):
                       "image_slots": [im["slot"] for im in t.inject_images]}
                      for t in treg.values()]
     except registry.ManifestError:
-        templates = []
+        treg, templates = {}, []
     return {
         "llm_providers": get_setting(request.app.state.db, "llm_providers"),
         "llm_routing": get_setting(request.app.state.db, "llm_routing"),
@@ -89,7 +100,7 @@ def read(request: Request):
         "asr": get_setting(request.app.state.db, "asr"),
         "speaker_blacklist": get_setting(request.app.state.db, "speaker_blacklist"),
         "template_map": get_setting(request.app.state.db, "template_map"),
-        "model_overrides": get_setting(request.app.state.db, "model_overrides") or {},
+        "model_overrides": _filter_model_overrides(request.app.state.db, treg),
         "template_params": get_setting(request.app.state.db, "template_params") or {},
         "model_templates": templates,
     }
@@ -185,6 +196,10 @@ def update(request: Request, body: SettingsUpdate):
                 merged.pop(tmpl_id, None)  # 空字典=恢复该模板默认（清空覆盖）
             else:
                 merged.setdefault(tmpl_id, {}).update(slots)
+            # 存量死键清洗（2026-09-17）：模板刷新退役的槽键从存储一并清掉
+            if tmpl_id in merged:
+                merged[tmpl_id] = {k: v for k, v in merged[tmpl_id].items() if k in labels}
+        merged = {t: s for t, s in merged.items() if t in reg}
         set_setting(db, "model_overrides", merged)
     if body.template_params is not None:
         from ..engine.workflows import registry
