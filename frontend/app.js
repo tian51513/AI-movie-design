@@ -65,12 +65,13 @@ function data() {
     styleOpen: false, styleEditStyle: '', styleEditVis: '', styleSaving: false,
     stylePickerOpen: false, spLib: '', spSel: '', spSearch: '', spCtx: 'create',
     analyzeState: { status: '', error: null }, pollTimer: null,
-    settingsForm: { local: {}, local2: {}, online: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
+    settingsForm: { llmProviders: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
       comfy: {}, t2i_tm: '', speakerBlacklist: '',
                     model_overrides: {}, model_templates: [],
                     comicTm: '', comicRefTm: '', comicKreaTm: '', templateParams: {} }, saving: false,
+    providerModels: {}, providerTypes: {}, removedProviders: [],
     moTemplate: '', modelChoices: [], moError: '',
-    ollamaModels: [], showThink: false, loadingModels: false,
+    showThink: false, loadingModels: '',
     activeKind: '全部', perRow: 2, lightbox: null,
     voices: [], voicesBusy: '', vUpBusy: false, vUpErr: '', vStaged: null,
     vUp: { file: null, name: '', start: 45, dur: 60 },
@@ -79,8 +80,8 @@ function data() {
     editAssetVoice: '',
     themeEditOpen: false, themeEdit: {}, themeEditErr: '',
     viewer: null,  // 分镜媒体查看器 {kind:'image'|'video', list:[{url,label}], idx}
-    comfyStatus: null, llmTesting: '', llmTestResult: {local: null, online: null},
-    localProviderType: '',  // ollama / lmstudio / custom（从 base_url 反推）
+    comfyStatus: null, llmTesting: '', llmTestResult: {local: null, local2: null, online: null},
+    localProviderType: '',  // 已废弃（2026-09-17 连接动态化）→ providerTypes 键控
     freeingComfy: false,
     llmTestManual: {local: false, local2: false, online: false},
     logs: [], lastLogId: 0, logsTimer: null,
@@ -120,10 +121,9 @@ const computed = {
                                       : this.assets.filter(a => a.kind === this.activeKind);
   },
   voiceChars() { return this.assets.filter(a => a.kind === 'character'); },
-  displayOllamaModels() {
-    return this.showThink ? this.ollamaModels
-      : this.ollamaModels.filter(m => !m.toLowerCase().includes("think"));
-  },
+  localConns() { return this._conns('local'); },
+  onlineConns() { return this._conns('online'); },
+  allConns() { return [...this.localConns, ...this.onlineConns]; },
   currentMO() {
     const mo = this.settingsForm.model_overrides;
     if (!mo[this.moTemplate]) mo[this.moTemplate] = {};
@@ -823,22 +823,21 @@ const methods = {
     clearInterval(this.pollTimer); this.pollTimer = null;
     this.stopLogsPolling(); this.project = null;
     this.view = 'settings'; this.checkComfy();
-    this.llmTestResult = {local: null, online: null};
+    this.llmTestResult = {local: null, local2: null, online: null};
     this.llmTestManual = {local: false, online: false};
     const s = await (await fetch('/api/settings')).json();
-    // 从 base_url 反推服务商类型（选下拉用——必须在 s 赋值之后！）
-    const _bu = (s.llm_providers.local?.base_url || '').toLowerCase();
-    this.localProviderType = _bu.includes('11434') ? 'ollama'
-      : _bu.includes('1234') ? 'lmstudio'
-      : _bu ? 'custom' : '';
+    // 服务商动态化（2026-09-17）：llmProviders 键控连接表；类型从 base_url 反推（快捷填地址用）
+    this.settingsForm.llmProviders = Object.fromEntries(
+      Object.entries(s.llm_providers || {}).map(([k, v]) => [k,
+        { ...(v || {}), extra_body_json: v?.extra_body ? JSON.stringify(v.extra_body) : '' }]));
+    this.providerTypes = Object.fromEntries(Object.keys(this.settingsForm.llmProviders).map(k => {
+      const bu = (this.settingsForm.llmProviders[k].base_url || '').toLowerCase();
+      return [k, bu.includes('11434') ? 'ollama' : bu.includes('1234') ? 'lmstudio' : bu ? 'custom' : ''];
+    }));
+    this.removedProviders = [];
+    this.providerModels = {};
     this.settingsForm = {
-      local: { ...s.llm_providers.local,
-               extra_body_json: s.llm_providers.local?.extra_body ? JSON.stringify(s.llm_providers.local.extra_body) : '' },
-      local2: { base_url: '', api_key: '', model: '',
-                ...(s.llm_providers.local2 || {}),
-                extra_body_json: s.llm_providers.local2?.extra_body ? JSON.stringify(s.llm_providers.local2.extra_body) : '' },
-      online: { ...s.llm_providers.online,
-                extra_body_json: s.llm_providers.online?.extra_body ? JSON.stringify(s.llm_providers.online.extra_body) : '' },
+      llmProviders: this.settingsForm.llmProviders,
       routing: { ...s.llm_routing },
       asr: { engine: s.asr?.engine || 'faster_whisper',
              chunk_seconds: s.asr?.chunk_seconds || 300 },
@@ -863,7 +862,9 @@ const methods = {
     this.moTemplate = ids.includes('h3_ref2va') ? 'h3_ref2va' : (ids[0] || '');
     await this.loadModelChoices();
     this.loadThemesManage();
-    this.llmTest('local', false); this.llmTest('online', false);  // 表单就绪后再自动检测
+    for (const key of Object.keys(this.settingsForm.llmProviders))
+      this.llmTest(key, false);   // 表单就绪后再自动检测（动态连接逐个）
+    this.fetchAllProviderModels();  // 路由下拉模型清单（2026-09-17）：所有有效连接静默拉取
   },
   // ===== 模型切换 =====
   async loadModelChoices() {
@@ -906,7 +907,7 @@ const methods = {
   async llmTest(provider, manual = true) {
     this.llmTesting = provider;
     this.llmTestManual[provider] = !!manual;
-    const p = this.settingsForm[provider] || {};
+    const p = (this.settingsForm.llmProviders || {})[provider] || {};
     if (!(p.base_url || '').trim() || !(p.model || '').trim()) {
       this.llmTestResult[provider] = {ok: false, unconfigured: true, detail: 'base_url 或模型名为空'};
       this.llmTesting = ''; return;
@@ -953,40 +954,69 @@ const methods = {
     } catch (e) { alert('清理失败：' + e); }
     this.freeingComfy = false;
   },
-  async fetchOllamaModels() {
-    this.loadingModels = true;
+  async fetchProviderModels(key, silent = false) {
+    // 按连接自己的 base_url 枚举（api_key 走 Bearer——线上连接也可列清单）；
+    // silent=路由页自动拉取，失败不弹窗
+    const p = (this.settingsForm.llmProviders || {})[key] || {};
+    if (!(p.base_url || '').trim()) return;
+    this.loadingModels = key;
     try {
       const resp = await fetch('/api/settings/ollama-models?base_url=' +
-        encodeURIComponent(this.settingsForm.local.base_url || ''));
+        encodeURIComponent(p.base_url) + '&api_key=' + encodeURIComponent(p.api_key || ''));
       if (!resp.ok) {
-        alert('获取失败：' + (await resp.json()).detail);
-        this.loadingModels = false; return;
+        if (!silent) alert('获取失败：' + (await resp.json()).detail);
+        this.loadingModels = ''; return;
       }
-      this.ollamaModels = (await resp.json()).models;
-    } catch (e) { alert('获取失败：' + e); }
-    this.loadingModels = false;
+      this.providerModels[key] = (await resp.json()).models;
+    } catch (e) { if (!silent) alert('获取失败：' + e); }
+    this.loadingModels = '';
+  },
+  async fetchAllProviderModels() {
+    // 任务路由下拉数据源（2026-09-17 用户需求）：所有有效连接静默拉一遍，
+    // 失败（服务没开/无 key）只是该组不出模型选项，不打扰
+    for (const key of Object.keys(this.settingsForm.llmProviders || {}))
+      this.fetchProviderModels(key, true);
+  },
+  dispModels(key) {
+    const list = this.providerModels[key] || [];
+    return this.showThink ? list : list.filter(m => !m.toLowerCase().includes('think'));
+  },
+  _conns(prefix) {
+    // 连接排序：基础键在前（local/online），其余按数字后缀升序；非 local/online
+    // 前缀的键（API 直配的）归入本地组
+    const keys = Object.keys(this.settingsForm.llmProviders || {});
+    const isOnline = k => k === 'online' || k.startsWith('online');
+    const pool = keys.filter(k => prefix === 'online' ? isOnline(k) : !isOnline(k));
+    const num = k => { const m = k.match(/(\d+)$/); return m ? +m[1] : 0; };
+    return pool.sort((a, b) => num(a) - num(b) || a.localeCompare(b));
+  },
+  addProvider(prefix) {
+    // 生成下一个空闲键 localN/onlineN（N≥2）；供应商键禁冒号（路由 provider:model 分隔符）
+    const keys = Object.keys(this.settingsForm.llmProviders || {});
+    let n = 2;
+    while (keys.includes(prefix + n)) n++;
+    const key = prefix + n;
+    this.settingsForm.llmProviders[key] = { base_url: '', api_key: '', model: '', extra_body_json: '' };
+    this.providerTypes[key] = '';
+  },
+  removeProvider(key) {
+    if (!confirm(`删除连接 ${key}？（若任务路由还引用它，保存会被拒绝并提示）`)) return;
+    delete this.settingsForm.llmProviders[key];
+    if (!this.removedProviders.includes(key)) this.removedProviders.push(key);
   },
   async saveSettings() {
-    const ebLocal = this._parseExtra(this.settingsForm.local);
-    const ebOnline = this._parseExtra(this.settingsForm.online);
-    if (ebLocal === undefined || ebOnline === undefined) {
-      alert('extra_body 不是合法 JSON（各 provider 检查）'); return;
+    // 服务商动态化（2026-09-17）：逐连接校验 extra_body；删除的连接发 null（后端
+    // 校验无路由引用才放行）
+    const providers = {};
+    for (const [k, p] of Object.entries(this.settingsForm.llmProviders)) {
+      const eb = this._parseExtra(p);
+      if (eb === undefined) { alert(`连接 ${k} 的附加参数不是合法 JSON`); return; }
+      providers[k] = { base_url: p.base_url || '', api_key: p.api_key || '',
+                       model: p.model || '', extra_body: eb };
     }
+    for (const k of this.removedProviders) providers[k] = null;
     this.saving = true;      const payload = {
-      llm_providers: {
-        local: { base_url: this.settingsForm.local.base_url || '',
-                 api_key: this.settingsForm.local.api_key || 'ollama',
-                 model: this.settingsForm.local.model || '',
-                 extra_body: ebLocal },
-        local2: { base_url: this.settingsForm.local.base_url || '',   // 与本地同一服务
-                  api_key: this.settingsForm.local.api_key || 'ollama',
-                  model: this.settingsForm.local2.model || '',
-                  extra_body: this.settingsForm.local2.extra_body ?? null },  // 表单默认 null（IQ2_M 被关思考打哑）；API 配置装载进表单后不再被抹（M15）
-        online: { base_url: this.settingsForm.online.base_url || '',
-                  api_key: this.settingsForm.online.api_key || '',
-                  model: this.settingsForm.online.model || '',
-                  extra_body: ebOnline },
-      },
+      llm_providers: providers,
       llm_routing: { ...this.settingsForm.routing },
       asr: { ...this.settingsForm.asr },
       speaker_blacklist: this.settingsForm.speakerBlacklist || '',
@@ -1410,15 +1440,14 @@ const methods = {
     this.splitRunning = true;
   },
   // 本地服务商切换：自动填预设地址（可手改）；不清模型（防误保存空值——
-  // 真机 2026-08-29：清了模型用户直接保存 → 库里 base_url/model 全空）
-  switchLocalProvider(type) {
-    this.localProviderType = type;
+  // 快捷填地址（真机 2026-08-29：清了模型用户直接保存 → 库里 base_url/model 全空）
+  fillProviderAddr(key, type) {
+    this.providerTypes[key] = type;
+    const p = this.settingsForm.llmProviders[key];
     if (type === 'ollama') {
-      this.settingsForm.local.base_url = 'http://127.0.0.1:11434';
-      this.settingsForm.local.api_key = 'ollama';
+      p.base_url = 'http://127.0.0.1:11434'; p.api_key = 'ollama';
     } else if (type === 'lmstudio') {
-      this.settingsForm.local.base_url = 'http://127.0.0.1:1234';
-      this.settingsForm.local.api_key = 'lmstudio';
+      p.base_url = 'http://127.0.0.1:1234'; p.api_key = 'lmstudio';
     }
     // custom 不动地址（用户自己填）；模型保留——切后点「获取模型」重选即可
   },

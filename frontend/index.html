@@ -476,65 +476,88 @@
     <h2>LLM 设置</h2>
     <div class="row">
       <div class="card" style="flex:1;min-width:320px">
-        <h3>本地 LLM
-          <span :style="{color: llmLamp('local').color}">●</span>
-          <span class="muted">{{ llmLamp('local').text }}</span></h3>
-        <p>服务商
-           <select @change="switchLocalProvider($event.target.value)" style="font-size:13px;padding:4px 8px">
-             <option value="" disabled :selected="!localProviderType">选择…</option>
-             <option value="ollama" :selected="localProviderType==='ollama'">Ollama</option>
-             <option value="lmstudio" :selected="localProviderType==='lmstudio'">LM Studio</option>
-             <option value="custom" :selected="localProviderType==='custom'">其它（自定义地址）</option>
-           </select>
-           <span class="muted" style="font-size:12px">切换自动填地址，可手改</span></p>
-        <p><input v-model="settingsForm.local.base_url" placeholder="地址（如 http://127.0.0.1:11434，任意写法自动归一 /v1）" style="width:55%">
-           <button @click="fetchOllamaModels" :disabled="loadingModels">
-             {{ loadingModels ? '获取中…' : '获取模型' }}</button>
-           <button @click="llmTest('local')" :disabled="llmTesting==='local'">
-             {{ llmTesting==='local' ? '测试中…' : '测试' }}</button>
-           <span v-if="llmTestManual.local && llmTestResult.local !== null"
-                 :style="{color: llmTestResult.local?.ok ? '#4ade80' : '#f87171'}">
-             {{ llmTestResult.local?.ok ? '✓ ' + (llmTestResult.local?.detail || 'OK') : '✗ ' + llmTestResult.local?.detail }}</span></p>
-        <p style="margin-bottom:2px"><span class="muted" style="font-size:12px">轻度模型（分析/读图等常规任务）</span></p>
-        <p v-if="ollamaModels.length">
-           <select v-model="settingsForm.local.model" style="width:90%">
-             <option v-if="settingsForm.local.model && !displayOllamaModels.includes(settingsForm.local.model)"
-                     :value="settingsForm.local.model">{{ settingsForm.local.model }}（清单外，保留）</option>
-             <option v-for="m in displayOllamaModels" :key="m" :value="m">{{ m }}</option>
-           </select></p>
-        <p v-else><input v-model="settingsForm.local.model"
-                  placeholder="模型名（点上方获取模型后变下拉）" style="width:90%"></p>
-        <p style="margin-bottom:2px"><span class="muted" style="font-size:12px">重度模型（拆分镜/提示词等结构重活；留空=不启用）</span></p>
-        <p v-if="ollamaModels.length">
-           <select v-model="settingsForm.local2.model" style="width:90%">
-             <option value="">（不启用）</option>
-             <option v-if="settingsForm.local2.model && !displayOllamaModels.includes(settingsForm.local2.model)"
-                     :value="settingsForm.local2.model">{{ settingsForm.local2.model }}（清单外，保留）</option>
-             <option v-for="m in displayOllamaModels" :key="'h'+m" :value="m">{{ m }}</option>
-           </select></p>
-        <p v-else><input v-model="settingsForm.local2.model"
-                  placeholder="重度模型名（结构与轻度物理隔离，不吃下方附加参数）" style="width:90%"></p>
-        <p><input v-model="settingsForm.local.extra_body_json"
-                  placeholder="附加参数 JSON（可选，仅作用于轻度模型，如 {&quot;reasoning_effort&quot;:&quot;none&quot;}）" style="width:90%"></p>
+        <h3>本地 LLM 服务商（多路）</h3>
+        <p class="muted" style="font-size:12px;margin-bottom:6px">连接只配地址/密钥；任务用哪个模型去「任务路由」逐任务钉选（连接名:模型名）</p>
+        <div v-for="key in localConns" :key="key"
+             style="border:1px solid #2c3540;border-radius:8px;padding:8px;margin-bottom:10px">
+          <p style="margin:0 0 4px"><b style="font-size:13px">{{ key }}</b>
+             <span :style="{color: llmLamp(key).color}">●</span>
+             <span class="muted">{{ llmLamp(key).text }}</span>
+             <button @click="removeProvider(key)"
+                     style="float:right;background:#7f1d1d;font-size:11px;padding:2px 8px"
+                     title="删除此连接（任务路由还引用它时保存会被拒绝并提示）">🗑 删除</button></p>
+          <p style="margin:0 0 4px">
+             <select :value="providerTypes[key] || ''" @change="fillProviderAddr(key, $event.target.value)"
+                     style="font-size:12px;padding:3px 6px" title="快捷填地址">
+               <option value="" disabled>选择…</option>
+               <option value="ollama">Ollama</option>
+               <option value="lmstudio">LM Studio</option>
+               <option value="custom">其它</option>
+             </select>
+             <input v-model="settingsForm.llmProviders[key].base_url"
+                    placeholder="地址（如 http://127.0.0.1:11434，自动归一 /v1）" style="width:46%">
+             <button @click="fetchProviderModels(key)" :disabled="loadingModels===key">
+               {{ loadingModels===key ? '获取中…' : '获取模型' }}</button>
+             <button @click="llmTest(key)" :disabled="llmTesting===key">
+               {{ llmTesting===key ? '测试中…' : '测试' }}</button></p>
+          <p v-if="llmTestManual[key] && llmTestResult[key] !== null"
+             :style="{color: llmTestResult[key]?.ok ? '#4ade80' : '#f87171'}">
+             {{ llmTestResult[key]?.ok ? '✓ ' + (llmTestResult[key]?.detail || 'OK') : '✗ ' + llmTestResult[key]?.detail }}</p>
+          <p style="margin:0 0 4px"><span class="muted" style="font-size:12px">默认模型（可选——路由只写连接名时的兜底）</span></p>
+          <p v-if="(providerModels[key] || []).length" style="margin:0 0 4px">
+             <select v-model="settingsForm.llmProviders[key].model" style="width:90%">
+               <option value="">（不设默认）</option>
+               <option v-if="settingsForm.llmProviders[key].model && !dispModels(key).includes(settingsForm.llmProviders[key].model)"
+                       :value="settingsForm.llmProviders[key].model">{{ settingsForm.llmProviders[key].model }}（清单外，保留）</option>
+               <option v-for="m in dispModels(key)" :key="key + m" :value="m">{{ m }}</option>
+             </select></p>
+          <p v-else style="margin:0 0 4px"><input v-model="settingsForm.llmProviders[key].model"
+                  placeholder="默认模型名（可选，点「获取模型」后变下拉）" style="width:90%"></p>
+          <p style="margin:0 0 4px"><input v-model="settingsForm.llmProviders[key].api_key"
+                  placeholder="api_key（本地服务随意）" style="width:90%"></p>
+          <p style="margin:0"><input v-model="settingsForm.llmProviders[key].extra_body_json"
+                  placeholder="附加参数 JSON（可选，作用于本连接全部调用，如 {&quot;reasoning_effort&quot;:&quot;none&quot;}——会打哑部分模型，慎用）" style="width:90%"></p>
+        </div>
+        <p style="margin:6px 0"><button @click="addProvider('local')" style="font-size:12px;padding:4px 12px">➕ 添加本地服务商</button></p>
         <p><label class="muted"><input type="checkbox" v-model="showThink"> 显示推理模型（含 think）</label></p>
       </div>
       <div class="card" style="flex:1;min-width:320px">
-        <h3>线上 API
-          <span :style="{color: llmLamp('online').color}">●</span>
-          <span class="muted">{{ llmLamp('online').text }}</span></h3>
-        <p><input v-model="settingsForm.online.base_url" placeholder="base_url（OpenAI 兼容）" style="width:90%"></p>
-        <p><input type="password" v-model="settingsForm.online.api_key" placeholder="api_key" style="width:90%"></p>
-        <p><input v-model="settingsForm.online.model" placeholder="模型名" style="width:90%"></p>
-        <p><input v-model="settingsForm.online.extra_body_json"
+        <h3>线上 API 服务商（多路）</h3>
+        <div v-for="key in onlineConns" :key="key"
+             style="border:1px solid #2c3540;border-radius:8px;padding:8px;margin-bottom:10px">
+          <p style="margin:0 0 4px"><b style="font-size:13px">{{ key }}</b>
+             <span :style="{color: llmLamp(key).color}">●</span>
+             <span class="muted">{{ llmLamp(key).text }}</span>
+             <button @click="removeProvider(key)"
+                     style="float:right;background:#7f1d1d;font-size:11px;padding:2px 8px">🗑 删除</button></p>
+          <p style="margin:0 0 4px"><input v-model="settingsForm.llmProviders[key].base_url"
+                  placeholder="base_url（OpenAI 兼容）" style="width:55%">
+             <button @click="fetchProviderModels(key)" :disabled="loadingModels===key">
+               {{ loadingModels===key ? '获取中…' : '获取模型' }}</button>
+             <button @click="llmTest(key)" :disabled="llmTesting===key">
+               {{ llmTesting===key ? '测试中…' : '测试' }}</button></p>
+          <p v-if="llmTestManual[key] && llmTestResult[key] !== null"
+             :style="{color: llmTestResult[key]?.ok ? '#4ade80' : '#f87171'}">
+             {{ llmTestResult[key]?.ok ? '✓ ' + (llmTestResult[key]?.detail || 'OK') : '✗ ' + llmTestResult[key]?.detail }}</p>
+          <p style="margin:0 0 4px"><span class="muted" style="font-size:12px">默认模型（可选）</span></p>
+          <p v-if="(providerModels[key] || []).length" style="margin:0 0 4px">
+             <select v-model="settingsForm.llmProviders[key].model" style="width:90%">
+               <option value="">（不设默认）</option>
+               <option v-if="settingsForm.llmProviders[key].model && !dispModels(key).includes(settingsForm.llmProviders[key].model)"
+                       :value="settingsForm.llmProviders[key].model">{{ settingsForm.llmProviders[key].model }}（清单外，保留）</option>
+               <option v-for="m in dispModels(key)" :key="key + m" :value="m">{{ m }}</option>
+             </select></p>
+          <p v-else style="margin:0 0 4px"><input v-model="settingsForm.llmProviders[key].model"
+                  placeholder="模型名" style="width:90%"></p>
+          <p style="margin:0 0 4px"><input type="password" v-model="settingsForm.llmProviders[key].api_key"
+                  placeholder="api_key" style="width:90%"></p>
+          <p style="margin:0"><input v-model="settingsForm.llmProviders[key].extra_body_json"
                   placeholder="附加参数 JSON（可选）" style="width:90%"></p>
-          <p><span class="muted" style="font-size:12px">说话人黑名单（VLM 又造脚手架短语时自添，逗号分隔，读图时生效）</span><br>
-             <input v-model="settingsForm.speakerBlacklist" placeholder="如：画外提示,气泡序号"
-                    style="width:90%"></p>
-        <p><button @click="llmTest('online')" :disabled="llmTesting==='online'">
-             {{ llmTesting==='online' ? '测试中…' : '测试连接' }}</button>
-           <span v-if="llmTestManual.online && llmTestResult.online !== null"
-                 :style="{color: llmTestResult.online?.ok ? '#4ade80' : '#f87171'}">
-             {{ llmTestResult.online?.ok ? '✓ ' + (llmTestResult.online?.detail || 'OK') : '✗ ' + llmTestResult.online?.detail }}</span></p>
+        </div>
+        <p style="margin:6px 0"><button @click="addProvider('online')" style="font-size:12px;padding:4px 12px">➕ 添加线上服务商</button></p>
+        <p><span class="muted" style="font-size:12px">说话人黑名单（VLM 又造脚手架短语时自添，逗号分隔，读图时生效）</span><br>
+           <input v-model="settingsForm.speakerBlacklist" placeholder="如：画外提示,气泡序号"
+                  style="width:90%"></p>
       </div>
     </div>
 </div>
@@ -738,19 +761,15 @@
     <div v-show="settingsTab==='route'">
     <h3>任务路由</h3>
     <p class="muted" style="font-size:13px">长文本任务（分镜拆解/提示词生成/主题正文）建议选<b>对话模型</b>——思考模型 🧠 的推理会挤占输出预算；
-    精确小任务（外貌优化/提取）可考虑思考模型。点「本地」行首「获取模型」刷新可选清单。</p>
+    精确小任务（外貌优化/提取）可考虑思考模型。逐任务直选具体模型——打开设置页自动从所有有效连接拉清单（LLM 设置里各连接「获取模型」可手动刷新）。</p>
     <p v-for="(label, task) in taskLabels" :key="task">
       {{ label }}：
       <select v-model="settingsForm.routing[task]">
-        <option value="local">本地 · 轻度模型</option>
-        <option v-for="m in displayOllamaModels" :key="'l'+task+m" :value="'local:'+m"
-                :title="'local:'+m">{{ m.toLowerCase().includes('think') ? '🧠 ' : '' }}{{ m }}</option>
-        <option v-if="settingsForm.local2 && settingsForm.local2.model" value="local2">本地 · 重度模型</option>
-        <option v-for="m in (settingsForm.local2 && settingsForm.local2.model ? displayOllamaModels : [])"
-                :key="'l2'+task+m" :value="'local2:'+m" :title="'local2:'+m">{{ m }}（重度）</option>
-        <option value="online">线上 · 默认模型</option>
-        <option v-if="settingsForm.online.model" :value="'online:'+settingsForm.online.model"
-                :title="'online:'+settingsForm.online.model">线上 · {{ settingsForm.online.model }}</option>
+        <template v-for="key in allConns" :key="key">
+          <option :value="key">{{ key }} · 默认{{ settingsForm.llmProviders[key].model ? '（' + settingsForm.llmProviders[key].model + '）' : '（未设默认模型）' }}</option>
+          <option v-for="m in dispModels(key)" :key="key + task + m" :value="key + ':' + m"
+                  :title="key + ':' + m">{{ m.toLowerCase().includes('think') ? '🧠 ' : '' }}{{ m }}（{{ key }}）</option>
+        </template>
       </select>
     </p>
     </div>

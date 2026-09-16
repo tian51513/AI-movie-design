@@ -11,7 +11,7 @@ def _client(tmp_path):
 def test_ollama_models_proxies_tags_and_strips_v1(tmp_path, monkeypatch):
     captured = {}
 
-    def fake_fetch(root_url):
+    def fake_fetch(root_url, api_key=''):
         captured["url"] = root_url
         return ["qwen3:14b", "qwen3:8b", "gemma3:12b"]
 
@@ -25,7 +25,7 @@ def test_ollama_models_proxies_tags_and_strips_v1(tmp_path, monkeypatch):
 
 
 def test_ollama_models_unreachable_returns_502(tmp_path, monkeypatch):
-    def fake_fetch(root_url):
+    def fake_fetch(root_url, api_key=''):
         raise ConnectionError("refused")
 
     monkeypatch.setattr("comic_studio.web.routes_settings._fetch_ollama_models", fake_fetch)
@@ -59,7 +59,7 @@ def test_ollama_root_tolerates_pasted_paths_and_no_scheme():
 
 def test_ollama_models_rejects_cross_site_browser_request(tmp_path, monkeypatch):
     monkeypatch.setattr("comic_studio.web.routes_settings._fetch_ollama_models",
-                        lambda root: ["qwen3:14b"])
+                        lambda root, api_key="": ["qwen3:14b"])
     with _client(tmp_path) as c:
         resp = c.get("/api/settings/ollama-models",
                      params={"base_url": "http://localhost:11434/v1"},
@@ -122,3 +122,40 @@ def test_fetch_raises_when_both_endpoints_fail():
 
     with pytest.raises(Exception):
         _fetch_ollama_models("http://127.0.0.1:1", transport=_mock(handler))
+
+
+def test_fetch_models_sends_bearer_when_api_key(tmp_path):
+    """api_key 非空 → /v1/models 带 Authorization Bearer（线上 API 枚举需要）。"""
+    import httpx
+    from comic_studio.web.routes_settings import _fetch_ollama_models
+
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.setdefault("auth", []).append(request.headers.get("authorization"))
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "gpt-x"}]})
+        return httpx.Response(404)
+
+    transport = httpx.MockTransport(handler)
+    assert _fetch_ollama_models("http://srv", api_key="sk-1", transport=transport) == ["gpt-x"]
+    assert seen["auth"] == ["Bearer sk-1"]
+    # 无 key 不带 Authorization（本地 Ollama/LM Studio 现状不变）
+    seen.clear()
+    assert _fetch_ollama_models("http://srv", transport=transport) == ["gpt-x"]
+    assert seen["auth"] == [None]
+
+
+def test_endpoint_forwards_api_key(tmp_path, monkeypatch):
+    captured = {}
+
+    def fake_fetch(root_url, api_key=""):
+        captured["key"] = api_key
+        return ["m1"]
+
+    monkeypatch.setattr("comic_studio.web.routes_settings._fetch_ollama_models", fake_fetch)
+    with _client(tmp_path) as c:
+        r = c.get("/api/settings/ollama-models",
+                  params={"base_url": "http://localhost:11434", "api_key": "sk-9"})
+        assert r.status_code == 200 and r.json() == {"models": ["m1"]}
+        assert captured["key"] == "sk-9"

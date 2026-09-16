@@ -323,3 +323,12 @@
 - **块级断点缓存**（`llm/storyboard.split_storyboards`）：`projects/<slug>/split_cache.json`——每块通过即落**处理后的 staging 行**（seeds 冻结首遍值，continue_prev 一并存）；重跑按指纹（正文+max_chars+配额+章范围+段时长+system 词+资产名册+_CACHE_VER）命中即回放零 LLM 调用；成功落库删缓存；指纹不符/缓存损坏自动作废全量重跑
 - **`_ask_block` 对半降级**：单块 kind=length → `split_chunks` 按段落边界对半（`_MIN_HALF=300` 字下限，半块仍炸递归再半）配额按字数分摊；到下限仍炸才上抛 job 失败（缓存保证下次从该块续）
 - 注意：拆解属 gpu_llm 组任务，running 不可 interrupt——要立即停只能重启服务（split_storyboards 在重启重排白名单、attempts<3 自动续跑，带缓存后无损）；workers=1 时长拆解 job 会堵住所有后续任务（主图/渲染排队是常态不是丢）
+
+## 模块地图（LLM 服务商动态化 2026-09-17）
+
+- **轻度/重度分层退役**——连接归连接、模型归路由：`local`/`local2`/`online` 固定三键 → **任意 N 个连接**（键 `^[a-z][a-z0-9_]*$` 禁冒号——路由值 `provider:model` 分隔符；UI 自动命名 local3/online2…，用户不手打名）；DEFAULT 收敛 local+online 各一，存量 local2 经深合并保留
+- **LLM 设置卡重排**：本地/线上两组各 v-for 渲染连接卡（地址/key/默认模型可选/附加参数/获取模型/测试/灯/🗑 删除）+「➕ 添加服务商」；`settingsForm.llmProviders` 键控状态机（`providerModels` 清单、`providerTypes` 快捷填址、`removedProviders` 待删清单）；llmTest/llmLamp/_parseExtra 全键通用
+- **任务路由下拉** = 全连接循环组（`连接名 · 默认` + 各模型 `连接名:模型`）；打开设置页 `fetchAllProviderModels` 静默拉所有有效连接清单（失败只是该组无钉选项）；`ollama-models` 端点带 `api_key`（Bearer——线上连接可枚举）
+- **PUT 语义**：子字典 **null=删除连接**（被路由引用 422 拒绝并列任务清单；**护栏按提交后生效路由判断**——同单改路由+删连接是 UI 自然操作序，Playwright 实测曾按库里旧路由误拦）；llm-test 的 provider 放宽为任意非空标签；局部 PUT 增量合并语义不变
+- **判例**：llmTest 读值路径漏改（`settingsForm[provider]`→`llmProviders[provider]`）= 全连接灯灰「未配置」——重构 data 形态时所有 `settingsForm.xxx` 直引点必须同步排查；Vue 生产构建无 `__vueParentComponent`，抓前端真实载荷用 fetch 包装器
+- 用法（用户定调）：全部模型挂同一条连接（如 `local:nsfwvision-v3`/`local:qwen…`）即可；extra_body 是连接级参数——要给思考模型关思考又不打哑别的，加一条**同地址**连接单独配 extra_body 再钉选

@@ -51,7 +51,7 @@ TEMPLATE_MAP_KEYS = {"character_views", "t2i", "ref2va", "fl2v", "t2v", "i2v",
 
 
 class SettingsUpdate(BaseModel):
-    llm_providers: dict[str, ProviderConfig] | None = None
+    llm_providers: dict[str, ProviderConfig | None] | None = None  # null=删除连接
     llm_routing: dict[str, str] | None = None
     comfy: ComfyConfig | None = None
     template_map: dict[str, str | None] | None = None
@@ -99,13 +99,33 @@ def read(request: Request):
 def update(request: Request, body: SettingsUpdate):
     db = request.app.state.db
     if body.llm_providers is not None:
-        bad = set(body.llm_providers) - set(PROVIDER_NAMES)
+        # 服务商动态化（2026-09-17）：键 ^[a-z][a-z0-9_]*$（禁冒号——路由值
+        # provider:model 分隔符）；子字典 null = 删除连接（被路由引用时拒绝）
+        import re as _re
+        bad = {k for k in body.llm_providers
+               if not _re.match(r"^[a-z][a-z0-9_]{0,30}$", k or "")}
         if bad:
-            raise HTTPException(422, f"未知 provider: {sorted(bad)}，只允许 {list(PROVIDER_NAMES)}")
+            raise HTTPException(422, f"非法 provider 键: {sorted(bad)}——"
+                                     "只允许小写字母开头的 字母/数字/下划线（禁冒号）")
         merged = get_setting(db, "llm_providers")
+        removed = [k for k, v in body.llm_providers.items() if v is None]
+        if removed:
+            # 护栏按「提交后生效路由」判断：同一单里改路由+删连接是 UI 自然操作序
+            # （Playwright 实测曾按库里旧路由误拦）
+            routing = {**get_setting(db, "llm_routing"),
+                       **({} if body.llm_routing is None else body.llm_routing)}
+            refs = sorted({t for t, v in routing.items()
+                           if (v.split(":", 1)[0] if v else v) in removed})
+            if refs:
+                raise HTTPException(422, f"连接 {removed} 正被任务路由引用（{refs}），"
+                                         "请先把这些路由改到其它连接再删除")
+            for k in removed:
+                merged.pop(k, None)
         # M15（2026-09-05 审计）：exclude_unset + 子字典增量合并——update(k, dump)
         # 会整体替换嵌套 provider dict，局部 PUT 仍冲掉兄弟键（api_key→''）
         for k, v in body.llm_providers.items():
+            if v is None:
+                continue
             merged.setdefault(k, {}).update(v.model_dump(exclude_unset=True))
         set_setting(db, "llm_providers", merged)
     if body.llm_routing is not None:
@@ -248,27 +268,30 @@ def _ollama_root(base_url: str) -> str:
     return u.rstrip("/")
 
 
-def _fetch_ollama_models(root_url: str, transport=None) -> list[str]:
+def _fetch_ollama_models(root_url: str, api_key: str = "", transport=None) -> list[str]:
     """取模型名清单（网络在此，测试注入 transport）。
     优先 OpenAI 兼容 /v1/models（data[].id）——Ollama/LM Studio/vLLM 通吃；
     404/非 200/空清单再退回 Ollama 原生 /api/tags（2026-08-27 真机：
-    LM Studio 测试连接通过但取模型失败，因其只服务 /v1/models 无 /api/tags）。"""
+    LM Studio 测试连接通过但取模型失败，因其只服务 /v1/models 无 /api/tags）。
+    api_key 非空时带 Bearer（2026-09-17：线上连接也可枚举模型清单）。"""
+    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
     with httpx.Client(timeout=5, transport=transport) as client:
         try:
-            r = client.get(f"{root_url}/v1/models")
+            r = client.get(f"{root_url}/v1/models", headers=headers)
             if r.status_code == 200:
                 ids = [m["id"] for m in r.json().get("data", []) if m.get("id")]
                 if ids:
                     return ids
         except httpx.HTTPError:
             pass  # 连接层失败也交由 /api/tags 再试一次，错误统一在下面抛
-        resp = client.get(f"{root_url}/api/tags")
+        resp = client.get(f"{root_url}/api/tags", headers=headers)
         resp.raise_for_status()
         return [m["name"] for m in resp.json().get("models", [])]
 
 
 @router.get("/ollama-models")
-def ollama_models(base_url: str = Query(...), request: Request = None):
+def ollama_models(base_url: str = Query(...), api_key: str = Query(""),
+                  request: Request = None):
     # 防浏览器跨站盲发（SSRF 向量）：浏览器会带 Sec-Fetch-Site，same-origin 放行；
     # cross-site 拒绝；非浏览器客户端（curl 等）无此头，不受影响（NAT 模式查局域网 Ollama 仍可用）
     sec_fetch_site = request.headers.get("sec-fetch-site") if request else None
@@ -276,7 +299,7 @@ def ollama_models(base_url: str = Query(...), request: Request = None):
         raise HTTPException(403, "拒绝跨站请求")
     root = _ollama_root(base_url)
     try:
-        models = _fetch_ollama_models(root)
+        models = _fetch_ollama_models(root, api_key)
     except Exception as e:
         raise HTTPException(502, f"LLM 服务不可达或响应异常（尝试了 {root}/v1/models "
                                  f"与 {root}/api/tags）：{e}；确认服务正在运行且地址正确")
@@ -296,8 +319,8 @@ def llm_test(body: LLMTestBody, request: Request = None):
     # 与 ollama-models 相同的跨站盲发守卫
     if request and request.headers.get("sec-fetch-site") == "cross-site":
         raise HTTPException(403, "拒绝跨站请求")
-    if body.provider not in ("local", "local2", "online"):
-        raise HTTPException(422, "provider 只能是 local / local2 / online")
+    if not (body.provider or "").strip():
+        raise HTTPException(422, "provider 不能为空")
     if not (body.base_url.strip() and body.model.strip()):
         return {"ok": False, "detail": "base_url 与模型名不能为空"}
     try:

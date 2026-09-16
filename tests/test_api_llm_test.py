@@ -61,7 +61,9 @@ def test_llm_test_failure_returns_detail(tmp_path, monkeypatch):
 
 def test_llm_test_rejects_bad_provider_and_cross_site(tmp_path):
     with _client(tmp_path) as c:
-        assert c.post("/api/settings/llm-test", json=_body(provider="xxx")).status_code == 422
+        # provider 动态化（2026-09-17）：任意非空连接名合法（含 xxx）；
+        # 只有空名 422
+        assert c.post("/api/settings/llm-test", json=_body(provider="")).status_code == 422
         r = c.post("/api/settings/llm-test", json=_body(),
                    headers={"Sec-Fetch-Site": "cross-site"})
         assert r.status_code == 403

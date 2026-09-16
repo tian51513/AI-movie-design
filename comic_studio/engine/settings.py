@@ -33,11 +33,11 @@ DEFAULT_SETTINGS = {
     "llm_providers": {
         "local": {"base_url": "http://localhost:11434/v1", "api_key": "ollama",
                   "model": "qwen3:14b"},
-        "local2": {"base_url": "http://localhost:1234/v1", "api_key": "lmstudio",
-                   "model": ""},
         "online": {"base_url": "", "api_key": "", "model": ""},
     },
-    # 任务路由（spec §9.1：轻活本地、重活线上）；local2=LM Studio（视觉模型等）
+    # 任务路由（spec §9.1：轻活本地、重活线上）
+    # 服务商动态化（2026-09-17）：本地/线上均可配 N 个连接（键 ^[a-z][a-z0-9_]*$，
+    # UI 自动命名 local3/online2…），默认各一；存量库的 local2 经深合并保留
     "asr": {"engine": "faster_whisper", "chunk_seconds": 300},
     "llm_routing": {
         "extract_assets": "local",
