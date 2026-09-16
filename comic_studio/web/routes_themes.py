@@ -2,6 +2,8 @@
 """预设主题管理（2026-08-25 需求）：列表 / 导入（default_theme.md 格式）/ 删除。"""
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile, Body
 
+from ..engine.textdecode import decode_text_bytes
+
 router = APIRouter(prefix="/api/themes", tags=["themes"])
 
 
@@ -21,9 +23,9 @@ def import_themes(request: Request, file: UploadFile = File(...)):
     if not (file.filename or "").lower().endswith(".md"):
         raise HTTPException(422, "只接受 .md 模板文件")
     try:
-        raw = file.file.read().decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(422, "模板文件需为 UTF-8 编码")
+        raw = decode_text_bytes(file.file.read())
+    except ValueError as e:
+        raise HTTPException(422, str(e))
     from ..engine.themes import parse_text
     items = parse_text(raw)
     if not items:

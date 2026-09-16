@@ -29,7 +29,7 @@
 
 ### 小说转漫画流程（comic_output）
 
-上传 .txt（UTF-8）→ 🚀 一键出片：分析 → 拆解（每镜=一页，场景+人物+对白）→ 逐页 t2i 出 `pages/page_NNN.png` → 「漫画就绪」自动停（无视频链）。详情「漫画页」页签浏览（点击放大）；缺页/失败页「🖼 生成缺失页」手动补；📄 导出 PDF（需 `pip install -e ".[pdf]"`，Pillow）/ 📜 导出长图（ffmpeg 竖拼）。页面模板走设置页模板映射 `comic_page`（默认 Z-Image t2i，可换 Krea2 等 t2i 模板）。
+上传 .txt（UTF-8/GBK/GB18030/UTF-16 自动识别）→ 🚀 一键出片：分析 → 拆解（每镜=一页，场景+人物+对白）→ 逐页 t2i 出 `pages/page_NNN.png` → 「漫画就绪」自动停（无视频链）。详情「漫画页」页签浏览（点击放大）；缺页/失败页「🖼 生成缺失页」手动补；📄 导出 PDF（需 `pip install -e ".[pdf]"`，Pillow）/ 📜 导出长图（ffmpeg 竖拼）。页面模板走设置页模板映射 `comic_page`（默认 Z-Image t2i，可换 Krea2 等 t2i 模板）。
 
 ## 一键出片（autopilot，2026-08-25）
 

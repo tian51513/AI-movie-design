@@ -623,10 +623,17 @@ def test_from_comic_novel_api(tmp_path):
             rr = c.post("/api/projects/from-comic-novel", data=data,
                         files={"novel": ("n.txt", "正文内容。" * 50, "text/plain")})
             assert rr.status_code == 422, (k, rr.text)
-        # 非 UTF-8 文件 422
+        # 不可解码二进制 422（注意不能用 \xff\xfe 开头——那是 UTF-16 LE BOM，
+        # 2026-09-16 编码自动检测后会被合法解出）
         rr = c.post("/api/projects/from-comic-novel", data={"name": "x"},
-                    files={"novel": ("n.txt", b"\xff\xfe\x00bad", "text/plain")})
+                    files={"novel": ("n.txt", b"\x80\x81\x82\xff", "text/plain")})
         assert rr.status_code == 422
+        # GBK 正文自动检测直传（2026-09-16）
+        rr = c.post("/api/projects/from-comic-novel",
+                    data={"name": "GBK漫画"},
+                    files={"novel": ("n.txt", ("中文漫画正文。" * 40).encode("gbk"),
+                                    "text/plain")})
+        assert rr.status_code == 201, rr.text
 
 
 def test_from_comic_novel_defaults(tmp_path):

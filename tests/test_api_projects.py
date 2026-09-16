@@ -57,13 +57,28 @@ def test_five_aspect_ratios_accepted(tmp_path):
         assert c.patch(f"/api/projects/{pid}", json={"aspect_ratio": "5:4"}).status_code == 422
 
 
-def test_gbk_upload_rejected_422(tmp_path):
-    """GBK 编码文件应返回 422 而非 500。"""
+def test_gbk_upload_decoded_201(tmp_path):
+    """GBK 编码文件自动检测解码（2026-09-16）：建项目成功、落盘 novel.txt 为 UTF-8。"""
     with _client(tmp_path) as c:
-        gbk_bytes = "中文".encode("gbk")
+        gbk_bytes = "中文正文".encode("gbk")
         resp = c.post("/api/projects",
                        data={"name": "g", "aspect_ratio": "9:16"},
                        files={"novel": ("f.txt", io.BytesIO(gbk_bytes), "text/plain")})
+        assert resp.status_code == 201, resp.text
+        pid = resp.json()["id"]
+        # 读回内容正确 + 磁盘文件是合法 UTF-8
+        assert c.get(f"/api/projects/{pid}/novel-text").json()["text"].startswith("中文正文")
+        novel = next(tmp_path.glob("data/projects/*/novel.txt"))
+        assert novel.read_bytes().decode("utf-8").startswith("中文正文")
+
+
+def test_undecodable_upload_rejected_422(tmp_path):
+    """真不可解码的二进制仍 422（而非 500），文案列支持编码清单。"""
+    with _client(tmp_path) as c:
+        resp = c.post("/api/projects",
+                       data={"name": "g", "aspect_ratio": "9:16"},
+                       files={"novel": ("f.txt", io.BytesIO(b"\x80\x81\x82\xff"),
+                                        "text/plain")})
         assert resp.status_code == 422
         assert "UTF-8" in resp.text
 

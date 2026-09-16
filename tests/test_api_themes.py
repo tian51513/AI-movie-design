@@ -114,6 +114,17 @@ def test_import_rejects_non_md(app_client):
         assert r.status_code == 422
 
 
+def test_import_gbk_decoded(app_client):
+    """GBK/GB18030 编码 .md 自动检测解码（2026-09-16 编码链共用）；
+    MD_OK 含 emoji（GBK 不含）故用 GB18030——同一检测链。"""
+    _, c = app_client
+    with c:
+        r = c.post("/api/themes/import",
+                   files={"file": ("gbk.md", MD_OK.encode("gb18030"),
+                                   "text/markdown")})
+        assert r.status_code == 200 and r.json()["imported"] == 1
+
+
 def test_create_from_theme_word_count_controls_target(app_client, monkeypatch):
     """字数参数（2026-08-27 用户需求）：主题生成正文过长（真机 21862 字）导致
     分镜分块过大撞上下文截断——创建时可传 word_count 控制目标字数。"""

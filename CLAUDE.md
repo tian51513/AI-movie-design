@@ -303,3 +303,10 @@
 - **主图生成经多图槽模板的缺槽占位（2026-09-14 21:11 真机 400）**：用户把 template_map.t2i 切到 comic_page_krea2 生成主图——genref 只注入了首槽，char 槽留默认 `char1.png` 引用 → ComfyUI /prompt 校验文件不存在 400。修：`genref._fill_missing_slots` 未提供的图片槽自动上传中性灰占位（data/_cache/blank_gray.png，同 ref2va 音频槽判例）；旧主图注入槽位偏好 **char/char1**（人物语义）而非盲取第一槽（scene 槽）；`_t2i_to_file` 签名加 data_dir。首张主图（无 main.png）仍走 zimage_t2i 纯文生图引导（既有防线不动）
 - **删项目 database is locked（2026-09-14 真机，渲染中删历史项目）**：双因——①sqlite3 默认 5s 忙等，渲染期多线程高频短写事务竞争下不够；②logs 表无 project_id 索引，`DELETE FROM logs WHERE project_id=?` 整表扫删拉长锁持有。修：连接 `timeout=30` + `PRAGMA busy_timeout=30000`（db.py connect）+ **迁移 42 `idx_logs_project(project_id, id)`**；孤儿 running 已有既有收尾（requeue_on_restart 第二条 UPDATE 落 failed 'interrupted by restart'——补回归测试钉住；另注：gen_comic_page 09-12 起就在重排白名单，重启自动续跑，旧文档「不在白名单」记载过时）
 - 注意：**尺寸不进设置页**（用户问询的决策）：漫画页=项目尺寸档×画幅推导（comicgen 已注入 width/height）；主图=模板默认 1024×1024（krea_t2i.api.json 可直接改宽高字段）；前端 saveSettings 全量发 model_overrides——空串值=合法覆盖（关 LoRA），PUT 白名单只校验键；Vue 判例沿用：模板函数调用助手（kreaLaneTemplates 等）必须进 methods
+
+## 模块地图（上传文本编码自动识别 2026-09-16）
+
+- `engine/textdecode.py` — `decode_text_bytes`（纯函数零依赖）：检测链 **BOM 识别 → UTF-8 严格 → GB18030**（GBK/GB2312 官方超集），首成即返；全失败 ValueError（文案列支持清单，路由层转 422）。**BOM 表顺序敏感：UTF-32 在 UTF-16 前**（`\xff\xfe\x00\x00` 以 `\xff\xfe` 为前缀，反了会把 UTF-32 误喂 utf-16 剩奇数字节报错）
+- 接入三处：routes_projects 两处 novel 上传（POST /api/projects + from-comic-novel）+ routes_themes 的 .md 导入——统一 `decode_text_bytes`，成功后照旧以 UTF-8 落盘 novel.txt（后续链路零改动）
+- 不猜的：无 BOM UTF-16（Windows 存档必带 BOM）、Big5/Shift-JIS（GB18030 解出乱码而非报错，猜错比报错糟）→ 报错引导手动转 UTF-8；不引 chardet/charset-normalizer（标准库够用）
+- 判例：测试里的「二进制拒绝」样本不能用 `\xff\xfe` 开头——那是合法 UTF-16 LE BOM，会被 BOM 链解出乱码 201 而非 422（`b"\x80\x81\x82\xff"` 才是真不可解码：0x80 在 GB18030 单字节区外、0xFF 在双字节引导区外）

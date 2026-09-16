@@ -9,6 +9,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from ..engine.llm.provider import client_for_task
 from ..engine.logbus import emit as emit_log
 from ..engine.projects import create_project, get_project, list_projects
+from ..engine.textdecode import decode_text_bytes
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -281,9 +282,9 @@ def create_from_comic_novel(request: Request,
         bubble_style = _validate_bubble_style(bubble_style)
     if novel is not None:
         try:
-            novel_text = novel.file.read().decode("utf-8")
-        except UnicodeDecodeError:
-            raise HTTPException(422, "小说文件需为 UTF-8 编码（请转换后重新上传）")
+            novel_text = decode_text_bytes(novel.file.read())
+        except ValueError as e:
+            raise HTTPException(422, str(e))
     elif (text or "").strip():
         novel_text = text
     else:
@@ -943,9 +944,9 @@ def create(request: Request, name: str = Form(...),
     if aspect_ratio not in ASPECT_RATIOS:
         raise HTTPException(422, f"aspect_ratio 只能是 {'/'.join(ASPECT_RATIOS)}")
     try:
-        text = novel.file.read().decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(422, "小说文件需为 UTF-8 编码（请转换后重新上传）")
+        text = decode_text_bytes(novel.file.read())
+    except ValueError as e:
+        raise HTTPException(422, str(e))
     row = create_project(request.app.state.db, request.app.state.data_dir,
                          name, aspect_ratio, text, style=style, style_vis=style_vis,
                          video_megapixels=video_megapixels, video_multiple=video_multiple,
