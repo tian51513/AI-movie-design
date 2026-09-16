@@ -316,3 +316,10 @@
 - **`templates/workflows/character_views.*` 刷新**（源 `_raw/▶▷MiniMaxH3辅助四视图生成流.json` 用户 2026-09-16 导出）：单 `LoraLoaderModelOnly`（旧节点 16，导出里已是孤儿）退役 → **`LazyKreaLoraStack`（节点 36）8 开关槽**；模型链 UNet(25)→LoRA 栈(36)→Krea2EditModelPatch(23)；UNet 换用户现选 `Krea2-Moody-Mix-premium_int8_convrot`；**内置栈 QuadView+Detail+Realism+turbo_4step 四开 → 采样 steps 4 / cfg 1**（turbo 档）
 - manifest：lora1~lora8 均带 `switch: 启用_N`（2026-09-14 开关槽语义：覆盖非空→文件+开、空串→只关、未覆盖→模板默认）；requires 补 `ComfyUI_Lazybuxuexi`；注入点不变（seed/width/height + body 图槽——handler/前端零改动）
 - 设置页「工作流模型切换」选 character_views 即见 8 LoRA 槽（registry 驱动自动出，「（关闭）」=开关 false）；存量 model_overrides 里旧键 `lora_quadview` 无害残留（filler 只注入 manifest 声明槽）
+
+## 模块地图（拆分镜断点续跑 + 单块截断对半降级 2026-09-17）
+
+- **事故 job 43228**：111 块拆解，第 47 块 `finish_reason=length` 整 job 失败 → worker 重试从块 1 重烧数小时；二次炸在 ~25 块（对白密集块输出密度 >9 tok/字随机撞 16384 窗）；伴随误读：⏹ 后拆解仍跑（温和停止只取消排队、running 不 interrupt）+ 主图重生「没动静」（workers=1 单 worker 堵队，非丢失）
+- **块级断点缓存**（`llm/storyboard.split_storyboards`）：`projects/<slug>/split_cache.json`——每块通过即落**处理后的 staging 行**（seeds 冻结首遍值，continue_prev 一并存）；重跑按指纹（正文+max_chars+配额+章范围+段时长+system 词+资产名册+_CACHE_VER）命中即回放零 LLM 调用；成功落库删缓存；指纹不符/缓存损坏自动作废全量重跑
+- **`_ask_block` 对半降级**：单块 kind=length → `split_chunks` 按段落边界对半（`_MIN_HALF=300` 字下限，半块仍炸递归再半）配额按字数分摊；到下限仍炸才上抛 job 失败（缓存保证下次从该块续）
+- 注意：拆解属 gpu_llm 组任务，running 不可 interrupt——要立即停只能重启服务（split_storyboards 在重启重排白名单、attempts<3 自动续跑，带缓存后无损）；workers=1 时长拆解 job 会堵住所有后续任务（主图/渲染排队是常态不是丢）

@@ -241,3 +241,85 @@ def test_split_project_render_mode_overrides(tmp_path):
     split_storyboards(db, tmp_path / "data", pid, client_factory=lambda t: fake)
     rows = list_shots(db, pid)
     assert rows and all(r["workflow_type"] == "fl2v" for r in rows)
+
+
+# ---------- 2026-09-17 断点续跑 + 单块截断对半降级（job 43228 事故） ----------
+
+class _LenErr:
+    """含 marker 的块抛 kind=length 截断错（模拟 16384 窗口对白密集块撞墙）。"""
+    model = "len-fake"
+    def __init__(self, markers): self.markers = markers; self.n = 0
+    def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+        user = messages[-1]["content"]
+        if self.markers and all(m in user for m in self.markers):
+            from comic_studio.engine.llm.provider import LLMError
+            e = LLMError("输出被长度上限截断（finish_reason=length）")
+            e.kind = "length"
+            raise e
+        self.n += 1
+        return CHUNK.format(desc=f"镜{self.n}", cid=1), Usage(1, 2)
+
+
+def _five_block_novel(tmp_path, db, pid):
+    from comic_studio.engine.projects import get_project
+    novel = data_to_abs(tmp_path / "data", get_project(db, pid)["novel_path"])
+    novel.parent.mkdir(parents=True, exist_ok=True)
+    novel.write_text("\n\n".join(m * 100 for m in "甲乙丙丁戊"), encoding="utf-8")
+    return tmp_path / "data" / "projects" / "p" / "split_cache.json"
+
+
+def test_split_checkpoint_resume(tmp_path):
+    """块 3 截断 → 前两块进缓存不重烧；续跑只打块 3/4/5；成功后清缓存。"""
+    db, pid = _setup(tmp_path)
+    cache = _five_block_novel(tmp_path, db, pid)
+    f1 = _LenErr(["丙" * 20])            # 块 3（丙段）必炸
+    with pytest.raises(Exception):
+        split_storyboards(db, tmp_path / "data", pid,
+                          client_factory=lambda t: f1, max_chars=150)
+    assert cache.exists()
+    data = json.loads(cache.read_text(encoding="utf-8"))
+    assert set(data["blocks"]) == {"1", "2"}          # 炸块不入缓存
+    # 续跑：好脾气 client，只应打 3/4/5 三次（缓存命中跳过 1/2）
+    f2 = _LenErr([])                                  # 无 marker → 全通过
+    split_storyboards(db, tmp_path / "data", pid,
+                      client_factory=lambda t: f2, max_chars=150)
+    assert f2.n == 3
+    assert not cache.exists()                         # 成功落库后清缓存
+    assert len(list_shots(db, pid)) == 5
+
+
+def test_split_checkpoint_invalidated_on_text_change(tmp_path):
+    """校正写回后重拆：指纹不符 → 缓存作废全量重跑（不吃旧块）。"""
+    db, pid = _setup(tmp_path)
+    cache = _five_block_novel(tmp_path, db, pid)
+    f1 = _LenErr(["丙" * 20])
+    with pytest.raises(Exception):
+        split_storyboards(db, tmp_path / "data", pid,
+                          client_factory=lambda t: f1, max_chars=150)
+    assert cache.exists()
+    # 改正文（>150 字新首段独立成块 → 指纹变；若缓存误命中只会打 5 次）
+    from comic_studio.engine.projects import get_project
+    novel = data_to_abs(tmp_path / "data", get_project(db, pid)["novel_path"])
+    novel.write_text("新开头" * 60 + "\n\n" + "\n\n".join(m * 100 for m in "甲乙丙丁戊"),
+                     encoding="utf-8")
+    f2 = _LenErr([])
+    split_storyboards(db, tmp_path / "data", pid,
+                      client_factory=lambda t: f2, max_chars=150)
+    assert f2.n == 6                                 # 6 段全量（无缓存命中）
+
+
+def test_split_length_halves_block(tmp_path):
+    """单块截断不炸 job：按段落边界对半降级，两半各拆一次。"""
+    db, pid = _setup(tmp_path)
+    from comic_studio.engine.projects import get_project
+    novel = data_to_abs(tmp_path / "data", get_project(db, pid)["novel_path"])
+    novel.parent.mkdir(parents=True, exist_ok=True)
+    novel.write_text("甲" * 300 + "\n\n" + "乙" * 300, encoding="utf-8")
+    # 整块（甲乙同框）必炸；半块（只含一段）通过——602 字 max_chars=1000 时单块
+    f = _LenErr(["甲" * 50, "乙" * 50])
+    split_storyboards(db, tmp_path / "data", pid,
+                      client_factory=lambda t: f, max_chars=1000)
+    assert f.n == 2                                  # 对半后两次成功调用
+    rows = list_shots(db, pid)
+    assert len(rows) == 2                            # 两半各一镜
+    assert not (tmp_path / "data" / "projects" / "p" / "split_cache.json").exists()

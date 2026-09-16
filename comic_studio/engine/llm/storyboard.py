@@ -1,5 +1,6 @@
 # comic_studio/engine/llm/storyboard.py
 """分镜拆解：schema、提示词、编排（spec §9.2，台账/绑定/workflow_type 建议）。"""
+import hashlib
 import json
 import re
 import time
@@ -178,7 +179,7 @@ from ..logbus import emit as emit_log
 from ..projects import get_project
 from ..settings import get_setting
 from ..shots import persist_shots
-from .provider import ask_validated, client_for_task
+from .provider import LLMError, ask_validated, client_for_task
 from .text import split_chunks
 
 class ContentBoundaryError(Exception):
@@ -320,6 +321,46 @@ def auto_bind_characters(db, project_id):
     return bound
 
 
+_CACHE_VER = 1     # 指纹成分：提示词/缓存结构演进时 +1 作废旧断点
+_MIN_HALF = 300    # 对半降级下限（字）：更小已无段落边界可切
+
+
+def _ask_block(db, project_id, client, system, chunk, assets, quota, target_count,
+               dur_hint):
+    """单块拆解 LLM 调用（2026-09-17 job 43228 事故）：kind=length 截断时按段落
+    边界对半降级——对白密集块输出密度 >9 tok/字撞窗，半块输入/输出双减可过；
+    半块仍炸再对半，到 _MIN_HALF 字仍失败上抛（断点缓存兜住重跑损失）。
+    quota：本块配额（None=自动拆分）；对半后按半块字数占比再分摊。"""
+    quota_line = (f"【数量约束】全文目标 {target_count} 个分镜，本块目标拆出约 {quota} 个分镜"
+                  f"（按篇幅分配，允许 ±1 浮动）") if quota else None
+    t0 = time.monotonic()
+    try:
+        result, usage = ask_validated(
+            client, system,
+            build_split_user_prompt(chunk, assets, quota_line, dur_hint=dur_hint),
+            ChunkStoryboard)
+    except LLMError as e:
+        if getattr(e, "kind", "") != "length" or len(chunk) <= _MIN_HALF:
+            raise
+        halves = split_chunks(chunk, max_chars=max(_MIN_HALF, len(chunk) // 2))
+        if len(halves) < 2:
+            raise
+        emit_log(db, "storyboard", "info",
+                 f"块输出截断 → 对半拆分重试（{len(chunk)} 字 → {len(halves)} 段 "
+                 f"{[len(h) for h in halves]}）", project_id=project_id)
+        shots = []
+        for h in halves:
+            sub = (max(1, round(quota * len(h) / max(1, len(chunk)))) if quota else None)
+            shots.extend(_ask_block(db, project_id, client, system, h, assets,
+                                    sub, target_count, dur_hint))
+        return shots
+    emit_log(db, "llm", "info",
+             f"split_storyboards 完成 · {getattr(client, 'model', '?')} · "
+             f"{usage.prompt_tokens}+{usage.completion_tokens} tok · {time.monotonic()-t0:.1f}s · "
+             f"{len(result.shots)} 镜", project_id=project_id)
+    return result.shots
+
+
 def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1300,
                       target_count=None, chapter_range=None):
     """max_chars=1300：按上下文容量实证取值（2026-08-27 job 582：8127 字块撞
@@ -380,29 +421,58 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
             "- 台词是这类项目的核心内容，漏录=成片无对白无口型"
             + (f"\n- 内容主题（说话人推断参考）：{_theme}" if _theme else ""))
     staged, link_first_of_block = [], []   # link_first_of_block[i] = i 块首镜在 staged 中的下标（需链上一块末镜）
+    # 块级断点缓存（2026-09-17 job 43228 事故：111 块单 job 全有全无，任一块
+    # 截断 → worker 重试从头重烧数小时）——每块通过即落缓存，自动重试/手动重拆/
+    # 重启重排只续跑失败块起；成功落库后清缓存；指纹不符（改正文/参数/提示词
+    # 版本演进）自动作废全量重跑。缓存处理后的 staging 行：续跑 seeds 冻结为首遍值
+    cache_path = data_to_abs(data_dir, f"projects/{proj['slug']}/split_cache.json")
+    _fp = hashlib.sha1(json.dumps({
+        "v": _CACHE_VER, "max_chars": max_chars, "target_count": target_count,
+        "chapter_range": list(chapter_range) if chapter_range else None,
+        "dur": _dur, "text": text, "sys": _sys + _audio_rules,
+        "assets": [[r["id"], r["name"], r["kind"]] for r in assets],
+    }, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+    cached: dict = {}
+    if cache_path.exists():
+        try:
+            _c = json.loads(cache_path.read_text(encoding="utf-8"))
+            if _c.get("fp") == _fp:
+                cached = _c.get("blocks") or {}
+        except (ValueError, OSError):
+            cached = {}   # 缓存损坏 → 全量重跑
+    if cached:
+        emit_log(db, "storyboard", "info",
+                 f"断点续跑：缓存命中 {len(cached)}/{len(chunks)} 块（跳过已完成块）",
+                 project_id=project_id)
+
+    def _save_cache():
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = cache_path.with_name(cache_path.name + ".tmp")
+        tmp.write_text(json.dumps({"fp": _fp, "blocks": cached}, ensure_ascii=False),
+                       encoding="utf-8")
+        tmp.replace(cache_path)
+
     for i, chunk in enumerate(chunks, 1):
+        key = str(i)
+        if key in cached:   # 命中：回放已处理行，零 LLM 调用
+            _b = cached[key]
+            if _b.get("continue_prev") and staged:
+                link_first_of_block.append(len(staged))
+            staged.extend(SimpleNamespace(**r) for r in _b["rows"])
+            continue
         emit_log(db, "storyboard", "info", f"分块 {i}/{len(chunks)} 拆解中（{len(chunk)} 字）",
                  project_id=project_id)
-        t0 = time.monotonic()
-        quota_line = (f"【数量约束】全文目标 {target_count} 个分镜，本块目标拆出约 {quotas[i-1]} 个分镜"
-                      f"（按篇幅分配，允许 ±1 浮动）") if quotas else None
-        result, usage = ask_validated(client, _sys + _audio_rules,
-                                      build_split_user_prompt(chunk, assets, quota_line,
-                                                              dur_hint=None if _comic else _dur),
-                                      ChunkStoryboard)
-        emit_log(db, "llm", "info",
-                 f"split_storyboards 完成 · {getattr(client, 'model', '?')} · "
-                 f"{usage.prompt_tokens}+{usage.completion_tokens} tok · {time.monotonic()-t0:.1f}s · "
-                 f"{len(result.shots)} 镜", project_id=project_id)
-        # for d in result.shots:
-        #     _content_guard(d.description + " " + d.text_span)
-        if result.shots[0].continue_prev and staged:
+        shots = _ask_block(db, project_id, client, _sys + _audio_rules, chunk, assets,
+                           quotas[i - 1] if quotas else None, target_count,
+                           dur_hint=None if _comic else _dur)
+        if shots[0].continue_prev and staged:
             link_first_of_block.append(len(staged))
         # B 级（2026-09-01）：延续状态在 staging 逐镜累积——组 seed 继承与
         # workflow 机械校准都要看「上一镜的 continuity」
         _prev_con = ""
         _prev_seed = None
-        for d in result.shots:
+        _rows = []   # 本块处理后的 staging 行（落断点缓存用）
+        for d in shots:
             con = d.continuity if d.continuity in CONTINUITY_MODES else ""
             wf = d.workflow_type
             # B4：本镜延续上一镜（继承/微变）而 LLM 给了 ref2va → 机械校准 fl2v
@@ -440,6 +510,9 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
                 character_ids=d.character_ids, scene_ids=d.scene_ids,
                 prop_ids=d.prop_ids,
                 depends_on=None))
+            _rows.append(vars(staged[-1]))
+        cached[key] = {"continue_prev": bool(shots[0].continue_prev), "rows": _rows}
+        _save_cache()
     # 对白机械兜底（2026-08-27 真机：nsfwvision-v3 等 RP 模型把对白写进描述正文、
     # 不填 schema 的 dialogue 字段 → TTS/字幕链路全空）：从 text_span 引号原文提取，
     # 说话人取引号前后最近角色名；LLM 已填的镜不动
@@ -521,4 +594,5 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     from ..storyboard_checks import audit_storyboard
     for w in audit_storyboard(db, project_id):
         emit_log(db, "storyboard", "warn", w, project_id=project_id)
+    cache_path.unlink(missing_ok=True)   # 全部落库成功 → 断点缓存使命完成
     return ids
