@@ -323,3 +323,41 @@ def test_split_length_halves_block(tmp_path):
     rows = list_shots(db, pid)
     assert len(rows) == 2                            # 两半各一镜
     assert not (tmp_path / "data" / "projects" / "p" / "split_cache.json").exists()
+
+
+def test_split_cache_invalidated_on_model_change(tmp_path):
+    """换模型重拆（2026-09-17 真机：nsfwvision 跑到 99/111 才换 14B）——
+    指纹必须含拆解模型，否则续跑回放旧模型结果+新模型只跑尾部=混血分镜。"""
+    db, pid = _setup(tmp_path)
+    cache = _five_block_novel(tmp_path, db, pid)
+
+    class ModelFake:
+        def __init__(self, model, fail_marker=None):
+            self.model, self.n, self.fail_marker = model, 0, fail_marker
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            if self.fail_marker and self.fail_marker in messages[-1]["content"]:
+                from comic_studio.engine.llm.provider import LLMError
+                e = LLMError("输出被长度上限截断"); e.kind = "length"; raise e
+            self.n += 1
+            return CHUNK.format(desc=f"镜{self.n}", cid=1), Usage(1, 2)
+
+    # 第一轮：nsfwvision 在块 3 截断 → 缓存 1、2
+    with pytest.raises(Exception):
+        split_storyboards(db, tmp_path / "data", pid,
+                          client_factory=lambda t: ModelFake("nsfwvision-v3", "丙" * 20),
+                          max_chars=150)
+    assert cache.exists()
+    # 同模型续跑：命中缓存只打 3/4/5
+    f_resume = ModelFake("nsfwvision-v3")
+    split_storyboards(db, tmp_path / "data", pid,
+                      client_factory=lambda t: f_resume, max_chars=150)
+    assert f_resume.n == 3
+    # 重造部分缓存，换模型续跑：指纹不符全量重跑 5 块（不回放旧模型结果）
+    with pytest.raises(Exception):
+        split_storyboards(db, tmp_path / "data", pid,
+                          client_factory=lambda t: ModelFake("nsfwvision-v3", "丙" * 20),
+                          max_chars=150)
+    f2 = ModelFake("qwen2.5:14b-uncen")
+    split_storyboards(db, tmp_path / "data", pid,
+                      client_factory=lambda t: f2, max_chars=150)
+    assert f2.n == 5

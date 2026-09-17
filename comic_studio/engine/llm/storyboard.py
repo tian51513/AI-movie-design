@@ -430,6 +430,9 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
         "v": _CACHE_VER, "max_chars": max_chars, "target_count": target_count,
         "chapter_range": list(chapter_range) if chapter_range else None,
         "dur": _dur, "text": text, "sys": _sys + _audio_rules,
+        # 拆解模型入指纹（2026-09-17 真机：nsfwvision 跑到 99/111 换 14B——
+        # 不含模型则续跑回放旧模型块+新模型只跑尾部=混血分镜）
+        "model": getattr(client, "model", ""),
         "assets": [[r["id"], r["name"], r["kind"]] for r in assets],
     }, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
     cached: dict = {}
