@@ -76,9 +76,12 @@ def test_render_shot_end_to_end(tmp_path, monkeypatch):
         out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
         assert out.exists() and out.stat().st_size == 2
         wf = m.prompts[0]["prompt"]
-        assert wf["110"]["inputs"]["prompt"].startswith("林晨在庭院推门")
-        assert wf["116"]["inputs"]["megapixels"] == 0.6
-        assert wf["117"]["inputs"]["strength_model"] == 0.6
+        assert wf["221"]["inputs"]["value"].startswith("林晨在庭院推门")
+        assert wf["162"]["inputs"]["megapixels"] == 0.6
+        # 2026-09-18 新链：lora_strength 注入退役（独立 realism LoRA 节点没了，
+        # 项目 lora_realism 不再覆盖用户验证的栈槽强度）
+        lora = next(n for n in wf.values() if n["class_type"] == "LazyH3LoraStack")
+        assert lora["inputs"]["强度_1"] == 1  # 模板默认未动
     shot = get_shot(db, sid)
     assert shot["status"] == "rendered"
     assert shot["video_path"] == f"projects/渲染剧/shots/1/video_v1.mp4"
@@ -200,7 +203,7 @@ def test_wide_shot_megapixels_boost(tmp_path, monkeypatch):
         from comic_studio.engine.comfy.client import ComfyClient
         render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
         wf = m.prompts[0]["prompt"]
-        assert wf["116"]["inputs"]["megapixels"] == 1.0  # 0.6+0.4 升档
+        assert wf["162"]["inputs"]["megapixels"] == 1.0  # 0.6+0.4 升档
 
 
 def test_render_versions_increment(tmp_path, monkeypatch):
@@ -355,8 +358,8 @@ def test_ref2va_prev_tail_frame_takes_ref0(tmp_path, monkeypatch):
         assert any(u.endswith("__ref0.png") for u in ups), ups
         assert any(u.endswith("__ref1.png") for u in ups), ups
         wf = m.prompts[0]["prompt"]
-        assert wf["96"]["inputs"]["image"].endswith("__ref0.png")   # 尾帧占 ref0
-        assert wf["97"]["inputs"]["image"].endswith("__ref1.png")   # 角色三视图占 ref1
+        assert wf["186"]["inputs"]["image"].endswith("__ref0.png")   # 尾帧占 ref0
+        assert wf["190"]["inputs"]["image"].endswith("__ref1.png")   # 角色三视图占 ref1
 
 
 def test_film_no_assets_falls_back_to_manga_pages(tmp_path, monkeypatch):
@@ -466,7 +469,7 @@ def test_render_shot_attaches_audit_snapshot(tmp_path, monkeypatch):
         render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url), job_id=jid)
         snap = _json.loads(get_job(db, jid)["snapshot_json"])
         assert snap["prompt"].startswith("林晨在庭院推门")
-        assert snap["template"] and "110" in snap["workflow"]
+        assert snap["template"] and "161" in snap["workflow"]
 
 
 def test_aspect_enum_five_ratios():
@@ -523,9 +526,9 @@ def test_ref2va_injects_voice_samples(tmp_path, monkeypatch):
         out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
         assert out.exists()
         wf = m.prompts[0]["prompt"]
-        assert wf["110"]["inputs"]["ref_audios.ref_audio_0"] == ["95", 0]
-        assert wf["95"]["inputs"]["audio"].endswith("audio0.flac")
-        sent = wf["110"]["inputs"]["prompt"]
+        assert wf["161"]["inputs"]["ref_audios.ref_audio_0"] == ["250", 0]
+        assert wf["250"]["inputs"]["audio"].endswith("audio0.flac")
+        sent = wf["221"]["inputs"]["value"]
         assert "<Audio 1> is a reference audio for 林晨" in sent
         assert any(u.endswith("audio0.flac") for u in m.audio_uploads)
         shot = get_shot(db, sid)
@@ -546,8 +549,8 @@ def test_no_voice_binding_no_audio_slots(tmp_path, monkeypatch):
         out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
         assert out.exists()
         wf = m.prompts[0]["prompt"]
-        assert wf["95"]["inputs"]["audio"] == "cs_voice_0.mp3"  # 模板默认未动
-        assert "<Audio 1>" not in wf["110"]["inputs"]["prompt"]
+        assert wf["250"]["inputs"]["audio"] == "cs_voice_0.mp3"  # 模板默认未动
+        assert "<Audio 1>" not in wf["221"]["inputs"]["value"]
         # 2026-09-06 语义变更：未注入槽补静音占位上传（防 ComfyUI 400）——
         # 真正要断言的是「没有角色音色样本被上传」，占位（cs_voice_*.mp3）除外
         assert all(u.startswith("cs_voice") for u in m.audio_uploads)

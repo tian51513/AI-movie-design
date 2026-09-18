@@ -26,7 +26,10 @@ def pick_template_id(shot_row, db=None) -> str:
     """分镜视频模板路由（2026-08-26 需求）：优先读 template_map 按类型映射，
     用户可在设置页为 ref2va/fl2v/t2v 各自切换实际模板；无映射时走内置默认。"""
     wt = (shot_row["workflow_type"] or "").strip() or "ref2va"
-    defaults = {"ref2va": "h3_ref2va", "fl2v": "h3_fl2v", "t2v": "h3_t2v"}
+    # i2v 默认（2026-09-18）：fl2v 缺尾帧的降级目标此前硬编码在 render_shot，
+    # type 路由重构后走统一入口——template_map.i2v 也可自选降级模板
+    defaults = {"ref2va": "h3_ref2va", "fl2v": "h3_fl2v", "t2v": "h3_t2v",
+                "i2v": "h3_i2v"}
     if db is not None:
         try:
             tmpl_id = get_setting(db, "template_map").get(wt)
@@ -384,25 +387,30 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
 
     tmpl_id = pick_template_id(shot, db=db)
     reg = registry.scan_templates(registry.TEMPLATE_ROOT)
-    # 关键帧接线（方案A 一期）：fl2v 走 h3_fl2v 首尾帧插值；
-    # kf_end 缺失时降级 h3_i2v（仅首帧），二期关键帧任务补齐 kf_* 后自动升回
+    # 类型路由（2026-09-18 重构）：按 manifest type 判断 fl2v/i2v 语义——
+    # 此前硬编码 tmpl_id in ("h3_fl2v","h3_i2v")，设置页把 fl2v 映射换成
+    # 自定义模板（如 Spectrum 加速道）时关键帧接线/图片槽全走错分支
+    tmpl_type = reg[tmpl_id].type if tmpl_id in reg else ""
+    # 关键帧接线（方案A 一期）：fl2v 走首尾帧插值；
+    # kf_end 缺失时降级 i2v（仅首帧），二期关键帧任务补齐 kf_* 后自动升回
     shot_dir = data_to_abs(data_dir, f"projects/{proj['slug']}/shots/{shot['seq']}")
     kf_start, kf_end = shot_dir / "kf_start.png", shot_dir / "kf_end.png"
-    if tmpl_id == "h3_fl2v" and not (kf_start.exists() and kf_end.exists()):
+    if tmpl_type == "fl2v" and not (kf_start.exists() and kf_end.exists()):
         try:
             ensure_keyframes(db, data_dir, shot_id, comfy, job_id=job_id)  # 二期：自动补对
         except Exception as exc:
             emit_log(db, "comfy", "warn",
                      f"分镜 {shot['seq']} 关键帧生成失败，降级首帧模式：{exc}",
                      project_id=proj["id"], job_id=job_id)
-    if tmpl_id == "h3_fl2v" and not kf_end.exists():
-        tmpl_id = "h3_i2v"
+    if tmpl_type == "fl2v" and not kf_end.exists():
+        tmpl_id = pick_template_id({"workflow_type": "i2v"}, db=db)
+        tmpl_type = reg[tmpl_id].type if tmpl_id in reg else "i2v"
     template = reg[tmpl_id]
 
     prompt = shot["prompt"]
     if not prompt:
         raise ValueError("shot prompt 为空")
-    if tmpl_id == "h3_fl2v":
+    if tmpl_type == "fl2v":
         # 官方 FL2VA 对齐头（2026-09-11 借鉴 MiniMax-H3-skills base 指南 §2.1
         # 原句——训练分布内的句式；此前自拟 EXACT 句为猜测近似）+ 镜内禁切约束
         dur = max(4, int(shot["duration"]))
@@ -411,7 +419,7 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
                   "the target video; Picture 2 (from Shot 1) aligns with the "
                   f"{dur:.2f}-second mark of the target video.\n\n"
                   + prompt + "\n" + KF_NO_CUT)
-    elif tmpl_id == "h3_i2v" and (first_frame_png is not None or kf_start.exists()):
+    elif tmpl_type == "i2v" and (first_frame_png is not None or kf_start.exists()):
         # 官方 I2VA 对齐头（首帧参考注入时）
         prompt = ("For the target video, at 0.00 seconds into the target video, "
                   "<Picture 1> (from [Shot 1]) is fully referenced.\n\n" + prompt)
@@ -424,6 +432,9 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         "lora_strength": proj["lora_realism"],
         **h3_sla_params(db),   # SLA 注意力三键（模板声明才注入，2026-09-10）
         **h3_lora_link(db, template.id),   # 加速 LoRA 随开关切换（手动槽优先）
+        # RTX Video Super Resolution（2026-09-18）：Spectrum 加速道模板的
+        # switch_links 旁路开关；其余模板未声明，filler 自然忽略
+        "rtx_vsr": bool((get_setting(db, "comfy") or {}).get("rtx_vsr_enabled", False)),
     }
     # 远景规避：远景/大全景自动升一档兆像素（上限 1.2）
     camera = json.loads(shot["camera_json"] or "{}")
@@ -450,11 +461,11 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
             emit_log(db, "comfy", "info",
                      f"分镜 {shot['seq']} 漫改模式：无角色资产，漫画原页作参考",
                      project_id=proj["id"], job_id=job_id)
-    if first_frame_png is None and tmpl_id in ("h3_fl2v", "h3_i2v") and kf_start.exists():
+    if first_frame_png is None and tmpl_type in ("fl2v", "i2v") and kf_start.exists():
         first_frame_png = kf_start  # 无上镜衔接时，本镜关键帧首图兜底
-    if first_frame_png and tmpl_id in ("h3_fl2v", "h3_i2v"):
+    if first_frame_png and tmpl_type in ("fl2v", "i2v"):
         images = [{"slot": "first", "path": str(first_frame_png)}]
-    elif shot["workflow_type"] == "t2v" or tmpl_id in ("h3_fl2v", "h3_i2v"):
+    elif shot["workflow_type"] == "t2v" or tmpl_type in ("fl2v", "i2v"):
         images = []  # i2v/fl2v 无首帧——交由 I1 快失败给出明确报错
     elif first_frame_png is not None:
         # 接力（连贯性①配套）：上镜尾帧优先占 ref0（画面/姿态延续），
@@ -473,7 +484,7 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         images = [{"slot": r["slot"],
                    "path": str(data_to_abs(data_dir, r["path"]))}
                   for r in raw_refs]
-    if tmpl_id == "h3_fl2v":
+    if tmpl_type == "fl2v":
         images.append({"slot": "last", "path": str(kf_end)})
 
     output_ctx = {"project": proj["slug"], "asset": f"shot-{shot['seq']}"}
