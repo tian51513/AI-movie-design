@@ -237,7 +237,8 @@ _PROTOCOL_ANCHOR_RE = _re.compile(
     r"|overall_soundscape|non_diegetic_music|\[Shot \d+\]|\[镜\d+\]")
 
 
-def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = None):
+def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = None,
+                   char_names=()):
     """P7-C 提示词 token 自愈（借鉴 Director reinforce 思想）：机械可修的问题
     直接修，不消耗 LLM 重试——①占位语删除 ②超界 <Picture N> 引用删除
     ③行内重复句子去重 ④有对白缺 <d>Chinese</d> 补标记
@@ -282,6 +283,12 @@ def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = No
     if "可自行补充" in t:
         t = "\n".join(l for l in t.splitlines() if "可自行补充" not in l)
         fixes.append("删除占位语")
+    # 2026-09-19 真机判例：LLM 照抄 modes 模板示例的 <人物> 占位符进正文
+    # （retention「保持<人物>的<黑色短发>」）——填绑定角色名；无名时去标记
+    if "<人物>" in t:
+        _name = char_names[0] if char_names else "人物"
+        t = t.replace("<人物>", _name)
+        fixes.append("填充人物占位符" if char_names else "人物占位符去标记")
     if _META_WORDS_RE.search(t):
         t = _META_WORDS_RE.sub("", t)
         fixes.append("删 Meta 词")
@@ -384,7 +391,15 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
         if backend == "h3":
             # P7-C 自愈：机械可修的问题直接修，不消耗重试（占位语/超界引用/
             # 重复句/缺对白标记——2026-08-27 前这些全靠 LLM 重生成，两次排障浪费）
-            text, _fixes = heal_h3_prompt(text, shot, max_pics=max_ref_images, mode=mode)
+            # <人物> 占位填充（2026-09-19）用绑定角色名——ledger 只有 id，经
+            # assets_by_id 取名（D 模式 retention 真机判例：LLM 照抄模板占位符）
+            _char_names = tuple(
+                assets_by_id[aid]["name"]
+                for aid in (json.loads(shot["ledger_json"] or "{}")
+                            .get("assets", {}).get("characters", []))
+                if aid in assets_by_id)
+            text, _fixes = heal_h3_prompt(text, shot, max_pics=max_ref_images,
+                                          mode=mode, char_names=_char_names)
         if backend != "h3":
             return text
         bound = len(ledger_assets(shot))  # 台账绑定资产数（ref 图数量）

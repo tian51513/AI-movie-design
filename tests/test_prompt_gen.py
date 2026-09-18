@@ -454,3 +454,20 @@ def test_generate_structure_failure_switches_to_compact_system(tmp_path):
     sys2 = calls[1][0]["content"]
     assert "subject_definitions:" in sys2 and len(sys2) < len(calls[0][0]["content"])
     assert sum(1 for m in calls[1] if m["role"] == "assistant") == 0  # 不背失败输出
+
+
+def test_heal_fills_subject_placeholder_with_bound_name():
+    """2026-09-19 真机判例：LLM 照抄 modes 模板示例的 <人物> 占位符进正文
+    （retention_analysis「保持<人物>的<黑色短发>」）——heal 机械填充绑定
+    角色名；无角色名时退化为去尖括号（不再发噪声给 H3）。"""
+    from comic_studio.engine.prompts.gen import heal_h3_prompt
+    bad = ("subject_definitions:\ntinsy 是来自 <Picture 1> 的人物\n"
+           "retention_analysis:\ntinsy（出现于 [Shot 1]）：fully_preserved - "
+           "保持<人物>的<黑色短发>、<校服背心>\n无字幕，无背景音乐")
+    shot = {"ledger_json": "{}"}
+    h, fixes = heal_h3_prompt(bad, shot, max_pics=2, char_names=("tinsy",))
+    assert "保持tinsy的" in h and "<人物>" not in h
+    assert any("人物占位" in f for f in fixes)
+    # 无名兜底：去尖括号留「人物」
+    h2, _ = heal_h3_prompt(bad, shot, max_pics=2)
+    assert "保持人物的" in h2 and "<人物>" not in h2
