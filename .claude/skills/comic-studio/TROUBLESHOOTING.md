@@ -120,3 +120,10 @@ identity_edit LoRA 双图训练上限（scene恒图1/person恒图2，交换劣�
 
 **症状**：渲染中 ComfyUI Desktop 整个进程退出（不是 400/500，是没了）。
 **判例**：Spectrum 链首测时发生一次，重启 ComfyUI 后同工作流渲染成功——**偶发（驱动/显存抖动），重启即愈**。复现同节点同阶段才需要排查（届时贴崩溃前日志尾部定位节点，SpectrumApply/BlockSparse 是嫌疑对象；SpectrumApply 有 enabled 开关可二分）。
+
+## 2026-09-19 · TRT VAE 编译硬件门槛（12G 卡不可用）
+
+**症状**：`MiniMaxH3TRTVAECompileEXPT8` 报 `startup_resource_margin_insufficient`。
+**根因**：编译守卫（trt_vae_compile.py L106）硬门槛=**12000MiB 空闲显存 + 24GiB 空闲内存**（作者测试环境 4060Ti 16G）——11.9G 卡物理过不了；32G 内存系统空闲 ~11G 也过不了 24G。**降守卫硬试会 TRT 构建期原生 OOM，勿试**。
+**已就绪资产**（换 16G+ 卡直接续跑编译）：`models/vae/h3_trt/` 下 runtime/site-packages（TRT cu13 10.13.3.9.post1 + onnx 1.22/protobuf 7.36 独立目录）、decoder.onnx+data（4.5G）、flex.onnx（已生成）。
+**判例**：① onnx 1.17 无 cp313 轮子（源码构建失败）——venv protobuf 5.29 与新 onnx 冲突时往同目录装配套对（onnx 1.22+protobuf 7.36）+ `sys.path.insert(0)` 启动器优先加载；② WSL 的 PYTHONPATH 不透传给 Windows 进程（要 WSLENV），跨系统调用用启动器脚本注入 sys.path。
