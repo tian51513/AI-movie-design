@@ -1,14 +1,14 @@
 id: h3_director
 type: director
-name: MiniMax H3 导演台整段快车道（段间 latent 连贯）
+name: MiniMax H3 导演台整段快车道（2026-09-18 新链·段间 latent 连贯）
 file: h3_director.api.json
 prompt_format: '{prompt}'
 inject:
   params:
     timeline_data: {node: '12', field: timeline_data}
     seed: {node: '12', field: seed}
-    # H3 SLA 注意力（2026-09-10 用户自定义节点）：settings 三键注入，
-    # 模板缺声明时 filler 自动忽略（旧模板可共存）
+    # H3 SLA 注意力三键（2026-09-10 起；2026-09-18 新链 SLA 前环换
+    # MiniMaxChunkFeedForward，block_size 新接口 INT；sage 联动已退役）
     h3_sla_enabled:
       node: '54'
       field: enabled
@@ -18,9 +18,6 @@ inject:
     h3_sla_block_size:
       node: '54'
       field: block_size
-    sage_attention:   # SLA 联动（2026-09-10）：SLA 开→disabled 防注意力双实现叠加（T8 禁令），SLA 关→auto 回稠密基线
-      node: '47'
-      field: sage_attention
     lora_turbo_name:   # SLA 联动（2026-09-10）：开关各配蒸馏匹配版——开=SLA 版/
       # 关=普通 turbo（历史基线）；设置页手动选过 lora_turbo 槽则不注入（手动优先）
       node: '42'
