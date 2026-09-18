@@ -250,7 +250,7 @@ def test_create_from_theme_300_chars_accepted(app_client, monkeypatch):
     """2026-09-19 用户需求：允许 300 字以上文本作为项目正文——主题生成下限
     500→300（361 字被判过短的事故）；过短兜底仍拦真垃圾输出。"""
     db, c = app_client
-    story = "短篇试炼。\n\n" + "主角在雨夜推开酒馆的门。" * 19  # ~330 字
+    story = "短篇试炼。\n\n" + "主角在雨夜推开酒馆的门。" * 28  # 314 字
     assert 300 <= len(story) < 500
     import comic_studio.web.routes_projects as rp
     monkeypatch.setattr(rp, "client_for_task",
