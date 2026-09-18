@@ -115,3 +115,8 @@ identity_edit LoRA 双图训练上限（scene恒图1/person恒图2，交换劣�
 2. **重放拿 400 响应体**：把快照 workflow POST 回 `/prompt`（无效 prompt 不会入队，安全）——响应 `node_errors` 直接点名节点+字段+枚举清单。
 3. 离线校验器判例：object_info **新式组合** `["COMBO", {"options":[…]}]` 枚举在 `fdef[1].options`；旧式 `fdef[0]` 直接是列表。只按旧格式校验会漏检新式 COMBO 的 value_not_in_list。
 **防线**：`h3_sla_params` 统一 `str()` 归一（settings 存 int 也兼容）；测试钉住模板 block_size ∈ {"64","128"}。
+
+## 2026-09-18 · ComfyUI 进程原生崩溃（退出代码 2147483651 / 0x8000000B）
+
+**症状**：渲染中 ComfyUI Desktop 整个进程退出（不是 400/500，是没了）。
+**判例**：Spectrum 链首测时发生一次，重启 ComfyUI 后同工作流渲染成功——**偶发（驱动/显存抖动），重启即愈**。复现同节点同阶段才需要排查（届时贴崩溃前日志尾部定位节点，SpectrumApply/BlockSparse 是嫌疑对象；SpectrumApply 有 enabled 开关可二分）。
