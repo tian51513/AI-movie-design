@@ -382,3 +382,45 @@ def test_timeline_fills_ref_audios_from_voices(tmp_path):
     assert segs[0]["refAudios"][0]["audioFile"] in upload_names  # 样本在上传清单
     # 提示词带 <Audio N> 声明（同逐镜链协议）
     assert "<Audio 1>" in segs[0]["prompt"]
+
+
+def test_gen_director_rtx_vsr_switch(tmp_path, monkeypatch):
+    """RTX VSR 全局开关对快车道生效（2026-09-18）：开=注入 RTX 节点+CreateVideo
+    改接；关=直连导演台输出零节点。director 手工注入路径与 filler 共用实现。"""
+    from pathlib import Path
+    from comic_studio.engine import director as D
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from comic_studio.engine.projects import set_stage
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comfy_mock import comfy_server
+    db, pid, chars = _setup(tmp_path)
+    persist_shots(db, pid, [
+        _shot("推门", "林晨推门。", 5.0,
+              ledger={"assets": {"characters": [chars["林晨"]]}},
+              character_ids=[chars["林晨"]])])
+    set_stage(db, pid, "storyboard_ready")
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"director": "h3_director"})
+    set_setting(db, "comfy", {"base_url": "http://x:8188", "min_free_vram_gb": 0,
+                              "rtx_vsr_enabled": True})
+    jid = enqueue_job(db, "gen_director", project_id=pid, resource="gpu_comfy",
+                      payload={"project_id": pid})
+    with comfy_server("ok", video=True) as m:
+        D.handle_gen_director(db, tmp_path / "data", get_job(db, jid),
+                              ComfyClient(m.base_url))
+        p = m.prompts[0]["prompt"]
+        assert p["6"]["inputs"]["images"] == ["141", 0]
+        assert p["141"]["class_type"] == "RTXVideoSuperResolution"
+        assert p["141"]["inputs"]["images"] == ["12", 0]
+    # 关 → 直连、无节点
+    set_setting(db, "comfy", {"base_url": "http://x:8188", "min_free_vram_gb": 0})
+    set_stage(db, pid, "storyboard_ready")
+    jid2 = enqueue_job(db, "gen_director", project_id=pid, resource="gpu_comfy",
+                       payload={"project_id": pid})
+    with comfy_server("ok", video=True) as m2:
+        D.handle_gen_director(db, tmp_path / "data", get_job(db, jid2),
+                              ComfyClient(m2.base_url))
+        p2 = m2.prompts[0]["prompt"]
+        assert p2["6"]["inputs"]["images"] == ["12", 0] and "141" not in p2

@@ -100,3 +100,27 @@ def test_unet_slot_is_kj_loader():
         assert unet.cls == 'DiffusionModelLoaderKJ' and unet.node == '105:128'
         wf = _wf(t)
         assert wf['105:128']['inputs']['model_name'].endswith('.safetensors')
+
+
+MAIN_IDS = ("h3_fl2v", "h3_i2v", "h3_t2v", "h3_ref2va", "h3_director")
+
+
+@pytest.mark.parametrize("t", MAIN_IDS)
+def test_rtx_switch_available_on_main_templates(t):
+    """2026-09-18 全局化：五个主模板同声明 rtx_vsr 旁路——关=CreateVideo 直连
+    原解码源，开=注入 RTX 节点改接（用户设置页开开关即全工作流生效）。"""
+    reg = scan_templates(Path("templates/workflows"))
+    tmpl = reg[t]
+    sl = tmpl.switch_links.get("rtx_vsr")
+    assert sl, f"{t} 缺 rtx_vsr switch_links"
+    wf, _ = fill_workflow(tmpl, prompt="p", params={"seed": 1},
+                          images=None, output_ctx={"project": "x", "asset": "y"})
+    node = wf[sl["node"]]
+    assert node["class_type"] == "CreateVideo"
+    assert node["inputs"]["images"] == [str(sl["off"][0]), 0]
+    assert "141" not in wf
+    wf2, _ = fill_workflow(tmpl, prompt="p", params={"seed": 1, "rtx_vsr": True},
+                           images=None, output_ctx={"project": "x", "asset": "y"})
+    assert wf2[sl["node"]]["inputs"]["images"] == ["141", 0]
+    assert wf2["141"]["class_type"] == "RTXVideoSuperResolution"
+    assert wf2["141"]["inputs"]["images"] == [str(sl["off"][0]), 0]

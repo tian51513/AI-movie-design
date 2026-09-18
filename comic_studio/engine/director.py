@@ -240,13 +240,19 @@ def handle_gen_director(db, data_dir, job, comfy):
         # H3 SLA 注意力三键（2026-09-10，h3_director manifest 已声明）+ 加速
         # LoRA 随开关联动（手动 lora_turbo 槽优先，h3_lora_link 内判）
         from .rendershot import h3_lora_link, h3_sla_params
-        for key, value in {"timeline_data": json.dumps(timeline, ensure_ascii=False),
-                           "seed": random.randint(0, 2**31 - 1),
-                           **h3_sla_params(db),
-                           **h3_lora_link(db, tmpl.id)}.items():
+        params = {"timeline_data": json.dumps(timeline, ensure_ascii=False),
+                  "seed": random.randint(0, 2**31 - 1),
+                  **h3_sla_params(db),
+                  **h3_lora_link(db, tmpl.id)}
+        for key, value in params.items():
             ip = tmpl.inject_params.get(key)
             if ip:
                 wf[ip.node]["inputs"][ip.field] = value
+        # 开关接线（2026-09-18 全局化）：RTX VSR 等旁路——director 手工注入
+        # 路径与 fill_workflow 共用同一实现，settings 开关对快车道同样生效
+        params["rtx_vsr"] = bool((get_setting(db, "comfy") or {}).get("rtx_vsr_enabled", False))
+        from .workflows.filler import apply_switch_links
+        apply_switch_links(wf, tmpl, params)
         attach_snapshot(db, job["id"],
                         prompt=f"(director 批次 {i}/{len(batches)}：{len(segments)} 段 "
                                f"{timeline['totalFrames']} 帧，budget={budget})",

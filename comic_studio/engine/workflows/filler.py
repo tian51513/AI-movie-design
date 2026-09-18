@@ -3,6 +3,19 @@
 import copy
 
 
+def apply_switch_links(wf, template, params: dict) -> None:
+    """开关接线（2026-09-18）：真 → 注入 add_nodes 节点并改接 on 链；假/缺 → off
+    直连。独立成函数供 director 手工注入路径共用（它不走 fill_workflow）。
+    API 格式无节点禁用，旁路分支默认不存在（详见 registry.WorkflowTemplate）"""
+    for key, spec in template.switch_links.items():
+        if params.get(key):
+            for nid, node_def in (spec.get("add_nodes") or {}).items():
+                wf[str(nid)] = copy.deepcopy(node_def)
+            wf[str(spec["node"])]["inputs"][spec["field"]] = spec["on"]
+        else:
+            wf[str(spec["node"])]["inputs"][spec["field"]] = spec["off"]
+
+
 def fill_workflow(template, *, prompt: str | None, params: dict,
                    images: list | None, output_ctx: dict,
                    model_overrides: dict | None = None):
@@ -39,13 +52,7 @@ def fill_workflow(template, *, prompt: str | None, params: dict,
 
     # 开关接线（2026-09-18）：真 → 注入 add_nodes 节点并改接 on 链；假/缺 → off
     # 直连。API 格式无节点禁用，旁路分支默认不存在（详见 registry.WorkflowTemplate）
-    for key, spec in template.switch_links.items():
-        if params.get(key):
-            for nid, node_def in (spec.get("add_nodes") or {}).items():
-                wf[str(nid)] = copy.deepcopy(node_def)
-            set_input(spec["node"], spec["field"], spec["on"])
-        else:
-            set_input(spec["node"], spec["field"], spec["off"])
+    apply_switch_links(wf, template, params)
 
     uploads: list[dict] = []
     for spec in template.inject_images:

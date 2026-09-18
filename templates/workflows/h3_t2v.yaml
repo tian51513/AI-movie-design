@@ -36,6 +36,23 @@ inject:
     h3_sla_block_size:
       node: '50'
       field: block_size
+# RTX Video Super Resolution 旁路（2026-09-18 全局化：settings comfy.rtx_vsr_enabled
+# 开=注入 RTX 2× ULTRA 超分后再入 CreateVideo，关=直出零开销——与 Spectrum 模板同机制）
+switch_links:
+  rtx_vsr:
+    node: "24"
+    field: images
+    "on": ["141", 0]
+    "off": ["22", 0]
+    add_nodes:
+      "141":
+        class_type: RTXVideoSuperResolution
+        inputs:
+          images: ["22", 0]
+          resize_type: "scale by multiplier"
+          "resize_type.scale": 2
+          quality: "ULTRA"
+
 outputs:
 - node: '20'
   filename_prefix: cs/{project}/{asset}
