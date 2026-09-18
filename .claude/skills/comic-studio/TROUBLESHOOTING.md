@@ -105,3 +105,13 @@
 
 ### 双角色参考上限
 identity_edit LoRA 双图训练上限（scene恒图1/person恒图2，交换劣化）：总数>2 才 stitch 拼接（默认）/chain 链式（comic_dual_mode 可切）；≤2 直种。拼接有官方确认的脸趋同缺陷——用户实测链式两段输出几乎一样（描述已含两人）后按用户指令保留双方案可切、默认单次。
+
+## 2026-09-18 · 提交 400 value_not_in_list（block_size int 化事故）
+
+**症状**：gen_shot 提交 ComfyUI `/prompt` 400（重试 3 次全灭）；日志只有 HTTPStatusError 无详情。
+**根因**：模板换链时把 `H3SLAAttention.block_size` 从 `"64"` 归一成 int 64——当前 ComfyUI 该输入是 **COMBO 字符串枚举 ['64','128']**，`value_not_in_list`。
+**排障手法**：
+1. 审计快照拿提交的完整 prompt：`GET /api/jobs/{id}/snapshot`（P7-A 落库，含 workflow）——服务占 db 时 WSL 侧 sqlite 直读会 disk I/O error（WAL 跨 OS），走 API。
+2. **重放拿 400 响应体**：把快照 workflow POST 回 `/prompt`（无效 prompt 不会入队，安全）——响应 `node_errors` 直接点名节点+字段+枚举清单。
+3. 离线校验器判例：object_info **新式组合** `["COMBO", {"options":[…]}]` 枚举在 `fdef[1].options`；旧式 `fdef[0]` 直接是列表。只按旧格式校验会漏检新式 COMBO 的 value_not_in_list。
+**防线**：`h3_sla_params` 统一 `str()` 归一（settings 存 int 也兼容）；测试钉住模板 block_size ∈ {"64","128"}。
