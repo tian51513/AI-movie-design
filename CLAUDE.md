@@ -347,5 +347,6 @@
 - **rendershot type 路由重构**：fl2v/i2v 语义按 manifest type 判断（原硬编码 `tmpl_id in ("h3_fl2v","h3_i2v")`——自定义 fl2v 模板会走错分支）；降级统一 `pick_template_id`（**补 i2v 默认映射**，template_map.i2v 可自选降级模板）
 - **存量清理判例**：model_overrides 里 h3_* 钉旧模型（t2v=fl2va_pruned/i2v+director=eros_turbo_hybrid）已清空回落新默认——**模板换血后先查存量覆盖**（设置冻结同族问题）；studio 服务没跑时 WSL mirrored 端口答 503「Forwarding failure」（不是 FastAPI 的 503），别误判服务在跑
 - **TRT VAE 解码（未接入，预留）**：H3 T8 包 `MiniMaxH3TRTVAEDecoderEXPT8` 输出 VAE 对象替换 VAEDecode.vae 输入（节点本身不动）——用户先手动 `MiniMaxH3TRTVAECompileEXPT8` 编 flex 引擎（需 12G 空闲显存+24G 内存）验证画质/耗时，通过后走 switch_links 同机制接开关；VAE 解码 30-40s 的正路
+- **用户锁定现状（2026-09-19）**：Spectrum 模板 EasyCache+SpectrumApply 两摆设节点**保留不动**（日志有 WARNING 但行为已验证）；spectrum LoRA 栈=taomate 3步+BulletTime 0.5 双 LoRA（用户在设置页自选 lora3-8=none 精简——**不是 bug 勿恢复**；UX 陷阱：下拉里 "none" 是真选项不是「关闭」，真关闭=「（关闭）」）
 - **真机验证（2026-09-18 深夜）**：h3_fl2v 新链渲染成功（block_size 修复后）；h3_spectrum_fl2v 成功且**耗时与主链相当**（Spectrum 预测收益被 4 步基线摊平——想再快主要看 TRT VAE）；RTX VSR 开=**+10s** 换 2× 输出（可接受）；ComfyUI 偶发原生崩溃 0x8000000B（2147483651）重启即愈、复现才是问题
 - **`_raw/audio_minimax_music_3.json`**：MiniMaxMusic3 文生音乐（Music3TextEncode.caption→seconds 驱动时长，KSampler 30 步 cfg 1.7，mp3 V0 落盘）——接入方案待定（BGM 生成特性，不在本轮）
