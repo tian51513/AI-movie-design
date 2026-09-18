@@ -1,402 +1,516 @@
 {
-  "90": {
-    "inputs": {
-      "unet_name": "Minimax_H3\\minimax_h3_ref2va_pruned_int8_convrot.safetensors",
-      "weight_dtype": "default"
-    },
-    "class_type": "UNETLoader",
-    "_meta": {
-      "title": "UNet加载器"
-    }
+ "146": {
+  "inputs": {
+   "unet_name": "Minimax_H3\\minimax_h3_fused_refdelta_r1024_turbo8_mystic07_int8_convrot.safetensors",
+   "weight_dtype": "default"
   },
-  "92": {
-    "inputs": {
-      "clip_name": "qwen3vl_32b_h3_ultra_uncensored_heretic_int8_convrot.safetensors",
-      "type": "minimax",
-      "device": "default"
-    },
-    "class_type": "CLIPLoader",
-    "_meta": {
-      "title": "加载CLIP"
-    }
-  },
-  "93": {
-    "inputs": {
-      "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
-    },
-    "class_type": "VAELoader",
-    "_meta": {
-      "title": "加载VAE"
-    }
-  },
-  "94": {
-    "inputs": {
-      "vae_name": "minimax_h3_video_vae_fp16.safetensors"
-    },
-    "class_type": "VAELoader",
-    "_meta": {
-      "title": "加载VAE"
-    }
-  },
-  "96": {
-    "inputs": {
-      "image": "placeholder.png"
-    },
-    "class_type": "LoadImage",
-    "_meta": {
-      "title": "加载图像"
-    }
-  },
-  "97": {
-    "inputs": {
-      "image": "placeholder.png"
-    },
-    "class_type": "LoadImage",
-    "_meta": {
-      "title": "加载图像"
-    }
-  },
-  "100": {
-    "inputs": {
-      "noise": [
-        "103",
-        0
-      ],
-      "guider": [
-        "102",
-        0
-      ],
-      "sampler": [
-        "104",
-        0
-      ],
-      "sigmas": [
-        "101",
-        0
-      ],
-      "latent_image": [
-        "110",
-        1
-      ]
-    },
-    "class_type": "SamplerCustomAdvanced",
-    "_meta": {
-      "title": "自定义采样器（高级）"
-    }
-  },
-  "101": {
-    "inputs": {
-      "scheduler": "simple",
-      "steps": 4,
-      "denoise": 1,
-      "model": [
-        "90",
-        0
-      ]
-    },
-    "class_type": "BasicScheduler",
-    "_meta": {
-      "title": "基本调度器"
-    }
-  },
-  "102": {
-    "inputs": {
-      "model": [
-        "130",
-        0
-      ],
-      "conditioning": [
-        "110",
-        0
-      ]
-    },
-    "class_type": "BasicGuider",
-    "_meta": {
-      "title": "基本引导器"
-    }
-  },
-  "103": {
-    "inputs": {
-      "noise_seed": [
-        "105",
-        0
-      ]
-    },
-    "class_type": "RandomNoise",
-    "_meta": {
-      "title": "随机噪波"
-    }
-  },
-  "104": {
-    "inputs": {
-      "sampler_name": "res_multistep"
-    },
-    "class_type": "KSamplerSelect",
-    "_meta": {
-      "title": "K采样器选择"
-    }
-  },
-  "105": {
-    "inputs": {
-      "seed": 484799350375457
-    },
-    "class_type": "Seed (rgthree)",
-    "_meta": {
-      "title": "Seed (rgthree)"
-    }
-  },
-  "108": {
-    "inputs": {
-      "fps": 24,
-      "bit_depth": 8,
-      "images": [
-        "111",
-        0
-      ],
-      "audio": [
-        "112",
-        0
-      ]
-    },
-    "class_type": "CreateVideo",
-    "_meta": {
-      "title": "创建视频"
-    }
-  },
-  "109": {
-    "inputs": {
-      "value": 5
-    },
-    "class_type": "PrimitiveFloat",
-    "_meta": {
-      "title": "Float (duration)"
-    }
-  },
-  "110": {
-    "inputs": {
-      "prompt": "",
-      "width": [
-        "116",
-        0
-      ],
-      "height": [
-        "116",
-        1
-      ],
-      "length": [
-        "113",
-        1
-      ],
-      "ref_image_size": "match",
-      "clip": [
-        "92",
-        0
-      ],
-      "vae": [
-        "94",
-        0
-      ],
-      "audio_vae": [
-        "93",
-        0
-      ],
-      "ref_images.ref_image_0": [
-        "96",
-        0
-      ],
-      "ref_images.ref_image_1": [
-        "97",
-        0
-      ],
-      "ref_audios.ref_audio_0": [
-        "95",
-        0
-      ],
-      "ref_audios.ref_audio_1": [
-        "98",
-        0
-      ]
-    },
-    "class_type": "MiniMaxH3ReferenceToVideo",
-    "_meta": {
-      "title": "MiniMax H3 Reference to Video"
-    }
-  },
-  "111": {
-    "inputs": {
-      "samples": [
-        "100",
-        0
-      ],
-      "vae": [
-        "94",
-        0
-      ]
-    },
-    "class_type": "VAEDecode",
-    "_meta": {
-      "title": "VAE解码"
-    }
-  },
-  "112": {
-    "inputs": {
-      "samples": [
-        "100",
-        0
-      ],
-      "vae": [
-        "93",
-        0
-      ]
-    },
-    "class_type": "VAEDecodeAudio",
-    "_meta": {
-      "title": "VAE解码"
-    }
-  },
-  "113": {
-    "inputs": {
-      "expression": "max(5, round(a * 24)) + (5 - (max(5, round(a * 24)) % 17)) % 17",
-      "values.a": [
-        "109",
-        0
-      ]
-    },
-    "class_type": "ComfyMathExpression",
-    "_meta": {
-      "title": "数学表达式"
-    }
-  },
-  "114": {
-    "inputs": {
-      "filename_prefix": "video/MiniMax_H3",
-      "format": "auto",
-      "codec": "auto",
-      "video": [
-        "108",
-        0
-      ]
-    },
-    "class_type": "SaveVideo",
-    "_meta": {
-      "title": "保存视频"
-    }
-  },
-  "116": {
-    "inputs": {
-      "aspect_ratio": "9:16 (Portrait Widescreen)",
-      "megapixels": 0.4,
-      "multiple": 32
-    },
-    "class_type": "ResolutionSelector",
-    "_meta": {
-      "title": "分辨率选择器"
-    }
-  },
-  "117": {
-    "inputs": {
-      "lora_name": "minimax_h3\\h3-真实感 LoRA .safetensors",
-      "strength_model": 0.75,
-      "model": [
-        "90",
-        0
-      ]
-    },
-    "class_type": "LoraLoaderModelOnly",
-    "_meta": {
-      "title": "LoRA加载器（仅模型）"
-    }
-  },
-  "118": {
-    "inputs": {
-      "lora_name": "minimax_h3\\minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy.safetensors",
-      "strength_model": 0.75,
-      "model": [
-        "117",
-        0
-      ]
-    },
-    "class_type": "LoraLoaderModelOnly",
-    "_meta": {
-      "title": "LoRA加载器（仅模型）"
-    }
-  },
-  "121": {
-    "inputs": {
-      "processing_control_value": 0.085,
-      "processing_percent_1": 0.1,
-      "processing_percent_2": 0.9,
-      "mcs": 2,
-      "device": "auto",
-      "mode": "4-step LoRA",
-      "model": [
-        "123",
-        0
-      ]
-    },
-    "class_type": "TESpeedMiniMaxH3",
-    "_meta": {
-      "title": "TE-Speed-MiniMaxH3"
-    }
-  },
-  "122": {
-    "inputs": {
-      "head_chunks": 4,
-      "model": [
-        "121",
-        0
-      ]
-    },
-    "class_type": "MiniMaxLowVRAMAttention",
-    "_meta": {
-      "title": "MiniMax H3 Low VRAM Attention"
-    }
-  },
-  "123": {
-    "inputs": {
-      "sage_attention": "auto",
-      "allow_compile": false,
-      "model": [
-        "118",
-        0
-      ]
-    },
-    "class_type": "PathchSageAttentionKJ",
-    "_meta": {
-      "title": "SAGE注意力补丁KJ"
-    }
-  },
-  "95": {
-    "class_type": "LoadAudio",
-    "inputs": {
-      "audio": "cs_voice_0.mp3",
-      "_meta": {
-        "title": "音色样本 A"
-      }
-    }
-  },
-  "98": {
-    "class_type": "LoadAudio",
-    "inputs": {
-      "audio": "cs_voice_1.mp3",
-      "_meta": {
-        "title": "音色样本 B"
-      }
-    }
-  },
-  "130": {
-    "class_type": "H3SLAAttention",
-    "inputs": {
-      "model": [
-        "122",
-        0
-      ],
-      "sparsity_ratio": 0.9,
-      "block_size": "64",
-      "min_seq_len": 8192,
-      "dense_last_steps": 0,
-      "protect_audio": true,
-      "enabled": true
-    }
+  "class_type": "UNETLoader",
+  "_meta": {
+   "title": "UNet加载器"
   }
+ },
+ "147": {
+  "inputs": {
+   "clip_name": "qwen3vl_32b_h3_ultra_uncensored_heretic_int8_convrot.safetensors",
+   "type": "minimax",
+   "device": "default"
+  },
+  "class_type": "CLIPLoader",
+  "_meta": {
+   "title": "加载CLIP"
+  }
+ },
+ "149": {
+  "inputs": {
+   "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "加载VAE"
+  }
+ },
+ "150": {
+  "inputs": {
+   "vae_name": "minimax_h3_video_vae_int8_convrot.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "加载VAE"
+  }
+ },
+ "155": {
+  "inputs": {
+   "noise": [
+    "158",
+    0
+   ],
+   "guider": [
+    "157",
+    0
+   ],
+   "sampler": [
+    "159",
+    0
+   ],
+   "sigmas": [
+    "156",
+    0
+   ],
+   "latent_image": [
+    "161",
+    1
+   ]
+  },
+  "class_type": "SamplerCustomAdvanced",
+  "_meta": {
+   "title": "自定义采样器（高级）"
+  }
+ },
+ "156": {
+  "inputs": {
+   "scheduler": "simple",
+   "steps": 4,
+   "denoise": 1,
+   "model": [
+    "232",
+    0
+   ]
+  },
+  "class_type": "BasicScheduler",
+  "_meta": {
+   "title": "基本调度器"
+  }
+ },
+ "157": {
+  "inputs": {
+   "model": [
+    "232",
+    0
+   ],
+   "conditioning": [
+    "161",
+    0
+   ]
+  },
+  "class_type": "BasicGuider",
+  "_meta": {
+   "title": "基本引导器"
+  }
+ },
+ "158": {
+  "inputs": {
+   "noise_seed": [
+    "160",
+    0
+   ]
+  },
+  "class_type": "RandomNoise",
+  "_meta": {
+   "title": "随机噪波"
+  }
+ },
+ "159": {
+  "inputs": {
+   "sampler_name": "res_multistep"
+  },
+  "class_type": "KSamplerSelect",
+  "_meta": {
+   "title": "K采样器选择"
+  }
+ },
+ "160": {
+  "inputs": {
+   "seed": 382372212457689
+  },
+  "class_type": "Seed (rgthree)",
+  "_meta": {
+   "title": "Seed (rgthree)"
+  }
+ },
+ "161": {
+  "inputs": {
+   "prompt": [
+    "221",
+    0
+   ],
+   "width": [
+    "162",
+    0
+   ],
+   "height": [
+    "162",
+    1
+   ],
+   "length": [
+    "169",
+    1
+   ],
+   "ref_image_size": "match",
+   "clip": [
+    "147",
+    0
+   ],
+   "vae": [
+    "150",
+    0
+   ],
+   "audio_vae": [
+    "149",
+    0
+   ],
+   "ref_images.ref_image_1": [
+    "187",
+    0
+   ],
+   "ref_images.ref_image_2": [
+    "191",
+    0
+   ],
+   "ref_audios.ref_audio_0": [
+    "250",
+    0
+   ],
+   "ref_audios.ref_audio_1": [
+    "251",
+    0
+   ]
+  },
+  "class_type": "MiniMaxH3ReferenceToVideo",
+  "_meta": {
+   "title": "MiniMax H3 参考转视频"
+  }
+ },
+ "162": {
+  "inputs": {
+   "aspect_ratio": "16:9 (Widescreen)",
+   "megapixels": 0.4,
+   "multiple": 32
+  },
+  "class_type": "ResolutionSelector",
+  "_meta": {
+   "title": "分辨率选择器"
+  }
+ },
+ "164": {
+  "inputs": {
+   "samples": [
+    "155",
+    0
+   ],
+   "vae": [
+    "150",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE解码"
+  }
+ },
+ "165": {
+  "inputs": {
+   "samples": [
+    "155",
+    0
+   ],
+   "vae": [
+    "149",
+    0
+   ]
+  },
+  "class_type": "VAEDecodeAudio",
+  "_meta": {
+   "title": "VAE解码"
+  }
+ },
+ "166": {
+  "inputs": {
+   "fps": 24,
+   "bit_depth": 8,
+   "color_space": "sRGB",
+   "codec": "none",
+   "images": [
+    "164",
+    0
+   ],
+   "audio": [
+    "165",
+    0
+   ]
+  },
+  "class_type": "CreateVideo",
+  "_meta": {
+   "title": "创建视频"
+  }
+ },
+ "167": {
+  "inputs": {
+   "value": 5
+  },
+  "class_type": "PrimitiveFloat",
+  "_meta": {
+   "title": "Float (duration)"
+  }
+ },
+ "168": {
+  "inputs": {
+   "filename_prefix": "cs/{project}/{asset}",
+   "format": "auto",
+   "format.codec": "auto",
+   "codec": "auto",
+   "video-preview": "",
+   "video": [
+    "166",
+    0
+   ]
+  },
+  "class_type": "SaveVideo",
+  "_meta": {
+   "title": "保存视频"
+  }
+ },
+ "169": {
+  "inputs": {
+   "expression": "max(5, round(a * 24)) + (5 - (max(5, round(a * 24)) % 17)) % 17",
+   "values.a": [
+    "167",
+    0
+   ]
+  },
+  "class_type": "ComfyMathExpression",
+  "_meta": {
+   "title": "数学表达式"
+  }
+ },
+ "172": {
+  "inputs": {
+   "shift_video": 10,
+   "shift_audio": 3,
+   "model": [
+    "229",
+    0
+   ]
+  },
+  "class_type": "MiniMaxH3SigmaShift",
+  "_meta": {
+   "title": "MiniMax H3 Sigma Shift"
+  }
+ },
+ "186": {
+  "inputs": {
+   "image": "main (2).png"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "加载图像"
+  }
+ },
+ "187": {
+  "inputs": {
+   "aspect_ratio": "original",
+   "proportional_width": 1,
+   "proportional_height": 1,
+   "fit": "crop",
+   "method": "lanczos",
+   "round_to_multiple": "32",
+   "scale_to_side": "total_pixel(kilo pixel)",
+   "scale_to_length": 1536,
+   "background_color": "#000000",
+   "image": [
+    "186",
+    0
+   ]
+  },
+  "class_type": "LayerUtility: ImageScaleByAspectRatio V2",
+  "_meta": {
+   "title": "图层工具：按宽高比缩放 V2"
+  }
+ },
+ "188": {
+  "inputs": {
+   "images": [
+    "187",
+    0
+   ]
+  },
+  "class_type": "PreviewImage",
+  "_meta": {
+   "title": "预览图像"
+  }
+ },
+ "190": {
+  "inputs": {
+   "image": "main (3).png"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "加载图像"
+  }
+ },
+ "191": {
+  "inputs": {
+   "aspect_ratio": "original",
+   "proportional_width": 1,
+   "proportional_height": 1,
+   "fit": "crop",
+   "method": "lanczos",
+   "round_to_multiple": "32",
+   "scale_to_side": "total_pixel(kilo pixel)",
+   "scale_to_length": 1536,
+   "background_color": "#000000",
+   "image": [
+    "190",
+    0
+   ]
+  },
+  "class_type": "LayerUtility: ImageScaleByAspectRatio V2",
+  "_meta": {
+   "title": "图层工具：按宽高比缩放 V2"
+  }
+ },
+ "192": {
+  "inputs": {
+   "images": [
+    "191",
+    0
+   ]
+  },
+  "class_type": "PreviewImage",
+  "_meta": {
+   "title": "预览图像"
+  }
+ },
+ "221": {
+  "inputs": {
+   "value": "subject_definitions:\n金发女性 是<picture 1>的人物，其外观由画面提供。\n黑发女性 是<picture 2>的人物，其外观由画面提供。\n\nsummary:\n镜头从双人全景缓推至两人面部与手部特写，突出69式姿势中彼此触碰的暧昧节奏与陶醉神情。\n\nretention_analysis:\n金发女性：fully_preserved - 保持浅金色齐肩短发、白色蕾丝文胸、浅灰蓝丁字裤（每个角色一条）\n黑发女性：fully_preserved - 保持黑色长卷发、黑色网格长手套至肘部、深色蕾丝内衣（每个角色一条）\n\ndetailed_description:\n纯白无缝背景棚拍空间，柔和漫射光。两人面对面呈69式首尾交叠姿势——金发女性仰卧于下方，双腿微屈抬起，一手沿小腹缓缓下滑至私密处轻柔揉弄，另一手轻抚黑发女性腰侧；黑发女性俯身伏于金发女性腿间，头颈贴近对方下身缓慢蹭动、呼吸加重，同时一手伸向自己胸下与腿根之间来回摩擦。两人眼神交汇，表情慵懒陶醉，身体随节奏轻微起伏晃动。镜头从中景缓推至近景特写，浅景深虚化背景，焦点锁定面部神情与手部动作细节。\n\noverall_soundscape:\n金发女性：「嗯……」\n黑发女性：「哈啊……」\n（轻柔呼吸声与皮肤摩擦声）\n\nnon_diegetic_music: N/A\n无字幕，无背景音乐"
+  },
+  "class_type": "PrimitiveStringMultiline",
+  "_meta": {
+   "title": "字符串（多行）"
+  }
+ },
+ "223": {
+  "inputs": {
+   "槽位数": 8,
+   "启用_1": true,
+   "LoRA_1": "minimax_h3\\Minimax H3真实电影质感V0.1.safetensors",
+   "强度_1": 1,
+   "启用_2": true,
+   "LoRA_2": "minimax_h3\\Motion_Repair.safetensors",
+   "强度_2": 1,
+   "启用_3": true,
+   "LoRA_3": "minimax_h3\\H3_Combat_V2.safetensors",
+   "强度_3": 1,
+   "启用_4": false,
+   "LoRA_4": "minimax_h3\\minimax_h3_fl2v_lightx2v_turbo_4step_v0.1_comfy.safetensors",
+   "强度_4": 1,
+   "启用_5": true,
+   "LoRA_5": "minimax_h3\\minimax_h3_taomate_3step_lora_avg_rank_19_bf16.safetensors",
+   "强度_5": 1,
+   "启用_6": false,
+   "LoRA_6": "minimax_h3\\nsfw effect\\hmpussy_v6_epoch30.safetensors",
+   "强度_6": 1,
+   "启用_7": false,
+   "LoRA_7": "minimax_h3\\nsfw effect\\HMCumshot_V2.safetensors",
+   "强度_7": 1,
+   "启用_8": false,
+   "LoRA_8": "minimax_h3\\nsfw effect\\Free Pussy.safetensors",
+   "强度_8": 1,
+   "启用_9": true,
+   "LoRA_9": "none",
+   "强度_9": 1,
+   "启用_10": true,
+   "LoRA_10": "none",
+   "强度_10": 1,
+   "启用_11": true,
+   "LoRA_11": "none",
+   "强度_11": 1,
+   "启用_12": true,
+   "LoRA_12": "none",
+   "强度_12": 1,
+   "启用_13": true,
+   "LoRA_13": "none",
+   "强度_13": 1,
+   "启用_14": true,
+   "LoRA_14": "none",
+   "强度_14": 1,
+   "启用_15": true,
+   "LoRA_15": "none",
+   "强度_15": 1,
+   "启用_16": true,
+   "LoRA_16": "none",
+   "强度_16": 1,
+   "model_fl": [
+    "172",
+    0
+   ]
+  },
+  "class_type": "LazyH3LoraStack",
+  "_meta": {
+   "title": "Lazy H3 多LoRA"
+  }
+ },
+ "229": {
+  "inputs": {
+   "attention": "comfy kitchen attention",
+   "model": [
+    "146",
+    0
+   ]
+  },
+  "class_type": "ModelAttentionBackend",
+  "_meta": {
+   "title": "ModelAttentionBackend"
+  }
+ },
+ "231": {
+  "inputs": {
+   "chunks": 4,
+   "seq_threshold": 4096,
+   "model": [
+    "223",
+    0
+   ]
+  },
+  "class_type": "MiniMaxChunkFeedForward",
+  "_meta": {
+   "title": "LOW VRAM: chunk the feed-forward over the sequence (exact; KJNodes)"
+  }
+ },
+ "232": {
+  "inputs": {
+   "sparsity_ratio": 0.9,
+   "block_size": 64,
+   "min_seq_len": 8192,
+   "dense_last_steps": 0,
+   "protect_audio": true,
+   "enabled": true,
+   "model": [
+    "231",
+    0
+   ]
+  },
+  "class_type": "H3SLAAttention",
+  "_meta": {
+   "title": "H3 SLA Attention 0.9/64 (their graph)"
+  }
+ },
+ "250": {
+  "class_type": "LoadAudio",
+  "inputs": {
+   "audio": "cs_voice_0.mp3",
+   "_meta": {
+    "title": "音色样本 A"
+   }
+  }
+ },
+ "251": {
+  "class_type": "LoadAudio",
+  "inputs": {
+   "audio": "cs_voice_1.mp3",
+   "_meta": {
+    "title": "音色样本 B"
+   }
+  }
+ }
 }

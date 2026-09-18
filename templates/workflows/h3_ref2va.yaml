@@ -1,78 +1,78 @@
 id: h3_ref2va
 type: ref2va
-name: MiniMax H3 多参考生视频（P4 主力）
+name: MiniMax H3 多参考生视频（2026-09-18 新链）
 file: h3_ref2va.api.json
 prompt_format: '{kind_label}：{name}。{detail}'
 inject:
   prompt:
-    node: '110'
-    field: prompt
+    # 经 PrimitiveStringMultiline 中转（用户工作流原结构）——161.prompt 是链接
+    node: '221'
+    field: value
   params:
     seed:
-      node: '105'
+      node: '160'
       field: seed
     duration:
-      node: '109'
+      node: '167'
       field: value
     aspect:
-      node: '116'
+      node: '162'
       field: aspect_ratio
     megapixels:
-      node: '116'
+      node: '162'
       field: megapixels
     multiple:
-      node: '116'
+      node: '162'
       field: multiple
     steps:
-      node: '101'
+      node: '156'
       field: steps
-    lora_strength:
-      node: '117'
-      field: strength_model
-    # H3 SLA 注意力（2026-09-10 用户自定义节点）：settings 三键注入，
-    # 模板缺该节点声明时 filler 自动忽略（旧模板可共存）
+    # H3 SLA 注意力三键（2026-09-18 新链，block_size INT）
     h3_sla_enabled:
-      node: '130'
+      node: '232'
       field: enabled
     h3_sla_sparsity:
-      node: '130'
+      node: '232'
       field: sparsity_ratio
     h3_sla_block_size:
-      node: '130'
+      node: '232'
       field: block_size
-    sage_attention:   # SLA 联动（2026-09-10）：SLA 开→disabled 防注意力双实现叠加（T8 禁令），SLA 关→auto 回稠密基线
-      node: '123'
-      field: sage_attention
-    lora_turbo_name:   # SLA 联动（2026-09-10）：开关各配蒸馏匹配版——开=SLA 版/
-      # 关=普通 turbo（历史基线）；设置页手动选过 lora_turbo 槽则不注入（手动优先）
-      node: '118'
-      field: lora_name
   images:
-  - node: '96'
+  # 参考图两路（引擎喂 ref0=衔接首帧/前镜尾帧、ref1=角色主图；用户原工作流
+  # 第三路已裁——引擎只供两路，缺省槽名会 400）
+  - node: '186'
     field: image
     slot: ref0
-  - node: '97'
+  - node: '190'
     field: image
     slot: ref1
-  # Phase 2 音色（2026-08-30）：说话人样本 LoadAudio 上传位（后缀分流 → /upload/audio）
-  - node: '95'
+  # Phase 2 音色（2026-08-30）：说话人样本 LoadAudio 上传位；未注入时
+  # rendershot 自动补 0.5s 静音占位（2026-09-06 判例）
+  - node: '250'
     field: audio
     slot: audio0
-  - node: '98'
+  - node: '251'
     field: audio
     slot: audio1
 outputs:
-- node: '114'
+- node: '168'
   filename_prefix: cs/{project}/{asset}
 requires:
 - ComfyUI-GGUF
 - comfyui-kjnodes
+- ComfyUI-LayerStyle
 
-# 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
+# 模型槽位（同 h3_fl2v 新链：LazyH3LoraStack lora1..lora8 开关栈）
 models:
-- {label: unet, node: '90', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
-- {label: clip, node: '92', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
-- {label: vae_audio, node: '93', field: vae_name, cls: VAELoader, label_cn: 音频 VAE}
-- {label: vae_video, node: '94', field: vae_name, cls: VAELoader, label_cn: 视频 VAE}
-- {label: lora_realism, node: '117', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 真实感 LoRA}
-- {label: lora_turbo, node: '118', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 加速 LoRA}
+- {label: unet, node: '146', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
+- {label: clip, node: '147', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae_audio, node: '149', field: vae_name, cls: VAELoader, label_cn: 音频 VAE}
+- {label: vae_video, node: '150', field: vae_name, cls: VAELoader, label_cn: 视频 VAE}
+- {label: lora1, node: '223', field: LoRA_1, cls: LazyH3LoraStack, switch: 启用_1, label_cn: LoRA 槽 1}
+- {label: lora2, node: '223', field: LoRA_2, cls: LazyH3LoraStack, switch: 启用_2, label_cn: LoRA 槽 2}
+- {label: lora3, node: '223', field: LoRA_3, cls: LazyH3LoraStack, switch: 启用_3, label_cn: LoRA 槽 3}
+- {label: lora4, node: '223', field: LoRA_4, cls: LazyH3LoraStack, switch: 启用_4, label_cn: LoRA 槽 4}
+- {label: lora5, node: '223', field: LoRA_5, cls: LazyH3LoraStack, switch: 启用_5, label_cn: LoRA 槽 5}
+- {label: lora6, node: '223', field: LoRA_6, cls: LazyH3LoraStack, switch: 启用_6, label_cn: LoRA 槽 6}
+- {label: lora7, node: '223', field: LoRA_7, cls: LazyH3LoraStack, switch: 启用_7, label_cn: LoRA 槽 7}
+- {label: lora8, node: '223', field: LoRA_8, cls: LazyH3LoraStack, switch: 启用_8, label_cn: LoRA 槽 8}

@@ -1,6 +1,6 @@
 id: h3_t2v
 type: t2v
-name: MiniMax H3 文生视频（P4 可选）
+name: MiniMax H3 文生视频（2026-09-18 新链）
 file: h3_t2v.api.json
 prompt_format: '{kind_label}：{name}。{detail}'
 inject:
@@ -26,35 +26,33 @@ inject:
     steps:
       node: '15'
       field: steps
-    # H3 SLA 注意力（2026-09-10 用户自定义节点）：settings 三键注入，
-    # 模板缺声明时 filler 自动忽略（旧模板可共存）
+    # H3 SLA 注意力三键（2026-09-18 新链，block_size INT）
     h3_sla_enabled:
-      node: '38'
+      node: '50'
       field: enabled
     h3_sla_sparsity:
-      node: '38'
+      node: '50'
       field: sparsity_ratio
     h3_sla_block_size:
-      node: '38'
+      node: '50'
       field: block_size
-    sage_attention:   # SLA 联动（2026-09-10）：SLA 开→disabled 防注意力双实现叠加（T8 禁令），SLA 关→auto 回稠密基线
-      node: '31'
-      field: sage_attention
-    lora_turbo_name:   # SLA 联动（2026-09-10）：开关各配蒸馏匹配版——开=SLA 版/
-      # 关=普通 turbo（历史基线）；设置页手动选过 lora_turbo 槽则不注入（手动优先）
-      node: '26'
-      field: lora_name
 outputs:
 - node: '20'
   filename_prefix: cs/{project}/{asset}
 requires:
 - ComfyUI-GGUF
 
-# 模型槽位（settings model_overrides 按模板 id → {label: 文件名} 覆盖）
+# 模型槽位（同 h3_fl2v 新链：LazyH3LoraStack lora1..lora8 开关栈）
 models:
 - {label: unet, node: '4', field: unet_name, cls: UNETLoader, label_cn: 主模型 UNet}
 - {label: clip, node: '3', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
-- {label: vae_audio, node: '8', field: vae_name, cls: VAELoader, label_cn: 音频 VAE}
 - {label: vae_video, node: '1', field: vae_name, cls: VAELoader, label_cn: 视频 VAE}
-- {label: lora_realism, node: '25', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 真实感 LoRA}
-- {label: lora_turbo, node: '26', field: lora_name, cls: LoraLoaderModelOnly, label_cn: 加速 LoRA}
+- {label: vae_audio, node: '8', field: vae_name, cls: VAELoader, label_cn: 音频 VAE}
+- {label: lora1, node: '47', field: LoRA_1, cls: LazyH3LoraStack, switch: 启用_1, label_cn: LoRA 槽 1}
+- {label: lora2, node: '47', field: LoRA_2, cls: LazyH3LoraStack, switch: 启用_2, label_cn: LoRA 槽 2}
+- {label: lora3, node: '47', field: LoRA_3, cls: LazyH3LoraStack, switch: 启用_3, label_cn: LoRA 槽 3}
+- {label: lora4, node: '47', field: LoRA_4, cls: LazyH3LoraStack, switch: 启用_4, label_cn: LoRA 槽 4}
+- {label: lora5, node: '47', field: LoRA_5, cls: LazyH3LoraStack, switch: 启用_5, label_cn: LoRA 槽 5}
+- {label: lora6, node: '47', field: LoRA_6, cls: LazyH3LoraStack, switch: 启用_6, label_cn: LoRA 槽 6}
+- {label: lora7, node: '47', field: LoRA_7, cls: LazyH3LoraStack, switch: 启用_7, label_cn: LoRA 槽 7}
+- {label: lora8, node: '47', field: LoRA_8, cls: LazyH3LoraStack, switch: 启用_8, label_cn: LoRA 槽 8}

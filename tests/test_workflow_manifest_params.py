@@ -34,9 +34,11 @@ def test_video_templates_have_render_params():
 
 
 def test_ref2va_lora_strength_point():
+    """2026-09-18 新链：独立 realism LoRA 节点退役，lora_strength 注入随之退役
+    （项目级 lora_realism=0.75 若注入会覆盖用户验证的栈槽强度 1.0——强度改由
+    LazyH3LoraStack 槽位在设置页控制）。"""
     reg = scan_templates(Path("templates/workflows"))
-    assert "lora_strength" in reg["h3_ref2va"].inject_params
-    assert reg["h3_ref2va"].inject_params["lora_strength"].node == "117"
+    assert "lora_strength" not in reg["h3_ref2va"].inject_params
 
 
 def test_zimage_t2i_steps_default_10():

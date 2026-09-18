@@ -15,11 +15,12 @@ def test_manifest_model_slots():
     reg = registry.scan_templates(registry.TEMPLATE_ROOT)
     t = reg["h3_ref2va"]
     slots = {s.label: s for s in t.models}
+    # 2026-09-18 新链：独立 LoRA 节点换 LazyH3LoraStack lora1..lora8 开关栈
     assert set(slots) == {"unet", "clip", "vae_audio", "vae_video",
-                          "lora_realism", "lora_turbo"}
+                          *(f"lora{i}" for i in range(1, 9))}
     assert slots["unet"].cls == "UNETLoader"
-    assert slots["clip"].node == "92"
-    assert slots["lora_realism"].label_cn == "真实感 LoRA"
+    assert slots["clip"].node == "147"
+    assert slots["lora1"].switch_field == "启用_1"
     assert reg["t2i_ref"].models[0].label == "ckpt"
     # 七模板全覆盖：无槽位模板=枚举空、用户误读为失败（2026-08-25 真机）
     for tid in ("h3_ref2va", "h3_i2v", "h3_t2v", "h3_fl2v", "t2i_ref",
@@ -34,11 +35,11 @@ def test_filler_injects_overrides_only():
         t, prompt="p", params={"seed": 1}, images=None,
         output_ctx={"project": "x", "asset": "y"},
         model_overrides={"unet": "h3_q4.safetensors"})
-    assert wf["90"]["inputs"]["unet_name"] == "h3_q4.safetensors"
+    assert wf["146"]["inputs"]["unet_name"] == "h3_q4.safetensors"
     # 未覆盖槽位保持模板原值
-    assert wf["92"]["inputs"]["clip_name"].endswith(".safetensors")
-    before = reg["h3_ref2va"].api_json()["92"]["inputs"]["clip_name"]
-    assert wf["92"]["inputs"]["clip_name"] == before
+    assert wf["147"]["inputs"]["clip_name"].endswith(".safetensors")
+    before = reg["h3_ref2va"].api_json()["147"]["inputs"]["clip_name"]
+    assert wf["147"]["inputs"]["clip_name"] == before
 
 
 def test_choices_endpoint_and_settings_roundtrip(tmp_path):
