@@ -1,0 +1,72 @@
+id: h3_spectrum_t2v
+type: t2v
+name: H3 Spectrum 加速·文生视频（BulletTime 组合）
+file: h3_spectrum_t2v.api.json
+prompt_format: '{kind_label}：{name}。{detail}'
+inject:
+  prompt:
+    node: '105:104'
+    field: prompt
+  params:
+    seed:
+      node: '105:130'
+      field: noise_seed
+    duration:
+      node: '105:111'
+      field: value
+    aspect:
+      node: '115'
+      field: aspect_ratio
+    megapixels:
+      node: '115'
+      field: megapixels
+    multiple:
+      node: '115'
+      field: multiple
+    steps:
+      node: '105:9'
+      field: steps
+
+# RTX Video Super Resolution 旁路（settings comfy.rtx_vsr_enabled）：
+# 关=直出原始分辨率（默认，节点不存在零开销）；开=注入 RTX 2× ULTRA 超分
+switch_links:
+  rtx_vsr:
+    node: "105:91"
+    field: images
+    "on": ["141", 0]
+    "off": ["105:10", 0]
+    add_nodes:
+      "141":
+        class_type: RTXVideoSuperResolution
+        inputs:
+          images: ["105:10", 0]
+          resize_type: "scale by multiplier"
+          "resize_type.scale": 2
+          quality: "ULTRA"
+outputs:
+- node: '140'
+  filename_prefix: cs/{project}/{asset}
+requires:
+- ComfyUI-Spectrum-MiniMax-H3
+- comfyui-kjnodes
+- ComfyUI_Lazybuxuexi
+- nvidia-rtx-vsr-pro
+
+# 模型槽位：unet=DiffusionModelLoaderKJ（KJ 加载器带 fp16 累积，非普通 UNETLoader）。
+# LoRA 栈=LazyH3LoraStack 8 槽开关（内置用户验证组合：L1 taomate 3步 /
+# L2 BulletTime 0.5 / L3 Combat / L4 真实电影质感 / L5 Motion_Repair，L6 关）。
+# 想换 SpectrumSpeed 组合：unet 切 ref2va_pruned + clip 切 nvfp4_awq + vae_video 切 fp16
+
+models:
+- {label: unet, node: '105:128', field: model_name, cls: DiffusionModelLoaderKJ, label_cn: 主模型（KJ 加载器）}
+- {label: clip, node: '105:13', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器 CLIP}
+- {label: vae_video, node: '105:11', field: vae_name, cls: VAELoader, label_cn: 视频 VAE}
+- {label: vae_audio, node: '105:24', field: vae_name, cls: VAELoader, label_cn: 音频 VAE}
+- {label: lora1, node: '105:156', field: LoRA_1, cls: LazyH3LoraStack, switch: 启用_1, label_cn: LoRA 槽 1}
+- {label: lora2, node: '105:156', field: LoRA_2, cls: LazyH3LoraStack, switch: 启用_2, label_cn: LoRA 槽 2}
+- {label: lora3, node: '105:156', field: LoRA_3, cls: LazyH3LoraStack, switch: 启用_3, label_cn: LoRA 槽 3}
+- {label: lora4, node: '105:156', field: LoRA_4, cls: LazyH3LoraStack, switch: 启用_4, label_cn: LoRA 槽 4}
+- {label: lora5, node: '105:156', field: LoRA_5, cls: LazyH3LoraStack, switch: 启用_5, label_cn: LoRA 槽 5}
+- {label: lora6, node: '105:156', field: LoRA_6, cls: LazyH3LoraStack, switch: 启用_6, label_cn: LoRA 槽 6}
+- {label: lora7, node: '105:156', field: LoRA_7, cls: LazyH3LoraStack, switch: 启用_7, label_cn: LoRA 槽 7}
+- {label: lora8, node: '105:156', field: LoRA_8, cls: LazyH3LoraStack, switch: 启用_8, label_cn: LoRA 槽 8}
