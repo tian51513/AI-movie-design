@@ -335,3 +335,16 @@
 - **按模型附加参数覆写 `extra_body_models`（2026-09-17 用户需求：附加参数连接通用会误伤同连接其它模型）**：provider 配置可选 `{模型名: 参数对象}`；`client_for_task` 生效优先级 **模型覆写 > 连接默认 extra_body > 无**（钉选与默认模型同权命中）；UI=连接卡结构化行编辑器（模型下拉+单参数 JSON 输入框，`ebm_rows` 行数组 ↔ 存库 dict 互转）；llm-test 按默认模型的覆写实测（所见即生效）。**不用再加同地址影子连接做参数隔离**
 - **判例（WSL 排障）**：跨 Bash 调用的后台进程 `kill %1` 杀不到（job 表每 shell 独立）→ 反复「重启」全是端口僵尸旧进程在答话（PUT 新字段静默丢=Pydantic 忽略未知键，旧代码 200 假象）；隔离实例清理必须 `pgrep -fa 'port 8191'` 逐个 kill；新旧行为探针=发「本应 422 的坏值」看响应
 - 用法（用户定调）：全部模型挂同一条连接（如 `local:nsfwvision-v3`/`local:qwen…`）即可；extra_body 是连接级参数——要给思考模型关思考又不打哑别的，加一条**同地址**连接单独配 extra_body 再钉选
+
+## 模块地图（H3 工作流新链 + Spectrum 加速道 2026-09-18）
+
+- **事故**：用户更新 ComfyUI 后旧视频链失效（MiniMaxLowVRAMAttention/TESpeedMiniMaxH3/PathchSageAttentionKJ 不再适用）；用户修复四个「▶MiniMaxH3加速版 (new)」并真机验证（15s 段 ~300s 可接受）
+- **四个 h3_* 分镜模板换新链**（id 不变）：`UNET→ModelAttentionBackend(pytorch)→MiniMaxH3SigmaShift→LazyH3LoraStack(8槽)→MiniMaxChunkFeedForward→H3SLAAttention→Guider`，底模 `fused_refdelta_r1024_turbo8_mystic07`+4 步；LoRA 槽=lora1..lora8（switch 启用_N，Krea2 开关语义）；**sage_attention/lora_turbo_name/lora_strength 注入退役**（无消费节点；lora_realism=0.75 若注入会覆盖验证组合的栈强度 1.0）；H3SLAAttention.block_size 新接口 **INT**（`h3_sla_params` 已转 int）
+- **h3_director 手动移植新链**（用户决策：不走 Spectrum 链——ChunkFF 长序列分块正是导演台批式长视频的显存安全需要；Spectrum 轨迹预测跳步镜间误差未验证）：UNET→MAB→lora×2→ChunkFF→SLA→Director；模型/timeline/lora_turbo_name 联动全保留
+- **Spectrum 加速道四件套 `h3_spectrum_{fl2v,i2v,t2v,ref2va}`**：BulletTime/SpectrumSpeed 统一骨架（用户已合并为同链：DiffusionModelLoaderKJ→LazyH3LoraStack→EasyCache→BlockSparseAttention(sla keep10%)→SpectrumApply→4步）；默认 BulletTime 组合（fused 底模），换 SpectrumSpeed 组合=设置页切 unet/clip/vae_video 三槽；unet 槽是 **DiffusionModelLoaderKJ.model_name**（非 UNETLoader）；requires：ComfyUI-Spectrum-MiniMax-H3/kjnodes/Lazybuxuexi/nvidia-rtx-vsr-pro
+- **`filler switch_links` 开关接线机制**：manifest `{param键: {node/field/"on"/"off"/add_nodes}}`——params 真→注入 add_nodes 节点+改接 on 链，假→off 直连；**API 格式无节点禁用（孤立节点照样执行），旁路分支必须默认不存在**；判例：yaml 里 on/off 键必须带引号（YAML 1.1 裸 on/off=布尔）
+- **RTX Video Super Resolution**：settings `comfy.rtx_vsr_enabled`（默认关，用户决策）→ rendershot params.rtx_vsr → Spectrum 模板 switch_links 旁路（开=2× ULTRA 超分后落盘）；前端设置页 SLA 区旁复选框
+- **rendershot type 路由重构**：fl2v/i2v 语义按 manifest type 判断（原硬编码 `tmpl_id in ("h3_fl2v","h3_i2v")`——自定义 fl2v 模板会走错分支）；降级统一 `pick_template_id`（**补 i2v 默认映射**，template_map.i2v 可自选降级模板）
+- **存量清理判例**：model_overrides 里 h3_* 钉旧模型（t2v=fl2va_pruned/i2v+director=eros_turbo_hybrid）已清空回落新默认——**模板换血后先查存量覆盖**（设置冻结同族问题）；studio 服务没跑时 WSL mirrored 端口答 503「Forwarding failure」（不是 FastAPI 的 503），别误判服务在跑
+- **TRT VAE 解码（未接入，预留）**：H3 T8 包 `MiniMaxH3TRTVAEDecoderEXPT8` 输出 VAE 对象替换 VAEDecode.vae 输入（节点本身不动）——用户先手动 `MiniMaxH3TRTVAECompileEXPT8` 编 flex 引擎（需 12G 空闲显存+24G 内存）验证画质/耗时，通过后走 switch_links 同机制接开关；VAE 解码 30-40s 的正路
+- **`_raw/audio_minimax_music_3.json`**：MiniMaxMusic3 文生音乐（Music3TextEncode.caption→seconds 驱动时长，KSampler 30 步 cfg 1.7，mp3 V0 落盘）——接入方案待定（BGM 生成特性，不在本轮）
