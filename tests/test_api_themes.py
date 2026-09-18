@@ -244,3 +244,19 @@ def test_update_theme(tmp_path):
         assert r2.json()["category"] == "武侠" and r2.json()["name"] == row["name"]
         assert c.patch(f"/api/themes/{row['id']}", json={}).status_code == 422
         assert c.patch("/api/themes/99999", json={"name": "x"}).status_code == 404
+
+
+def test_create_from_theme_300_chars_accepted(app_client, monkeypatch):
+    """2026-09-19 用户需求：允许 300 字以上文本作为项目正文——主题生成下限
+    500→300（361 字被判过短的事故）；过短兜底仍拦真垃圾输出。"""
+    db, c = app_client
+    story = "短篇试炼。\n\n" + "主角在雨夜推开酒馆的门。" * 19  # ~330 字
+    assert 300 <= len(story) < 500
+    import comic_studio.web.routes_projects as rp
+    monkeypatch.setattr(rp, "client_for_task",
+                        lambda db, task: FakeLLM(story))
+    with c:
+        themes = c.get("/api/themes").json()
+        r = c.post("/api/projects/from-theme", json={
+            "theme_id": themes[0]["id"], "aspect_ratio": "16:9"})
+        assert r.status_code == 201, r.text

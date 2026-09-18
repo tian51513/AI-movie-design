@@ -171,7 +171,7 @@ def _generate_story_text(db, theme, body) -> str:
     text, n_fixed = apply_sensitive_replacements(text)
     if n_fixed:
         emit_log(db, "llm", "info", f"生成正文敏感词转译 {n_fixed} 处", project_id=None)
-    if len(text) < 500:
+    if len(text) < 300:   # 2026-09-19 用户需求：短篇主题放行（500→300）
         raise HTTPException(422, f"生成的正文过短（{len(text)} 字），请重试或换主题")
     return text
 
