@@ -54,7 +54,7 @@ def test_shot_chain_structure(t):
                      if n["class_type"] == "BasicGuider"
                      and n["inputs"].get("model") == [sla_id, 0]), None)
     assert consumer, f"{t} BasicGuider 未接 SLA"
-    assert isinstance(sla["inputs"].get("block_size"), int), f"{t} block_size 应为 INT"
+    assert sla["inputs"].get("block_size") in ("64", "128"), f"{t} block_size 应为 COMBO 字符串"
 
 
 def test_director_chain_structure():
@@ -75,7 +75,7 @@ def test_director_chain_structure():
     assert wf[lora_ids[0]]["inputs"]["model"] == [mab_id, 0]
     dir_id, dirn = _node(wf, "MiniMaxH3Director")
     assert dir_id and dirn["inputs"]["model"] == [sla_id, 0]
-    assert isinstance(sla["inputs"].get("block_size"), int)
+    assert sla["inputs"].get("block_size") in ("64", "128")
 
 
 @pytest.mark.parametrize("t", ALL_TEMPLATES)
@@ -132,11 +132,11 @@ def test_fill_workflow_injects_sla():
                           output_ctx={"project": "t", "asset": "a"},
                           params={"seed": 1, "h3_sla_enabled": False,
                                   "h3_sla_sparsity": 0.85,
-                                  "h3_sla_block_size": 128})
+                                  "h3_sla_block_size": "128"})
     sla_id, _ = _node(wf, "H3SLAAttention")
     ins = wf[sla_id]["inputs"]
     assert ins["enabled"] is False and ins["sparsity_ratio"] == 0.85 \
-        and ins["block_size"] == 128
+        and ins["block_size"] == "128"  # COMBO 串（int 归一在 h3_sla_params）
 
 
 def test_fill_workflow_lora_switch_semantics():
@@ -180,12 +180,12 @@ def test_h3_sla_params_helper(tmp_path):
     from comic_studio.engine.rendershot import h3_sla_params
     db = Database(tmp_path / "s.db"); db.migrate()
     assert h3_sla_params(db) == {"h3_sla_enabled": True, "h3_sla_sparsity": 0.9,
-                                 "h3_sla_block_size": 64}
+                                 "h3_sla_block_size": "64"}
     set_setting(db, "comfy", {"h3_sla_enabled": False, "h3_sla_sparsity": 0.85,
                               "h3_sla_block_size": "128"})
     out = h3_sla_params(db)
     assert out["h3_sla_enabled"] is False and out["h3_sla_sparsity"] == 0.85
-    assert out["h3_sla_block_size"] == 128 and out is not None
+    assert out["h3_sla_block_size"] == "128"
     assert "sage_attention" not in out
 
 
@@ -211,7 +211,7 @@ def test_render_shot_carries_sla_settings(tmp_path, monkeypatch):
         classes = {n["class_type"] for n in wf.values()}
         sla = next(n for n in wf.values() if n["class_type"] == "H3SLAAttention")
         assert sla["inputs"]["enabled"] is False
-        assert isinstance(sla["inputs"]["block_size"], int)
+        assert sla["inputs"]["block_size"] == "64"
         assert {"ModelAttentionBackend", "MiniMaxChunkFeedForward",
                 "LazyH3LoraStack"} <= classes
         for dead in DEAD_NODES:

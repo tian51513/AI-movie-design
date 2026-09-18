@@ -167,7 +167,7 @@
     0
    ],
    "sparsity_ratio": 0.9,
-   "block_size": 64,
+   "block_size": "64",
    "min_seq_len": 8192,
    "dense_last_steps": 0,
    "protect_audio": true,

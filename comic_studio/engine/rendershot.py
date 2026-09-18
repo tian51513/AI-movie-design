@@ -352,14 +352,15 @@ def h3_sla_params(db) -> dict:
     """H3 SLA 注意力（2026-09-10 用户自定义节点 H3SLAAttention）：settings 三键 →
     filler params 键。模板 manifest 声明了注入点才真生效（五个 h3_* 模板已接，
     其余模板 filler 忽略多余键）。部分覆盖/旧库缺键走 .get 缺省。
-    2026-09-18 新链：block_size 转 INT（新接口，旧 COMBO 字符串会过不了校验）；
+    2026-09-18 真机 400 判例：block_size 是 COMBO 字符串枚举 ["64","128"]——
+    统一 str() 归一（settings 里存 int 也兼容）；
     sage_attention 联动退役——PathchSageAttentionKJ 节点已随 ComfyUI 更新
     淘汰，新链稠密后端由模板内 ModelAttentionBackend 决定。"""
     cfg = get_setting(db, "comfy") or {}
     enabled = bool(cfg.get("h3_sla_enabled", True))
     return {"h3_sla_enabled": enabled,
             "h3_sla_sparsity": cfg.get("h3_sla_sparsity", 0.9),
-            "h3_sla_block_size": int(cfg.get("h3_sla_block_size", "64"))}
+            "h3_sla_block_size": str(cfg.get("h3_sla_block_size", "64"))}
 
 
 # 加速 LoRA 双版（2026-09-10 联动）：普通 turbo 按稠密注意力蒸馏、SLA 版按
