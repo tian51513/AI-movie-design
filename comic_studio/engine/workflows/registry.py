@@ -58,6 +58,11 @@ class WorkflowTemplate:
     # natural_zh = 中文自然语言（qwen/lumina2 类编码器，如 zimage_t2i）；
     # tags_en = 英文标签流（SD 系 CLIP 读不懂中文，如 t2i_ref——中文提示词对它是噪声）
     prompt_style: str = "natural_zh"
+    # 开关接线（2026-09-18 RTX VSR 需求）：{param键: {node/field/on/off/add_nodes}}。
+    # params 键为真 → 注入 add_nodes 节点并改接 on 链；假/缺 → off 直连。
+    # ComfyUI API 格式无节点禁用（孤立节点照样执行），旁路分支必须
+    # "默认不存在、开时注入"——关着的 RTX 超分不能留在 prompt 里白烧 GPU
+    switch_links: dict = field(default_factory=dict)
 
     def api_json(self) -> dict:
         import json
@@ -95,7 +100,8 @@ def load_manifest(path: Path) -> WorkflowTemplate:
         dir=path.parent,
         inject_images=list(inj.get("images") or []),
         models=_parse_slots(data.get("models") or []),
-        prompt_style=data.get("prompt_style") or "natural_zh")
+        prompt_style=data.get("prompt_style") or "natural_zh",
+        switch_links=dict(data.get("switch_links") or {}))
 
 
 def scan_templates(root: Path) -> dict:

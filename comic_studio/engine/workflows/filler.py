@@ -37,6 +37,16 @@ def fill_workflow(template, *, prompt: str | None, params: dict,
             value = int(value)
         set_input(point.node, point.field, value)
 
+    # 开关接线（2026-09-18）：真 → 注入 add_nodes 节点并改接 on 链；假/缺 → off
+    # 直连。API 格式无节点禁用，旁路分支默认不存在（详见 registry.WorkflowTemplate）
+    for key, spec in template.switch_links.items():
+        if params.get(key):
+            for nid, node_def in (spec.get("add_nodes") or {}).items():
+                wf[str(nid)] = copy.deepcopy(node_def)
+            set_input(spec["node"], spec["field"], spec["on"])
+        else:
+            set_input(spec["node"], spec["field"], spec["off"])
+
     uploads: list[dict] = []
     for spec in template.inject_images:
         matched = next((im for im in (images or []) if im["slot"] == spec["slot"]), None)
