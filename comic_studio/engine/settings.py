@@ -75,7 +75,10 @@ DEFAULT_SETTINGS = {
               # LoRA 后最后一环；默认开（0.9=本机验证值/64=音频安全块，节点出厂默认）
               "h3_sla_enabled": True,
               "h3_sla_sparsity": 0.9,
-              "h3_sla_block_size": "64"},
+              "h3_sla_block_size": "64",
+              # RTX Video Super Resolution 输出超分（2026-09-18）：Spectrum 模板
+              # switch_links 旁路开关——默认关（用户决策：可选操作不默认启用）
+              "rtx_vsr_enabled": False},
     # 工作流模板级参数（2026-09-14 用户：模型切换区各模板各自设）：
     # {模板 id: {steps: N}}——steps 0/缺省=模板内置；作用于无专属步数控制的
     # 路径（genref 主图/参考图、漫画页 Krea2 快道），项目质量档控制的路径不覆盖

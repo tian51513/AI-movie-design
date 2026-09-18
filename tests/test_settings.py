@@ -56,6 +56,8 @@ def test_comfy_setting_default(tmp_path):
     # merge_xfade/merge_grade：C6 段间交叉淡化/统一调色（2026-09-01，默认关）
     # page_redraw_denoise：动态漫整页重绘重绘幅度（2026-09-09，决策 8）
     # h3_sla_*：H3 SLA 注意力三键（2026-09-10，默认开/0.9 本机验证/64 音频安全）
+    # rtx_vsr_enabled：RTX Video Super Resolution 输出超分（2026-09-18，
+    # Spectrum 模板 switch_links 旁路，默认关——N 卡专用且超分耗时不菲）
     assert get_setting(db, "comfy") == {"base_url": "http://127.0.0.1:8188",
                                         "min_free_vram_gb": 8,
                                         "merge_xfade": False,
@@ -70,7 +72,8 @@ def test_comfy_setting_default(tmp_path):
                                         "page_redraw_h3_duration": 2,
                                         "h3_sla_enabled": True,
                                         "h3_sla_sparsity": 0.9,
-                                        "h3_sla_block_size": "64"}
+                                        "h3_sla_block_size": "64",
+                                        "rtx_vsr_enabled": False}
 
 
 def test_page_redraw_defaults(tmp_path):
