@@ -66,7 +66,9 @@ def generate(request: Request, body: dict = Body(...)):
             "AND status IN ('pending','running') LIMIT 1").fetchone():
         raise HTTPException(409, "已有音乐生成任务在排队/执行，请等待完成后再试")
     payload = {"caption": caption,
-               "lyrics": str(body.get("lyrics") or "").strip(), "seed": seed}
+               "lyrics": str(body.get("lyrics") or "").strip(), "seed": seed,
+               "genre": str(body.get("genre") or "").strip(),
+               "voice": str(body.get("voice") or "").strip()}
     if duration is not None:
         payload["duration"] = duration
     jid = enqueue_job(db, "gen_music", project_id=None, resource="gpu_comfy",
@@ -142,8 +144,12 @@ def delete_music_route(request: Request, music_id: int):
 def suggest_caption(request: Request, body: dict | None = Body(default=None)):
     """LLM 曲风描述建议（Music3 caption 格式）。失败 502 包 detail。"""
     try:
+        _b = body or {}
         text = musiclib.suggest_caption(request.app.state.db,
-                                        str((body or {}).get("hint") or ""))
+                                        str(_b.get("hint") or ""),
+                                        genre=str(_b.get("genre") or ""),
+                                        voice=str(_b.get("voice") or ""),
+                                        lyrics=str(_b.get("lyrics") or ""))
     except Exception as e:
         raise HTTPException(502, f"曲风建议失败：{e}")
     return {"text": text}
@@ -153,8 +159,13 @@ def suggest_caption(request: Request, body: dict | None = Body(default=None)):
 def suggest_lyrics(request: Request, body: dict | None = Body(default=None)):
     """LLM 歌词建议（[主歌]/[副歌] 结构）。失败 502 包 detail。"""
     try:
+        _b = body or {}
         text = musiclib.suggest_lyrics(request.app.state.db,
-                                       str((body or {}).get("hint") or ""))
+                                       str(_b.get("hint") or ""),
+                                       base_lyrics=str(_b.get("lyrics") or ""),
+                                       duration=_b.get("duration"),
+                                       genre=str(_b.get("genre") or ""),
+                                       voice=str(_b.get("voice") or ""))
     except Exception as e:
         raise HTTPException(502, f"歌词建议失败：{e}")
     return {"text": text}

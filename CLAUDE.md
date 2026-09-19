@@ -366,4 +366,6 @@
 - **app.py 双注册**：routes_music include + musiclib 进 lifespan handler 注册清单——漏后者 worker 认领不了 gen_music（pending 永挂）
 - **gen_music 不在 REQUEUE_ON_RESTART_TYPES**：重启丢在跑任务，手动重发（同 describe_shots 约定）
 - **前端**：设置页「🎵 音乐库」tab（生成/试听/入库/删除全套）+ 项目参数面板配乐下拉/音量滑条；`_PUBLIC_COLUMNS` 已暴露 bgm 两列供详情回显
+- **曲风/声部/歌词双模式/完整歌曲（2026-09-19 增量）**：表单曲风 17 档（中文→英文映射进 caption `Global Metadata` 前缀）+ 声部 5 档（female/male/duet/child/chorus vocals）；歌词 ✨AI 写 / ✧润色保留（原词逐句保留只补段润衔，`suggest_lyrics(base_lyrics=…)` 双模式）+ 曲风↔歌词联动（写词带曲风语感、写 caption 带歌词摘录）；**完整歌曲三件**——caption 恒附 natural ending 指令、`planned_duration`=max(目标, 行数×5s) 钳 30~360（长词自动放宽上限治「唱到一半戛然而止」）、写词带目标时长控段落规模
+- **参考音乐导入（标签/ASR 读词曲风）：用户决策暂不做（2026-09-19）**——能力已查证：mutagen 读 ID3/FLAC 标签（未装）+ faster-whisper 听写歌词（Win 侧已装）+ 曲风无分类模型只能标签/人工；将来做「📥 参考导入」入口时用
 - **音频参考续写：生态未支持（2026-09-19 查证，用户决策等生态）**——Music3/YuE2 节点均无音频输入（纯文本 conditioning）；YuE 原版有 song continuation 模式，ComfyUI 封装将来暴露音频输入后音乐库架构直接可接（加参考音频上传位）；拼接式 workaround（样片+caption 匹配续段 concat）已评估不做

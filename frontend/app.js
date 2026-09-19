@@ -80,7 +80,9 @@ function data() {
     editAssetVoice: '',
     // 音乐库（2026-09-19 BGM spec Task 7）：设置页 tab + 项目配乐选择
     musicLib: [], musicStaging: [], musicBusy: '',
-    musicForm: { caption: '', lyrics: '', seed: 0, duration: 120 },
+    musicForm: { caption: '', lyrics: '', seed: 0, duration: 120, genre: '', voice: '' },
+    musicGenres: ['流行','民谣','摇滚','国风','二次元','电子','说唱','爵士','R&B','金属','乡村','蓝调','古典','轻音乐','影视配乐','氛围','实验'],
+    musicVoiceParts: ['女声','男声','男女对唱','童声','合唱'],
     musicSaveName: {}, musicJobId: null, musicPollTimer: null,
     bgmSel: '', bgmVol: 0.2, bgmHint: '',
     themeEditOpen: false, themeEdit: {}, themeEditErr: '',
@@ -2043,18 +2045,28 @@ const methods = {
     try {
       const r = await fetch('/api/music/suggest-caption', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ hint: this.musicForm.caption || '' }) });
+        body: JSON.stringify({ hint: this.musicForm.caption || '',
+                               genre: this.musicForm.genre || '',
+                               voice: this.musicForm.voice || '',
+                               lyrics: this.musicForm.lyrics || '' }) });
       if (!r.ok) { alert(`曲风建议失败：${(await r.json()).detail || r.status}`); return; }
       const t = (await r.json()).text || '';
       if (t.trim()) this.musicForm.caption = t;  // 空结果不清原文本（同 PromptBox 判例）
     } finally { this.musicBusy = ''; }
   },
-  async musicSuggestLyrics() {
-    this.musicBusy = '✨ 歌词建议中…';
+  async musicSuggestLyrics(mode) {   // 'write'=自由创作；'polish'=保留原词润色
+    const polish = mode === 'polish';
+    if (polish && !(this.musicForm.lyrics || '').trim()) {
+      alert('「✧ 润色」需要先在歌词框里写点内容'); return; }
+    this.musicBusy = polish ? '✧ 歌词润色中…' : '✨ 歌词建议中…';
     try {
       const r = await fetch('/api/music/suggest-lyrics', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ hint: this.musicForm.caption || '' }) });
+        body: JSON.stringify({ hint: this.musicForm.caption || '',
+                               lyrics: polish ? (this.musicForm.lyrics || '') : '',
+                               duration: this.musicForm.duration || null,
+                               genre: this.musicForm.genre || '',
+                               voice: this.musicForm.voice || '' }) });
       if (!r.ok) { alert(`歌词建议失败：${(await r.json()).detail || r.status}`); return; }
       const t = (await r.json()).text || '';
       if (t.trim()) this.musicForm.lyrics = t;
@@ -2070,7 +2082,9 @@ const methods = {
         body: JSON.stringify({ caption,
           lyrics: (this.musicForm.lyrics || '').trim(),
           seed: Number(this.musicForm.seed) || 0,
-          duration: Number(this.musicForm.duration) || 120 }) });
+          duration: Number(this.musicForm.duration) || 120,
+          genre: this.musicForm.genre || '',
+          voice: this.musicForm.voice || '' }) });
       if (!r.ok) { alert(`生成失败：${(await r.json()).detail || r.status}`); return; }
       this.musicJobId = (await r.json()).job_id;
       this.musicPollStart();

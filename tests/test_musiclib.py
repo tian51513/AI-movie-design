@@ -307,7 +307,7 @@ def test_music_api_matrix(tmp_path, monkeypatch):
         assert r.status_code == 404
 
         # suggest：LLM 失败 → 502 包 detail；正常 → 200 {text}
-        def boom(db, hint=""):
+        def boom(db, *a, **k):
             raise ValueError("LLM 不可用")
         monkeypatch.setattr(musiclib, "suggest_caption", boom)
         r = c.post("/api/music/suggest-caption", json={"hint": "雨夜"})
@@ -344,3 +344,68 @@ def test_gen_music_stall_passthrough(tmp_path, monkeypatch):
         musiclib.handle_gen_music(db, tmp_path, get_job(db, jid),
                                   ComfyClient(m.base_url))
     assert seen and seen[0].get("stall_seconds") == 1800
+
+
+def test_suggest_lyrics_two_modes(tmp_path, monkeypatch):
+    """2026-09-19 用户需求：歌词建议双模式——自由创作（hint 当主题）vs
+    润色保留（base_lyrics 原词进上下文+保留约束），并带目标时长控制段落数。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine import musiclib
+    db = Database(tmp_path / "s.db"); db.migrate()
+    calls = []
+    class F:
+        def raw_chat(self, messages, temperature=0.7):
+            calls.append(messages); return "[主歌]\n新词", None
+    monkeypatch.setattr(musiclib, "client_for_task", lambda db, task: F())
+    musiclib.suggest_lyrics(db, hint="雨夜", duration=60, genre="民谣", voice="女声")
+    assert "雨夜" in calls[-1][-1]["content"] and "保留" not in calls[-1][0]["content"]
+    assert "民谣" in calls[-1][0]["content"]  # 曲风联动：歌词风格随曲风
+    musiclib.suggest_lyrics(db, base_lyrics="[主歌]\n我的原词第一行", duration=120)
+    sysw, user = calls[-1][0]["content"], calls[-1][-1]["content"]
+    assert "保留" in sysw and "不得丢弃" in sysw
+    assert "我的原词第一行" in user
+    assert "120" in user and "60" in calls[-2][-1]["content"]  # 时长进上下文
+
+
+def test_compose_caption_genre_voice_and_completeness():
+    """生成时 caption 组装：曲风+声部前缀（英文描述）+ 完整收尾指令。"""
+    from comic_studio.engine.musiclib import GENRES, VOICE_PARTS, compose_caption
+    assert any(zh == "二次元" for zh, _ in GENRES) and len(GENRES) >= 15
+    assert any(zh == "男女对唱" for zh, _ in VOICE_PARTS)
+    out = compose_caption("轻快钢琴小品", genre="民谣", voice="男声")
+    assert out.startswith("Global Metadata: Folk, male vocals.")
+    assert "轻快钢琴小品" in out
+    assert "natural ending" in out and "never cut off" in out
+    # 无曲风声部：只加完整收尾指令
+    out2 = compose_caption("Global Metadata: Lo-fi, 70 BPM.", genre="", voice="")
+    assert out2.startswith("Global Metadata: Lo-fi")
+    assert "natural ending" in out2
+
+
+def test_planned_duration_balances_lyrics():
+    """完整歌曲（治戛然而止）：max_duration = max(目标, 歌词行数×5s) 钳 30~360。"""
+    from comic_studio.engine.musiclib import planned_duration
+    assert planned_duration(60, "[主歌]\n词一行\n词二行\n\n[副歌]\n词三行\n词四行") == 60
+    # 16 行词 × 5s = 80s > 60 目标 → 放宽到 80
+    long_lyrics = "\n".join(f"第{i}行歌词内容" for i in range(16))
+    assert planned_duration(60, long_lyrics) == 80
+    assert planned_duration(None, "") == 120            # 无目标无词=默认 120
+    assert planned_duration(400, "") == 360             # 上限钳 360
+    assert planned_duration(10, "") == 30               # 下限钳 30
+
+
+def test_suggest_caption_genre_voice_link(tmp_path, monkeypatch):
+    """曲风↔歌词联动：写曲风时带所选曲风/声部；已有歌词则摘录进上下文。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine import musiclib
+    db = Database(tmp_path / "s.db"); db.migrate()
+    calls = []
+    class F:
+        def raw_chat(self, messages, temperature=0.5):
+            calls.append(messages); return "Global Metadata: Folk.", None
+    monkeypatch.setattr(musiclib, "client_for_task", lambda db, task: F())
+    musiclib.suggest_caption(db, hint="毕业季", genre="民谣", voice="女声",
+                             lyrics="[主歌]\n蝉声落进六月的走廊")
+    user = calls[-1][-1]["content"]
+    assert "民谣" in user and "女声" in user
+    assert "蝉声落进六月的走廊" in user  # 歌词摘录联动曲风气质

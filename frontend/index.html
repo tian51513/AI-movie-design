@@ -479,6 +479,19 @@
       <div class="card" style="flex:1.2;min-width:320px">
         <h3>🎼 生成样曲（Music3）</h3>
         <p style="font-size:13px;display:flex;flex-direction:column;gap:6px">
+          <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label>曲风
+              <select v-model="musicForm.genre" style="max-width:130px">
+                <option value="">不指定</option>
+                <option v-for="g in musicGenres" :key="g" :value="g">{{ g }}</option>
+              </select></label>
+            <label>声部
+              <select v-model="musicForm.voice" style="max-width:110px">
+                <option value="">不指定</option>
+                <option v-for="v in musicVoiceParts" :key="v" :value="v">{{ v }}</option>
+              </select></label>
+            <span class="muted" style="font-size:11px">选了会拼进 caption 并联动写词</span>
+          </span>
           <span style="display:block">曲风描述 caption
             <button @click="musicSuggestCaption" :disabled="!!musicBusy"
                     title="LLM 按当前描述起草/改写 Music3 caption"
@@ -487,9 +500,12 @@
                     placeholder="如：Global Metadata: Cinematic, 90 BPM, C minor. 中文描述情绪与配器…"
                     style="width:100%"></textarea>
           <span style="display:block">歌词
-            <button @click="musicSuggestLyrics" :disabled="!!musicBusy"
-                    title="LLM 生成 [主歌]/[副歌] 结构歌词"
-                    style="font-size:11px;padding:2px 8px;margin-left:6px">✨ LLM 建议</button>
+            <button @click="musicSuggestLyrics('write')" :disabled="!!musicBusy"
+                    title="LLM 按主题/曲风自由创作 [主歌]/[副歌] 结构歌词"
+                    style="font-size:11px;padding:2px 8px;margin-left:6px">✨ AI 写</button>
+            <button @click="musicSuggestLyrics('polish')" :disabled="!!musicBusy || !(musicForm.lyrics||'').trim()"
+                    title="保留你已写的歌词原句，LLM 只补段落/润色衔接——不丢弃任何原句"
+                    style="font-size:11px;padding:2px 8px">✧ 润色我的歌词</button>
             <span class="muted" style="font-size:11px">（留空=纯音乐）</span></span>
           <textarea v-model="musicForm.lyrics" rows="4"
                     placeholder="留空=纯音乐；支持 [主歌]/[副歌] 结构标记"
