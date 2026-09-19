@@ -119,7 +119,8 @@ def handle_gen_music(db, data_dir, job, comfy) -> Path:
         comfy, "music3",
         params={"seed": seed, "max_duration": duration, "lyrics": lyrics},
         images=None, dest_dir=staging_dir(data_dir), name=str(job["id"]),
-        db=db, prompt=caption)
+        db=db, prompt=caption,
+        stall_seconds=1800)   # Music3 长曲（360s）生成远超默认失速阈 300s
     attach_snapshot(db, job["id"], prompt=caption,
                     workflow={"staging": rel_to_data(data_dir, dest)},
                     template_id="music3")

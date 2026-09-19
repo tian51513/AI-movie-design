@@ -70,12 +70,15 @@ def resolve_sample(data_dir, name: str, project: str | None = None) -> Path | No
 
 def _run_template(comfy, template_id: str, params: dict, images: list | None,
                   dest_dir: Path, name: str, db=None,
-                  prompt: str | None = None) -> Path:
+                  prompt: str | None = None,
+                  stall_seconds: float | None = None) -> Path:
     """提交 TTS 模板 → 轮询 → 下载首个 audio 产物到 dest_dir/<name><原后缀>。
     db 给定时先走 ensure_vram_for_comfy（LLM 让位+显存门槛——TTS 1.7B 与
     本地 LLM 同卡会挤爆，2026-08-31 用户要求 LLM/Comfy 串行）。
     prompt 透传 fill_workflow（gen_music 复用此通道注入 music3 caption；
-    None=保留工作流内置提示词，既有 TTS 调用不传=行为不变）。"""
+    None=保留工作流内置提示词，既有 TTS 调用不传=行为不变）。
+    stall_seconds 透传 wait_and_collect 失速阈（None=默认 300s；gen_music
+    长曲生成远超默认，由调用方显式放宽）。"""
     if db is not None:
         try:
             has_gpu_info = bool((comfy.health().get("devices") or [{}])[0])
@@ -93,7 +96,10 @@ def _run_template(comfy, template_id: str, params: dict, images: list | None,
     for up in uploads:
         comfy.upload_media(Path(up["path"]), up["name"])
     pid = comfy.submit(wf, client_id="comic-studio-voicelib")
-    results = comfy.wait_and_collect(pid)
+    if stall_seconds:
+        results = comfy.wait_and_collect(pid, stall_seconds=stall_seconds)
+    else:
+        results = comfy.wait_and_collect(pid)
     audios = [r for r in results if r.get("_kind") == "audio"]
     if not audios:
         raise RuntimeError(f"{template_id} 未产出音频（结果: {results}）")

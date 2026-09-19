@@ -623,7 +623,7 @@ const methods = {
     this.logs = []; this.lastLogId = 0;
     this.detailMode = 'assets'; this.shots = []; this.splitRunning = false; this.expandedShot = null;
     this.merges = [];
-    // 配乐面板本地态（bgm 字段不在项目 GET 载荷里，入会话后由 PATCH 回包维护）
+    // 配乐面板本地态（GET 载荷已含 bgm_music_id/bgm_volume，PATCH 后本地同步）
     this.bgmSel = (p && p.bgm_music_id != null) ? p.bgm_music_id : '';
     this.bgmVol = (p && p.bgm_volume != null) ? p.bgm_volume : 0.2;
     this.bgmHint = '';

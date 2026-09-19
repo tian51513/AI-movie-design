@@ -251,6 +251,10 @@ def _mix_bgm(db, data_dir, proj, final: Path) -> Path:
     row = db.connect().execute("SELECT * FROM music_library WHERE id=?",
                                (mid,)).fetchone()
     if row is None:
+        from .logbus import emit as emit_log
+        emit_log(db, "merge", "warn",
+                 f"配乐库条目已删除（music_id={mid}），跳过混音",
+                 project_id=proj["id"])
         return final
     from .paths import data_to_abs
     music = data_to_abs(data_dir, row["path"])
@@ -382,8 +386,15 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
     srt = out_dir / "subtitles.srt"
     if srt.exists() and subtitles_enabled(proj):
         _burn_subtitles(out, srt)
-    # 项目 BGM 混入（2026-09-19 Task 6）：成片产出后、置 merged 前混入音乐库曲目
-    out = _mix_bgm(db, data_dir, proj, out)
+    # 项目 BGM 混入（2026-09-19 Task 6）：成片产出后、置 merged 前混入音乐库曲目。
+    # 自守 try（与 director.py 快车道同构）：数小时合成的成片不因 BGM ffmpeg
+    # 失败报废——失败只 warn，成片保留原音轨
+    try:
+        out = _mix_bgm(db, data_dir, proj, out)
+    except Exception as exc:
+        emit_log(db, "merge", "warn",
+                 f"BGM 混入失败（成片保留原音轨）：{exc}",
+                 project_id=project_id, job_id=job_id)
     set_stage(db, project_id, "merged")
     emit_log(db, "merge", "info", f"成片合成完成 → {out.name}（{len(shots)} 镜）",
              project_id=project_id, job_id=job_id)

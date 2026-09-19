@@ -361,7 +361,7 @@
 - **合成末端混音 `merge._mix_bgm`**：ffmpeg `amix normalize=0` + volume 钳 0~0.5 + `-stream_loop -1` BGM 循环 + `duration=first` 随片长截断 + **`-c:v copy` 视频流零重编码**；空引用/库行已删/文件缺 → 原样降级不炸合成。逐镜链插在字幕烧录后、set_stage 前
 - **快车道同构**：混音挂 `handle_gen_director` 的 **director_mix 块外**（BGM 不随 comfy.director_mix 开关失效）+ try/except 护航——数小时成片不因 BGM 失败报废
 - **判例：amix 必关 normalize**——默认 normalize=1 会把人声与 BGM 各缩 0.5（成片人声减半，真机发现后修复）；混音类 amix 一律显式 normalize=0
-- **判例：staging 路径三道闸**——save 回读 staging 快照必须 resolve 后仍落 data 根内（出界 422/409 分流）+ 曲名白名单 `_NAME_RE`（引擎层）+ delete_music resolve 越界检查——路径穿越全拦在引擎/路由层
+- **判例：staging 路径三道闸**——save 回读 staging 快照必须 resolve 后仍落 data 根内（越界/快照缺 409；曲名非法 422）+ 曲名白名单 `_NAME_RE`（引擎层）+ delete_music resolve 越界检查——路径穿越全拦在引擎/路由层
 - **merge_cache 不纳 music 键**（spec 自查结论）：merge_cache 是**段级**缓存，BGM 混音发生在 concat 之后最终产物上，天然不受缓存影响——改 BGM/音量只需「重新合成」
 - **app.py 双注册**：routes_music include + musiclib 进 lifespan handler 注册清单——漏后者 worker 认领不了 gen_music（pending 永挂）
 - **gen_music 不在 REQUEUE_ON_RESTART_TYPES**：重启丢在跑任务，手动重发（同 describe_shots 约定）

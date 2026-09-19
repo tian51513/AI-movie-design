@@ -544,3 +544,23 @@ def test_merge_part_cache_reuses_unchanged(tmp_path, monkeypatch):
     out2 = M.merge_project(db, tmp_path / "data", pid)
     assert out2.exists() and "ep002" in str(out2)
     assert calls["n"] == 0, "未变镜应走缓存零重编码"
+
+
+def test_merge_bgm_failure_warns_and_keeps_output(tmp_path, monkeypatch):
+    """终审修复 2（2026-09-19）：merge_project 的 BGM 混入自守 try（与
+    director.py 快车道同构）——_mix_bgm 抛异常只 warn 一条，成片照常落盘
+    置 merged，不因 BGM 失败报废数小时合成。"""
+    import comic_studio.engine.merge as M
+
+    db, pid = _proj_with_shots(tmp_path, "护栏剧")
+
+    def boom(*a, **kw):
+        raise RuntimeError("ffmpeg boom")
+
+    monkeypatch.setattr(M, "_mix_bgm", boom)
+    out = merge_project(db, tmp_path / "data", pid)
+    assert out.exists() and out.stat().st_size > 0
+    assert get_project(db, pid)["stage"] == "merged"
+    n = db.connect().execute("SELECT COUNT(*) c FROM logs "
+                             "WHERE message LIKE '%BGM 混入失败%'").fetchone()["c"]
+    assert n == 1

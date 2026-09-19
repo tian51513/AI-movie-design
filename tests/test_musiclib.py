@@ -149,7 +149,8 @@ def test_delete_music_path_escape(tmp_path):
 def test_mix_bgm_three_states(tmp_path, monkeypatch):
     """Task 6：_mix_bgm 三态——①无引用原样返回不触 ffmpeg；②有引用 amix 命令
     （-stream_loop -1 循环 + volume 音量 + duration=first 随片长 + -c:v copy
-    零重编码）产出 _bgm.mp4 后覆盖引用；③库文件缺失 warn 降级原样返回。"""
+    零重编码）产出 _bgm.mp4 后覆盖引用；③库文件缺失 warn 降级原样返回；
+    ④库行已删（悬空引用）warn 降级原样返回（终审 2026-09-19）。"""
     from comic_studio.engine import merge as M
     from comic_studio.engine.db import Database
     from comic_studio.engine.musiclib import save_to_library
@@ -203,6 +204,16 @@ def test_mix_bgm_three_states(tmp_path, monkeypatch):
     assert grabbed == {} and final.read_bytes() == b"v2"
     n = db.connect().execute("SELECT COUNT(*) c FROM logs "
                              "WHERE message LIKE '%配乐文件缺失%'").fetchone()["c"]
+    assert n == 1
+
+    # ④ 库行已删（引用悬空）→ warn 一条、原样返回不触 ffmpeg（终审修复 2b）
+    conn.execute("UPDATE projects SET bgm_music_id=99999 WHERE id=?", (pid,))
+    conn.commit()
+    final.write_bytes(b"v3")
+    assert M._mix_bgm(db, tmp_path / "data", get_project(db, pid), final) == final
+    assert grabbed == {} and final.read_bytes() == b"v3"
+    n = db.connect().execute("SELECT COUNT(*) c FROM logs "
+                             "WHERE message LIKE '%库条目已删除%'").fetchone()["c"]
     assert n == 1
 
 
@@ -305,3 +316,31 @@ def test_music_api_matrix(tmp_path, monkeypatch):
                             lambda db, task: FakeLLM("[副歌]\n再见一面"))
         r = c.post("/api/music/suggest-lyrics", json={"hint": "毕业"})
         assert r.status_code == 200 and "[副歌]" in r.json()["text"]
+
+
+def test_gen_music_stall_passthrough(tmp_path, monkeypatch):
+    """终审修复 3：Music3 长曲（最长 360s）生成远超默认失速阈 300s——
+    handle_gen_music 必须把 stall_seconds=1800 透传到 wait_and_collect。"""
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.db import Database
+    from comic_studio.engine import musiclib
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from comic_studio.engine.workflows import registry
+    from comfy_mock import comfy_server
+    db = Database(tmp_path / "s.db"); db.migrate()
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    jid = enqueue_job(db, "gen_music", resource="gpu_comfy",
+                      payload={"caption": "Global Metadata: lo-fi, 70 BPM.",
+                               "duration": 360})
+    seen = []
+    orig = ComfyClient.wait_and_collect
+
+    def spy(self, prompt_id, **kw):
+        seen.append(kw)
+        return orig(self, prompt_id, **kw)
+
+    monkeypatch.setattr(ComfyClient, "wait_and_collect", spy)
+    with comfy_server("ok", audio=True) as m:
+        musiclib.handle_gen_music(db, tmp_path, get_job(db, jid),
+                                  ComfyClient(m.base_url))
+    assert seen and seen[0].get("stall_seconds") == 1800
