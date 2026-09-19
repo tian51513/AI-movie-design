@@ -184,7 +184,7 @@ def test_mix_bgm_three_states(tmp_path, monkeypatch):
     assert str(tmp_path / "data" / "music" / "custom" / "夜曲.mp3") in cmd
     fc = cmd[cmd.index("-filter_complex") + 1]
     assert fc == ("[1:a]volume=0.2[bg];"
-                  "[0:a][bg]amix=inputs=2:duration=first[a]")  # 默认音量 0.2
+                  "[0:a][bg]amix=inputs=2:duration=first:normalize=0[a]")  # 默认音量 0.2
     assert cmd[cmd.index("-c:v") + 1] == "copy"   # 视频流零重编码
     assert final.read_bytes() == b"mp4"           # move 覆盖引用
     assert not final.with_name("ep001_bgm.mp4").exists()

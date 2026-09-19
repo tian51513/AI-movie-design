@@ -242,8 +242,9 @@ def _burn_subtitles(video: Path, srt: Path) -> None:
 def _mix_bgm(db, data_dir, proj, final: Path) -> Path:
     """项目配乐混入（2026-09-19 spec Task 6）：proj.bgm_music_id 引用音乐库曲目
     → 成片 amix BGM——音乐 -stream_loop -1 循环补长、duration=first 随片长截断、
-    视频流 copy 零重编码。无引用/库行缺/文件缺 → 原样返回（合成不因 BGM 断）；
-    音量钳 0~0.5（PATCH /bgm 端点同规则，此处兜底）。"""
+    normalize=0 关均值缩放（Ruling-6：默认 normalize=1 两路各缩 0.5，人声响度
+    减半）、视频流 copy 零重编码。无引用/库行缺/文件缺 → 原样返回（合成不因
+    BGM 断）；音量钳 0~0.5（PATCH /bgm 端点同规则，此处兜底）。"""
     mid = proj["bgm_music_id"] if "bgm_music_id" in proj.keys() else None
     if not mid:
         return final
@@ -266,7 +267,7 @@ def _mix_bgm(db, data_dir, proj, final: Path) -> Path:
                     "-i", str(music),
                     "-filter_complex",
                     f"[1:a]volume={vol}[bg];"
-                    f"[0:a][bg]amix=inputs=2:duration=first[a]",
+                    f"[0:a][bg]amix=inputs=2:duration=first:normalize=0[a]",
                     "-map", "0:v", "-map", "[a]", "-c:v", "copy",
                     "-c:a", "aac", str(out)],
                    check=True, capture_output=True, encoding='utf-8',
