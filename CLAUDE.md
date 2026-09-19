@@ -366,3 +366,4 @@
 - **app.py 双注册**：routes_music include + musiclib 进 lifespan handler 注册清单——漏后者 worker 认领不了 gen_music（pending 永挂）
 - **gen_music 不在 REQUEUE_ON_RESTART_TYPES**：重启丢在跑任务，手动重发（同 describe_shots 约定）
 - **前端**：设置页「🎵 音乐库」tab（生成/试听/入库/删除全套）+ 项目参数面板配乐下拉/音量滑条；`_PUBLIC_COLUMNS` 已暴露 bgm 两列供详情回显
+- **音频参考续写：生态未支持（2026-09-19 查证，用户决策等生态）**——Music3/YuE2 节点均无音频输入（纯文本 conditioning）；YuE 原版有 song continuation 模式，ComfyUI 封装将来暴露音频输入后音乐库架构直接可接（加参考音频上传位）；拼接式 workaround（样片+caption 匹配续段 concat）已评估不做
