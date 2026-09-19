@@ -230,6 +230,22 @@ MIGRATIONS: list[str] = [
     # 高频写入，DELETE FROM logs WHERE project_id=? 无索引整表扫删——写锁
     # 持有被拉长，与 worker 提交竞争下 5s 忙等不够即报锁）
     """CREATE INDEX IF NOT EXISTS idx_logs_project ON logs(project_id, id);""",
+    # 43 音乐库（2026-09-19 BGM spec）：Music3 生成音乐入库（同音色库心智：
+    # 文件在 data/music/custom，元数据在 music_library 表）；projects 挂
+    # bgm_music_id 项目引用 + bgm_volume 混音音量
+    """CREATE TABLE IF NOT EXISTS music_library (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        caption TEXT NOT NULL DEFAULT '',
+        lyrics TEXT NOT NULL DEFAULT '',
+        seed INTEGER NOT NULL DEFAULT 0,
+        duration REAL NOT NULL DEFAULT 120,
+        origin TEXT NOT NULL DEFAULT 'user',
+        path TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    );
+    ALTER TABLE projects ADD COLUMN bgm_music_id INTEGER;
+    ALTER TABLE projects ADD COLUMN bgm_volume REAL NOT NULL DEFAULT 0.2;""",
 ]
 
 
