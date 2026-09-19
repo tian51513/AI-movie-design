@@ -1,0 +1,27 @@
+id: music3
+type: music
+name: MiniMax Music3 音乐生成
+file: music3.api.json
+prompt_format: '{prompt}'
+inject:
+  prompt:
+    node: '37:13'
+    field: caption
+  params:
+    seed:
+      node: '37:38'
+      field: seed
+    max_duration:
+      node: '37:13'
+      field: max_duration
+    lyrics:
+      node: '37:13'
+      field: lyrics
+outputs:
+- node: '35'
+  filename_prefix: cs/{project}/{asset}
+requires: []
+models:
+- {label: unet, node: '37:6', field: unet_name, cls: UNETLoader, label_cn: 音乐底模}
+- {label: clip, node: '37:3', field: clip_name, cls: CLIPLoader, label_cn: 音乐文本编码器}
+- {label: vae, node: '37:7', field: vae_name, cls: VAELoader, label_cn: 音频 VAE}

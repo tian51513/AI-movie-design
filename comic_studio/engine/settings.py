@@ -29,6 +29,8 @@ DEFAULT_SETTINGS = {
         "comic_page_ref": "zimage_page_ref",
         # Krea2 快道（2026-09-13 用户实测 20-30s/页·风格原生贴合）
         "comic_page_krea2": "comic_page_krea2",
+        # 全局音乐库（2026-09-19）：MiniMax Music3 音乐生成（musiclib 消费）
+        "music": "music3",
     },
     "llm_providers": {
         "local": {"base_url": "http://localhost:11434/v1", "api_key": "ollama",
