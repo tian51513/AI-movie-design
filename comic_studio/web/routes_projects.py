@@ -50,7 +50,9 @@ _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", 
                     # 迁移 39（2026-09-13 二期）：主图停等检查标记
                     "comic_refs_done",
                     # 迁移 40（2026-09-13）：双角色处理模式 stitch/chain
-                    "comic_dual_mode")
+                    "comic_dual_mode",
+                    # 迁移 43（2026-09-19 音乐库）：项目配乐引用（前端参数面板回显）
+                    "bgm_music_id", "bgm_volume")
 
 
 @router.post("/{project_id}/retry-transcribe", status_code=202)

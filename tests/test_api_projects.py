@@ -356,6 +356,11 @@ def test_patch_bgm_endpoint(tmp_path):
         r = c.patch(f"/api/projects/{pid}/bgm", json={"music_id": mid, "volume": 0.35})
         assert r.status_code == 200
         assert r.json() == {"music_id": mid, "volume": 0.35}
+        # 项目详情 GET 暴露两列（迁移 43）——前端参数面板刷新后回显 DB 真值
+        detail = c.get(f"/api/projects/{pid}")
+        assert detail.status_code == 200
+        assert detail.json()["bgm_music_id"] == mid
+        assert detail.json()["bgm_volume"] == 0.35
         # music_id 不存在 → 422
         r = c.patch(f"/api/projects/{pid}/bgm", json={"music_id": 9999})
         assert r.status_code == 422
