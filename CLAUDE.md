@@ -351,3 +351,18 @@
 - **用户锁定现状（2026-09-19）**：Spectrum 模板 EasyCache+SpectrumApply 两摆设节点**保留不动**（日志有 WARNING 但行为已验证）；spectrum LoRA 栈=taomate 3步+BulletTime 0.5 双 LoRA（用户在设置页自选 lora3-8=none 精简——**不是 bug 勿恢复**；UX 陷阱：下拉里 "none" 是真选项不是「关闭」，真关闭=「（关闭）」）
 - **真机验证（2026-09-18 深夜）**：h3_fl2v 新链渲染成功（block_size 修复后）；h3_spectrum_fl2v 成功且**耗时与主链相当**（Spectrum 预测收益被 4 步基线摊平——想再快主要看 TRT VAE）；RTX VSR 开=**+10s** 换 2× 输出（可接受）；ComfyUI 偶发原生崩溃 0x8000000B（2147483651）重启即愈、复现才是问题
 - **`_raw/audio_minimax_music_3.json`**：MiniMaxMusic3 文生音乐（Music3TextEncode.caption→seconds 驱动时长，KSampler 30 步 cfg 1.7，mp3 V0 落盘）——接入方案待定（BGM 生成特性，不在本轮）
+
+## 模块地图（全局音乐库 2026-09-19）
+
+- **全链**：MiniMaxMusic3 文生音乐——生成（曲风 caption ✨LLM/手填、歌词 手填/✨LLM/空=纯音乐、时长 15~360s、🎲seed）→ staging 试听 → 保存入库（`data/music/custom` + `music_library` 表）→ 项目引用（`projects.bgm_music_id`/`bgm_volume`，**迁移 43**，表+列合一）→ 合成混入成片
+- **`templates/workflows/music3.{yaml,api.json}`** — type: music（新模板类型），caption/lyrics/max_duration/seed 四注入（Music3TextEncode.caption 的 seconds 驱动时长）
+- **`engine/musiclib.py`** — 库 CRUD + staging 暂存 + `suggest_caption`/`suggest_lyrics`（LLM 双建议）+ `@register("gen_music")` 处理器（经 voicelib._run_template 加 prompt 透传共用跑模板）
+- **`web/routes_music.py`** — POST generate（202 受理/在飞 409）、suggest（LLM 失败 502）、list、save、discard、DELETE；`routes_projects.py` PATCH `/{id}/bgm` 键门控——`{}` 不动 / null 清引用 / volume 钳 0~0.5
+- **合成末端混音 `merge._mix_bgm`**：ffmpeg `amix normalize=0` + volume 钳 0~0.5 + `-stream_loop -1` BGM 循环 + `duration=first` 随片长截断 + **`-c:v copy` 视频流零重编码**；空引用/库行已删/文件缺 → 原样降级不炸合成。逐镜链插在字幕烧录后、set_stage 前
+- **快车道同构**：混音挂 `handle_gen_director` 的 **director_mix 块外**（BGM 不随 comfy.director_mix 开关失效）+ try/except 护航——数小时成片不因 BGM 失败报废
+- **判例：amix 必关 normalize**——默认 normalize=1 会把人声与 BGM 各缩 0.5（成片人声减半，真机发现后修复）；混音类 amix 一律显式 normalize=0
+- **判例：staging 路径三道闸**——save 回读 staging 快照必须 resolve 后仍落 data 根内（出界 422/409 分流）+ 曲名白名单 `_NAME_RE`（引擎层）+ delete_music resolve 越界检查——路径穿越全拦在引擎/路由层
+- **merge_cache 不纳 music 键**（spec 自查结论）：merge_cache 是**段级**缓存，BGM 混音发生在 concat 之后最终产物上，天然不受缓存影响——改 BGM/音量只需「重新合成」
+- **app.py 双注册**：routes_music include + musiclib 进 lifespan handler 注册清单——漏后者 worker 认领不了 gen_music（pending 永挂）
+- **gen_music 不在 REQUEUE_ON_RESTART_TYPES**：重启丢在跑任务，手动重发（同 describe_shots 约定）
+- **前端**：设置页「🎵 音乐库」tab（生成/试听/入库/删除全套）+ 项目参数面板配乐下拉/音量滑条；`_PUBLIC_COLUMNS` 已暴露 bgm 两列供详情回显

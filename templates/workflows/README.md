@@ -29,6 +29,7 @@
 | h3_t2v | t2v | 文生视频（2026-09-18 新链） | 可选（已映射） |
 | h3_i2v | i2v | 图生视频（首帧）（2026-09-18 新链） | fl2v 缺尾帧降级目标 |
 | h3_spectrum_fl2v / _i2v / _t2v / _ref2va | fl2v/i2v/t2v/ref2va | BulletTime/SpectrumSpeed 统一骨架（2026-09-18） | Spectrum 加速道备选——设置页映射切换；RTX VSR 超分开关（comfy.rtx_vsr_enabled，默认关） |
+| music3 | music | MiniMaxMusic3 音乐生成（2026-09-19） | 全局音乐库——musiclib 消费；caption/lyrics/max_duration/seed 四注入 |
 
 **H3 视频模板 2026-09-18 换链**：ComfyUI 更新后旧链（MiniMaxLowVRAMAttention/
 TESpeedMiniMaxH3/PathchSageAttentionKJ）失效——四个分镜模板按用户修复验证的
