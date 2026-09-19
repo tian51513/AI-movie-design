@@ -2,6 +2,7 @@
 """音乐库（2026-09-19 spec）：Music3 生成 → staging 试听 → 入库 → 项目引用。
 同 voicelib 心智：文件在 data/music/custom，元数据在 music_library 表。"""
 import json
+import re as _re
 import shutil
 from pathlib import Path
 
@@ -11,6 +12,10 @@ from .llm.provider import client_for_task
 
 STAGING_REL = "music/_staging"
 LIBRARY_REL = "music/custom"
+
+# name 白名单（2026-09-19 安全评审）：name 进文件路径，防穿越写盘。
+# \w 含下划线字母数字；显式留中文段与空格/连字符/圆点/括号。
+_NAME_RE = _re.compile(r"^[\w一-鿿 \-().]{1,100}$")
 
 
 def staging_dir(data_dir) -> Path:
@@ -24,6 +29,10 @@ def save_to_library(db, data_dir, src: Path, name: str, caption: str, lyrics: st
     name = (name or "").strip()
     if not name:
         raise ValueError("音乐名不能为空")
+    # name 白名单（2026-09-19 安全评审：防路径穿越写盘——name 会拼进
+    # music/custom/<name><后缀>；'/' 与 '..' 片段一律拒绝）
+    if not _NAME_RE.fullmatch(name) or name in {".", ".."}:
+        raise ValueError("音乐名含有非法字符")
     conn = db.connect()
     if conn.execute("SELECT 1 FROM music_library WHERE name=?", (name,)).fetchone():
         raise ValueError(f"音乐名已存在: {name}")
@@ -54,7 +63,11 @@ def delete_music(db, data_dir, music_id: int) -> None:
     if row is None:
         raise ValueError(f"音乐不存在: {music_id}")
     from .paths import data_to_abs
-    p = data_to_abs(data_dir, row["path"])
+    p = data_to_abs(data_dir, row["path"]).resolve()
+    lib_root = (Path(data_dir) / LIBRARY_REL).resolve()
+    if not p.is_relative_to(lib_root):
+        # 库表脏数据/越界路径（2026-09-19 安全评审）：拒绝 unlink 任意文件
+        raise ValueError("路径越界")
     p.unlink(missing_ok=True)
     conn.execute("DELETE FROM music_library WHERE id=?", (music_id,))
     conn.commit()
@@ -108,7 +121,8 @@ def handle_gen_music(db, data_dir, job, comfy) -> Path:
         images=None, dest_dir=staging_dir(data_dir), name=str(job["id"]),
         db=db, prompt=caption)
     attach_snapshot(db, job["id"], prompt=caption,
-                    workflow={"staging": rel_to_data(data_dir, dest)})
+                    workflow={"staging": rel_to_data(data_dir, dest)},
+                    template_id="music3")
     return dest
 
 

@@ -90,6 +90,7 @@ def test_gen_music_handler(tmp_path, monkeypatch):
     snap = json.loads(get_job(db, jid)["snapshot_json"])
     assert snap["workflow"]["staging"] == str(st.relative_to(tmp_path))
     assert snap["prompt"].startswith("Global Metadata")
+    assert snap["template"] == "music3"
     # 缺 caption 直接拒绝（不白烧 ComfyUI）
     jid2 = enqueue_job(db, "gen_music", resource="gpu_comfy", payload={})
     with pytest.raises(ValueError, match="caption"):
@@ -112,3 +113,135 @@ def test_suggest_caption_and_lyrics(tmp_path, monkeypatch):
         monkeypatch.setattr(musiclib, "client_for_task",
                             lambda db, task: FakeLLM("  "))
         musiclib.suggest_caption(db)
+
+
+def test_save_to_library_name_whitelist(tmp_path):
+    """安全评审（2026-09-19）：name 白名单防路径穿越写盘（引擎层防御，
+    路由层 422 只是门面）。'a/b' 与 '../x' 均含 /，直接 ValueError 不落盘。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.musiclib import save_to_library
+    db = Database(tmp_path / "s.db"); db.migrate()
+    src = tmp_path / "draft.mp3"; src.write_bytes(b"mp3")
+    for bad in ("a/b", "../x"):
+        with pytest.raises(ValueError, match="非法字符"):
+            save_to_library(db, tmp_path, src, bad, "", "", 1, 60)
+    assert not (tmp_path / "music").exists()  # 未写盘
+
+
+def test_delete_music_path_escape(tmp_path):
+    """安全评审（2026-09-19）：库表脏数据（path 指向库外）删除必须拒绝，
+    不越界 unlink data 根下的任意文件。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.musiclib import delete_music
+    db = Database(tmp_path / "s.db"); db.migrate()
+    evil = tmp_path / "evil.mp3"; evil.write_bytes(b"x")
+    conn = db.connect()
+    conn.execute(
+        "INSERT INTO music_library (name, path) VALUES ('evil', '../evil.mp3')")
+    conn.commit()
+    mid = conn.execute(
+        "SELECT id FROM music_library WHERE name='evil'").fetchone()[0]
+    with pytest.raises(ValueError, match="越界"):
+        delete_music(db, tmp_path, mid)
+    assert evil.exists()  # 文件未被动
+
+
+def test_music_api_matrix(tmp_path, monkeypatch):
+    """Task 5：/api/music 全套。generate 入队 202（仓库入队端点惯例）+
+    在飞 409 + 空 caption 422；save 从 job 快照回读 staging（无快照/文件缺
+    409、穿越名 422、重名 409、正常 201）；discard 204→409；delete 204→404；
+    suggest LLM 失败 502。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.engine.db import Database
+    from comic_studio.engine import musiclib
+    from comic_studio.engine.jobs import attach_snapshot, get_job
+    from comic_studio.web.app import create_app
+    db = Database(tmp_path / "s.db"); db.migrate()
+    with TestClient(create_app(tmp_path / "s.db", tmp_path / "data",
+                               start_workers=False)) as c:
+        # generate：caption 空 422
+        r = c.post("/api/music/generate", json={"caption": "  "})
+        assert r.status_code == 422
+        # generate：正常入队 202 + jobs 表落 gen_music pending
+        r = c.post("/api/music/generate",
+                   json={"caption": "Global Metadata: lo-fi.", "seed": 3,
+                         "duration": 60})
+        assert r.status_code == 202 and r.json()["job_id"]
+        jid = r.json()["job_id"]
+        row = get_job(db, jid)
+        assert row is not None and row["type"] == "gen_music" \
+            and row["status"] == "pending"
+        # generate：在飞互斥 409
+        r2 = c.post("/api/music/generate",
+                    json={"caption": "Global Metadata: lo-fi."})
+        assert r2.status_code == 409
+
+        # list：无快照 → staging 空、库空
+        r = c.get("/api/music")
+        assert r.status_code == 200
+        assert r.json()["music"] == [] and r.json()["staging"] == []
+
+        # save：job 不存在/无快照 → 409
+        r4 = c.post("/api/music/save", json={"job_id": 999, "name": "x",
+                                             "caption": "", "lyrics": "",
+                                             "seed": 1, "duration": 60})
+        assert r4.status_code == 409
+
+        # 造 staging 文件 + 快照（正确写法 workflow={"staging": rel}）
+        st = musiclib.staging_dir(tmp_path / "data") / f"{jid}.mp3"
+        st.write_bytes(b"mp3")
+        attach_snapshot(db, jid, prompt="Global Metadata: lo-fi.",
+                        workflow={"staging": str(st.relative_to(tmp_path / "data"))})
+        r = c.get("/api/music")
+        assert r.json()["staging"] == [
+            {"job_id": jid, "status": "pending",
+             "path": str(st.relative_to(tmp_path / "data"))}]
+
+        # save：穿越名 → 422（引擎白名单→路由映射）
+        r = c.post("/api/music/save", json={"job_id": jid, "name": "../evil",
+                                            "caption": "c", "lyrics": "",
+                                            "seed": 1, "duration": 60})
+        assert r.status_code == 422
+        r = c.post("/api/music/save", json={"job_id": jid, "name": "a/b",
+                                            "caption": "c", "lyrics": "",
+                                            "seed": 1, "duration": 60})
+        assert r.status_code == 422
+
+        # save：正常 → 201；文件落 custom、库里可见
+        r3 = c.post("/api/music/save", json={"job_id": jid, "name": "夜曲",
+                                             "caption": "c", "lyrics": "",
+                                             "seed": 1, "duration": 60})
+        assert r3.status_code == 201 and r3.json()["id"]
+        assert (tmp_path / "data/music/custom/夜曲.mp3").exists()
+        assert r3.json()["path"] == "music/custom/夜曲.mp3"
+        mid = r3.json()["id"]
+
+        # save：重名 → 409
+        r5 = c.post("/api/music/save", json={"job_id": jid, "name": "夜曲",
+                                             "caption": "c", "lyrics": "",
+                                             "seed": 1, "duration": 60})
+        assert r5.status_code == 409
+
+        # discard：删 staging → 204；再 discard → 409（文件已无）
+        r = c.post("/api/music/discard", json={"job_id": jid})
+        assert r.status_code == 204 and not st.exists()
+        r = c.post("/api/music/discard", json={"job_id": jid})
+        assert r.status_code == 409
+
+        # delete：204 → 再删 404；库清空
+        r = c.delete(f"/api/music/{mid}")
+        assert r.status_code == 204
+        assert c.get("/api/music").json()["music"] == []
+        r = c.delete(f"/api/music/{mid}")
+        assert r.status_code == 404
+
+        # suggest：LLM 失败 → 502 包 detail；正常 → 200 {text}
+        def boom(db, hint=""):
+            raise ValueError("LLM 不可用")
+        monkeypatch.setattr(musiclib, "suggest_caption", boom)
+        r = c.post("/api/music/suggest-caption", json={"hint": "雨夜"})
+        assert r.status_code == 502 and "LLM 不可用" in r.json()["detail"]
+        monkeypatch.setattr(musiclib, "client_for_task",
+                            lambda db, task: FakeLLM("[副歌]\n再见一面"))
+        r = c.post("/api/music/suggest-lyrics", json={"hint": "毕业"})
+        assert r.status_code == 200 and "[副歌]" in r.json()["text"]

@@ -163,7 +163,7 @@ def create_app(db_path: str | Path = "./data/studio.db",
                          (get_setting(db, "comfy") or {}).get("base_url", ""))).start()
         if start_workers:
             from ..engine import (comicgen, director, genref,  # noqa: F401 注册触发
-                                  merge as merge_mod, pageredraw,
+                                  merge as merge_mod, musiclib, pageredraw,
                                   pipeline_jobs, rendershot)
             merge_mod.register_merge_handler()  # merge handler 延迟注册（避免环）
             from ..engine.queue.worker import start_workers as _spawn_workers, stop_workers
@@ -235,6 +235,9 @@ def create_app(db_path: str | Path = "./data/studio.db",
 
     from .routes_voices import router as voices_router
     app.include_router(voices_router)
+
+    from .routes_music import router as music_router
+    app.include_router(music_router)
 
     from .routes_projects import router as projects_router
     app.include_router(projects_router)
