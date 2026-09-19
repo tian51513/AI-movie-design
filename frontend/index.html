@@ -413,8 +413,9 @@
         {id:'wf',name:'🎬 工作流'},
         {id:'themes',name:'📚 预设主题'},
         {id:'route',name:'🔀 任务路由'},
-        {id:'voices',name:'🎵 音色库'}]" :key="t.id"
-        @click="settingsTab=t.id; if(t.id==='voices') loadVoices()"
+        {id:'voices',name:'🎵 音色库'},
+        {id:'music',name:'🎵 音乐库'}]" :key="t.id"
+        @click="settingsTab=t.id; if(t.id==='voices') loadVoices(); if(t.id==='music') loadMusic()"
         :style="settingsTab===t.id ? 'background:#16a34a;font-weight:bold' : ''"
         style="padding:6px 14px">{{ t.name }}</button>
     </p>
@@ -469,6 +470,76 @@
           <button @click="delVoice(v, 'global')" style="background:#dc2626;font-size:11px;padding:2px 8px">🗑</button>
         </div>
         <p class="muted" style="font-size:12px">上传走 VoiceClone（裁剪段→默认句克隆成标准样本）；项目级上传在项目详情页。</p>
+      </div>
+    </div>
+    </div>
+    <div v-show="settingsTab==='music'">
+    <h2>音乐库</h2>
+    <div class="row">
+      <div class="card" style="flex:1.2;min-width:320px">
+        <h3>🎼 生成样曲（Music3）</h3>
+        <p style="font-size:13px;display:flex;flex-direction:column;gap:6px">
+          <span style="display:block">曲风描述 caption
+            <button @click="musicSuggestCaption" :disabled="!!musicBusy"
+                    title="LLM 按当前描述起草/改写 Music3 caption"
+                    style="font-size:11px;padding:2px 8px;margin-left:6px">✨ LLM 建议</button></span>
+          <textarea v-model="musicForm.caption" rows="3"
+                    placeholder="如：Global Metadata: Cinematic, 90 BPM, C minor. 中文描述情绪与配器…"
+                    style="width:100%"></textarea>
+          <span style="display:block">歌词
+            <button @click="musicSuggestLyrics" :disabled="!!musicBusy"
+                    title="LLM 生成 [主歌]/[副歌] 结构歌词"
+                    style="font-size:11px;padding:2px 8px;margin-left:6px">✨ LLM 建议</button>
+            <span class="muted" style="font-size:11px">（留空=纯音乐）</span></span>
+          <textarea v-model="musicForm.lyrics" rows="4"
+                    placeholder="留空=纯音乐；支持 [主歌]/[副歌] 结构标记"
+                    style="width:100%"></textarea>
+          <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label>时长(秒)
+              <input type="number" v-model.number="musicForm.duration" min="15" max="360" style="width:70px"></label>
+            <label>seed
+              <input type="number" v-model.number="musicForm.seed" min="0" style="width:100px"></label>
+            <button @click="musicRandomSeed" title="随机 seed（换一首不同采样）"
+                    style="font-size:12px;padding:3px 8px">🎲</button>
+          </span>
+          <button @click="musicGenerate" :disabled="!!musicBusy">{{ musicBusy || '🎼 生成样曲（入队）' }}</button>
+          <span v-if="musicJobId" class="muted" style="font-size:12px;color:#fde047">
+            🎼 生成中（job #{{ musicJobId }}，需数分钟）——完成后自动出现在右侧试听区</span>
+          <span class="muted" style="font-size:12px">生成走队列（gpu_comfy 串行）；试听满意再「保存入库」，不满意「✕ 放弃」重生成。</span>
+        </p>
+      </div>
+      <div class="card" style="flex:1;min-width:300px">
+        <h3>⏳ 待入库试听（staging）</h3>
+        <p v-if="!musicStaging.length" class="muted" style="font-size:12px">暂无待入库样曲</p>
+        <div v-for="s in musicStaging" :key="s.job_id"
+             style="border:1px solid #f59e0b;border-radius:6px;padding:8px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px">
+          <b style="font-size:12px;color:#f59e0b">生成任务 #{{ s.job_id }} · {{ s.status === 'done' ? '已完成' : s.status }}</b>
+          <audio :src="'/media/'+s.path" controls style="height:28px"></audio>
+          <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <input v-model="musicSaveName[s.job_id]" placeholder="入库名称（如：紧张悬疑主旋律）"
+                   style="flex:1;min-width:140px">
+            <button style="background:#16a34a;font-size:12px;padding:3px 10px" :disabled="!!musicBusy"
+                    @click="musicSave(s)">✓ 保存入库</button>
+            <button style="background:#dc2626;font-size:12px;padding:3px 10px" :disabled="!!musicBusy"
+                    @click="musicDiscard(s)">✕ 放弃</button>
+          </span>
+          <span class="muted" style="font-size:11px">保存时按左侧表单的曲风/歌词/seed/时长记档，供后续复现。</span>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3>🎵 库存音乐（{{ musicLib.length }}）</h3>
+      <p v-if="!musicLib.length" class="muted" style="font-size:12px">
+        还没有入库音乐——上方生成并「保存入库」后出现在这里；在项目详情「参数面板 → 配乐」选用。</p>
+      <div v-for="m in musicLib" :key="m.id"
+           style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
+        <b style="font-size:13px">{{ m.name }}</b>
+        <audio :src="'/media/'+m.path" controls style="height:22px;flex:1;min-width:200px"></audio>
+        <span class="muted" style="font-size:11px;max-width:280px;overflow-wrap:anywhere"
+              :title="m.caption">{{ (m.caption || '').slice(0, 60) }}</span>
+        <span v-if="m.duration" class="muted" style="font-size:11px">{{ Math.round(m.duration) }}s</span>
+        <button @click="musicDelete(m)" title="删除该曲（文件一并删；引用它的项目需改选配乐）"
+                style="background:#dc2626;font-size:11px;padding:2px 8px">🗑</button>
       </div>
     </div>
     </div>
@@ -898,7 +969,7 @@
               @click="editEra">⛩ {{ project.era }}</span>
         <span v-if="project.video_megapixels && isVideoChain" class="pill" style="cursor:pointer"
               title="点击展开/收起视频参数面板"
-              @click="paramsOpen=!paramsOpen">{{ videoParamsLabel() }}</span>
+              @click="toggleParams()">{{ videoParamsLabel() }}</span>
         <span v-else-if="isComicOutput" class="pill" style="cursor:pointer;background:#422006;color:#facc15"
               title="点击展开/收起漫画参数面板（尺寸/质量档/页数/对白呈现/气泡样式——改完重出页面生效）"
               @click="paramsOpen=!paramsOpen">📖 {{ project.image_size }} ·
@@ -984,6 +1055,15 @@
       <label>LoRA
         <input type="number" min="0" max="1" step="0.05" :value="project.lora_realism"
                @change="patchVideoParam('lora_realism', Number($event.target.value))" style="width:56px"></label>
+      <label title="项目配乐（设置页音乐库生成入库）——合成成片时低音量混入，对白优先">配乐
+        <select v-model="bgmSel" @change="patchBgmMusic()" style="max-width:170px">
+          <option value="">无配乐</option>
+          <option v-for="m in musicLib" :key="m.id" :value="m.id">{{ m.name }}</option>
+        </select></label>
+      <label title="配乐相对音量 0~0.5（防压过对白人声）——重新合成时生效">音量
+        <input type="range" min="0" max="0.5" step="0.05" v-model.number="bgmVol"
+               @change="patchBgmVol()" style="width:90px;vertical-align:middle"> {{ bgmVol }}</label>
+      <span v-if="bgmHint" style="font-size:12px;color:#fde047">💡 {{ bgmHint }}</span>
       </template>
       <!-- 漫画参数（2026-09-13 气泡渲染）：对白呈现/页数/尺寸/质量档 + 气泡样式 -->
       <template v-if="project.comic_mode==='comic_output'">

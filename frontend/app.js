@@ -78,6 +78,11 @@ function data() {
     pUp: { file: null, name: '', start: 45, dur: 60 },
     voicePanelOpen: false, rowVoiceSel: {}, rowVoiceDesc: {}, rowBusy: {},
     editAssetVoice: '',
+    // 音乐库（2026-09-19 BGM spec Task 7）：设置页 tab + 项目配乐选择
+    musicLib: [], musicStaging: [], musicBusy: '',
+    musicForm: { caption: '', lyrics: '', seed: 0, duration: 120 },
+    musicSaveName: {}, musicJobId: null, musicPollTimer: null,
+    bgmSel: '', bgmVol: 0.2, bgmHint: '',
     themeEditOpen: false, themeEdit: {}, themeEditErr: '',
     viewer: null,  // 分镜媒体查看器 {kind:'image'|'video', list:[{url,label}], idx}
     comfyStatus: null, llmTesting: '', llmTestResult: {local: null, local2: null, online: null},
@@ -618,6 +623,10 @@ const methods = {
     this.logs = []; this.lastLogId = 0;
     this.detailMode = 'assets'; this.shots = []; this.splitRunning = false; this.expandedShot = null;
     this.merges = [];
+    // 配乐面板本地态（bgm 字段不在项目 GET 载荷里，入会话后由 PATCH 回包维护）
+    this.bgmSel = (p && p.bgm_music_id != null) ? p.bgm_music_id : '';
+    this.bgmVol = (p && p.bgm_volume != null) ? p.bgm_volume : 0.2;
+    this.bgmHint = '';
     this.view = 'detail'; this.project = p;
     await this.loadDetail(); this.startLogsPolling();
   },
@@ -1787,6 +1796,27 @@ const methods = {
     if (r.ok) { Object.assign(this.project, await r.json()); }  // 回写 UI——否则输入框被旧值顶回，形同没保存
     else { alert(await r.text()); await this.loadDetail(); }
   },
+  toggleParams() {  // 参数面板开合（2026-09-19：打开时惰性拉音乐库——配乐下拉数据源）
+    this.paramsOpen = !this.paramsOpen;
+    if (this.paramsOpen) this.loadMusic();
+  },
+  async patchBgm(key, value) {  // 项目配乐 PATCH /bgm（键存在性门控：传 null=清引用）
+    const r = await fetch(`/api/projects/${this.project.id}/bgm`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({[key]: value})});
+    if (!r.ok) { alert(await r.text());
+      this.bgmSel = (this.project.bgm_music_id != null) ? this.project.bgm_music_id : '';
+      return; }
+    const body = await r.json();  // {music_id, volume}——非整项目对象
+    this.bgmSel = (body.music_id === null || body.music_id === undefined) ? '' : body.music_id;
+    if (body.volume !== null && body.volume !== undefined) this.bgmVol = body.volume;
+    this.project.bgm_music_id = body.music_id;
+    this.project.bgm_volume = body.volume;
+    this.bgmHint = this.project.stage === 'merged'
+      ? '已改配乐——点「🎬 重新合成」重出成片后生效' : '';
+  },
+  patchBgmMusic() { this.patchBgm('music_id', this.bgmSel === '' ? null : this.bgmSel); },
+  patchBgmVol() { this.patchBgm('volume', Number(this.bgmVol) || 0); },
   promptBadge(s) {
     const j = s.prompt_job;
     if (!j) return '';
@@ -1983,6 +2013,105 @@ const methods = {
       body: JSON.stringify({ voice: this.editAssetVoice }) });
     if (!r.ok) { alert(`绑定失败：${(await r.json()).detail || r.status}`); return; }
     await this.open(this.project);  // 刷新资产列表（voice 字段）
+  },
+  // ===== 音乐库（2026-09-19 BGM spec Task 7）=====
+  async loadMusic() {
+    try {
+      const r = await fetch('/api/music');
+      if (!r.ok) return;
+      const body = await r.json();
+      this.musicLib = body.music || [];
+      this.musicStaging = body.staging || [];
+    } catch (e) { /* 忽略瞬时失败 */ }
+  },
+  musicPollStop() {
+    if (this.musicPollTimer) { clearInterval(this.musicPollTimer); this.musicPollTimer = null; }
+  },
+  musicPollStart() {  // 入队后轮询 staging——样曲落盘自动出现试听条
+    if (this.musicPollTimer) return;
+    this.musicPollTimer = setInterval(async () => {
+      if (this.settingsTab !== 'music' || this.musicJobId === null) { this.musicPollStop(); return; }
+      await this.loadMusic();
+      if (this.musicStaging.some(s => s.job_id === this.musicJobId)) {
+        this.musicJobId = null; this.musicPollStop();
+      }
+    }, 4000);
+  },
+  musicRandomSeed() { this.musicForm.seed = Math.floor(Math.random() * 2147483646) + 1; },
+  async musicSuggestCaption() {
+    this.musicBusy = '✨ 曲风建议中…';
+    try {
+      const r = await fetch('/api/music/suggest-caption', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ hint: this.musicForm.caption || '' }) });
+      if (!r.ok) { alert(`曲风建议失败：${(await r.json()).detail || r.status}`); return; }
+      const t = (await r.json()).text || '';
+      if (t.trim()) this.musicForm.caption = t;  // 空结果不清原文本（同 PromptBox 判例）
+    } finally { this.musicBusy = ''; }
+  },
+  async musicSuggestLyrics() {
+    this.musicBusy = '✨ 歌词建议中…';
+    try {
+      const r = await fetch('/api/music/suggest-lyrics', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ hint: this.musicForm.caption || '' }) });
+      if (!r.ok) { alert(`歌词建议失败：${(await r.json()).detail || r.status}`); return; }
+      const t = (await r.json()).text || '';
+      if (t.trim()) this.musicForm.lyrics = t;
+    } finally { this.musicBusy = ''; }
+  },
+  async musicGenerate() {
+    const caption = (this.musicForm.caption || '').trim();
+    if (!caption) { alert('曲风描述 caption 必填（可点 ✨ 让 LLM 起草）'); return; }
+    this.musicBusy = '🎼 入队中…';
+    try {
+      const r = await fetch('/api/music/generate', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ caption,
+          lyrics: (this.musicForm.lyrics || '').trim(),
+          seed: Number(this.musicForm.seed) || 0,
+          duration: Number(this.musicForm.duration) || 120 }) });
+      if (!r.ok) { alert(`生成失败：${(await r.json()).detail || r.status}`); return; }
+      this.musicJobId = (await r.json()).job_id;
+      this.musicPollStart();
+    } finally { this.musicBusy = ''; }
+  },
+  async musicSave(s) {
+    const name = (this.musicSaveName[s.job_id] || '').trim();
+    if (!name) { alert('请先填入库名称'); return; }
+    this.musicBusy = '入库中…';
+    try {
+      const r = await fetch('/api/music/save', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ job_id: s.job_id, name,
+          caption: (this.musicForm.caption || '').trim(),
+          lyrics: (this.musicForm.lyrics || '').trim(),
+          seed: Number(this.musicForm.seed) || 0,
+          duration: Number(this.musicForm.duration) || 120 }) });
+      if (!r.ok) { alert(`入库失败：${(await r.json()).detail || r.status}`); return; }
+      this.musicSaveName[s.job_id] = '';
+      if (this.musicJobId === s.job_id) this.musicJobId = null;
+      await this.loadMusic();
+    } finally { this.musicBusy = ''; }
+  },
+  async musicDiscard(s) {
+    this.musicBusy = '放弃中…';
+    try {
+      const r = await fetch('/api/music/discard', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ job_id: s.job_id }) });
+      if (!r.ok) { alert(`放弃失败：${await r.text()}`); return; }
+      if (this.musicJobId === s.job_id) this.musicJobId = null;
+      await this.loadMusic();
+    } finally { this.musicBusy = ''; }
+  },
+  async musicDelete(m) {
+    const ref = (this.project && this.project.bgm_music_id === m.id)
+      ? '\n注意：当前项目正引用此曲，删除后请在参数面板改选配乐。' : '';
+    if (!confirm(`确认删除音乐「${m.name}」？音频文件一并删除（不可恢复）。${ref}`)) return;
+    const r = await fetch(`/api/music/${m.id}`, { method: 'DELETE' });
+    if (!r.ok) { alert(`删除失败：${(await r.json()).detail || r.status}`); return; }
+    await this.loadMusic();
   },
   // ===== 预设主题编辑（2026-08-30 用户需求：可预览/编辑）=====
   openThemeEdit(t) {
