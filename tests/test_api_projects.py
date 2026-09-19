@@ -341,3 +341,32 @@ def test_patch_redraw_toggle(tmp_path):
         assert r.status_code == 201, r.text
         pid = r.json()["id"]
         assert c.patch(f"/api/projects/{pid}", json={"redraw_characters": True}).json()["redraw_characters"] == 1
+
+
+def test_patch_bgm_endpoint(tmp_path):
+    """Task 6 C：PATCH /{id}/bgm——正常更新两字段 / music_id 不存在 422 /
+    volume 钳 0~0.5 / music_id=None 清引用 / 404。"""
+    from comic_studio.engine.musiclib import save_to_library
+    with _client(tmp_path) as c:
+        pid = _upload(c, name="配乐剧").json()["id"]
+        src = tmp_path / "draft.mp3"; src.write_bytes(b"m")
+        mid = save_to_library(c.app.state.db, tmp_path / "data", src,
+                              "夜曲", "", "", 1, 60)["id"]
+        # 正常更新（两字段一起）
+        r = c.patch(f"/api/projects/{pid}/bgm", json={"music_id": mid, "volume": 0.35})
+        assert r.status_code == 200
+        assert r.json() == {"music_id": mid, "volume": 0.35}
+        # music_id 不存在 → 422
+        r = c.patch(f"/api/projects/{pid}/bgm", json={"music_id": 9999})
+        assert r.status_code == 422
+        # volume 钳 0~0.5；只改 volume 不动 music_id
+        r = c.patch(f"/api/projects/{pid}/bgm", json={"volume": 9})
+        assert r.status_code == 200 and r.json()["volume"] == 0.5
+        assert r.json()["music_id"] == mid
+        r = c.patch(f"/api/projects/{pid}/bgm", json={"volume": -3})
+        assert r.json()["volume"] == 0.0
+        # 清引用（music_id=None）
+        r = c.patch(f"/api/projects/{pid}/bgm", json={"music_id": None})
+        assert r.status_code == 200 and r.json()["music_id"] is None
+        # 项目不存在 → 404
+        assert c.patch("/api/projects/999/bgm", json={"music_id": mid}).status_code == 404

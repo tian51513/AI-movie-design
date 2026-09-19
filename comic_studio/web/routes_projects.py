@@ -1142,3 +1142,33 @@ def patch_style(request: Request, project_id: int, body: dict):
             raise HTTPException(422, str(e))
 
     return _public(get_project(db, project_id))
+
+
+@router.patch("/{project_id}/bgm")
+def patch_bgm(request: Request, project_id: int, body: dict):
+    """项目配乐引用（迁移 43 bgm_music_id/bgm_volume）：music_id=None 清引用；
+    volume 钳 0~0.5（混音端 merge._mix_bgm 同规则二次钳）。"""
+    from pydantic import BaseModel
+
+    class BgmPatch(BaseModel):
+        music_id: int | None = None
+        volume: float | None = None
+
+    db = request.app.state.db
+    if get_project(db, project_id) is None:
+        raise HTTPException(404, "项目不存在")
+    patch = BgmPatch.model_validate(body)
+    conn = db.connect()
+    if "music_id" in body:
+        if patch.music_id is not None and conn.execute(
+                "SELECT 1 FROM music_library WHERE id=?",
+                (patch.music_id,)).fetchone() is None:
+            raise HTTPException(422, f"配乐不存在: {patch.music_id}")
+        conn.execute("UPDATE projects SET bgm_music_id=? WHERE id=?",
+                     (patch.music_id, project_id))
+    if "volume" in body and patch.volume is not None:
+        conn.execute("UPDATE projects SET bgm_volume=? WHERE id=?",
+                     (min(0.5, max(0.0, patch.volume)), project_id))
+    conn.commit()
+    cur = get_project(db, project_id)
+    return {"music_id": cur["bgm_music_id"], "volume": cur["bgm_volume"]}

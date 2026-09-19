@@ -239,6 +239,42 @@ def _burn_subtitles(video: Path, srt: Path) -> None:
     tmp.replace(video)
 
 
+def _mix_bgm(db, data_dir, proj, final: Path) -> Path:
+    """项目配乐混入（2026-09-19 spec Task 6）：proj.bgm_music_id 引用音乐库曲目
+    → 成片 amix BGM——音乐 -stream_loop -1 循环补长、duration=first 随片长截断、
+    视频流 copy 零重编码。无引用/库行缺/文件缺 → 原样返回（合成不因 BGM 断）；
+    音量钳 0~0.5（PATCH /bgm 端点同规则，此处兜底）。"""
+    mid = proj["bgm_music_id"] if "bgm_music_id" in proj.keys() else None
+    if not mid:
+        return final
+    row = db.connect().execute("SELECT * FROM music_library WHERE id=?",
+                               (mid,)).fetchone()
+    if row is None:
+        return final
+    from .paths import data_to_abs
+    music = data_to_abs(data_dir, row["path"])
+    if not music.exists():
+        from .logbus import emit as emit_log
+        emit_log(db, "merge", "warn", f"配乐文件缺失，跳过混音: {music}",
+                 project_id=proj["id"])
+        return final
+    vol = min(0.5, max(0.0, float(proj["bgm_volume"]
+                                if "bgm_volume" in proj.keys() else 0.2)))
+    out = final.with_name(final.stem + "_bgm.mp4")
+    import shutil
+    subprocess.run([ffmpeg_bin(), "-y", "-i", str(final), "-stream_loop", "-1",
+                    "-i", str(music),
+                    "-filter_complex",
+                    f"[1:a]volume={vol}[bg];"
+                    f"[0:a][bg]amix=inputs=2:duration=first[a]",
+                    "-map", "0:v", "-map", "[a]", "-c:v", "copy",
+                    "-c:a", "aac", str(out)],
+                   check=True, capture_output=True, encoding='utf-8',
+                   errors='replace', timeout=600)
+    shutil.move(out, final)   # 覆盖引用——epNNN.mp4 即成片
+    return final
+
+
 def merge_project(db, data_dir, project_id, job_id=None) -> Path:
     """按 seq 收集选用视频 → 归一化 → concat → output/epNNN.mp4；置 stage=merged。"""
     from .logbus import emit as emit_log
@@ -345,6 +381,8 @@ def merge_project(db, data_dir, project_id, job_id=None) -> Path:
     srt = out_dir / "subtitles.srt"
     if srt.exists() and subtitles_enabled(proj):
         _burn_subtitles(out, srt)
+    # 项目 BGM 混入（2026-09-19 Task 6）：成片产出后、置 merged 前混入音乐库曲目
+    out = _mix_bgm(db, data_dir, proj, out)
     set_stage(db, project_id, "merged")
     emit_log(db, "merge", "info", f"成片合成完成 → {out.name}（{len(shots)} 镜）",
              project_id=project_id, job_id=job_id)

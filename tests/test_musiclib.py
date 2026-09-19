@@ -146,6 +146,66 @@ def test_delete_music_path_escape(tmp_path):
     assert evil.exists()  # 文件未被动
 
 
+def test_mix_bgm_three_states(tmp_path, monkeypatch):
+    """Task 6：_mix_bgm 三态——①无引用原样返回不触 ffmpeg；②有引用 amix 命令
+    （-stream_loop -1 循环 + volume 音量 + duration=first 随片长 + -c:v copy
+    零重编码）产出 _bgm.mp4 后覆盖引用；③库文件缺失 warn 降级原样返回。"""
+    from comic_studio.engine import merge as M
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.musiclib import save_to_library
+    from comic_studio.engine.projects import create_project, get_project
+    grabbed = {}
+
+    def fake_run(cmd, **kw):
+        grabbed["cmd"], grabbed["kw"] = cmd, kw
+        Path(cmd[-1]).write_bytes(b"mp4")  # 产出 _bgm.mp4 供 move
+
+    monkeypatch.setattr(M.subprocess, "run", fake_run)
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "混音剧", "16:9", "正文")["id"]
+    final = tmp_path / "data" / "out" / "ep001.mp4"
+    final.parent.mkdir(parents=True)
+    final.write_bytes(b"v")
+
+    # ① 无引用 → 原样返回、不触 ffmpeg
+    assert M._mix_bgm(db, tmp_path / "data", get_project(db, pid), final) == final
+    assert grabbed == {}
+
+    # ② 有引用 → amix 混音 + 覆盖引用（epNNN.mp4 即成片，无 _bgm 残留）
+    src = tmp_path / "draft.mp3"; src.write_bytes(b"music")
+    mid = save_to_library(db, tmp_path / "data", src, "夜曲", "", "", 1, 60)["id"]
+    conn = db.connect()
+    conn.execute("UPDATE projects SET bgm_music_id=? WHERE id=?", (mid, pid))
+    conn.commit()
+    proj = get_project(db, pid)
+    assert M._mix_bgm(db, tmp_path / "data", proj, final) == final
+    cmd = grabbed["cmd"]
+    assert "-stream_loop" in cmd and cmd[cmd.index("-stream_loop") + 1] == "-1"
+    assert str(tmp_path / "data" / "music" / "custom" / "夜曲.mp3") in cmd
+    fc = cmd[cmd.index("-filter_complex") + 1]
+    assert fc == ("[1:a]volume=0.2[bg];"
+                  "[0:a][bg]amix=inputs=2:duration=first[a]")  # 默认音量 0.2
+    assert cmd[cmd.index("-c:v") + 1] == "copy"   # 视频流零重编码
+    assert final.read_bytes() == b"mp4"           # move 覆盖引用
+    assert not final.with_name("ep001_bgm.mp4").exists()
+
+    # vol 钳 0~0.5：超上限 → 0.5
+    conn.execute("UPDATE projects SET bgm_volume=0.9 WHERE id=?", (pid,))
+    conn.commit()
+    M._mix_bgm(db, tmp_path / "data", get_project(db, pid), final)
+    assert "volume=0.5" in grabbed["cmd"][grabbed["cmd"].index("-filter_complex") + 1]
+
+    # ③ 库文件缺失 → warn 一条、原样返回不触 ffmpeg
+    (tmp_path / "data" / "music" / "custom" / "夜曲.mp3").unlink()
+    final.write_bytes(b"v2")
+    grabbed.clear()
+    assert M._mix_bgm(db, tmp_path / "data", get_project(db, pid), final) == final
+    assert grabbed == {} and final.read_bytes() == b"v2"
+    n = db.connect().execute("SELECT COUNT(*) c FROM logs "
+                             "WHERE message LIKE '%配乐文件缺失%'").fetchone()["c"]
+    assert n == 1
+
+
 def test_music_api_matrix(tmp_path, monkeypatch):
     """Task 5：/api/music 全套。generate 入队 202（仓库入队端点惯例）+
     在飞 409 + 空 caption 422；save 从 job 快照回读 staging（无快照/文件缺

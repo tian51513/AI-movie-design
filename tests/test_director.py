@@ -129,6 +129,51 @@ def test_handle_gen_director_end_to_end(tmp_path, monkeypatch):
     assert snap["template"] == "h3_director" and "timeline" not in snap["prompt"] or True
 
 
+def test_gen_director_mixes_project_bgm(tmp_path, monkeypatch):
+    """Task 6 B：快车道成片产出后、置 merged 前调 merge._mix_bgm 混入项目配乐。
+    接在调用方 director.py——mix_director_audio 签名拿不到 data_dir（_mix_bgm
+    需要它解析音乐库相对路径），以最小侵入在调用处补齐。"""
+    from pathlib import Path
+    from comic_studio.engine import director as D
+    from comic_studio.engine import merge as M
+    from comic_studio.engine.musiclib import save_to_library
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from comic_studio.engine.projects import get_project, set_stage
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comfy_mock import comfy_server
+    db, pid, chars = _setup(tmp_path)
+    persist_shots(db, pid, [
+        _shot("推门", "林晨推门，中景。", 5.0,
+              ledger={"assets": {"characters": [chars["林晨"]]}},
+              character_ids=[chars["林晨"]])])
+    set_stage(db, pid, "storyboard_ready")
+    src = tmp_path / "bgm.mp3"; src.write_bytes(b"m")
+    mid = save_to_library(db, tmp_path / "data", src, "夜曲", "", "", 1, 60)["id"]
+    conn = db.connect()
+    conn.execute("UPDATE projects SET bgm_music_id=? WHERE id=?", (mid, pid))
+    conn.commit()
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"director": "h3_director"})
+    rec = []
+
+    def fake_bgm(db_, dd, proj, final):
+        assert get_project(db_, pid)["stage"] != "merged"  # 必须在置 merged 之前
+        rec.append(Path(final).name)
+        return Path(final)
+
+    monkeypatch.setattr(M, "_mix_bgm", fake_bgm)
+    jid = enqueue_job(db, "gen_director", project_id=pid, resource="gpu_comfy",
+                      payload={"project_id": pid})
+    with comfy_server("ok", video=True) as m:
+        D.handle_gen_director(db, tmp_path / "data", get_job(db, jid),
+                              ComfyClient(m.base_url))
+    out_dir = tmp_path / "data" / "projects" / "导演剧" / "output"
+    assert rec == ["ep001.mp4"]           # 恰好一次、目标是最终成片
+    assert get_project(db, pid)["stage"] == "merged"
+
+
 def test_gen_director_batches_by_frame_budget(tmp_path, monkeypatch):
     """job 721 教训：整部一次提交 → CPU 灰画布 39GB 爆。按帧预算分批：
     多次提交、批首 continuity 断开、批间 ffmpeg 拼接。"""

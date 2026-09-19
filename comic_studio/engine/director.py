@@ -332,6 +332,16 @@ def handle_gen_director(db, data_dir, job, comfy):
             emit_log(db, "comfy", "warn",
                      f"整片混音失败（成片保留纯画面）：{exc}",
                      project_id=pid, job_id=job["id"])
+    # 项目 BGM 混入（2026-09-19 Task 6）：与逐镜合成同构——快车道成片产出后、
+    # 置 merged 前混入音乐库曲目。接在调用方（mix_director_audio 拿不到
+    # data_dir）；自守 try：数小时渲染的成片不因 BGM ffmpeg 失败报废
+    try:
+        from .merge import _mix_bgm
+        dest = _mix_bgm(db, data_dir, proj, dest)
+    except Exception as exc:
+        emit_log(db, "comfy", "warn",
+                 f"BGM 混入失败（成片保留原音轨）：{exc}",
+                 project_id=pid, job_id=job["id"])
     for s in list_shots(db, pid):
         if not s["disabled"]:
             update_shot(db, s["id"], {"status": "rendered", "video_path": rel})
