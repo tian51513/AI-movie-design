@@ -4,6 +4,10 @@
 import shutil
 from pathlib import Path
 
+# 顶层 import 一次，函数内直接引用模块属性——测试经
+# monkeypatch.setattr(musiclib, "client_for_task", ...) 替换才命中
+from .llm.provider import client_for_task
+
 STAGING_REL = "music/_staging"
 LIBRARY_REL = "music/custom"
 
@@ -53,3 +57,30 @@ def delete_music(db, data_dir, music_id: int) -> None:
     p.unlink(missing_ok=True)
     conn.execute("DELETE FROM music_library WHERE id=?", (music_id,))
     conn.commit()
+
+
+def suggest_caption(db, hint: str = "") -> str:
+    system = ("你是音乐曲风描述写手，为 MiniMax Music3 生成 caption。输出格式："
+              "第一行 'Global Metadata: <风格>, <BPM>, <调性>.'，第二行起中文描述"
+              "情绪走向与配器（2~3 句）。只输出正文，不要解释。")
+    user = f"作品语境：{hint or '通用背景音乐'}"
+    text, _ = client_for_task(db, "gen_story").raw_chat(
+        [{"role": "system", "content": system},
+         {"role": "user", "content": user}], temperature=0.5)
+    text = (text or "").strip()
+    if not text:
+        raise ValueError("曲风建议为空，请重试")
+    return text
+
+
+def suggest_lyrics(db, hint: str = "") -> str:
+    system = ("你是歌词作者。输出中文歌词，结构为 [主歌] / [副歌]（可含 [桥段]），"
+              "每段 4 行内、口语可唱、末字尽量押韵。只输出歌词正文。")
+    user = f"主题：{hint or '青春、遗憾与重逢'}"
+    text, _ = client_for_task(db, "gen_story").raw_chat(
+        [{"role": "system", "content": system},
+         {"role": "user", "content": user}], temperature=0.7)
+    text = (text or "").strip()
+    if not text:
+        raise ValueError("歌词建议为空，请重试")
+    return text

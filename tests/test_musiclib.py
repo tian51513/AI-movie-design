@@ -52,3 +52,26 @@ def test_library_crud_roundtrip(tmp_path):
     assert list_music(db) == [] and not (tmp_path / "music/custom/夜晚钢琴.mp3").exists()
     with pytest.raises(ValueError, match="音乐不存在"):
         delete_music(db, tmp_path, entry["id"])
+
+
+class FakeLLM:
+    def __init__(self, reply): self.reply, self.calls = reply, []
+    def raw_chat(self, messages, temperature=0.5):
+        self.calls.append(messages); return self.reply, None
+
+
+def test_suggest_caption_and_lyrics(tmp_path, monkeypatch):
+    from comic_studio.engine.db import Database
+    from comic_studio.engine import musiclib
+    db = Database(tmp_path / "s.db"); db.migrate()
+    fake = FakeLLM("Global Metadata: Cinematic lo-fi, 72 BPM, A minor.\n情绪走向：由静谧渐至温暖。")
+    monkeypatch.setattr(musiclib, "client_for_task", lambda db, task: fake)
+    cap = musiclib.suggest_caption(db, "雨夜重逢的校园恋爱短剧")
+    assert cap.startswith("Global Metadata") and "雨夜" in fake.calls[0][-1]["content"]
+    fake2 = FakeLLM("[主歌]\n风穿过走廊\n[副歌]\n我想再见你一面")
+    monkeypatch.setattr(musiclib, "client_for_task", lambda db, task: fake2)
+    assert "[副歌]" in musiclib.suggest_lyrics(db, "毕业季告别")
+    with pytest.raises(ValueError, match="曲风"):
+        monkeypatch.setattr(musiclib, "client_for_task",
+                            lambda db, task: FakeLLM("  "))
+        musiclib.suggest_caption(db)
