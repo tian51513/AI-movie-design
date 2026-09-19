@@ -60,6 +60,43 @@ class FakeLLM:
         self.calls.append(messages); return self.reply, None
 
 
+def test_gen_music_handler(tmp_path, monkeypatch):
+    """Task 4：gen_music 处理器——music3 注入 caption/lyrics/max_duration/seed，
+    staging 落盘 music/_staging/<job_id>.<后缀>，snapshot 记相对路径（save 回读）。"""
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.db import Database
+    from comic_studio.engine import musiclib
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from comic_studio.engine.workflows import registry
+    from comfy_mock import comfy_server
+    db = Database(tmp_path / "s.db"); db.migrate()
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    jid = enqueue_job(db, "gen_music", project_id=None, resource="gpu_comfy",
+                      payload={"caption": "Global Metadata: lo-fi, 70 BPM.",
+                               "lyrics": "[主歌]\n夜色温柔", "seed": 7,
+                               "duration": 60})
+    with comfy_server("ok", audio=True) as m:
+        dest = musiclib.handle_gen_music(db, tmp_path, get_job(db, jid),
+                                         ComfyClient(m.base_url))
+        prompt = m.prompts[0]["prompt"]
+        wf = prompt["37:13"]["inputs"]
+        assert wf["caption"].startswith("Global Metadata")
+        assert wf["lyrics"].startswith("[主歌]") and wf["max_duration"] == 60
+        # seed 字面注入在 SeedNode 37:38（37:13.seed 是链引用 ["37:38", 0]）
+        assert prompt["37:38"]["inputs"]["seed"] == 7
+    # 后缀跟随产物文件名（mock 产物 cs_x.flac → .flac，同 voicelib 行为）
+    st = musiclib.staging_dir(tmp_path) / f"{jid}.flac"
+    assert st.exists() and dest == st
+    snap = json.loads(get_job(db, jid)["snapshot_json"])
+    assert snap["workflow"]["staging"] == str(st.relative_to(tmp_path))
+    assert snap["prompt"].startswith("Global Metadata")
+    # 缺 caption 直接拒绝（不白烧 ComfyUI）
+    jid2 = enqueue_job(db, "gen_music", resource="gpu_comfy", payload={})
+    with pytest.raises(ValueError, match="caption"):
+        musiclib.handle_gen_music(db, tmp_path, get_job(db, jid2),
+                                  ComfyClient(m.base_url))
+
+
 def test_suggest_caption_and_lyrics(tmp_path, monkeypatch):
     from comic_studio.engine.db import Database
     from comic_studio.engine import musiclib

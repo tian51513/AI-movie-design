@@ -1,6 +1,7 @@
 # comic_studio/engine/musiclib.py
 """音乐库（2026-09-19 spec）：Music3 生成 → staging 试听 → 入库 → 项目引用。
 同 voicelib 心智：文件在 data/music/custom，元数据在 music_library 表。"""
+import json
 import shutil
 from pathlib import Path
 
@@ -84,3 +85,35 @@ def suggest_lyrics(db, hint: str = "") -> str:
     if not text:
         raise ValueError("歌词建议为空，请重试")
     return text
+
+
+def handle_gen_music(db, data_dir, job, comfy) -> Path:
+    """gen_music 队列处理器：music3 模板生成 BGM 样曲 → **staging 暂存**
+    （music/_staging/<job_id>.<产物后缀>，先试听、确认才 save_to_library）。
+    snapshot 记 staging 相对路径（save 端点回读）。payload：
+    {caption: 必填曲风描述, lyrics: 可选歌词, seed: int, duration: 秒（钳 15~360）}。"""
+    from .jobs import attach_snapshot
+    from .paths import rel_to_data
+    from .voicelib import _run_template
+    payload = json.loads(job["payload_json"] or "{}")
+    caption = (payload.get("caption") or "").strip()
+    if not caption:
+        raise ValueError("gen_music 缺 caption")
+    lyrics = (payload.get("lyrics") or "").strip()
+    duration = min(360.0, max(15.0, float(payload.get("duration") or 120)))
+    seed = int(payload.get("seed") or 0)
+    dest = _run_template(
+        comfy, "music3",
+        params={"seed": seed, "max_duration": duration, "lyrics": lyrics},
+        images=None, dest_dir=staging_dir(data_dir), name=str(job["id"]),
+        db=db, prompt=caption)
+    attach_snapshot(db, job["id"], prompt=caption,
+                    workflow={"staging": rel_to_data(data_dir, dest)})
+    return dest
+
+
+# handler 注册放文件底部（queue.worker 不反向 import 本模块，无环；同 genref
+# 的 @register 挂法，只是按 brief 约定挪到底部 import + 显式注册）
+from .queue.worker import register  # noqa: E402
+
+register("gen_music")(handle_gen_music)

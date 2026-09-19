@@ -69,10 +69,13 @@ def resolve_sample(data_dir, name: str, project: str | None = None) -> Path | No
 
 
 def _run_template(comfy, template_id: str, params: dict, images: list | None,
-                  dest_dir: Path, name: str, db=None) -> Path:
+                  dest_dir: Path, name: str, db=None,
+                  prompt: str | None = None) -> Path:
     """提交 TTS 模板 → 轮询 → 下载首个 audio 产物到 dest_dir/<name><原后缀>。
     db 给定时先走 ensure_vram_for_comfy（LLM 让位+显存门槛——TTS 1.7B 与
-    本地 LLM 同卡会挤爆，2026-08-31 用户要求 LLM/Comfy 串行）。"""
+    本地 LLM 同卡会挤爆，2026-08-31 用户要求 LLM/Comfy 串行）。
+    prompt 透传 fill_workflow（gen_music 复用此通道注入 music3 caption；
+    None=保留工作流内置提示词，既有 TTS 调用不传=行为不变）。"""
     if db is not None:
         try:
             has_gpu_info = bool((comfy.health().get("devices") or [{}])[0])
@@ -84,7 +87,7 @@ def _run_template(comfy, template_id: str, params: dict, images: list | None,
     from .workflows import registry
     from .workflows.filler import fill_workflow
     tmpl = registry.scan_templates(registry.TEMPLATE_ROOT)[template_id]
-    wf, uploads = fill_workflow(tmpl, prompt=None, params=params, images=images,
+    wf, uploads = fill_workflow(tmpl, prompt=prompt, params=params, images=images,
                                 output_ctx={"project": "voices", "asset": name},
                                 model_overrides=None)
     for up in uploads:
