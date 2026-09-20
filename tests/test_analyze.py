@@ -608,3 +608,30 @@ def test_dedup_merges_duplicate_scenes(tmp_path):
     assert "粉笔痕" in _json.loads(keep["appearance_json"])["detail"]  # 描述取更丰富者
     led = _json.loads(get_shot(db, sid)["ledger_json"] or "{}")
     assert led["assets"]["scenes"] == [keep["id"]]  # 绑定改指 keep
+
+
+def test_dedup_kind_alias_and_bigram_guard(tmp_path):
+    """kind 异形归一（2026-09-20 二轮真机：「角色」查空 → 在库名被误跳）+
+    共享词根机械护栏（街道并进教室判例拦截；教室角落/教室 放行）。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.llm.analyze import dedup_project_assets
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "文本")
+    persist_assets(db, tmp_path / "data", proj["id"],
+                   NS(characters=[NS(name="阿良良木火怜", appearance="x", tags=[]),
+                                   NS(name="火怜", appearance="y", tags=[])],
+                      scenes=[NS(name="教室", description="上课教室", tags=[]),
+                              NS(name="教室角落", description="角落", tags=[]),
+                              NS(name="黄金周早晨的街道", description="街道", tags=[])],
+                      props=[NS(name="妖刀", description="刀", tags=[]),
+                              NS(name="斩妖刀", description="刀2", tags=[])]))
+    reply = ('{"merges":['
+             '{"kind":"角色","keep":"阿良良木火怜","drop":["火怜"]},'
+             '{"kind":"scene","keep":"教室","drop":["教室角落","黄金周早晨的街道"]},'
+             '{"kind":"prop","keep":"妖刀","drop":["斩妖刀"]}]}')
+    n = dedup_project_assets(db, tmp_path / "data", proj["id"], FakeClient([reply]))
+    assert n == 3
+    names = {a["name"] for a in list_project_assets(db, proj["id"])}
+    # 街道与「教室」零共享词根 → 护栏拦截保留；教室角落/火怜/斩妖刀 正常并入
+    assert names == {"阿良良木火怜", "教室", "妖刀", "黄金周早晨的街道"}

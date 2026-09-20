@@ -546,17 +546,43 @@ def dedup_project_assets(db, data_dir, project_id: int, client: LLMClient) -> in
     from shutil import copytree as _copytree
     applied = 0
     conn = db.connect()
+    # kind 归一（2026-09-20 真机判例：模型输出「角色/Character」等异形 →
+    # by_kind 查空 → 在库的 月火/火怜 被误报「清单外」跳过）
+    _KIND_ALIAS = {"character": "character", "角色": "character", "char": "character",
+                   "scene": "scene", "场景": "scene",
+                   "prop": "prop", "道具": "prop", "item": "prop"}
+
+    def _bigrams(s: str) -> set:
+        s = "".join(ch for ch in s if not ch.isspace())
+        return {s[i:i + 2] for i in range(len(s) - 1)} | {s[i:i + 3] for i in range(len(s) - 2)}
+
     for m in result.merges:
-        kind_map = {a["name"]: a for a in by_kind.get(m.kind, [])}
+        kind = _KIND_ALIAS.get(str(m.kind).strip().lower(), str(m.kind).strip())
+        kind_map = {a["name"]: a for a in by_kind.get(kind, [])}
         keep = kind_map.get(m.keep.strip())
         drops = [kind_map[d.strip()] for d in m.drop if d.strip() in kind_map
                  and d.strip() != m.keep.strip()]
         drops = [d for d in drops if d["id"] != (keep or {"id": None})["id"]] if keep else []
         if not keep or not drops:
             emit_log(db, "analyze", "warn",
-                     f"查重指令引用了清单外的名称，跳过：{m.kind} keep={m.keep!r}",
+                     f"查重指令引用了清单外的名称，跳过：{kind} keep={m.keep!r}",
                      project_id=project_id)
             continue
+        # 机械护栏（2026-09-20 二轮真机判例：街道/学校走廊被 LLM 并进「教室」
+        # ——9B 在长清单下语义把控不住）。keep 与 drop 须共享至少一个二字词根
+        # （教室角落/教室 ✓；街道/教室 ✗）；不共享的 drop 剔除并 warn——
+        # 宁可漏合不可错合，用户可再点一次查重或手动处理
+        _kg = _bigrams(keep["name"])
+        _blocked = [d for d in drops if not (_bigrams(d["name"]) & _kg)]
+        if _blocked:
+            drops = [d for d in drops if d not in _blocked]
+            emit_log(db, "analyze", "warn",
+                     "查重机械护栏拦截（与保留名无共享词根，疑似不同地点）："
+                     + "、".join(d["name"] for d in _blocked)
+                     + f" → 不并入「{keep['name']}」",
+                     project_id=project_id)
+            if not drops:
+                continue
         keep_detail = json.loads(keep["appearance_json"] or "{}").get("detail", "") or ""
         from ..paths import data_to_abs as _d2a
         keep_lib = _d2a(Path(data_dir), keep["library_dir"]) if keep["library_dir"] else None
