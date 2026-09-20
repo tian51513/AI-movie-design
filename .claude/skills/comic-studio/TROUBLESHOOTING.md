@@ -127,3 +127,22 @@ identity_edit LoRA 双图训练上限（scene恒图1/person恒图2，交换劣�
 **根因**：编译守卫（trt_vae_compile.py L106）硬门槛=**12000MiB 空闲显存 + 24GiB 空闲内存**（作者测试环境 4060Ti 16G）——11.9G 卡物理过不了；32G 内存系统空闲 ~11G 也过不了 24G。**降守卫硬试会 TRT 构建期原生 OOM，勿试**。
 **已就绪资产**（换 16G+ 卡直接续跑编译）：`models/vae/h3_trt/` 下 runtime/site-packages（TRT cu13 10.13.3.9.post1 + onnx 1.22/protobuf 7.36 独立目录）、decoder.onnx+data（4.5G）、flex.onnx（已生成）。
 **判例**：① onnx 1.17 无 cp313 轮子（源码构建失败）——venv protobuf 5.29 与新 onnx 冲突时往同目录装配套对（onnx 1.22+protobuf 7.36）+ `sys.path.insert(0)` 启动器优先加载；② WSL 的 PYTHONPATH 不透传给 Windows 进程（要 WSLENV），跨系统调用用启动器脚本注入 sys.path。
+
+## 2026-09-20 · 猫物语连环判例（era 误判 / 乱码资产名 / 队列窗口盲区）
+
+### era 误判「中国清代」
+- 44 万字日本现代小说被判中国清代：全文唯一命中=「孤陋寡闻不**大清**楚」——程度副词「大」+形容词「清楚」的子串。时代限制句「禁止现代元素」反向毒害全部图像提示词
+- 修：era.py「大X」缩写形负向先行挡常用词续字（大清楚/大清早/大明白/大明星/大元素/大元帅/大汉子/五代同堂/移民国家）；重分析自动刷新机器标记（人工改值不动）；现代/未来时代改注「禁止古装与时代错位」（用户手改「日本现代」曾撞自相矛盾约束）
+- 排查法：era 值可疑先 `grep -oE "大清|满清|清朝|清代" novel.txt` 看命中上下文
+
+### 资产名乱码 Kissshot?Acerolaorion?Heartunder-Blade
+- 源文件上传前就损坏（外文名分隔点「・」被上游工具替换成 ?，字节 0x3f 实证）——解码链（BOM→UTF-8→GB18030）不会制造 ?，出现即上游问题
+- 分析时 ≥3 处「字母?字母」模式 warn 提示；入库后可改名（PATCH name，同项目同 kind 不能重名）或删除（🗑 按钮，FK 链齐清）
+
+### 批量生成参考图部分不显示「生成中」
+- `/queue` 的 jobs 列表曾「最近 20 条」：批量入队 46 个 gen_ref 时前 26 个对前端不可见（ComfyUI 侧照跑）；done 计数随窗口滑动漏触发 loadDetail（生成完的图不出现，刷新才见）
+- 修：jobs 列表改非终态全量（pending/running/failed 上限 200）+ 完成数走聚合 done_total（单调）
+
+### 换画风重生主图「每次都差不多」
+- 根因：主图模板带图片槽时（Krea2 快道族），重生=旧 main.png 进 char 槽 i2i 重绘——旧图锚死构图与人脸，画风词推不动（seed 每次随机无关）
+- 修：资产卡「🎨 重设计」按钮（redesign=1）强制走纯文生图 zimage_t2i，旧图不进槽

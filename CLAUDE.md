@@ -369,3 +369,13 @@
 - **曲风/声部/歌词双模式/完整歌曲（2026-09-19 增量）**：表单曲风 17 档（中文→英文映射进 caption `Global Metadata` 前缀）+ 声部 5 档（female/male/duet/child/chorus vocals）；歌词 ✨AI 写 / ✧润色保留（原词逐句保留只补段润衔，`suggest_lyrics(base_lyrics=…)` 双模式）+ 曲风↔歌词联动（写词带曲风语感、写 caption 带歌词摘录）；**完整歌曲三件**——caption 恒附 natural ending 指令、`planned_duration`=max(目标, 行数×5s) 钳 30~360（长词自动放宽上限治「唱到一半戛然而止」）、写词带目标时长控段落规模
 - **参考音乐导入（标签/ASR 读词曲风）：用户决策暂不做（2026-09-19）**——能力已查证：mutagen 读 ID3/FLAC 标签（未装）+ faster-whisper 听写歌词（Win 侧已装）+ 曲风无分类模型只能标签/人工；将来做「📥 参考导入」入口时用
 - **音频参考续写：生态未支持（2026-09-19 查证，用户决策等生态）**——Music3/YuE2 节点均无音频输入（纯文本 conditioning）；YuE 原版有 song continuation 模式，ComfyUI 封装将来暴露音频输入后音乐库架构直接可接（加参考音频上传位）；拼接式 workaround（样片+caption 匹配续段 concat）已评估不做
+
+## 模块地图（2026-09-20 猫物语连环修 + 九路参考）
+
+- **era 检测三修**：`era.py` 「大X」缩写形负向先行（「不大清楚」子串「大清」曾把 44 万字日本现代小说判成中国清代，时代限制句反向毒害提示词；同类：大清早/大明白/大明星/大元素/大汉子/五代同堂/移民国家）+ `era_suffix(era)` 现代分流（现代/当代/未来改注「禁止古装与时代错位」——用户手改「日本现代」曾撞「禁止现代元素」自相矛盾；三消费点 genref/rendershot/prompts/gen 统一走它）+ `ERA_LABELS` 闭集（重分析自动刷新机器标记、人工改值不动）；存量错值清洗=重分析或 PATCH era 空串
+- **资产工具三件**（routes_assets_edit/routes_assets）：PATCH `name` 改名（乱码名自救，同项目同 kind 重名 422，meta.json 同步）· DELETE `/api/assets/{id}`（FK 链齐清：project_assets/jobs.asset_id 置 NULL 保留任务行/ledger 绑定解除/library 目录删除——`assets.delete_asset` 引擎函数）· POST `/api/projects/{id}/assets/dedup-assets`（**LLM 查重**：`analyze.dedup_project_assets`+`AssetDedup` schema——同物异名合并（四层/四楼教室），drop 并入 keep：绑定改指/描述取富/参考图音色缺失继承；清单外名称跳过；分析尾链自动跑（任一 kind ≥2 才烧 LLM，失败只 warn）；前端「🧹 LLM 查重」按钮+资产卡「🗑 删除」）
+- **队列窗口修复**（routes_refs queue_status）：jobs 列表曾「最近 20 条」——批量 46 个 gen_ref 时前 26 个 assetBusy 不可见（不显示生成中）、done 计数窗口滑动漏触发 loadDetail（生成完的图刷新才出现）。改非终态全量（上限 200）+ 聚合 `done_total`（单调，前端 done 边沿改读它）
+- **🎨 重设计**（genref redesign）：带图槽主图模板重生=旧 main.png 进 char 槽 i2i 重绘，旧图锚死构图人脸（换画风推不动判例）；`redesign=1` 强制 zimage_t2i 纯文生图；前端资产卡「🎨 重设计」按钮；三视图按钮仍以当前主图为种子（设计如此）
+- **H3 ref2va 九路参考**（2026-09-20 用户「不是支持9张参考图吗」——object_info 实证 `ref_images` COMFY_AUTOGROW_V3 `ref_image_` min0/**max9**）：h3_ref2va 模板加 7 条 LoadImage→Scale 链（节点 200-213，ref_image_3..9），manifest slots ref2..ref8；`collect_ref_images` 槽上限读模板声明（**仅 ref2va 型且 >2 槽启用**，自定义/旧模板保持 2 槽+单图复制补槽零回归）角色→场景→道具顺延占槽；接力帧占 ref0 其余 ref1..ref8；`_prune_ref_slots` 未提供槽提交前**整链物理裁剪**（API 格式孤立 LoadImage 缺省文件名 400 判例；摘 ref_images.ref_image_N 输入+删 Scale/上游 LoadImage/Preview）；`prompts/gen` 槽位声明 max_slots 改只数 ref\d+ 图片槽（旧算法把 audio 槽计入——声明过 <Picture 3/4> 却从未上传）
+- **场景/道具参与渲染现状**（用户问询核实）：视频提示词文字✅（名称+描述入词）· ref2va 参考图⚠️角色优先占槽（九路升级后有空槽即上）· 关键帧双槽场景✅ · 漫画页 Krea2 场景槽✅ · 道具基本只走文字
+- 注意：**改完代码必须重启服务**（start-prod 无热重载）；资产删除/改名/查重/九路参考全部需重启后生效
