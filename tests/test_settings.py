@@ -82,3 +82,24 @@ def test_page_redraw_defaults(tmp_path):
     assert get_setting(db, "template_map")["page_redraw"] == "zimage_page_redraw"
     assert get_setting(db, "comfy")["page_redraw_denoise"] == 1.0
 
+
+
+def test_llama_models_scan_endpoint(tmp_path):
+    """llama 型连接「获取模型」=公共目录扫盘（2026-09-20）：mmproj 排除、
+    递归子目录、目录缺失返回空清单。"""
+    from fastapi.testclient import TestClient
+    from comic_studio.web.app import create_app
+    from comic_studio.engine.settings import set_setting
+    d = tmp_path / "models"
+    (d / "Bonsai").mkdir(parents=True)
+    (d / "Bonsai" / "Ternary-Bonsai-2-27B-PQ2_0.gguf").write_bytes(b"x")
+    (d / "Bonsai" / "Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf").write_bytes(b"x")
+    (d / "qwen" / "3.5").mkdir(parents=True)
+    (d / "qwen" / "3.5" / "Qwen3.5-4B-Q4_K_M.gguf").write_bytes(b"x")
+    with TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data",
+                               start_workers=False)) as c:
+        set_setting(c.app.state.db, "llama_server", {"model_dir": str(d)})
+        assert c.get("/api/settings/llama-models").json() == {
+            "models": ["Qwen3.5-4B-Q4_K_M", "Ternary-Bonsai-2-27B-PQ2_0"]}
+        set_setting(c.app.state.db, "llama_server", {"model_dir": str(tmp_path / "nope")})
+        assert c.get("/api/settings/llama-models").json() == {"models": []}

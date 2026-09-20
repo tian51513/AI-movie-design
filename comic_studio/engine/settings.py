@@ -42,9 +42,12 @@ DEFAULT_SETTINGS = {
     # UI 自动命名 local3/online2…），默认各一；存量库的 local2 经深合并保留
     "asr": {"engine": "faster_whisper", "chunk_seconds": 300},
     # llama-server 启停器（2026-09-20 服务商类型分流）：llama 型连接的显存
-    # 释放/按需拉起经此目录命令执行（通用 启动.bat <模型关键字> / 停止.bat）
+    # 释放/按需拉起经此目录命令执行（通用 启动.bat <模型关键字> / 停止.bat）；
+    # model_dir=公共模型目录——llama 型连接「获取模型」扫盘枚举（llama-server
+    # 单模型服务，/v1/models 只有当前加载的一个，扫盘才是可用清单语义）
     "llama_server": {"dir": r"E:\AI\llama\server", "start": "启动.bat",
-                     "stop": "停止.bat", "wait_s": 150},
+                     "stop": "停止.bat", "wait_s": 150,
+                     "model_dir": r"E:\Comfy-Desktop\ComfyUI-Installs\anime-gc\ComfyUI\models\llm"},
     "llm_routing": {
         "extract_assets": "local",
         "fix_appearance": "local",

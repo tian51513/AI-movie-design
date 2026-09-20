@@ -978,8 +978,21 @@ const methods = {
   },
   async fetchProviderModels(key, silent = false) {
     // 按连接自己的 base_url 枚举（api_key 走 Bearer——线上连接也可列清单）；
-    // silent=路由页自动拉取，失败不弹窗
+    // silent=路由页自动拉取，失败不弹窗。
+    // llama 型连接（2026-09-20）：改走引擎扫盘端点——llama-server 单模型服务，
+    // /v1/models 只报当前加载的一个，公共目录 gguf 列表才是可用清单（且服务
+    // 没开也能枚举配置）
     const p = (this.settingsForm.llmProviders || {})[key] || {};
+    if (p.kind === 'llama') {
+      this.loadingModels = key;
+      try {
+        const resp = await fetch('/api/settings/llama-models');
+        if (resp.ok) this.providerModels[key] = (await resp.json()).models;
+        else if (!silent) alert('获取失败：' + (await resp.json()).detail);
+      } catch (e) { if (!silent) alert('获取失败：' + e); }
+      this.loadingModels = '';
+      return;
+    }
     if (!(p.base_url || '').trim()) return;
     this.loadingModels = key;
     try {

@@ -163,3 +163,46 @@ def test_client_for_task_llama_kind_triggers_start(tmp_path, monkeypatch):
                         lambda db, p, name="": False)
     with pytest.raises(LLMError, match="llama-server"):
         client_for_task(db, "extract_assets")
+
+
+def test_ensure_llama_switches_when_wrong_model_loaded(tmp_path, monkeypatch):
+    """切换语义（2026-09-20 用户确认预期）：跑着其它模型 → 先停再启目标；
+    跑着目标模型 → 零命令直用（此前只看活没活，路由换模型时请求会静默打到旧模型）。"""
+    from comic_studio.engine.llm.local import ensure_llama_running
+    db = Database(tmp_path / "s.db"); db.migrate()
+    state = {"loaded": "Ternary-Bonsai-2-27B-PQ2_0", "healthy": True}
+    ran = []
+
+    class T(httpx.BaseTransport):
+        def handle_request(self, request):
+            path = request.url.path
+            if path.endswith("/v1/models"):
+                if state["healthy"]:
+                    return httpx.Response(200, json={"data": [{"id": state["loaded"]}]})
+                raise httpx.ConnectError("down")
+            if path.endswith("/health"):
+                return httpx.Response(200 if state["healthy"] else 503)
+            return httpx.Response(404)
+
+    def fake_run(cfg, bat, *args):
+        ran.append((bat, args))
+        if bat == cfg["start"]:
+            state["healthy"] = True
+            state["loaded"] = "Ternary-Bonsai-2-27B-PQ2_0"
+
+    monkeypatch.setattr("comic_studio.engine.llm.local._run_bat", fake_run)
+
+    def ensure(model):
+        return ensure_llama_running(db, {"base_url": "http://127.0.0.1:8123/v1",
+                                         "model": model}, transport=T(),
+                                    runner=fake_run)
+
+    ran.clear()
+    assert ensure("Bonsai:latest") is True  # 目标在跑（关键字包含匹配）——零命令
+    assert ran == []
+
+    state["loaded"] = "Qwen3.5-4B-Q4_K_M"
+    ran.clear()
+    assert ensure("Ternary-Bonsai-2-27B-PQ2_0") is True  # 换模型：停旧→启新
+    assert [b for b, _ in ran] == ["停止.bat", "启动.bat"]
+    assert ran[1][1] == ("Ternary-Bonsai-2-27B-PQ2_0",)

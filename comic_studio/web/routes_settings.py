@@ -321,6 +321,24 @@ def _fetch_ollama_models(root_url: str, api_key: str = "", transport=None) -> li
         return [m["name"] for m in resp.json().get("models", [])]
 
 
+@router.get("/llama-models")
+def llama_models(request: Request):
+    """llama 型连接的模型清单=公共模型目录扫盘（2026-09-20）：llama-server 单
+    模型服务，/v1/models 只报当前加载的一个；「这个连接能加载什么」的语义就是
+    目录里的 gguf 列表（mmproj 排除）。目录缺失/为空返回空清单不报错。"""
+    from pathlib import Path
+    from ..engine.settings import get_setting
+    cfg = get_setting(request.app.state.db, "llama_server") or {}
+    root = Path(cfg.get("model_dir") or "")
+    models: list[str] = []
+    if str(root):
+        for f in root.rglob("*.gguf"):
+            if "mmproj" in f.name.lower():
+                continue
+            models.append(f.stem)
+    return {"models": sorted(models)}
+
+
 @router.get("/ollama-models")
 def ollama_models(base_url: str = Query(...), api_key: str = Query(""),
                   request: Request = None):

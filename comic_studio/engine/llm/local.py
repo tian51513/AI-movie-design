@@ -96,24 +96,59 @@ def _llama_health(base_url: str, transport=None) -> bool:
         return False
 
 
+def _llama_loaded_model(base_url: str, transport=None) -> str:
+    """已加载模型身份（/v1/models 首条 id，llama-server 默认 alias=文件名主干）；
+    不可达/无模型返回空串。"""
+    root = _root(base_url)
+    if not root:
+        return ""
+    try:
+        with httpx.Client(timeout=3, transport=transport) as c:
+            r = c.get(f"{root}/v1/models")
+            r.raise_for_status()
+            data = r.json().get("data") or []
+            return str((data[0] or {}).get("id") or "") if data else ""
+    except Exception:
+        return ""
+
+
+def _model_matches(expected: str, loaded: str) -> bool:
+    """双向包含匹配（大小写不敏感）：连接 model 可能是完整主干名或较短关键字。"""
+    e = (expected or "").split(":")[0].strip().lower()
+    l = (loaded or "").strip().lower()
+    if not e or not l:
+        return False
+    return e == l or e in l or l in e
+
+
 def ensure_llama_running(db, provider: dict, name: str = "",
                          transport=None, runner=None) -> bool:
-    """llama 型连接前置：健康探测失败 → 启动.bat <模型名关键字> 拉起 → 轮询至
-    就绪。超时 False（调用方决定报错或降级）。"""
-    if _llama_health(provider.get("base_url") or "", transport=transport):
-        return True
+    """llama 型连接前置：已加载的正是目标模型 → 直用；其它模型在跑 → 先停再启
+    （切换语义，2026-09-20 用户确认的预期——此前只看活没活，路由换模型时请求
+    会静默打到旧模型）；未运行 → 启动.bat <关键字> 拉起 → 轮询至就绪。
+    超时 False（调用方决定报错或降级）。"""
     cfg = _launcher_cfg(db)
     keyword = (provider.get("model") or "").strip()
     if not keyword:
         return False
-    (runner or _run_bat)(cfg, cfg["start"], keyword.split(":")[0])
+    key = keyword.split(":")[0]
+    run = runner or _run_bat
+    base_url = provider.get("base_url") or ""
+    loaded = _llama_loaded_model(base_url, transport=transport)
+    if loaded and _model_matches(key, loaded):
+        return True  # 正是目标模型在跑
     from ..logbus import emit as emit_log
+    if loaded:
+        run(cfg, cfg["stop"])
+        emit_log(db, "system", "info",
+                 f"llama-server 在跑的是「{loaded}」而非「{key}」——已停止并切换")
+    run(cfg, cfg["start"], key)
     emit_log(db, "system", "info",
-             f"llama-server 未运行，已执行启动命令（模型关键字 {keyword.split(':')[0]}，"
+             f"llama-server 已执行启动命令（模型关键字 {key}，"
              f"等待就绪至多 {cfg['wait_s']:.0f}s）")
     deadline = time.monotonic() + cfg["wait_s"]
     while time.monotonic() < deadline:
-        if _llama_health(provider.get("base_url") or "", transport=transport):
+        if _llama_health(base_url, transport=transport):
             return True
         time.sleep(3)
     emit_log(db, "system", "warn",
