@@ -580,6 +580,7 @@
                <option value="" disabled>选择…</option>
                <option value="ollama">Ollama</option>
                <option value="lmstudio">LM Studio</option>
+               <option value="llama">llama-server</option>
                <option value="custom">其它</option>
              </select>
              <select v-model="settingsForm.llmProviders[key].kind"
@@ -644,6 +645,14 @@
                      style="float:right;background:#7f1d1d;font-size:11px;padding:2px 8px">🗑 删除</button></p>
           <p style="margin:0 0 4px"><input v-model="settingsForm.llmProviders[key].base_url"
                   placeholder="base_url（OpenAI 兼容）" style="width:55%">
+             <select v-model="settingsForm.llmProviders[key].kind"
+                     style="font-size:12px;padding:3px 6px;margin-left:4px"
+                     title="引擎类型（显存让位分流）：llama=llama-server（Comfy 前自动停止、调用前自动拉起，地址须指向 8123 端口）；ollama=自动卸载；lmstudio/通用=无专用动作">
+               <option value="">引擎·通用</option>
+               <option value="ollama">引擎·Ollama</option>
+               <option value="lmstudio">引擎·LM Studio</option>
+               <option value="llama">引擎·llama-server</option>
+             </select>
              <button @click="fetchProviderModels(key)" :disabled="loadingModels===key">
                {{ loadingModels===key ? '获取中…' : '获取模型' }}</button>
              <button @click="llmTest(key)" :disabled="llmTesting===key">

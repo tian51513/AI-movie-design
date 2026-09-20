@@ -1490,6 +1490,8 @@ const methods = {
       p.base_url = 'http://127.0.0.1:11434'; p.api_key = 'ollama';
     } else if (type === 'lmstudio') {
       p.base_url = 'http://127.0.0.1:1234'; p.api_key = 'lmstudio';
+    } else if (type === 'llama') {
+      p.base_url = 'http://127.0.0.1:8123'; p.kind = 'llama';
     }
     // custom 不动地址（用户自己填）；模型保留——切后点「获取模型」重选即可
   },
