@@ -324,3 +324,17 @@ def test_skip_think_injection(tmp_path):
     c = client_for_task(db, "extract_assets")
     assert c.skip_think is True
     monkey.undo()
+
+
+def test_skip_think_dual_mechanism():
+    """skip_think 双机制（2026-09-20 真机判例）：Qwen3.5+ 模板 assistant 轮强制
+    <think>\\n——user 消息空块注入被无视；官方开关 chat_template_kwargs.
+    enable_thinking=false（实测生效）。kwargs 为主、空块兜底旧 Qwen3 模板。"""
+    from comic_studio.engine.llm.provider import compose_skip_think_extra
+    eb = compose_skip_think_extra(None)
+    assert eb["chat_template_kwargs"]["enable_thinking"] is False
+    # 已有 extra_body / 已有 chat_template_kwargs 合并不丢键
+    eb2 = compose_skip_think_extra({"reasoning_effort": "none",
+                                    "chat_template_kwargs": {"foo": 1}})
+    assert eb2["reasoning_effort"] == "none"
+    assert eb2["chat_template_kwargs"] == {"foo": 1, "enable_thinking": False}

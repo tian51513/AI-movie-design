@@ -50,6 +50,18 @@ def normalize_base_url(base_url: str) -> str:
 _SKIP_THINK_BLOCK = "<think>\n\n</think>"
 
 
+def compose_skip_think_extra(extra_body: dict | None) -> dict:
+    """skip_think 的 extra_body 组合（2026-09-20 真机判例）：Qwen3.5+ 模板在
+    assistant 轮强制拼 <think>\\n——往 user 消息注入空块会被模板无视；官方开关
+    是 chat_template_kwargs.enable_thinking=false（实测 27 tokens 直答零思考）。
+    保留消息注入兜底旧 Qwen3 模板（其模板不认 kwargs 但吃空块）。"""
+    eb = dict(extra_body or {})
+    ctk = dict(eb.get("chat_template_kwargs") or {})
+    ctk["enable_thinking"] = False
+    eb["chat_template_kwargs"] = ctk
+    return eb
+
+
 def inject_skip_think(messages: list[dict]) -> list[dict]:
     """消息尾注入空 think 块（Qwen3 系=真跳过思考）。只动最后一条 user 消息；
     纯文本 content 追加、多模态 list content 加 text part。返回新列表不改入参。"""
@@ -82,13 +94,15 @@ class LLMClient:
 
     def raw_chat(self, messages: list[dict], temperature: float = 0.3,
                  max_tokens: int | None = None) -> tuple[str, Usage]:
+        extra = self.extra_body
         if self.skip_think:
             messages = inject_skip_think(messages)
+            extra = compose_skip_think_extra(extra)
         kwargs = dict(model=self.model, messages=messages, temperature=temperature)
         if max_tokens is not None:
             kwargs["max_tokens"] = max_tokens
-        if self.extra_body is not None:
-            kwargs["extra_body"] = self.extra_body
+        if extra is not None:
+            kwargs["extra_body"] = extra
         resp = self._client.chat.completions.create(**kwargs)
         choices = getattr(resp, "choices", None) or []
         if not choices:
