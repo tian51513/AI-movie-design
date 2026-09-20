@@ -370,6 +370,13 @@
 - **参考音乐导入（标签/ASR 读词曲风）：用户决策暂不做（2026-09-19）**——能力已查证：mutagen 读 ID3/FLAC 标签（未装）+ faster-whisper 听写歌词（Win 侧已装）+ 曲风无分类模型只能标签/人工；将来做「📥 参考导入」入口时用
 - **音频参考续写：生态未支持（2026-09-19 查证，用户决策等生态）**——Music3/YuE2 节点均无音频输入（纯文本 conditioning）；YuE 原版有 song continuation 模式，ComfyUI 封装将来暴露音频输入后音乐库架构直接可接（加参考音频上传位）；拼接式 workaround（样片+caption 匹配续段 concat）已评估不做
 
+## 模块地图（2026-09-20 下午 · llama-server 接入与显存分流）
+
+- **`E:\AI\llama\server\` 通用启停器**（PrismML fork prism-b10709 CUDA13.3 装于 E:\AI\llama，绿色解压无复制）：`启动.bat <模型名关键字>`——在公共模型目录（E:\Comfy-Desktop\...\models\llm，含子目录）递归匹配 `*关键字*.gguf`（跳过 mmproj），有 mmproj 同伴自动挂载，`start /min` 分离启动固定 8123 端口；`停止.bat`=taskkill（未运行无害）；llama-server 自带 WebUI（浏览器开 :8123 即聊天测试）。**注意**：PQ2_0 是 group-128 Prism 方言，官方 llama.cpp/Ollama（至 0.33.2）均不认（`invalid ggml type 142`/`size overflow`）——必须 fork；上游 group-64 迁移完成后可回归官方
+- **服务商类型分流（迁移 44 同日）**：`llm_providers.<连接>.kind`——""（通用）/ollama/lmstudio/**llama**；设置页连接卡「引擎」下拉；PUT 白名单校验。`llm/local.py`：`yield_local_llm` 改遍历**全部本机连接**（曾硬编码 local 键——动态化后新连接从不让位的既有缺口；非 127.0.0.1/localhost 不打线上；llama 型跳过）；**`stop_llama_servers`**——任一 llama 型在配置中→gpu_comfy 前跑「停止.bat」（`ensure_vram_for_comfy` 内联，接在 Ollama 让位后）；**`ensure_llama_running`**——健康探测（/health）失败→「启动.bat <model 冒号前关键字>」→轮询至就绪（超时 warn+False）；`client_for_task` 对 llama 型连接前置调用（拉起失败 LLMError 显式报错）。启停器路径 settings `llama_server`（dir/start/stop/wait_s，默认即 E:\AI\llama\server）
+- **llama-server 心智**：常驻显存（进程活=占用，无 keep_alive）；模型 mmap 原位读不复制；12G 卡与 ComfyUI 互斥靠启停器编排（自动=engine 分流，手动=bats）
+- 前端：llm-test 直连不触发自动拉起（该连接的「测试」需先手动启动或经管线触发）
+
 ## 模块地图（2026-09-20 猫物语连环修 + 九路参考）
 
 - **era 检测三修**：`era.py` 「大X」缩写形负向先行（「不大清楚」子串「大清」曾把 44 万字日本现代小说判成中国清代，时代限制句反向毒害提示词；同类：大清早/大明白/大明星/大元素/大汉子/五代同堂/移民国家）+ `era_suffix(era)` 现代分流（现代/当代/未来改注「禁止古装与时代错位」——用户手改「日本现代」曾撞「禁止现代元素」自相矛盾；三消费点 genref/rendershot/prompts/gen 统一走它）+ `ERA_LABELS` 闭集（重分析自动刷新机器标记、人工改值不动）；存量错值清洗=重分析或 PATCH era 空串

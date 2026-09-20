@@ -582,6 +582,14 @@
                <option value="lmstudio">LM Studio</option>
                <option value="custom">其它</option>
              </select>
+             <select v-model="settingsForm.llmProviders[key].kind"
+                     style="font-size:12px;padding:3px 6px;margin-left:4px"
+                     title="引擎类型（显存让位分流）：llama=llama-server（常驻显存——Comfy 前自动停止、调用前自动拉起，地址须指向 8123 端口）；ollama=自动卸载；lmstudio/通用=无专用动作">
+               <option value="">引擎·通用</option>
+               <option value="ollama">引擎·Ollama</option>
+               <option value="lmstudio">引擎·LM Studio</option>
+               <option value="llama">引擎·llama-server</option>
+             </select>
              <input v-model="settingsForm.llmProviders[key].base_url"
                     placeholder="地址（如 http://127.0.0.1:11434，自动归一 /v1）" style="width:46%">
              <button @click="fetchProviderModels(key)" :disabled="loadingModels===key">

@@ -157,3 +157,9 @@ identity_edit LoRA 双图训练上限（scene恒图1/person恒图2，交换劣�
 1. **一轮**：13 组方案里 5 组 drop=[] → pydantic 整单一票否决 ×3 → 查重全跳过。修=宽进 schema（空条目剔除、drop 接受 str、坏条目不毒死好条目）+ 提示词带结构示例
 2. **二轮**：①模型 kind 写「角色」→ by_kind 查空 → 在库的 月火/火怜 被误报清单外跳过（妖刀对同因）②街道/学校走廊被并进「教室」（9B 长清单下语义失控）③笼统名吸收具体名（废弃教室←四楼教室）。修=kind 异形归一 + **共享词根机械护栏**（keep/drop 无共享 2-3 字词根即拦截 warn 保留）+ keep 取具体名/房间禁合/时段词可合并规则
 - 教训：**小模型批量结构输出的可靠性=宽进 schema+机械护栏兜底**，严格校验只会把 80% 好结果和 20% 坏结果一起扔掉；错合不可逆（drop 行+图删除），护栏取向必须是宁可漏合
+
+### Ollama 建 Bonsai 模型报 "tensor output.weight size overflow"（2026-09-20）
+- 不是文件坏/版本旧：PQ2_0 是 Prism 方言 group-128 三进制张量（ggml type 142），Ollama 0.33.2 为止都不认（报 `size overflow` 或 `invalid ggml type 142, should be in [0, 42)`）；官方 llama.cpp 上游实现是 group-64，迁移未完成
+- 解：PrismML-Eng/llama.cpp fork（prism-b10658+，装于 E:\AI\llama）的 llama-server；`E:\AI\llama\server\启动.bat <模型关键字>` 通用启停（公共模型目录递归匹配+mmproj 自动挂+8123 固定端口）
+- **ollama create 失败后 blobs 有孤儿**（copying 已完成、模型未注册）——手动清 %OLLAMA_MODELS%\blobs 对应 sha256 回收空间；本机 OLLAMA_MODELS=E:\AI\ollama\.ollama
+- llama-server 常驻显存无自动卸载：engine 的 llama 型连接走启停器编排（Comfy 前 停止.bat / 调用前健康失败自动 拉起+等就绪）；让位机制只对 ollama 型有 /api/ps 通道——**llama 型连接必须在设置页把「引擎」选成 llama-server 才享受自动编排**

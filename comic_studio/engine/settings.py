@@ -41,6 +41,10 @@ DEFAULT_SETTINGS = {
     # 服务商动态化（2026-09-17）：本地/线上均可配 N 个连接（键 ^[a-z][a-z0-9_]*$，
     # UI 自动命名 local3/online2…），默认各一；存量库的 local2 经深合并保留
     "asr": {"engine": "faster_whisper", "chunk_seconds": 300},
+    # llama-server 启停器（2026-09-20 服务商类型分流）：llama 型连接的显存
+    # 释放/按需拉起经此目录命令执行（通用 启动.bat <模型关键字> / 停止.bat）
+    "llama_server": {"dir": r"E:\AI\llama\server", "start": "启动.bat",
+                     "stop": "停止.bat", "wait_s": 150},
     "llm_routing": {
         "extract_assets": "local",
         "fix_appearance": "local",

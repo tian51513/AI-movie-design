@@ -5,6 +5,7 @@ import httpx
 import pytest
 
 from comic_studio.engine.db import Database
+from comic_studio.engine.llm.local import yield_local_llm
 from comic_studio.engine.settings import set_setting
 
 
@@ -88,3 +89,77 @@ def test_ensure_vram_times_out_with_clear_error(tmp_path):
     with pytest.raises(VramShortage, match="显存不足.*2.0.*8"):
         ensure_vram_for_comfy(db, comfy, transport=_Transport(),
                               wait_s=0.1, poll=0.05)
+
+
+def test_yield_covers_all_local_providers(tmp_path):
+    """2026-09-17 动态化后曾硬编码 local 键——新连接（如 llama3）从不让位；
+    2026-09-20 修：遍历全部本机连接；非本机地址不打；llama 型跳过（无 /api/ps）。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "llm_providers", {
+        "local": {"base_url": "http://127.0.0.1:11434/v1", "model": "m1"},
+        "llama3": {"base_url": "http://127.0.0.1:11435/v1", "model": "m2"},
+        "cloud": {"base_url": "https://api.example.com/v1", "model": "x"},
+        "llamacpp": {"base_url": "http://127.0.0.1:8123/v1", "model": "Bonsai",
+                     "kind": "llama"}})
+    t = _Transport(ps_models=[{"name": "m"}, {"name": "n"}])
+    n = yield_local_llm(db, transport=t)
+    assert n == 4  # 两个本机 Ollama 型连接 × 各 2 个已加载模型
+    hosts = {u.split("//")[1].split("/")[0] for (_, u, _) in t.calls}
+    assert hosts == {"127.0.0.1:11434", "127.0.0.1:11435"}  # 线上/llama 未探测
+
+
+def test_stop_llama_servers_runs_stop_bat_only_when_configured(tmp_path, monkeypatch):
+    from comic_studio.engine.llm.local import stop_llama_servers
+    db = Database(tmp_path / "s.db"); db.migrate()
+    ran = []
+    monkeypatch.setattr("comic_studio.engine.llm.local._run_bat",
+                        lambda cfg, bat, *a: ran.append((bat, a)))
+    set_setting(db, "llm_providers",
+                {"local": {"base_url": "http://127.0.0.1:11434/v1", "kind": "ollama"}})
+    assert stop_llama_servers(db) is False and not ran  # 无 llama 型不执行
+    set_setting(db, "llm_providers",
+                {"bonsai": {"base_url": "http://127.0.0.1:8123/v1", "kind": "llama"}})
+    assert stop_llama_servers(db) is True
+    assert ran and ran[0][0] == "停止.bat" and not ran[0][1]
+
+
+def test_ensure_llama_running_starts_and_waits(tmp_path, monkeypatch):
+    from comic_studio.engine.llm.local import ensure_llama_running
+    db = Database(tmp_path / "s.db"); db.migrate()
+    ran, probes = [], {"n": 0}
+
+    class Health(httpx.BaseTransport):
+        def handle_request(self, request):
+            probes["n"] += 1
+            # 前两次健康失败（未运行），启动后成功
+            return httpx.Response(200 if probes["n"] > 2 else 503)
+
+    monkeypatch.setattr("comic_studio.engine.llm.local._run_bat",
+                        lambda cfg, bat, *a: ran.append((bat, a)))
+    monkeypatch.setattr("comic_studio.engine.llm.local.time.sleep", lambda s: None)
+    monkeypatch.setattr("comic_studio.engine.llm.local.time.monotonic",
+                        lambda: probes["n"])  # 单调推进防真等 150s
+    ok = ensure_llama_running(db, {"base_url": "http://127.0.0.1:8123/v1",
+                                   "model": "Bonsai:latest"}, transport=Health())
+    assert ok is True and ran == [("启动.bat", ("Bonsai",))]  # 冒号后 tag 剥离
+
+
+def test_client_for_task_llama_kind_triggers_start(tmp_path, monkeypatch):
+    """llama 型连接经 client_for_task → 未运行自动拉起；拉起失败显式报错。"""
+    from comic_studio.engine.llm.provider import LLMError, client_for_task
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "llm_providers",
+                {"bonsai": {"base_url": "http://127.0.0.1:8123/v1", "model": "Bonsai",
+                            "kind": "llama"}})
+    calls = []
+    monkeypatch.setattr("comic_studio.engine.llm.local.ensure_llama_running",
+                        lambda db, p, name="": calls.append(name) or True)
+    client_for_task(db, "extract_assets") if False else None
+    # 路由缺 bonsai——直接用 provider 名调（client_for_task 按 routing 解析）
+    set_setting(db, "llm_routing", {"extract_assets": "bonsai"})
+    client_for_task(db, "extract_assets")
+    assert calls  # 拉起钩子触发
+    monkeypatch.setattr("comic_studio.engine.llm.local.ensure_llama_running",
+                        lambda db, p, name="": False)
+    with pytest.raises(LLMError, match="llama-server"):
+        client_for_task(db, "extract_assets")

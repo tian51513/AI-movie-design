@@ -172,6 +172,14 @@ def client_for_task(db: Database, task: str) -> "LLMClient":
     p = providers[name]
     if not p.get("base_url"):
         raise LLMError(f"线上 LLM 未配置：settings.llm_providers.{name}.base_url 为空")
+    # llama 型连接（2026-09-20）：llama-server 常驻显存但无自动拉起——健康探测
+    # 失败则经启停器命令拉起（阻塞至就绪/超时）；其余类型直连
+    if str(p.get("kind") or "") == "llama":
+        from .local import ensure_llama_running
+        if not ensure_llama_running(db, p, name=name):
+            raise LLMError(
+                f"连接 {name} 的 llama-server 未能启动（看执行日志的启动超时告警；"
+                f"可手动跑 {r'E:\AI\llama\server'} 启动.bat 排障）")
     model = model_override or p["model"]
     # 按模型附加参数覆写（2026-09-17）：钉选/默认模型在 extra_body_models 有条目
     # → 覆写连接默认（思考模型单独关思考不误伤同连接其它模型）

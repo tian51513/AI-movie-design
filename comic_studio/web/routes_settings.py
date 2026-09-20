@@ -20,6 +20,10 @@ class ProviderConfig(BaseModel):
     base_url: str = ""
     api_key: str = ""
     model: str = ""
+    # 连接类型（2026-09-20 显存让位分流）：ollama=/api/ps 自动卸载（缺省对本机
+    # 连接 best-effort 同效）；llama=llama-server 启停器（常驻显存，Comfy 前
+    # 停止、调用前按需拉起）；lmstudio=暂无专用动作；空=通用 OpenAI 兼容
+    kind: str = ""
     # 附加请求参数（透传 chat.completions.create 的 extra_body），如屏蔽思考：
     # {"chat_template_kwargs": {"enable_thinking": false}}——本机 LM Studio 实测无效，留给支持的服务端
     extra_body: dict | None = None
@@ -57,6 +61,8 @@ TEMPLATE_MAP_KEYS = {"character_views", "t2i", "ref2va", "fl2v", "t2v", "i2v",
 class SettingsUpdate(BaseModel):
     llm_providers: dict[str, ProviderConfig | None] | None = None  # null=删除连接
     llm_routing: dict[str, str] | None = None
+    # llama-server 启停器（2026-09-20）：{dir, start, stop, wait_s} 整字典替换
+    llama_server: dict | None = None
     comfy: ComfyConfig | None = None
     template_map: dict[str, str | None] | None = None
     model_overrides: dict[str, dict[str, str]] | None = None
@@ -123,6 +129,11 @@ def update(request: Request, body: SettingsUpdate):
             raise HTTPException(422, f"非法 provider 键: {sorted(bad)}——"
                                      "只允许小写字母开头的 字母/数字/下划线（禁冒号）")
         merged = get_setting(db, "llm_providers")
+        bad_kind = {k for k, v in body.llm_providers.items()
+                    if v is not None and v.kind not in ("", "ollama", "lmstudio", "llama")}
+        if bad_kind:
+            raise HTTPException(422, f"非法连接类型（{sorted(bad_kind)}）："
+                                     "kind 只能是 ollama/lmstudio/llama 或留空")
         removed = [k for k, v in body.llm_providers.items() if v is None]
         if removed:
             # 护栏按「提交后生效路由」判断：同一单里改路由+删连接是 UI 自然操作序
@@ -143,6 +154,8 @@ def update(request: Request, body: SettingsUpdate):
                 continue
             merged.setdefault(k, {}).update(v.model_dump(exclude_unset=True))
         set_setting(db, "llm_providers", merged)
+    if body.llama_server is not None:
+        set_setting(db, "llama_server", body.llama_server)
     if body.llm_routing is not None:
         bad_tasks = set(body.llm_routing) - set(TASK_NAMES)
         if bad_tasks:
