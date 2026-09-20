@@ -180,6 +180,13 @@ def client_for_task(db: Database, task: str) -> "LLMClient":
             raise LLMError(
                 f"连接 {name} 的 llama-server 未能启动（看执行日志的启动超时告警；"
                 f"可手动跑 {r'E:\AI\llama\server'} 启动.bat 排障）")
+    elif (str(p.get("base_url") or "").startswith(("http://127.0.0.1", "http://localhost"))
+          and str(p.get("kind") or "") != "llama"):
+        # 跨服务商让位（2026-09-20）：本机 Ollama/LM Studio 型任务前停掉在跑的
+        # llama-server（其 7G 常驻会让 Ollama 只能 CPU 下放）——没配置/没在跑
+        # 零开销直过；交替路由的代价=llama 侧下次重拉（十几秒，12G 单卡现实）
+        from .local import stop_llama_servers
+        stop_llama_servers(db)
     model = model_override or p["model"]
     # 按模型附加参数覆写（2026-09-17）：钉选/默认模型在 extra_body_models 有条目
     # → 覆写连接默认（思考模型单独关思考不误伤同连接其它模型）

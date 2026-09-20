@@ -114,6 +114,8 @@ def test_stop_llama_servers_runs_stop_bat_only_when_configured(tmp_path, monkeyp
     ran = []
     monkeypatch.setattr("comic_studio.engine.llm.local._run_bat",
                         lambda cfg, bat, *a: ran.append((bat, a)))
+    monkeypatch.setattr("comic_studio.engine.llm.local._llama_health",
+                        lambda url, transport=None: True)  # 在跑（幂等门槛）
     set_setting(db, "llm_providers",
                 {"local": {"base_url": "http://127.0.0.1:11434/v1", "kind": "ollama"}})
     assert stop_llama_servers(db) is False and not ran  # 无 llama 型不执行
@@ -206,3 +208,58 @@ def test_ensure_llama_switches_when_wrong_model_loaded(tmp_path, monkeypatch):
     assert ensure("Ternary-Bonsai-2-27B-PQ2_0") is True  # 换模型：停旧→启新
     assert [b for b, _ in ran] == ["停止.bat", "启动.bat"]
     assert ran[1][1] == ("Ternary-Bonsai-2-27B-PQ2_0",)
+
+
+def test_cross_provider_yield(tmp_path, monkeypatch):
+    """跨服务商让位（2026-09-20 用户确认的多服务商路由场景）：
+    ① llama 起模型前先请 Ollama 卸载驻留；② 本机 Ollama 型任务前停在跑的
+    llama-server（未在跑零开销）；③ stop_llama_servers 没在跑不动作。"""
+    from comic_studio.engine.llm.local import ensure_llama_running, stop_llama_servers
+    from comic_studio.engine.llm.provider import client_for_task
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "llm_providers", {
+        "bonsai": {"base_url": "http://127.0.0.1:8123/v1", "model": "Bonsai",
+                   "kind": "llama"},
+        "local": {"base_url": "http://127.0.0.1:11434/v1", "model": "m",
+                  "kind": "ollama"}})
+    set_setting(db, "llm_routing", {"extract_assets": "local"})
+    ran, ps_hits = [], []
+
+    class T(httpx.BaseTransport):
+        def handle_request(self, request):
+            path = request.url.path
+            if path.endswith("/api/ps"):
+                ps_hits.append(1)
+                return httpx.Response(200, json={"models": [{"name": "m"}]})
+            if path.endswith("/api/generate"):
+                return httpx.Response(200, json={"done": True})
+            if path.endswith("/v1/models"):
+                return httpx.Response(503)  # llama 未跑
+            if path.endswith("/health"):
+                return httpx.Response(200)  # 启动命令后即就绪（免真等 150s）
+            return httpx.Response(404)
+
+    def fake_run(cfg, bat, *args):
+        ran.append((bat, args))
+
+    monkeypatch.setattr("comic_studio.engine.llm.local._run_bat", fake_run)
+    monkeypatch.setattr("comic_studio.engine.llm.local.time.sleep", lambda s: None)
+    # ① llama 冷启（未跑）→ 启动前 Ollama 让位（/api/ps 被打 + keep_alive=0）
+    ensure_llama_running(db, {"base_url": "http://127.0.0.1:8123/v1",
+                              "model": "Bonsai"}, transport=T(), runner=fake_run)
+    assert ps_hits and ran[-1][0] == "启动.bat"
+    # ② 本机 Ollama 型任务 → 停在跑的 llama（此 mock 下 health=404 未跑 → 不动作）
+    ran.clear()
+    client_for_task(db, "extract_assets")
+    assert ran == []  # llama 未在跑：零命令零开销
+    # ③ llama 在跑（health 200）→ Ollama 任务前执行停止
+    class T2(T):
+        def handle_request(self, request):
+            if request.url.path.endswith("/health"):
+                return httpx.Response(200)
+            return super().handle_request(request)
+    monkeypatch.setattr("comic_studio.engine.llm.local._llama_health",
+                        lambda url, transport=None: True)
+    ran.clear()
+    client_for_task(db, "extract_assets")
+    assert ran == [("停止.bat", ())]

@@ -70,18 +70,24 @@ def _run_bat(cfg: dict, bat: str, *args) -> None:
                    capture_output=True)
 
 
-def stop_llama_servers(db, cfg=None) -> bool:
-    """任一 llama 型连接在配置中 → 执行「停止.bat」释放其显存（幂等，未运行无害）。
-    返回是否执行了停止。"""
+def stop_llama_servers(db, cfg=None, transport=None) -> bool:
+    """任一 llama 型连接在配置且**实际在跑**（健康探测）→ 执行「停止.bat」释放
+    显存。没配置/没在跑返回 False 不动作（幂等且零开销——供每次 LLM 调用前的
+    跨服务商让位路径复用）。"""
     from ..settings import get_setting
     providers = get_setting(db, "llm_providers") or {}
-    if not any(p and str(p.get("kind") or "") == "llama" for p in providers.values()):
+    llama_ps = [p for p in providers.values()
+                if p and str(p.get("kind") or "") == "llama"]
+    if not llama_ps:
+        return False
+    if not any(_llama_health(p.get("base_url") or "", transport=transport)
+               for p in llama_ps):
         return False
     cfg = cfg or _launcher_cfg(db)
     _run_bat(cfg, cfg["stop"])
     from ..logbus import emit as emit_log
     emit_log(db, "system", "info",
-             "ComfyUI 任务前 LLM 让位：llama-server 已执行停止命令（释放显存）")
+             "llama-server 已执行停止命令（释放显存——跨服务商/Comfy 让位）")
     return True
 
 
@@ -142,6 +148,12 @@ def ensure_llama_running(db, provider: dict, name: str = "",
         run(cfg, cfg["stop"])
         emit_log(db, "system", "info",
                  f"llama-server 在跑的是「{loaded}」而非「{key}」——已停止并切换")
+    # 跨服务商让位（2026-09-20）：llama-server 起 7G 级模型前先请 Ollama 卸载
+    # 驻留模型——否则 12G 卡上两家同时驻留必撞车（Ollama keep_alive 5 分钟窗口）
+    n_yield = yield_local_llm(db, transport=transport)
+    if n_yield:
+        emit_log(db, "system", "info",
+                 f"llama-server 启动前 LLM 让位：已请求 Ollama 卸载 {n_yield} 个模型")
     run(cfg, cfg["start"], key)
     emit_log(db, "system", "info",
              f"llama-server 已执行启动命令（模型关键字 {key}，"
