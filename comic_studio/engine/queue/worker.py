@@ -83,7 +83,7 @@ class Worker(threading.Thread):
                     # 12GB 共享显存（2026-08-28 决策）：LLM 与 ComfyUI 不并行——
                     # 先请求 Ollama 让位，轮询显存回升至门槛再跑；不达标显式失败
                     from ..llm.local import ensure_vram_for_comfy
-                    ensure_vram_for_comfy(db, comfy)
+                    ensure_vram_for_comfy(db, comfy, project_id=job["project_id"])
                 if comfy is not None and job["resource"] == "gpu_llm_local":
                     # 让位双向化（2026-09-13 真机判例：拆分切 27B 重度秒 504——
                     # ComfyUI 渲染模型跑完驻留显存，重 LLM 装不下；旧让位只有

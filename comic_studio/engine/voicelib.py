@@ -71,7 +71,8 @@ def resolve_sample(data_dir, name: str, project: str | None = None) -> Path | No
 def _run_template(comfy, template_id: str, params: dict, images: list | None,
                   dest_dir: Path, name: str, db=None,
                   prompt: str | None = None,
-                  stall_seconds: float | None = None) -> Path:
+                  stall_seconds: float | None = None,
+                  project_id: int | None = None) -> Path:
     """提交 TTS 模板 → 轮询 → 下载首个 audio 产物到 dest_dir/<name><原后缀>。
     db 给定时先走 ensure_vram_for_comfy（LLM 让位+显存门槛——TTS 1.7B 与
     本地 LLM 同卡会挤爆，2026-08-31 用户要求 LLM/Comfy 串行）。
@@ -86,7 +87,7 @@ def _run_template(comfy, template_id: str, params: dict, images: list | None,
             has_gpu_info = False   # 健康信息不可得 → 无法测量，交给 ComfyUI 队列兜底
         if has_gpu_info:
             from .llm.local import ensure_vram_for_comfy
-            ensure_vram_for_comfy(db, comfy)
+            ensure_vram_for_comfy(db, comfy, project_id=project_id)
     from .workflows import registry
     from .workflows.filler import fill_workflow
     tmpl = registry.scan_templates(registry.TEMPLATE_ROOT)[template_id]

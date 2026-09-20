@@ -1,5 +1,5 @@
 # comic_studio/engine/llm/local.py
-"""本地 LLM 让位 + 显存门槛（2026-08-28 决策：LLM 与 ComfyUI 不并行，
+r"""本地 LLM 让位 + 显存门槛（2026-08-28 决策：LLM 与 ComfyUI 不并行，
 12GB 共享显存——gpu_comfy 任务前请求 Ollama 卸载模型（keep_alive=0），
 轮询等待 ComfyUI 侧显存回升至门槛，不达标显式报错不硬跑）。
 
@@ -70,7 +70,7 @@ def _run_bat(cfg: dict, bat: str, *args) -> None:
                    capture_output=True)
 
 
-def stop_llama_servers(db, cfg=None, transport=None) -> bool:
+def stop_llama_servers(db, cfg=None, transport=None, project_id: int | None = None) -> bool:
     """任一 llama 型连接在配置且**实际在跑**（健康探测）→ 执行「停止.bat」释放
     显存。没配置/没在跑返回 False 不动作（幂等且零开销——供每次 LLM 调用前的
     跨服务商让位路径复用）。"""
@@ -86,8 +86,9 @@ def stop_llama_servers(db, cfg=None, transport=None) -> bool:
     cfg = cfg or _launcher_cfg(db)
     _run_bat(cfg, cfg["stop"])
     from ..logbus import emit as emit_log
-    emit_log(db, "system", "info",
-             "llama-server 已执行停止命令（释放显存——跨服务商/Comfy 让位）")
+    emit_log(db, "comfy", "info",
+             "llama-server 已执行停止命令（释放显存——跨服务商/Comfy 让位）",
+             project_id=project_id)
     return True
 
 
@@ -171,7 +172,7 @@ def ensure_llama_running(db, provider: dict, name: str = "",
 
 def ensure_vram_for_comfy(db, comfy, min_gb: float | None = None,
                           wait_s: float = 60.0, poll: float = 2.0,
-                          transport=None) -> float:
+                          transport=None, project_id: int | None = None) -> float:
     """gpu_comfy 前置：让位本地 LLM（Ollama 卸载 + llama-server 停止）→ 轮询
     comfy.vram_free() 至 ≥ 门槛。期间间隔秒级~几十秒可接受（用户决策
     2026-08-28）。达标返回可用 GB；超时 raise VramShortage（含当前值与门槛）。"""
@@ -179,9 +180,10 @@ def ensure_vram_for_comfy(db, comfy, min_gb: float | None = None,
     n = yield_local_llm(db, transport=transport)
     if n:
         from ..logbus import emit as emit_log
-        emit_log(db, "system", "info",
-                 f"ComfyUI 任务前 LLM 让位：已请求 Ollama 卸载 {n} 个模型（释放显存）")
-    stop_llama_servers(db)
+        emit_log(db, "comfy", "info",
+                 f"ComfyUI 任务前 LLM 让位：已请求 Ollama 卸载 {n} 个模型（释放显存）",
+                 project_id=project_id)
+    stop_llama_servers(db, project_id=project_id)
     if min_gb is None:
         cfg = get_setting(db, "comfy") or {}
         min_gb = float(cfg.get("min_free_vram_gb") or 8)
