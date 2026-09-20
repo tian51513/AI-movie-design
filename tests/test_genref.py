@@ -402,3 +402,43 @@ def test_condense_appearance_keeps_labels_for_body_fields():
     assert "瞳色：深褐色" in out and "肤色：白皙" in out
     assert "36岁" in out and "女性" in out    # 自然短句部分不变
     assert "配饰" not in out                  # 无值行仍丢
+
+
+def test_redesign_ignores_old_main_reference(tmp_path, monkeypatch):
+    """🎨 重设计（2026-09-20 用户判例：换画风后重生主图每次都差不多——带图槽
+    模板把旧 main.png 作 char 参考重绘，旧图锚死构图与人脸）。redesign=1 →
+    有旧主图也强制走纯文生图（zimage_t2i），旧图不上传。"""
+    from pathlib import Path
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.paths import data_to_abs
+    db, pid = _setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    set_setting(db, "template_map", {"t2i": "comic_page_krea2"})  # 带图槽模板
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="萧炎", appearance="黑发少年", tags=[])],
+                      scenes=[], props=[]))
+    asset = list_project_assets(db, pid)[0]
+    main = data_to_abs(tmp_path / "data", asset["library_dir"]) / "main.png"
+    main.parent.mkdir(parents=True, exist_ok=True)
+    main.write_bytes(b"\x89PNG\r\n\x1a\nold")  # 旧主图在场
+    with comfy_server("ok") as m:
+        from comic_studio.engine.comfy.client import ComfyClient
+        # 不带 redesign：旧主图作参考上传（Krea2 工作台链）
+        jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                          resource="gpu_comfy",
+                          payload={"asset_id": asset["id"], "stage": "main"})
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+        wf = m.prompts[0]["prompt"]
+        assert "2001" in wf  # comic_page_krea2 Generate 节点签名
+        assert any(f"cs__p{pid}" in u for u in m.uploads)
+        # redesign：走 zimage_t2i 纯文生图，旧图不再上传
+        m.uploads.clear(); m.prompts.clear()
+        jid2 = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                           resource="gpu_comfy",
+                           payload={"asset_id": asset["id"], "stage": "main",
+                                    "redesign": True})
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid2), ComfyClient(m.base_url))
+        wf2 = m.prompts[0]["prompt"]
+        assert "57:27" in wf2 and "萧炎" in wf2["57:27"]["inputs"]["text"]  # zimage_t2i
+        assert not any(f"cs__p{pid}" in u for u in m.uploads)

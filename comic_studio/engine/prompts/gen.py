@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 from ..assets import list_project_assets
+from ..era import era_suffix
 from ..projects import get_project
 from ..shots import get_shot
 from . import H3_DIR
@@ -74,7 +75,13 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
     try:
         _tid = _pti(shot_row, db=None)
         _regs = _wreg.scan_templates(_wreg.TEMPLATE_ROOT)
-        max_slots = len(_regs[_tid].inject_images) if _tid in _regs else 2
+        # 只数 ref\d+ 图片槽（2026-09-20：旧算法把 audio 槽也计入——声明了
+        # <Picture 3/4> 却从未上传，H3 看到不存在的图片声明）
+        import re as _re
+        max_slots = (sum(1 for im in (_regs[_tid].inject_images or [])
+                         if im.get("field") == "image"
+                         and _re.fullmatch(r"ref\d+", str(im.get("slot", ""))))
+                     if _tid in _regs else 2) or 2
     except Exception:
         max_slots = 2
     for aid in (chars + (ledger.get("assets") or {}).get("scenes", [])
@@ -94,8 +101,7 @@ def build_shot_context(shot_row, assets_by_id: dict, project_row,
         f"画面描述：{shot_row['description']}",
         f"镜头语言：{shot_row['camera_json']}",
         f"项目画风：{project_row['style'] or '未指定'}",
-        (f"时代风格：{era}，人物服饰、发型、器物、建筑均须符合该时代形制，禁止现代元素"
-         if era else "时代风格：未明确（按描述自行合理推断）"),
+        (era_suffix(era) if era else "时代风格：未明确（按描述自行合理推断）"),
     ]
     # A 级织入（2026-09-01 台词组拆镜）：拆解产出的结构化情绪/微动作/视线/延续
     # 进上下文——由 LLM 按当前模式的格式自然织入内容段（机械拼接会破 structure_check）

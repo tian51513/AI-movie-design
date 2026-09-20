@@ -38,14 +38,38 @@ inject:
       node: '232'
       field: block_size
   images:
-  # 参考图两路（引擎喂 ref0=衔接首帧/前镜尾帧、ref1=角色主图；用户原工作流
-  # 第三路已裁——引擎只供两路，缺省槽名会 400）
+  # 参考图九路（2026-09-20 升级：MiniMaxH3ReferenceToVideo.ref_images 是
+  # COMFY_AUTOGROW_V3 自增长组（ref_image_ 前缀 min 0 / max 9）——此前只接
+  # 两路（用户原工作流第三路已裁）。引擎喂法：ref0=衔接首帧/前镜尾帧，
+  # ref1..ref8=角色→场景→道具按序占槽；未提供的槽 rendershot 提交前整链裁剪
+  # （LoadImage→Scale→ref_images.ref_image_N），autogrow min 0 保证合法
   - node: '186'
     field: image
     slot: ref0
   - node: '190'
     field: image
     slot: ref1
+  - node: '201'
+    field: image
+    slot: ref2
+  - node: '203'
+    field: image
+    slot: ref3
+  - node: '205'
+    field: image
+    slot: ref4
+  - node: '207'
+    field: image
+    slot: ref5
+  - node: '209'
+    field: image
+    slot: ref6
+  - node: '211'
+    field: image
+    slot: ref7
+  - node: '213'
+    field: image
+    slot: ref8
   # Phase 2 音色（2026-08-30）：说话人样本 LoadAudio 上传位；未注入时
   # rendershot 自动补 0.5s 静音占位（2026-09-06 判例）
   - node: '250'

@@ -70,7 +70,8 @@ def gen_asset(request: Request, asset_id: int, body: dict | None = Body(default=
         raise HTTPException(409, str(exc))
     jid = enqueue_job(db, "gen_ref", project_id=asset["source_project"],
                       asset_id=asset_id, resource="gpu_comfy",
-                      payload={"asset_id": asset_id, "stage": stage})
+                      payload={"asset_id": asset_id, "stage": stage,
+                               "redesign": bool((body or {}).get("redesign"))})
     return {"job_id": jid}
 
 
@@ -129,14 +130,20 @@ def clear_queue(request: Request, project_id: int):
 def queue_status(request: Request, project_id: int):
     db = request.app.state.db
     conn = db.connect()
-    counts = {"running": 0, "pending": 0, "failed": 0}
+    counts = {"running": 0, "pending": 0, "failed": 0, "done_total": 0}
     for r in conn.execute("SELECT status, COUNT(*) c FROM jobs WHERE project_id=? "
                           "GROUP BY status", (project_id,)):
-        if r["status"] in counts:
+        if r["status"] == "done":
+            counts["done_total"] = r["c"]
+        elif r["status"] in counts:
             counts[r["status"]] = r["c"]
+    # 2026-09-20 判例：曾用「最近 20 条」窗口——批量入队 46 个 gen_ref 时前 26 个
+    # 对前端 assetBusy 不可见（不显示生成中）、done 计数随窗口滑动漏触发刷新。
+    # jobs 列表只装非终态（上限 200）；完成数走聚合 done_total（单调，边沿可靠）
     jobs = [{"id": r["id"], "type": r["type"], "status": r["status"], "error": r["error"],
              "asset_id": r["asset_id"]} for r in conn.execute(
-        "SELECT * FROM jobs WHERE project_id=? ORDER BY id DESC LIMIT 20", (project_id,))]
+        "SELECT * FROM jobs WHERE project_id=? AND status IN ('pending','running','failed') "
+        "ORDER BY id DESC LIMIT 200", (project_id,))]
     comfy_ok = False
     try:
         from ..engine.comfy.client import ComfyClient

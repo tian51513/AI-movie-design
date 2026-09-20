@@ -12,7 +12,7 @@ from ..paths import data_to_abs
 from ..projects import get_project, set_stage
 from ..settings import get_setting
 from .provider import LLMClient, Usage, ask_validated, client_for_task, log_llm_call
-from .schemas import AssetsAnalysis
+from .schemas import AssetDedup, AssetsAnalysis
 from .text import split_chunks
 
 EXTRACT_SYSTEM = """你是小说改编漫剧的资产分析师。从给定的小说文本中提取：
@@ -55,6 +55,12 @@ EXTRACT_SYSTEM = """你是小说改编漫剧的资产分析师。从给定的小
 同一人的不同称谓（2026-09-06 真机：少芬妈妈/少芬阿姨/少芬姐 实为一人被建成
 重复资产）必须**合并为一个角色**：name 取原文中出现次数最多的称呼，
 appearance 取信息最丰富的描述；判据=共享同一专名（少芬）+ 不同身份称谓后缀。
+同一人物的正式全名/真名与叙述性称谓/俗称/形态名也是同一角色（2026-09-20
+猫物语判例：Kissshot 全名与「吸血鬼幼女」被建成两个资产）——文本明确表明
+两者为同一人时必须合并，name 取最常用称呼；拿不准时保持分开。
+场景去重同理（2026-09-20 判例：废弃大楼四层教室/四楼教室/废弃教室 实为
+同一地）：同一地点的不同叫法、楼层写法、叙述粒度差异合并为一条，
+name 取最常用的叫法。
 每个角色另给 suggested_voice：按年龄/性别/气质/着装从随提示附上的「可用音色库」
 清单中选最贴切的一个（含用户自定义音色；清单外值会被忽略，走性别×年龄基线：
 女童→萝莉 男童→正太 青年女→温柔少女 青年男→深沉男声 中年女→温柔淑女
@@ -68,7 +74,8 @@ voice_description 只给**有台词的说话角色**；不出声的角色一律�
 
 MERGE_SYSTEM = """合并多段小说文本的资产分析结果。规则：
 - 同名（或明显同一人的别名，如"萧炎/炎少爷"）合并为一条，appearance 取信息最丰富的描述并可融合细节；
-- 同一场景不同叫法合并；tags 取并集；
+- 同一人物的真名/全名与俗称/形态称谓明确同一人时合并；同一场景不同叫法、
+  楼层写法/叙述粒度差异（四层教室=四楼教室）也是同一地，合并；tags 取并集；
 - 合并即精选：条目很多时优先保留主角与重要配角，appearance 不扩写；
   只在末尾露过一面的路人角色、无关紧要的场景/道具可以丢弃——
   宁可少而精，不可为了保全面输出超长清单。
@@ -317,13 +324,30 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
         raise ValueError(f"项目不存在: {project_id}")
     text = data_to_abs(data_dir, proj["novel_path"]).read_text(encoding="utf-8")
     # 时代背景检测（2026-08-25）：明确朝代 → 存项目，参考图/视频提示词自动加时代限制
-    from ..era import detect_era
+    # 2026-09-20：机器标记随重分析刷新（检测空→清旧标签值）；人工纠错值（非标签集）不动
+    from ..era import ERA_LABELS, detect_era
     era = detect_era(text)
+    prev_era = proj["era"] if "era" in proj.keys() else ""
     if era:
         conn = db.connect()
         conn.execute("UPDATE projects SET era=? WHERE id=?", (era, project_id))
         conn.commit()
         emit_log(db, "analyze", "info", f"检测到时代背景：{era}（提示词将自动附加时代限制）",
+                 project_id=project_id)
+    elif prev_era and prev_era in ERA_LABELS:
+        conn = db.connect()
+        conn.execute("UPDATE projects SET era=? WHERE id=?", ("", project_id))
+        conn.commit()
+        emit_log(db, "analyze", "info", f"未检测到明确朝代，已清除旧时代标记「{prev_era}」",
+                 project_id=project_id)
+    # 源文件乱码提示（2026-09-20 猫物语判例：外文名分隔点被上游工具替换成 ?，
+    # Kissshot?Acerolaorion?Heartunder-Blade 进了资产名）。解码链（BOM→UTF-8→
+    # GB18030）不会制造 ?——出现即上传前已损坏
+    import re as _re
+    if len(_re.findall(r"[A-Za-z0-9]\?[A-Za-z0-9]", text)) >= 3:
+        emit_log(db, "analyze", "warn",
+                 "正文疑似存在编码损坏的问号（外文词间的「・」等被替换成 ?），"
+                 "资产名可能带乱码——建议重新导出源文件，或入库后改名/删除",
                  project_id=project_id)
     chunks = split_chunks(text, max_chars=max_chars)
     emit_log(db, "analyze", "info", f"开始分析：{len(chunks)} 个文本块（共 {len(text)} 字）",
@@ -409,6 +433,14 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
                  f"清理 {len(_orphans)} 个上轮孤儿角色（"
                  + "、".join(a["name"] for a in _orphans) + "，含分镜绑定）",
                  project_id=project_id)
+    # LLM 查重（2026-09-20 用户需求：四层/四楼教室类同物异名，机械规则覆盖不了）。
+    # 失败只 warn 不炸分析（查重是增强不是门槛）
+    try:
+        dedup_project_assets(db, data_dir, project_id, extract_client)
+        _live = {a["id"] for a in list_project_assets(db, project_id)}
+        ids = [i for i in ids if i in _live]  # 查重删掉的 id 不再出现在返回值
+    except Exception as e:
+        emit_log(db, "analyze", "warn", f"资产查重跳过：{e}", project_id=project_id)
     # 音色决策链（2026-09-02 用户需求：预设优先，不匹配才生成）：
     # ① suggested_voice 库内有效 → 绑（零成本）
     # ② LLM 给了 voice_description → ComfyUI 可用时生成项目级音色（角色名命名）
@@ -462,3 +494,99 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
     set_stage(db, project_id, "analyzed")
     emit_log(db, "system", "info", "阶段流转 created → analyzed", project_id=project_id)
     return ids
+
+
+DEDUP_SYSTEM = """你是资产库查重员。输入是某小说项目的资产清单（分角色/场景/道具，含名称与描述）。
+找出"同一对象"的重复条目并给出合并方案：
+- 场景：同一地点的不同叫法/楼层写法（「四层教室」=「四楼教室」）/叙述粒度差异
+  （「教室角落」与「教室」若描述同一间教室即同地；但「废弃教室」与「教室」
+  是不同地点，不得合并）；
+- 角色：同一人物的不同称谓/别名/真名与形态名（文本明确同一人时）；
+- 道具：同一物品的不同叫法。
+仅合并**确定同一**的条目，拿不准的保持分开——宁可漏合不可错合（错合会把
+两个不同地点/人物永久混为一谈）。keep=保留条目名（取描述最丰富或最常用的），
+drop=要并入的重复名列表。只准使用清单中存在的名称，不要发明条目。
+只输出一个 JSON 对象：{"merges":[{"kind":"scene","keep":"名","drop":["名",…]},…]}。
+无重复输出 {"merges": []}"""
+
+
+def dedup_project_assets(db, data_dir, project_id: int, client: LLMClient) -> int:
+    """LLM 资产查重合并（2026-09-20 用户需求：废弃大楼四层教室/四楼教室类重复，
+    机械规则覆盖不了表述差异——LLM 为主机械兜底）。作用于已入库资产：
+    drop 并入 keep（分镜绑定改指 keep、描述取更丰富者、参考图/音色缺失时
+    从 drop 继承、删 drop 行+目录）。返回实际合并组数；任一 kind 不足 2 条
+    直接 0 不烧 LLM。"""
+    from ..assets import delete_asset, list_project_assets
+    rows = list_project_assets(db, project_id)
+    by_kind: dict[str, list] = {}
+    for r in rows:
+        by_kind.setdefault(r["kind"], []).append(r)
+    if not any(len(v) >= 2 for v in by_kind.values()):
+        return 0
+    lines = []
+    for kind, items in by_kind.items():
+        lines.append(f"【{ {'character':'角色','scene':'场景','prop':'道具'}[kind] }】")
+        for a in items:
+            detail = json.loads(a["appearance_json"] or "{}").get("detail", "") or ""
+            lines.append(f"{a['name']}：{detail[:80]}")
+    user = "\n".join(lines)
+    result, usage = ask_validated(client, DEDUP_SYSTEM, user, AssetDedup,
+                                  on_retry=lambda why: emit_log(
+                                      db, "analyze", "warn", f"资产查重输出不合格重试：{why}",
+                                      project_id=project_id))
+    log_llm_call(db, "dedup_assets", getattr(client, "provider_name", "llm"),
+                 client.model, usage, reply=getattr(usage, "last_reply", ""))
+    from pathlib import Path as _P
+    from shutil import copytree as _copytree
+    applied = 0
+    conn = db.connect()
+    for m in result.merges:
+        kind_map = {a["name"]: a for a in by_kind.get(m.kind, [])}
+        keep = kind_map.get(m.keep.strip())
+        drops = [kind_map[d.strip()] for d in m.drop if d.strip() in kind_map
+                 and d.strip() != m.keep.strip()]
+        drops = [d for d in drops if d["id"] != (keep or {"id": None})["id"]] if keep else []
+        if not keep or not drops:
+            emit_log(db, "analyze", "warn",
+                     f"查重指令引用了清单外的名称，跳过：{m.kind} keep={m.keep!r}",
+                     project_id=project_id)
+            continue
+        keep_detail = json.loads(keep["appearance_json"] or "{}").get("detail", "") or ""
+        from ..paths import data_to_abs as _d2a
+        keep_lib = _d2a(Path(data_dir), keep["library_dir"]) if keep["library_dir"] else None
+        for drop in drops:
+            drop_detail = json.loads(drop["appearance_json"] or "{}").get("detail", "") or ""
+            if len(drop_detail) > len(keep_detail):  # 描述取更丰富者
+                keep_detail = drop_detail
+            if drop["library_dir"]:
+                drop_lib = _d2a(Path(data_dir), drop["library_dir"])
+                if keep_lib is not None and drop_lib.exists():
+                    # keep 缺参考图时从 drop 继承（用户可能已手动生成）
+                    for fn in ("main.png",):
+                        if (drop_lib / fn).exists() and not (keep_lib / fn).exists():
+                            (keep_lib / fn).write_bytes((drop_lib / fn).read_bytes())
+                    if (drop_lib / "views").exists() and not (keep_lib / "views" ).exists():
+                        _copytree(drop_lib / "views", keep_lib / "views")
+            if drop["voice"] and not keep["voice"]:  # 音色缺失时继承
+                conn.execute("UPDATE assets SET voice=? WHERE id=?", (drop["voice"], keep["id"]))
+            # 分镜绑定改指 keep（去重列表防重复 id）
+            from ..shots import list_shots as _ls
+            for sh in _ls(db, project_id):
+                led = json.loads(sh["ledger_json"] or "{}")
+                groups = led.get("assets") or {}
+                lst = groups.get(f"{m.kind}s") or []
+                if drop["id"] in lst:
+                    groups[f"{m.kind}s"] = [i for i in lst if i != drop["id"]]
+                    if keep["id"] not in groups[f"{m.kind}s"]:
+                        groups[f"{m.kind}s"].append(keep["id"])
+                    conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
+                                 (json.dumps(led, ensure_ascii=False), sh["id"]))
+            delete_asset(db, data_dir, drop["id"])
+        conn.execute("UPDATE assets SET appearance_json=? WHERE id=?",
+                     (json.dumps({"detail": keep_detail}, ensure_ascii=False), keep["id"]))
+        conn.commit()
+        applied += 1
+        emit_log(db, "analyze", "info",
+                 f"资产查重合并：「{keep['name']}」← {'、'.join(d['name'] for d in drops)}",
+                 project_id=project_id)
+    return applied

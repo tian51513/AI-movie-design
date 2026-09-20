@@ -60,7 +60,7 @@ function data() {
     newSegDur: 0, newTotalDur: 0,  // 0=系统自动（2026-09-05 默认）
     settingsTab: 'llm', wfImportFile: null, wfImporting: false, activeShotSeq: 1,
     themesManage: [], themeImportFile: null, themeImporting: false,
-    editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character',
+    editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character', editAssetNewName: '', dedupBusy: false,
     newStyleKey: '', newStyleText: '', kreaLibs: {}, kreaLib: '', kreaName: '',
     styleOpen: false, styleEditStyle: '', styleEditVis: '', styleSaving: false,
     stylePickerOpen: false, spLib: '', spSel: '', spSearch: '', spCtx: 'create',
@@ -811,10 +811,10 @@ const methods = {
     alert('主图已上传。可点「三视图」从新主图重新派生');
     await this.loadDetail();
   },
-  async regenAsset(a, stage = 'all') {
+  async regenAsset(a, stage = 'all', redesign = false) {
     const r = await fetch(`/api/assets/${a.id}/gen`, {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({stage})});
+      body: JSON.stringify({stage, redesign})});
     if (!r.ok) alert(await r.text());
   },
   async passGate1() {
@@ -1145,7 +1145,8 @@ const methods = {
             alert('🚄 整段快车道失败：' + (dj.error || '详见日志'));
           }
         }
-        const done = this.queue.jobs.filter(j => j.status === 'done').length;
+        // done_total=聚合完成数（单调）；jobs 列表只装非终态，done 行不进窗口
+        const done = this.queue.done_total || 0;
         const busy = this.queue.running > 0 || this.queue.pending > 0;
         this._tickBusy = busy || (this.project && this.project.autopilot);
         const idleEdge = wasBusy && !busy;
@@ -1849,6 +1850,7 @@ const methods = {
   editAssetDetail(a) {
     this.editAssetId = a.id;
     this.editAssetName = a.name;
+    this.editAssetNewName = a.name;
     this.editAssetKind = a.kind || 'character';
     this.editAssetDraft = a.detail || '';
     this.editAssetVoice = a.voice || '';
@@ -2145,15 +2147,33 @@ const methods = {
   },
   async saveAssetDetail() {
     const v = (this.editAssetDraft || '').trim();
-    if (!v) { alert('描述不能为空'); return; }
+    const n = (this.editAssetNewName || '').trim();
+    if (!v && !n) { alert('描述与名称至少填一个'); return; }
     const r = await fetch(`/api/assets/${this.editAssetId}`, {
       method: 'PATCH', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({detail: v})});
+      body: JSON.stringify({detail: v, name: n})});
     if (r.ok) {
       this.editAssetOpen = false;
-      alert('已更新。引用该资产的分镜已标 stale——请重生参考图与提示词');
+      alert('已更新' + (v ? '。引用该资产的分镜已标 stale——请重生参考图与提示词' : ''));
       await this.loadDetail();
     } else alert(await r.text());
+  },
+  async deleteAsset(a) {
+    if (!confirm(`确认删除资产「${a.name}」？\n（绑定它的分镜会自动解除绑定；已生成的参考图一并删除；任务记录保留作审计）`)) return;
+    const r = await fetch(`/api/assets/${a.id}`, { method: 'DELETE' });
+    if (r.ok) { await this.loadDetail(); }
+    else alert(await r.text());
+  },
+  async dedupAssets() {
+    this.dedupBusy = true;
+    try {
+      const r = await fetch(`/api/projects/${this.project.id}/assets/dedup-assets`, { method: 'POST' });
+      if (r.ok) {
+        const { merged } = await r.json();
+        alert(merged ? `查重完成：合并 ${merged} 组（详见执行日志）` : '查重完成：未发现可合并的重复资产');
+        await this.loadDetail();
+      } else alert(await r.text());
+    } finally { this.dedupBusy = false; }
   },
 
   stageName(s) { return { created: '已创建', analyzed: '已分析', assets_ready: '资产就绪',

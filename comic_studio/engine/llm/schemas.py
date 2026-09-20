@@ -30,3 +30,14 @@ class AssetsAnalysis(BaseModel):
     characters: list[CharacterAsset]
     scenes: list[SceneAsset]
     props: list[PropAsset]
+
+
+class AssetMerge(BaseModel):
+    """LLM 资产查重的单组合并指令（2026-09-20：keep 保留、drop 并入）。"""
+    kind: str = Field(pattern="^(character|scene|prop)$")
+    keep: str = Field(min_length=1)
+    drop: list[str] = Field(min_length=1)
+
+
+class AssetDedup(BaseModel):
+    merges: list[AssetMerge] = []

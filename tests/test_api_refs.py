@@ -111,3 +111,27 @@ def test_views_listing_includes_main(tmp_path):
         assert items[0]["name"] == "主图 main"
         assert "main.png?" in items[0]["url"]
         assert any(i["name"] == "sheet" for i in items)
+
+
+def test_queue_feed_covers_all_active_jobs(tmp_path):
+    """2026-09-20 判例：jobs 列表曾「最近 20 条」——批量入队 46 个 gen_ref 时
+    前 26 个对前端 assetBusy 不可见（不显示生成中）。非终态必须全量在窗 +
+    完成数走 done_total 聚合（单调，边沿触发不漏拍）。"""
+    with _client(tmp_path) as c:
+        pid = c.post("/api/projects", data={"name": "批量参考图", "aspect_ratio": "9:16"},
+                     files={"novel": ("n.txt", io.BytesIO("文".encode()), "text/plain")}).json()["id"]
+        conn = c.app.state.db.connect()
+        for i in range(46):
+            cur = conn.execute("INSERT INTO assets (kind, name, appearance_json, tags_json, "
+                               "library_dir, source_project) VALUES ('prop', ?, '{}', '[]', '', ?)",
+                               (f"道具{i}", pid))
+            conn.execute("INSERT INTO jobs (project_id, asset_id, type, status) "
+                         "VALUES (?,?, 'gen_ref', 'pending')", (pid, cur.lastrowid))
+        conn.execute("INSERT INTO jobs (project_id, type, status) "
+                     "VALUES (?, 'gen_ref', 'done')", (pid,))
+        conn.commit()
+        q = c.get(f"/api/projects/{pid}/queue").json()
+        pending_ids = [j["asset_id"] for j in q["jobs"] if j["status"] == "pending"]
+        assert len(pending_ids) == 46 and None not in pending_ids  # 全量在窗（不再被 20 条截断）
+        assert q["pending"] == 46
+        assert q["done_total"] == 1  # 完成数聚合（done 行本身不进 jobs 列表）

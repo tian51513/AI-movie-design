@@ -192,8 +192,8 @@ def build_gen_prompt(asset_row, style: str = "", era: str = "",
         prompt += "。" + PHOTO_BOOST  # 写实增强（cfg=1 下弱文本需强词）
     era = (era or "").strip()
     if era:
-        from .era import ERA_SUFFIX
-        prompt += "。" + ERA_SUFFIX.format(era=era)
+        from .era import era_suffix
+        prompt += "。" + era_suffix(era)
     prompt += ZIMAGE_TAIL.get(kind, "")  # Turbo 质量与正向纠错尾缀
     if kind == "character" and variant != "main":
         prompt += "。严格三视图布局：正面、左侧、背面各一个，禁止视角重复"  # 结构收尾再强调
@@ -294,29 +294,33 @@ def handle_gen_ref(db, data_dir, job, comfy):
                             else build_gen_prompt)
             main_prompt, _ = main_builder(asset, style=style, era=era, variant="main")
             # 主图模板若声明图片槽（文+图重绘类，如 xf_zimage_ti2i）：
-            # 有主图 → 作 ref 传入重绘；无主图 → 引导用纯文生图（zimage_t2i）
+            # 有主图 → 作 ref 传入重绘；无主图/🎨重设计 → 纯文生图（zimage_t2i）。
+            # redesign（2026-09-20 用户判例：换画风后重生主图每次都差不多——带图
+            # 槽模板的旧 main.png 参考把构图与人脸锚死，画风词推不动；重设计强制
+            # 走纯文生图让画风全权驱动）
             main_tmpl = resolve_template(db, "t2i")
             main_images = None
-            if main_tmpl.inject_images:
-                if main_png.exists():
-                    # 槽位偏好（2026-09-14）：旧主图是「人物」参考——多槽模板
-                    # 优先进 char/char1 槽（Krea2 工作台图2=人物、zimage_page_ref
-                    # char1=身份参考）；无人物语义槽才退第一槽（xf_zimage_ti2i）
-                    _slots = [im["slot"] for im in main_tmpl.inject_images]
-                    _pref = next((s for s in ("char", "char1") if s in _slots),
-                                 _slots[0])
-                    main_images = [{"slot": _pref, "path": str(main_png)}]
-                else:
-                    from .workflows import registry as _reg
-                    boot = _reg.scan_templates(_reg.TEMPLATE_ROOT).get("zimage_t2i")
-                    if boot is None or boot.inject_images:
-                        raise ValueError(
-                            f"主图模板 {main_tmpl.id} 需要图片输入，且无现有主图可传"
-                            f"（可先把 t2i 映射切回纯文生图模板生成首张主图）")
-                    main_tmpl = boot
-                    emit_log(db, "comfy", "info",
-                             f"无现有主图，引导用纯文生图 {boot.id} 生成首张主图",
-                             project_id=job["project_id"], job_id=job["id"])
+            redesign = bool(payload.get("redesign"))
+            if main_tmpl.inject_images and main_png.exists() and not redesign:
+                # 槽位偏好（2026-09-14）：旧主图是「人物」参考——多槽模板
+                # 优先进 char/char1 槽（Krea2 工作台图2=人物、zimage_page_ref
+                # char1=身份参考）；无人物语义槽才退第一槽（xf_zimage_ti2i）
+                _slots = [im["slot"] for im in main_tmpl.inject_images]
+                _pref = next((s for s in ("char", "char1") if s in _slots),
+                             _slots[0])
+                main_images = [{"slot": _pref, "path": str(main_png)}]
+            elif main_tmpl.inject_images:
+                from .workflows import registry as _reg
+                boot = _reg.scan_templates(_reg.TEMPLATE_ROOT).get("zimage_t2i")
+                if boot is None or boot.inject_images:
+                    raise ValueError(
+                        f"主图模板 {main_tmpl.id} 需要图片输入，且无现有主图可传"
+                        f"（可先把 t2i 映射切回纯文生图模板生成首张主图）")
+                main_tmpl = boot
+                emit_log(db, "comfy", "info",
+                         ("🎨 重设计：忽略旧主图参考" if redesign else "无现有主图")
+                         + f"，用纯文生图 {boot.id} 生成主图",
+                         project_id=job["project_id"], job_id=job["id"])
             _t2i_to_file(db, data_dir, comfy, main_tmpl, main_prompt, main_png, ctx,
                          job, label=f"资产「{asset['name']}」主图", images=main_images)
         if stage in ("all", "views"):

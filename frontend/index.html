@@ -1236,6 +1236,9 @@
                     :title="a.kind==='character'
                       ? '仅重新生成主图（三视图保持不变，不触发分镜 stale）'
                       : '生成场景/道具主图（漫画项目：绑定该场景的页会注入为图3 场景参考——想要场景跨页视觉一致就生成它）'">主图</button>
+          <button @click="regenAsset(a, 'main', true)" :disabled="assetBusy(a)"
+                    style="margin-top:6px;margin-left:4px;font-size:12px;padding:3px 8px"
+                    title="换画风后用这个：忽略旧图纯文生图重做主图（带图槽模板的旧图参考会锚死构图与人脸，画风推不动）">🎨 重设计</button>
           <template v-if="a.kind==='character'">
             <button @click="regenAsset(a, 'views')" :disabled="assetBusy(a)"
                     style="margin-top:6px;margin-left:4px;font-size:12px;padding:3px 8px"
@@ -1249,10 +1252,16 @@
           <button @click="editAssetDetail(a)"
                   title="修正外貌/服装描述（同步资产库；引用此资产的分镜会标 stale）"
                   style="margin-top:6px;margin-left:4px">编辑外貌</button>
+          <button @click="deleteAsset(a)"
+                  title="删除该资产（乱码名/误提取/重复条目）；绑定它的分镜自动解除绑定"
+                  style="margin-top:6px;margin-left:4px;font-size:12px;padding:3px 8px">🗑 删除</button>
         </div>
     </div>
     <p v-if="['analyzed','assets_ready','storyboard_ready'].includes(project.stage)">
       <button v-if="isVideoChain" @click="genAllRefs">批量生成参考图</button>
+      <button @click="dedupAssets" :disabled="dedupBusy"
+              title="LLM 判断同物异名（如 废弃大楼四层教室/四楼教室）并合并：保留一条、绑定改指、描述取更丰富者"
+              style="font-size:12px;padding:3px 8px">{{ dedupBusy ? '查重中…' : '🧹 LLM 查重' }}</button>
       <button v-if="allHaveViews && project.stage==='analyzed' && isVideoChain" @click="passGate1" style="background:#16a34a">
         ✓ 确认资产（过门1）</button><!-- N1：门1 仅 analyzed 可过，其他阶段露出必 409 -->
       <!-- B1 漫画链停等确认（2026-09-13）：检查/改名/删减名册后放行拆解 -->
@@ -1940,7 +1949,11 @@
   <div v-if="editAssetOpen" @click.self="editAssetOpen=false"
        style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:110;display:flex;align-items:flex-start;justify-content:center;overflow:auto">
     <div class="card" style="width:min(720px,92vw);margin:24px 0">
-      <h3>编辑外貌 · {{ editAssetName }}<span class="muted" style="font-size:12px">（可手写，也可 ✨ 润色）</span></h3>
+      <h3>编辑资产 · {{ editAssetName }}<span class="muted" style="font-size:12px">（可手写，也可 ✨ 润色）</span></h3>
+      <p style="display:flex;gap:8px;align-items:center;margin:0 0 8px">
+        名称 <input v-model="editAssetNewName" style="flex:1;max-width:320px"
+               title="乱码名/翻译名不对时可改名（同项目同类不能重名）；改名不触发分镜 stale">
+      </p>
       <prompt-box v-model="editAssetDraft" :rows="10"
                   :kind="editAssetKind === 'character' ? 'appearance' : 'appearance:' + editAssetKind"
                   :key="editAssetKind"></prompt-box>

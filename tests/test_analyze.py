@@ -53,7 +53,7 @@ def test_multi_chunk_merges(tmp_path):
                           client_factory=lambda t: fake, max_chars=60)
     rows = list_project_assets(db, proj["id"])
     assert len(rows) == 3  # 2角色+1场景
-    assert fake.n == 3  # 两块抽取 + 一次合并
+    assert fake.n == 4  # 两块抽取 + 一次合并 + 一次查重（2 角色 ≥2 触发；回复非法→no-op）
 
 
 def test_llm_calls_logged(tmp_path):
@@ -75,7 +75,7 @@ def test_merge_llm_call_logs_real_usage(tmp_path):
                     client_factory=lambda t: fake, max_chars=60)
     rows = db.connect().execute(
         "SELECT prompt_tokens, completion_tokens FROM llm_calls ORDER BY id").fetchall()
-    assert len(rows) == 3  # 2 extract + 1 merge
+    assert len(rows) == 4  # 2 extract + 1 merge + 1 dedup（查重不落 merge 语义外的行）
     for r in rows:
         assert r["prompt_tokens"] == 1
         assert r["completion_tokens"] == 2
@@ -533,3 +533,78 @@ def test_merge_length_double_failure_takes_first():
 
     merged, _u = merge_analyses(AlwaysLengthFake([None]), [a, b], max_payload_chars=1200)
     assert [c.name for c in merged.characters] == ["角A"]  # 批内首份
+
+
+def test_reanalyze_clears_stale_machine_era(tmp_path):
+    """机器检测的时代标记随重分析刷新（2026-09-20 猫物语判例：「不大清楚」
+    子串「大清」误判中国清代，旧 if era: 门导致修了检测器也清不掉存量错值）。"""
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "现代都市的日常故事")
+    conn = db.connect()
+    conn.execute("UPDATE projects SET era='中国清代' WHERE id=?", (proj["id"],))
+    conn.commit()
+    analyze_project(db, tmp_path / "data", proj["id"],
+                    client_factory=lambda t: FakeClient([CHUNK1]))
+    assert get_project(db, proj["id"])["era"] == ""
+
+
+def test_reanalyze_keeps_manual_era(tmp_path):
+    """人工手改的时代值（非 detect_era 标签集）重分析不动——用户纠错是正路。"""
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "现代都市的日常故事")
+    conn = db.connect()
+    conn.execute("UPDATE projects SET era='日本现代' WHERE id=?", (proj["id"],))
+    conn.commit()
+    analyze_project(db, tmp_path / "data", proj["id"],
+                    client_factory=lambda t: FakeClient([CHUNK1]))
+    assert get_project(db, proj["id"])["era"] == "日本现代"
+
+
+def test_analyze_warns_on_mojibake_question_marks(tmp_path):
+    """源文件乱码（外文名分隔点被替换成 ?）分析时 warn 引导检查源文件
+    （2026-09-20 猫物语判例：Kissshot?Acerolaorion?Heartunder-Blade 配角资产）。"""
+    from comic_studio.engine.logbus import fetch_logs
+    db = _db(tmp_path)
+    text = ("Kissshot?Acerolaorion?Heartunder-Blade 出现了。"
+            "Kissshot?Acerolaorion?Heartunder-Blade 又出现。"
+            "Kissshot?Acerolaorion?Heartunder-Blade 第三次。")
+    proj = create_project(db, tmp_path / "data", "p", "9:16", text)
+    analyze_project(db, tmp_path / "data", proj["id"],
+                    client_factory=lambda t: FakeClient([CHUNK1]))
+    warns = [r["message"] for r in fetch_logs(db, proj["id"]) if r["level"] == "warn"]
+    assert any("问号" in m or "乱码" in m for m in warns)
+
+
+def test_dedup_merges_duplicate_scenes(tmp_path):
+    """LLM 查重（2026-09-20 用户需求：四层/四楼教室）——drop 并入 keep：
+    绑定改指、描述取富、drop 行/目录删除；清单外名称跳过。"""
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.llm.analyze import dedup_project_assets
+    from comic_studio.engine.shots import persist_shots, get_shot
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "文本")
+    from types import SimpleNamespace as NS
+    persist_assets(db, tmp_path / "data", proj["id"],
+                   NS(characters=[],
+                      scenes=[NS(name="废弃大楼四层教室", description="四层，破桌椅", tags=[]),
+                              NS(name="废弃大楼四楼教室", description="位于四楼的废弃教室，午后光线斜入，桌椅蒙尘，黑板上残留粉笔痕", tags=[])],
+                      props=[]))
+    rows = {a["name"]: a for a in list_project_assets(db, proj["id"])}
+    sid = persist_shots(db, proj["id"], [NS(
+        text_span="", description="x", shot_type="", camera={}, duration=5.0,
+        workflow_type="ref2va", ledger={}, character_ids=[],
+        scene_ids=[rows["废弃大楼四楼教室"]["id"]], prop_ids=[],
+        depends_on=None)])[0]
+    reply = ('{"merges":[{"kind":"scene","keep":"废弃大楼四层教室",'
+             '"drop":["废弃大楼四楼教室","清单外的名字"]},'
+             '{"kind":"scene","keep":"不存在的场景","drop":["废弃大楼四层教室"]}]}')
+    n = dedup_project_assets(db, tmp_path / "data", proj["id"],
+                             FakeClient([reply]))
+    assert n == 1
+    left = [a["name"] for a in list_project_assets(db, proj["id"])]
+    assert left == ["废弃大楼四层教室"]  # 清单外指令跳过、drop 删除
+    import json as _json
+    keep = list_project_assets(db, proj["id"])[0]
+    assert "粉笔痕" in _json.loads(keep["appearance_json"])["detail"]  # 描述取更丰富者
+    led = _json.loads(get_shot(db, sid)["ledger_json"] or "{}")
+    assert led["assets"]["scenes"] == [keep["id"]]  # 绑定改指 keep

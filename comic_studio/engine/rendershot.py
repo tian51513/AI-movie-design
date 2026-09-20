@@ -2,6 +2,7 @@
 """gen_shot 渲染编排：模板选择/参考图槽位绑定/项目参数注入/提交-等待-落盘（spec §9）。"""
 import json
 import random
+import re
 from pathlib import Path
 
 from .assets import get_asset
@@ -80,7 +81,10 @@ def shot_versions(data_dir, slug: str, seq: int) -> list:
 
 def collect_ref_images(db, shot_row) -> list[dict]:
     """角色优先占满参考槽（人物一致性 > 场景还原），场景/道具仅在有空槽时补位。
-    C 版实验教训：第二角色无参考图 + 同款服装 → 模型身份融合（2026-08-24 实测）。"""
+    C 版实验教训：第二角色无参考图 + 同款服装 → 模型身份融合（2026-08-24 实测）。
+    2026-09-20：槽上限读模板声明——H3 ref2va 升 9 路（ref_images autogrow max 9），
+    场景/道具真上图；仅 ref2va 型且 >2 槽才启用（自定义/旧模板保持 2 槽+单图
+    复制补槽旧语义，缺槽由 rendershot 提交前整链裁剪兜底）。"""
     if shot_row["workflow_type"] == "t2v":
         return []
     ledger = json.loads(shot_row["ledger_json"] or "{}")
@@ -88,17 +92,65 @@ def collect_ref_images(db, shot_row) -> list[dict]:
     ordered_ids = (assets_map.get("characters", [])
                    + assets_map.get("scenes", [])
                    + assets_map.get("props", []))
+    max_refs = 2
+    try:
+        from .workflows import registry as _wreg
+        _tmpl = _wreg.scan_templates(_wreg.TEMPLATE_ROOT).get(
+            pick_template_id(shot_row, db))
+        _n = sum(1 for im in (_tmpl.inject_images or [])
+                 if im.get("field") == "image"
+                 and re.fullmatch(r"ref\d+", str(im.get("slot", ""))))
+        if getattr(_tmpl, "type", "") == "ref2va" and _n > 2:
+            max_refs = _n
+    except Exception:
+        pass
     refs = []
     for asset_id in ordered_ids:
-        if len(refs) >= 2:  # TODO 动态槽数（需 db 查 template inject_images 数）
+        if len(refs) >= max_refs:
             break
         asset = get_asset(db, asset_id)
         if asset and asset["library_dir"]:
             refs.append({"slot": f"ref{len(refs)}",
                          "path": f"{asset['library_dir']}/views/sheet.png"})
-    if len(refs) == 1:
+    if max_refs == 2 and len(refs) == 1:
         refs.append({"slot": "ref1", "path": refs[0]["path"]})
     return refs
+
+
+def _prune_ref_slots(prompt: dict, template, provided: set) -> dict:
+    """ref2va 自增长参考槽裁剪（2026-09-20 九路升级配套）：模板槽位是静态的、
+    实际参考数随镜变化——未提供的 ref\\d+ 图片槽整链删除（Scale 节点、其上游
+    LoadImage、只消费该链的 Preview），并摘掉 ref 节点上的 ref_images.ref_image_N
+    输入。COMFY_AUTOGROW_V3 min 0 保证零槽合法（API 格式无节点禁用，孤立
+    LoadImage 照样执行→缺省文件名 400，必须物理删除）。"""
+    import re as _re
+    slot_node = {im["slot"]: str(im["node"])
+                 for im in (template.inject_images or [])
+                 if im.get("field") == "image"
+                 and _re.fullmatch(r"ref\d+", str(im.get("slot", "")))}
+    for slot, scale_id in slot_node.items():
+        if slot in provided:
+            continue
+        for nid, node in list(prompt.items()):
+            for k, v in list((node.get("inputs") or {}).items()):
+                if isinstance(v, list) and str(v[0]) == scale_id:
+                    if k.startswith("ref_images."):
+                        del prompt[nid]["inputs"][k]  # 摘 ref 节点输入
+                    elif node.get("class_type") == "PreviewImage":
+                        prompt.pop(nid, None)  # 调试预览节点一并删
+                    else:
+                        del prompt[nid]["inputs"][k]
+        # 上游 LoadImage（仅被该 Scale 消费才删）——先取再删自身
+        up = ((prompt.get(scale_id) or {}).get("inputs") or {}).get("image")
+        prompt.pop(scale_id, None)  # Scale 节点
+        if isinstance(up, list):
+            up_id = str(up[0])
+            if not any(nid != scale_id and any(
+                    isinstance(v, list) and str(v[0]) == up_id
+                    for v in (n.get("inputs") or {}).values())
+                    for nid, n in prompt.items()):
+                prompt.pop(up_id, None)
+    return prompt
 
 
 def _voice_slots_for_shot(db, data_dir, proj, shot, audio_slots: list):
@@ -163,7 +215,7 @@ KF_PAIR_CONSTRAINT = ("两帧必须严格同机位、同景别、同构图、同
 
 def build_keyframe_prompt(db, shot, proj, phase: str) -> str:
     """首/尾关键帧提示词：分镜描述 + 角色外貌文字 + 画风 + 时代 + ZImage 尾缀。"""
-    from .era import ERA_SUFFIX
+    from .era import era_suffix
     from .genref import PHOTO_BOOST, ZIMAGE_TAIL, condense_appearance, is_photo_style
     detail = (shot["description"] or "").strip().rstrip("。；;，,") or "按分镜描述"
     prompt = f"漫剧分镜关键帧（{phase}瞬间）：{detail}"
@@ -194,7 +246,7 @@ def build_keyframe_prompt(db, shot, proj, phase: str) -> str:
         prompt += "。" + PHOTO_BOOST  # 写实增强（与主图同款，2026-08-27 真机二次元泄漏）
     era = proj["era"] if proj is not None and "era" in proj.keys() else ""
     if era:
-        prompt += "。" + ERA_SUFFIX.format(era=era)
+        prompt += "。" + era_suffix(era)
     # 注意：不放 KF_PAIR_CONSTRAINT——'两帧'字样会让图像模型在单张图里画两个画面；
     # 配对一致性由同 seed + 相似提示词保证
     return prompt + ZIMAGE_TAIL["scene"]
@@ -470,12 +522,18 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
         images = []  # i2v/fl2v 无首帧——交由 I1 快失败给出明确报错
     elif first_frame_png is not None:
         # 接力（连贯性①配套）：上镜尾帧优先占 ref0（画面/姿态延续），
-        # 角色参考占 ref1（锁人设）——全链后 ref2va 的默认形态（优先于原页兜底）
+        # 角色参考占 ref1..（锁人设）——全链后 ref2va 的默认形态（优先于原页兜底）；
+        # 2026-09-20 九路升级：接力帧占 ref0，其余资产参考顺延 ref1..ref8；
+        # 无资产参考时保留旧兜底（接力帧补 ref1——≤2 槽模板必须填满，防裁剪
+        # 蹭到未验证的自定义链）
         raw_refs = collect_ref_images(db, shot)
-        ref1_path = (data_to_abs(data_dir, raw_refs[0]["path"])
-                     if raw_refs else first_frame_png)
-        images = [{"slot": "ref0", "path": str(first_frame_png)},
-                  {"slot": "ref1", "path": str(ref1_path)}]
+        images = [{"slot": "ref0", "path": str(first_frame_png)}]
+        if raw_refs:
+            for i, r in enumerate(raw_refs[:8]):
+                images.append({"slot": f"ref{i + 1}",
+                               "path": str(data_to_abs(data_dir, r["path"]))})
+        else:
+            images.append({"slot": "ref1", "path": str(first_frame_png)})
     elif images is None:
         raw_refs = collect_ref_images(db, shot)
         if not raw_refs:
@@ -504,6 +562,9 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     wf, uploads = fill_workflow(template, prompt=prompt, params=params,
                                 images=images, output_ctx=output_ctx,
                                 model_overrides=model_overrides)
+    # 2026-09-20 九路升级：未提供的 ref\d+ 图片槽整链裁剪（模板槽静态、实际
+    # 参考数随镜变化；孤立 LoadImage 会以缺省文件名 400，必须物理删除链）
+    _prune_ref_slots(wf, template, {i["slot"] for i in (images or [])})
     # 2026-09-06 有声2 真机：dialogue 空 → 音色槽不注入 → 模板默认
     # cs_voice_0.mp3 不在 ComfyUI input → 400 全灭。未注入的音频槽补静音
     # 占位（data 缓存生成一次），模板校验必过；有对白时正常注入覆盖

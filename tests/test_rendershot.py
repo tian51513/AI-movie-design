@@ -58,11 +58,12 @@ def test_collect_ref_images_slots(tmp_path):
         scene_ids=[assets["庭院"]["id"]])])[0]
     refs = collect_ref_images(db, get_shot(db, sid))
     assert [r["slot"] for r in refs] == ["ref0", "ref1"]
-    # 单资产：复制补第二槽
+    # 单资产：不再复制补槽（2026-09-20 九路升级——未提供槽由 _prune_ref_slots
+    # 提交前整链裁剪兜底，autogrow min 0 合法；复制补槽仅 ≤2 槽自定义模板保留）
     sid2 = persist_shots(db, pid, [_shot_draft(
         character_ids=[assets["林晨"]["id"]])])[0]
     refs2 = collect_ref_images(db, get_shot(db, sid2))
-    assert len(refs2) == 2 and refs2[0]["path"] == refs2[1]["path"]
+    assert [r["slot"] for r in refs2] == ["ref0"]
 
 
 def test_render_shot_end_to_end(tmp_path, monkeypatch):
@@ -180,14 +181,7 @@ def test_ref_slots_characters_priority(tmp_path):
         scene_ids=[assets["庭院"]["id"]])])[0]
     refs = collect_ref_images(db, get_shot(db, sid))
     names = [get_asset(db, int(r["path"].split("/")[2]))["name"] for r in refs]
-    assert names == ["林晨", "第二角色"], f"角色未优先占槽: {names}"
-    # 单角色+场景：角色 ref0、场景 ref1（既有行为不变）
-    sid2 = persist_shots(db, pid, [_shot_draft(
-        character_ids=[assets["林晨"]["id"]],
-        scene_ids=[assets["庭院"]["id"]])])[0]
-    refs2 = collect_ref_images(db, get_shot(db, sid2))
-    names2 = [get_asset(db, int(r["path"].split("/")[2]))["name"] for r in refs2]
-    assert names2 == ["林晨", "庭院"]
+    assert names == ["林晨", "第二角色", "庭院"], f"角色未优先占槽: {names}（九路下场景可补位）"
 
 
 def test_wide_shot_megapixels_boost(tmp_path, monkeypatch):
@@ -606,3 +600,60 @@ def test_render_fills_silent_placeholder_for_unfilled_audio_slots(tmp_path, monk
     with comfy_server("ok", video=True) as m:
         render_shot(db, tmp_path / "data", sid, FakeComfy())
     assert any(k.startswith("cs_voice") for k in uploaded)   # 静音占位确实上传
+
+
+def test_collect_ref_images_nine_slots(tmp_path):
+    """九路升级（2026-09-20）：H3 ref2va 模板 ref\\d+ 槽 9 个 → 角色→场景→道具
+    顺延占槽全量返回（此前硬顶 2，场景/道具永远上图无门）。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.assets import persist_assets
+    db, pid, assets = _setup(tmp_path)
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="苏七", appearance="红衣", tags=[]),
+                                  NS(name="陈九", appearance="青衣", tags=[])],
+                      scenes=[NS(name="码头", description="夜", tags=[]),
+                              NS(name="酒馆", description="昏黄", tags=[])],
+                      props=[NS(name="油纸伞", description="竹骨", tags=[])]))
+    from comic_studio.engine.paths import data_to_abs
+    for a in __import__("comic_studio.engine.assets", fromlist=["list_project_assets"]) \
+            .list_project_assets(db, pid):
+        views = data_to_abs(tmp_path / "data", a["library_dir"]) / "views"
+        views.mkdir(parents=True, exist_ok=True)
+        (views / "sheet.png").write_bytes(b"\x89PNG")
+    all_assets = {r["name"]: r for r in
+                  __import__("comic_studio.engine.assets", fromlist=["list_project_assets"])
+                  .list_project_assets(db, pid)}
+    sid = persist_shots(db, pid, [_shot_draft(
+        character_ids=[all_assets["林晨"]["id"], all_assets["苏七"]["id"],
+                       all_assets["陈九"]["id"]],
+        scene_ids=[all_assets["庭院"]["id"], all_assets["码头"]["id"],
+                   all_assets["酒馆"]["id"]],
+        prop_ids=[all_assets["油纸伞"]["id"]])])[0]
+    refs = collect_ref_images(db, get_shot(db, sid))
+    assert [r["slot"] for r in refs] == [f"ref{i}" for i in range(7)]  # 9 槽封顶→实际 7 资产
+    order = [get_asset(db, int(r["path"].split("/")[2]))["kind"] for r in refs]
+    assert order == ["character"] * 3 + ["scene"] * 3 + ["prop"]  # 角色→场景→道具占槽序
+
+
+def test_prune_ref_slots_drops_unprovided_chains():
+    """未提供的 ref 槽整链裁剪：ref_images.ref_image_N 输入摘除 + Scale/LoadImage
+    节点删除（孤立 LoadImage 缺省文件名 400 判例）。"""
+    from comic_studio.engine.workflows import registry
+    regs = registry.scan_templates(registry.TEMPLATE_ROOT)
+    tmpl = regs["h3_ref2va"]
+    wf = {k: dict(v) for k, v in
+          __import__("json").load(open("templates/workflows/h3_ref2va.api.json")).items()}
+    # 深拷贝 inputs 防污染源
+    for n in wf.values():
+        n["inputs"] = dict(n["inputs"])
+    from comic_studio.engine.rendershot import _prune_ref_slots
+    _prune_ref_slots(wf, tmpl, {"ref0", "ref1"})
+    ref_inputs = sorted(k for k in wf["161"]["inputs"] if k.startswith("ref_images."))
+    assert ref_inputs == ["ref_images.ref_image_1", "ref_images.ref_image_2"]
+    for nid in ("201", "200", "203", "202", "213", "212"):
+        assert nid not in wf
+    # 孤儿检测：剩余节点引用的输出来源都还在
+    for nid, n in wf.items():
+        for v in (n.get("inputs") or {}).values():
+            if isinstance(v, list):
+                assert str(v[0]) in wf, f"悬空引用 {nid} -> {v}"
