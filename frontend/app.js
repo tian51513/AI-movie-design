@@ -62,7 +62,7 @@ function data() {
     themesManage: [], themeImportFile: null, themeImporting: false,
     editAssetOpen: false, editAssetId: null, editAssetName: '', editAssetDraft: '', editAssetKind: 'character', editAssetNewName: '', dedupBusy: false,
     newStyleKey: '', newStyleText: '', kreaLibs: {}, kreaLib: '', kreaName: '',
-    styleOpen: false, styleEditStyle: '', styleEditVis: '', styleSaving: false,
+    styleOpen: false, styleEditStyle: '', styleEditVis: '', styleSaving: false, styleEditKrea2: '',
     stylePickerOpen: false, spLib: '', spSel: '', spSearch: '', spCtx: 'create',
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { llmProviders: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
@@ -266,6 +266,7 @@ const methods = {
     fd.append('name', this.newName); fd.append('aspect_ratio', this.newRatio);
     fd.append('style', this._styleText());
     fd.append('style_vis', this._styleVis());
+    fd.append('krea2_style', this._krea2StyleField());
     fd.append('subtitles', this.newSubtitles); fd.append('video_megapixels', this.newMegapixels);
     fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
     fd.append('render_mode', this.newRenderMode);
@@ -1539,6 +1540,7 @@ const methods = {
       // 动态漫不消费（画风跟随原页），提交了也只作项目元信息留存
       fd.append('style', this._styleText());
       fd.append('style_vis', this._styleVis());
+      fd.append('krea2_style', this._krea2StyleField());
       fd.append('subtitles', this.newSubtitles); fd.append('video_megapixels', this.newMegapixels);
       fd.append('video_multiple', this.newMultiple); fd.append('video_speed', this.newSpeed);
       fd.append('default_shot_duration', Number(this.newSegDur) || 0);  // L11：空串/NaN 兜 0   // M16：漫画 tab 时长此前是摆设
@@ -1596,6 +1598,7 @@ const methods = {
     const fd = new FormData();
     fd.append('aspect_ratio', this.newRatio);
     fd.append('style', this._styleText()); fd.append('style_vis', this._styleVis());
+    fd.append('krea2_style', this._krea2StyleField());
     fd.append('dialogue_mode', this.comicDialogueMode);
     fd.append('target_pages', Number(this.comicTargetPages) || 0);  // 空串/NaN 兜 0（0=自动）
     fd.append('image_size', this.comicImageSize);
@@ -2209,17 +2212,24 @@ const methods = {
       // 占位符，拼接式用法里是死文本——2026-09-13 真机混入画风判例）
       return (p || '').replace(/\.*\s*Subject:\s*\{prompt\}\s*$/i, '').trim();
     },
+    _krea2StyleField() {
+      // Krea2 工作台风格槽值（迁移 44）：选中 Krea2 库风格才带 "lib|name"，
+      // 其余画风来源返回空串=不套（走提示词文字段）
+      return (this.newStyleKey === 'Krea2库' && this.kreaLib && this.kreaName)
+        ? `${this.kreaLib}|${this.kreaName}` : '';
+    },
     toggleStylePanel() {
       this.styleOpen = !this.styleOpen;
       if (this.styleOpen) {
         this.styleEditStyle = this.project.style || '';
         this.styleEditVis = this.project.style_vis || '';
+        this.styleEditKrea2 = this.project.krea2_style || '';
       }
     },
     async saveStylePanel() {
       this.styleSaving = true;
       try {
-        const body = { style: this.styleEditStyle.trim() };
+        const body = { style: this.styleEditStyle.trim(), krea2_style: (this.styleEditKrea2 || '').trim() };
         if (this.styleEditVis.trim()) body.style_vis = this.styleEditVis.trim();
         const r = await fetch(`/api/projects/${this.project.id}`, {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -2227,6 +2237,11 @@ const methods = {
         if (r.ok) { this.styleOpen = false; await this.loadDetail(); }
         else alert(await r.text());
       } finally { this.styleSaving = false; }
+    },
+    krea2StyleZh() {  // 面板显示当前库风格中文名（查不到回落原串）
+      const [lib, name] = (this.styleEditKrea2 || '').split('|');
+      const s = ((this.kreaLibs || {})[lib] || []).find(x => x.name === name);
+      return (s && (s.zh || s.name)) || (this.styleEditKrea2 || '');
     },
     openStylePicker(ctx) {
       this.spCtx = ctx;
@@ -2250,6 +2265,8 @@ const methods = {
         // 用户换画风后图像端（主图/漫画页优先吃 style_vis）永远吃旧风格）
         this.styleEditStyle = this._kreaClean(s.prompt);
         this.styleEditVis = this._kreaClean(s.prompt);
+        // 工作台风格槽同步记录（双管齐下：文字段照拼 + 库风格强注入）
+        this.styleEditKrea2 = `${this.spLib}|${s.name}`;
       }
       this.stylePickerOpen = false;
     },

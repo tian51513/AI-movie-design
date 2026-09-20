@@ -5,6 +5,25 @@
 import json
 from pathlib import Path
 
+
+def parse_krea2_style(value: str) -> tuple[str, str]:
+    """projects.krea2_style（"lib|style"）→ (风格库, 风格名)；空/坏格式返 ("","")。
+    工作台槽值：lib=风格库文件 stem（object_info 下拉值），style=条目 name。"""
+    value = (value or "").strip()
+    if not value or "|" not in value:
+        return "", ""
+    lib, _, style = value.partition("|")
+    lib, style = lib.strip(), style.strip()
+    if not lib or not style:
+        return "", ""
+    return lib, style
+
+
+def format_krea2_style(lib: str, style: str) -> str:
+    """(lib, style) → 存库值；任一为空返 ""（=不套库风格）。"""
+    lib, style = (lib or "").strip(), (style or "").strip()
+    return f"{lib}|{style}" if lib and style else ""
+
 _CACHE: dict | None = None   # 进程内缓存（文件不热更）
 
 

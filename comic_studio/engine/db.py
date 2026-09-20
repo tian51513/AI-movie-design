@@ -246,6 +246,10 @@ MIGRATIONS: list[str] = [
     );
     ALTER TABLE projects ADD COLUMN bgm_music_id INTEGER;
     ALTER TABLE projects ADD COLUMN bgm_volume REAL NOT NULL DEFAULT 0.2;""",
+    # 44 Krea2 工作台风格槽（2026-09-20 用户实测判例：提示词文字段对部分
+    # Krea2 模型推不动画风，工作台「风格库+风格」槽才是强杠杆——手动指定
+    # 库风格可出漫画风）。值="库文件名|风格名"，空=不套（走提示词文字段）
+    """ALTER TABLE projects ADD COLUMN krea2_style TEXT NOT NULL DEFAULT '';""",
 ]
 
 

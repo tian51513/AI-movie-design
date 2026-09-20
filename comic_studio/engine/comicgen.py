@@ -266,6 +266,15 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     steps = QUALITY_STEPS.get(proj["quality_tier"] or "standard", 12)
     params = {"seed": _seed if _seed is not None else random.randint(0, 2**31 - 1),
               "steps": steps, "width": w, "height": h}
+    # Krea2 工作台风格槽（2026-09-20 用户实测判例：文字段推不动部分 Krea2
+    # 模型的画风，工作台槽才是强杠杆）——漫画页合法多人物，不加单人物禁令
+    _kstyle = ((proj["krea2_style"] if "krea2_style" in proj.keys() else "") or "").strip()
+    if _kstyle:
+        from .stylepresets import parse_krea2_style
+        _lib, _name = parse_krea2_style(_kstyle)
+        if _lib:
+            params["krea_style_lib"] = _lib
+            params["krea_style"] = _name
     images = []
     # 二期参考注入分流（2026-09-13）：绑定角色 ≤2 且有 main.png → 人物场景化
     # 模板（base=第一角色主图；第二角色文字锚）。无绑定/主图缺/>2 → 纯 t2i。

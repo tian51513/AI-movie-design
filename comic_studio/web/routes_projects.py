@@ -45,6 +45,8 @@ _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", 
                     "dialogue_mode", "target_pages", "image_size", "quality_tier",
                     # 迁移 37（2026-09-13 气泡渲染）：样式三参数 JSON
                     "bubble_style",
+                    # 迁移 44（2026-09-20）：Krea2 工作台风格槽 "lib|style"
+                    "krea2_style",
                     # 迁移 38（2026-09-13 B1）：资产停等确认标记
                     "comic_assets_confirmed",
                     # 迁移 39（2026-09-13 二期）：主图停等检查标记
@@ -185,6 +187,7 @@ def create_from_comic(request: Request,
                       default_shot_duration: float = Form(0.0),
                       target_duration: float = Form(0.0),
                       style: str = Form(""), style_vis: str = Form(""),
+                      krea2_style: str = Form(""),  # 迁移 44 Krea2 工作台风格槽 "lib|style"
                       subtitles: bool = Form(False),  # 漫画默认不烧（原页自带台词）
                       redraw: bool = Form(False),  # 动态漫角色重绘（迁移 35）——漫改忽略
                       video_megapixels: float = Form(0.4),
@@ -208,6 +211,7 @@ def create_from_comic(request: Request,
                             default_shot_duration=default_shot_duration,
                             target_duration=target_duration,
                             style=style, style_vis=style_vis,
+                            krea2_style=krea2_style,
                             subtitles=1 if subtitles else 0,
                             # 重绘仅动态漫语义（漫改画风本就要转换，恒 0）
                             redraw_characters=1 if (redraw and comic_mode == "motion_comic") else 0,
@@ -259,6 +263,7 @@ def create_from_comic_novel(request: Request,
                             novel: UploadFile = File(None),
                             text: str = Form(""),
                             style: str = Form(""), style_vis: str = Form(""),
+                            krea2_style: str = Form(""),  # Krea2 工作台风格槽
                             dialogue_mode: str = Form("bubble"),
                             target_pages: int = Form(0),
                             image_size: str = Form("0.8"),
@@ -296,7 +301,7 @@ def create_from_comic_novel(request: Request,
                           comic_mode="comic_output",
                           dialogue_mode=dialogue_mode, target_pages=target_pages,
                           image_size=image_size, quality_tier=quality_tier,
-                          bubble_style=bubble_style,
+                          bubble_style=bubble_style, krea2_style=krea2_style,
                           video_megapixels=video_megapixels,
                           video_multiple=video_multiple, video_speed=video_speed,
                           default_shot_duration=default_shot_duration,
@@ -309,6 +314,7 @@ def create_from_comic_novel(request: Request,
 def create_from_comic_audio(request: Request, name: str = Form(...),
                             aspect_ratio: str = Form("9:16"),
                             style: str = Form(""), style_vis: str = Form(""),
+                            krea2_style: str = Form(""),  # Krea2 工作台风格槽
                             dialogue_mode: str = Form("bubble"),
                             target_pages: int = Form(0),
                             image_size: str = Form("0.8"),
@@ -348,7 +354,7 @@ def create_from_comic_audio(request: Request, name: str = Form(...),
                           comic_mode="comic_output",
                           dialogue_mode=dialogue_mode, target_pages=target_pages,
                           image_size=image_size, quality_tier=quality_tier,
-                          bubble_style=bubble_style,
+                          bubble_style=bubble_style, krea2_style=krea2_style,
                           video_megapixels=video_megapixels,
                           video_multiple=video_multiple, video_speed=video_speed,
                           default_shot_duration=default_shot_duration,
@@ -917,6 +923,7 @@ def create_from_theme(request: Request, body: dict):
     row = create_project(db, data_dir, body.get("name") or theme["name"], aspect,
                          text, style=(body.get("style") or ""),
                          style_vis=(body.get("style_vis") or ""),
+                         krea2_style=(body.get("krea2_style") or ""),
                          default_shot_duration=float(body.get("default_shot_duration") or 0.0),
                          target_duration=float(body.get("target_duration") or 0.0),
                          video_megapixels=float(body.get("video_megapixels") or 0.4),
@@ -935,6 +942,7 @@ def _public(row) -> dict:
 def create(request: Request, name: str = Form(...),
            aspect_ratio: str = Form(...), novel: UploadFile = File(...),
            style: str = Form(""), style_vis: str = Form(""),
+           krea2_style: str = Form(""),  # Krea2 工作台风格槽（迁移 44）
            video_megapixels: float = Form(0.4),
            video_multiple: int = Form(32), video_speed: str = Form("标准"),
            default_shot_duration: float = Form(0.0),  # 0=LLM 动态估时（2026-09-05 默认）
@@ -951,6 +959,7 @@ def create(request: Request, name: str = Form(...),
         raise HTTPException(422, str(e))
     row = create_project(request.app.state.db, request.app.state.data_dir,
                          name, aspect_ratio, text, style=style, style_vis=style_vis,
+                         krea2_style=krea2_style,
                          video_megapixels=video_megapixels, video_multiple=video_multiple,
                          video_speed=video_speed, default_shot_duration=default_shot_duration,
                          prompt_mode=prompt_mode, lora_realism=lora_realism,
@@ -1116,6 +1125,18 @@ def patch_style(request: Request, project_id: int, body: dict):
         conn = db.connect()
         conn.execute("UPDATE projects SET era=? WHERE id=?",
                      (str(body["era"] or "").strip(), project_id))
+        conn.commit()
+
+    # Krea2 工作台风格槽（迁移 44）：空串=清除（回落提示词文字段）；
+    # 非空须为 "库|风格名" 两段皆非空——引擎会把值直注 ComfyUI 下拉/字符串槽
+    if "krea2_style" in body:
+        from ..engine.stylepresets import parse_krea2_style
+        raw = str(body["krea2_style"] or "").strip()
+        if raw and not all(parse_krea2_style(raw)):
+            raise HTTPException(422, 'krea2_style 需为 "风格库|风格名"（两段非空）或空串清除')
+        conn = db.connect()
+        conn.execute("UPDATE projects SET krea2_style=? WHERE id=?",
+                     (raw, project_id))
         conn.commit()
 
     # Handle video parameters (composable with style)

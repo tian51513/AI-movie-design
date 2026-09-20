@@ -217,16 +217,25 @@ def _fill_missing_slots(data_dir, tmpl, images):
 
 
 def _t2i_to_file(db, data_dir, comfy, tmpl, prompt, dest, ctx, job, label,
-                 images=None):
+                 images=None, krea_style: str = ""):
     """单段 t2i：组工作流 → 提交 → 等待 → 下载到 dest（主图与回退路径共用）。
     images：模板声明图片槽时传入（如文+图重绘的 ref 槽）；未提供的槽自动
-    补灰占位防 ComfyUI 400。"""
+    补灰占位防 ComfyUI 400。
+    krea_style：projects.krea2_style（"lib|style"）——Krea2 工作台风格槽注入
+    （2026-09-20 用户实测：提示词文字段推不动部分 Krea2 模型，工作台槽才是
+    强杠杆）；模板未声明该参数则自动忽略（zimage 道零影响）。"""
     if comfy is None:
         raise RuntimeError("gen_ref 需要 ComfyUI 端点（settings.comfy.base_url）")
     images = _fill_missing_slots(data_dir, tmpl, images)
     # 模板级步数（2026-09-14 template_params，设置页模型切换区按模板配）：
     # 0/缺省=模板内置——t2i 步数对耗时影响大（Krea2 文生图等）
     params = {"seed": random.randint(0, 2**31 - 1)}
+    if krea_style:
+        from .stylepresets import parse_krea2_style
+        _lib, _name = parse_krea2_style(krea_style)
+        if _lib:
+            params["krea_style_lib"] = _lib
+            params["krea_style"] = _name
     _steps = int(((get_setting(db, "template_params") or {}).get(tmpl.id) or {})
                  .get("steps") or 0)
     if _steps > 0:
@@ -269,6 +278,8 @@ def handle_gen_ref(db, data_dir, job, comfy):
     # 叙事/剪辑词留在 style 给视频提示词——"场景切换流畅""剪辑节奏"对 T2I 是噪声
     style = (proj["style_vis"] or proj["style"]) if proj else ""
     era = proj["era"] if proj is not None and "era" in proj.keys() else ""
+    krea2_style = ((proj["krea2_style"] if "krea2_style" in proj.keys() else "")
+                   if proj is not None else "")
     cv_tmpl = None
     if asset["kind"] == "character":
         from .workflows.registry import ManifestError
@@ -321,8 +332,15 @@ def handle_gen_ref(db, data_dir, job, comfy):
                          ("🎨 重设计：忽略旧主图参考" if redesign else "无现有主图")
                          + f"，用纯文生图 {boot.id} 生成主图",
                          project_id=job["project_id"], job_id=job["id"])
+            # 库风格激活的角色主图：风格 prompt 自带场景词汇会稀释「单人物」
+            # 锚定（2026-09-20 用户实测：选风格后背景常冒出多个人物）——
+            # 正向强化禁令（ZImage/Krea2 负向词通道不可靠）
+            if krea2_style and asset["kind"] == "character":
+                main_prompt += ("。画面中有且仅有一个人物，背景不得出现任何"
+                                "其他人物、人形剪影或额外角色")
             _t2i_to_file(db, data_dir, comfy, main_tmpl, main_prompt, main_png, ctx,
-                         job, label=f"资产「{asset['name']}」主图", images=main_images)
+                         job, label=f"资产「{asset['name']}」主图", images=main_images,
+                         krea_style=krea2_style)
         if stage in ("all", "views"):
             # 提示词不注入：四视图走工作流内置触发词（用户勘误 2026-08-25——
             # 参数只有主图 body 槽 + 随机 seed，步数等保持工作流默认）
@@ -359,7 +377,7 @@ def handle_gen_ref(db, data_dir, job, comfy):
                     if getattr(_tmpl, "prompt_style", "") == "tags_en" else build_gen_prompt)
         prompt, ctx = _builder(asset, style=style, era=era)
         _t2i_to_file(db, data_dir, comfy, _tmpl, prompt, dest, ctx, job,
-                     label=f"资产「{asset['name']}」参考图")
+                     label=f"资产「{asset['name']}」参考图", krea_style=krea2_style)
     if stage == "main":
         return  # 仅换主图：sheet 未变，无需 stale 联动
     from .shots import mark_stale_for_asset

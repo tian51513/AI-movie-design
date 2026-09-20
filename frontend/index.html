@@ -1010,6 +1010,15 @@
       <p><label style="display:block">图像画风子集（主图/关键帧用，视觉词；留空=同上）</label>
         <input v-model="styleEditVis" placeholder="留空=同画风描述"
                style="width:96%"></p>
+      <p style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="pill" v-if="styleEditKrea2" style="background:#1e3a5f;color:#93c5fd">
+          🎨 工作台风格槽：{{ krea2StyleZh() }}</span>
+        <button v-if="styleEditKrea2" class="btn" style="font-size:12px;padding:2px 8px"
+                @click="styleEditKrea2 = ''"
+                title="清除后风格只走提示词文字段（部分 Krea2 模型文字段推不动画风——2026-09-20 实测）">✕ 清除库风格</button>
+        <span v-else class="muted" style="font-size:12px">
+          未启用工作台风格槽（从 Krea2 库选择即启用——比文字段更强的画风杠杆，主图/漫画页生效）</span>
+      </p>
       <p><button class="btn" @click="saveStylePanel" :disabled="styleSaving">
         {{ styleSaving ? '保存中…' : '保存画风（参考图/提示词后续生成生效）' }}</button></p>
     </div>
