@@ -24,6 +24,9 @@ class ProviderConfig(BaseModel):
     # 连接 best-effort 同效）；llama=llama-server 启停器（常驻显存，Comfy 前
     # 停止、调用前按需拉起）；lmstudio=暂无专用动作；空=通用 OpenAI 兼容
     kind: str = ""
+    # 跳过思考（2026-09-20）：Qwen3 系官方机制——消息尾注入空 think 块即无思考
+    # 模式（llama-server 思考模型用；reasoning_effort 是 Ollama 私有参数它不认）
+    skip_think: bool = False
     # 附加请求参数（透传 chat.completions.create 的 extra_body），如屏蔽思考：
     # {"chat_template_kwargs": {"enable_thinking": false}}——本机 LM Studio 实测无效，留给支持的服务端
     extra_body: dict | None = None

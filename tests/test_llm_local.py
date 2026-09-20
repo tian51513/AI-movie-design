@@ -248,7 +248,10 @@ def test_cross_provider_yield(tmp_path, monkeypatch):
     ensure_llama_running(db, {"base_url": "http://127.0.0.1:8123/v1",
                               "model": "Bonsai"}, transport=T(), runner=fake_run)
     assert ps_hits and ran[-1][0] == "启动.bat"
-    # ② 本机 Ollama 型任务 → 停在跑的 llama（此 mock 下 health=404 未跑 → 不动作）
+    # ② 本机 Ollama 型任务 → 停在跑的 llama（显式 mock 未在跑——真实探测会让
+    # 测试依赖本机 llama-server 状态，2026-09-20 真机在跑时曾误失败）
+    monkeypatch.setattr("comic_studio.engine.llm.local._llama_health",
+                        lambda url, transport=None: False)
     ran.clear()
     client_for_task(db, "extract_assets")
     assert ran == []  # llama 未在跑：零命令零开销
@@ -293,3 +296,31 @@ def test_pinned_model_drives_llama_switch(tmp_path, monkeypatch):
                         lambda db, p, name="": seen.update(model=p.get("model")) or True)
     client_for_task(db, "extract_assets")
     assert seen["model"] == "Qwen3.5-4B-Q4_K_M"  # 钉选模型生效，不是连接默认
+
+
+def test_skip_think_injection(tmp_path):
+    """跳过思考（2026-09-20）：Qwen3 系空 think 块注入——只动最后一条 user、
+    纯文本/多模态两形态、不改入参；llama 连接配置经 client_for_task 带上开关。"""
+    from comic_studio.engine.llm.provider import LLMClient, inject_skip_think
+    msgs = [{"role": "system", "content": "s"},
+            {"role": "user", "content": "你好"}]
+    out = inject_skip_think(msgs)
+    assert out[-1]["content"] == "你好<think>\n\n</think>"
+    assert msgs[-1]["content"] == "你好"  # 入参未改
+    assert out[0]["content"] == "s"  # 只动最后一条 user
+    mm = inject_skip_think([{"role": "user", "content": [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,x"}}]}])
+    assert mm[0]["content"][-1]["type"] == "text" and "</think>" in mm[0]["content"][-1]["text"]
+    # 开关经 client_for_task 落到 LLMClient
+    from comic_studio.engine.llm.provider import client_for_task
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "llm_providers",
+                {"llm": {"base_url": "http://127.0.0.1:8123/v1", "model": "Bonsai",
+                         "kind": "llama", "skip_think": True}})
+    set_setting(db, "llm_routing", {"extract_assets": "llm"})
+    import comic_studio.engine.llm.local as loc
+    monkey = pytest.MonkeyPatch()
+    monkey.setattr(loc, "ensure_llama_running", lambda db, p, name="": True)
+    c = client_for_task(db, "extract_assets")
+    assert c.skip_think is True
+    monkey.undo()

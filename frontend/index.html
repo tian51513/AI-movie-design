@@ -591,6 +591,12 @@
                <option value="lmstudio">引擎·LM Studio</option>
                <option value="llama">引擎·llama-server</option>
              </select>
+             <label v-if="settingsForm.llmProviders[key].kind === 'llama'"
+                    style="font-size:12px;margin-left:6px;cursor:pointer"
+                    title="Qwen3 系官方机制：消息尾注入空 think 块=真跳过思考（省窗口省时；R1 式恒思考模型无效）。Bonsai/Qwen3.x 适用">
+               <input type="checkbox" v-model="settingsForm.llmProviders[key].skip_think"
+                      style="vertical-align:middle"> 跳过思考
+             </label>
              <input v-model="settingsForm.llmProviders[key].base_url"
                     placeholder="地址（如 http://127.0.0.1:11434，自动归一 /v1）" style="width:46%">
              <button @click="fetchProviderModels(key)" :disabled="loadingModels===key">
@@ -653,6 +659,12 @@
                <option value="lmstudio">引擎·LM Studio</option>
                <option value="llama">引擎·llama-server</option>
              </select>
+             <label v-if="settingsForm.llmProviders[key].kind === 'llama'"
+                    style="font-size:12px;margin-left:6px;cursor:pointer"
+                    title="Qwen3 系官方机制：消息尾注入空 think 块=真跳过思考（省窗口省时；R1 式恒思考模型无效）。Bonsai/Qwen3.x 适用">
+               <input type="checkbox" v-model="settingsForm.llmProviders[key].skip_think"
+                      style="vertical-align:middle"> 跳过思考
+             </label>
              <button @click="fetchProviderModels(key)" :disabled="loadingModels===key">
                {{ loadingModels===key ? '获取中…' : '获取模型' }}</button>
              <button @click="llmTest(key)" :disabled="llmTesting===key">

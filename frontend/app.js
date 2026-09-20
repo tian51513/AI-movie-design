@@ -1065,7 +1065,8 @@ const methods = {
         ebm[m] = val;
       }
       providers[k] = { base_url: p.base_url || '', api_key: p.api_key || '',
-                       model: p.model || '', kind: p.kind || '', extra_body: eb,
+                       model: p.model || '', kind: p.kind || '',
+                       skip_think: !!p.skip_think, extra_body: eb,
                        extra_body_models: Object.keys(ebm).length ? ebm : null };
     }
     for (const k of this.removedProviders) providers[k] = null;

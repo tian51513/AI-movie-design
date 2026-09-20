@@ -47,18 +47,43 @@ def normalize_base_url(base_url: str) -> str:
     return root + path
 
 
+_SKIP_THINK_BLOCK = "<think>\n\n</think>"
+
+
+def inject_skip_think(messages: list[dict]) -> list[dict]:
+    """消息尾注入空 think 块（Qwen3 系=真跳过思考）。只动最后一条 user 消息；
+    纯文本 content 追加、多模态 list content 加 text part。返回新列表不改入参。"""
+    out = [dict(m) for m in messages]
+    for m in reversed(out):
+        if m.get("role") != "user":
+            continue
+        c = m.get("content")
+        if isinstance(c, str):
+            m["content"] = c + _SKIP_THINK_BLOCK
+        elif isinstance(c, list):
+            m["content"] = list(c) + [{"type": "text", "text": _SKIP_THINK_BLOCK}]
+        break
+    return out
+
+
 class LLMClient:
     def __init__(self, base_url: str, api_key: str, model: str, timeout: float = 600,
-                 extra_body: dict | None = None):
+                 extra_body: dict | None = None, skip_think: bool = False):
         self.base_url = normalize_base_url(base_url)
         self._client = OpenAI(base_url=self.base_url, api_key=api_key, timeout=timeout)
         self.model = model
         # extra_body 透传 create()（思考模型屏蔽思考等：本机 LM Studio 实测
         # think/chat_template_kwargs/reasoning_effort 均无效，留给支持的服务端配置）
         self.extra_body = extra_body
+        # 跳过思考（2026-09-20）：Qwen3 系官方机制——消息尾注入空 think 块即
+        # 无思考模式（与 llama.cpp WebUI 的 skip thinking 同款；R1 式恒思考模型
+        # 无效）。llama-server 连接用（reasoning_effort 是 Ollama 私有参数它不认）
+        self.skip_think = skip_think
 
     def raw_chat(self, messages: list[dict], temperature: float = 0.3,
                  max_tokens: int | None = None) -> tuple[str, Usage]:
+        if self.skip_think:
+            messages = inject_skip_think(messages)
         kwargs = dict(model=self.model, messages=messages, temperature=temperature)
         if max_tokens is not None:
             kwargs["max_tokens"] = max_tokens
@@ -199,7 +224,8 @@ def client_for_task(db: Database, task: str) -> "LLMClient":
         if per_model is not None:
             extra = per_model
     return LLMClient(base_url=p["base_url"], api_key=p.get("api_key") or "none",
-                     model=model, extra_body=extra)
+                     model=model, extra_body=extra,
+                     skip_think=bool(p.get("skip_think")))
 
 
 def log_llm_call(db: Database, task: str, provider: str, model: str, usage: Usage,
