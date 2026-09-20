@@ -609,7 +609,10 @@
              </select></p>
           <p v-else style="margin:0 0 4px"><input v-model="settingsForm.llmProviders[key].model"
                   placeholder="默认模型名（可选，点「获取模型」后变下拉）" style="width:90%"></p>
-          <p style="margin:0 0 4px"><input v-model="settingsForm.llmProviders[key].api_key"
+          <!-- api_key 仅通用型连接显示（2026-09-20：ollama/lmstudio/llama 本机
+               引擎不鉴权，隐藏输入免困惑——留空/旧值都不影响连通） -->
+          <p v-if="!['ollama','lmstudio','llama'].includes(settingsForm.llmProviders[key].kind)"
+             style="margin:0 0 4px"><input v-model="settingsForm.llmProviders[key].api_key"
                   placeholder="api_key（本地服务随意）" style="width:90%"></p>
           <p style="margin:0"><input v-model="settingsForm.llmProviders[key].extra_body_json"
                   placeholder="附加参数 JSON（可选，作用于本连接全部调用，如 {&quot;reasoning_effort&quot;:&quot;none&quot;}——会打哑部分模型，慎用）" style="width:90%"></p>
@@ -658,7 +661,8 @@
              </select></p>
           <p v-else style="margin:0 0 4px"><input v-model="settingsForm.llmProviders[key].model"
                   placeholder="模型名" style="width:90%"></p>
-          <p style="margin:0 0 4px"><input type="password" v-model="settingsForm.llmProviders[key].api_key"
+          <p v-if="!['ollama','lmstudio','llama'].includes(settingsForm.llmProviders[key].kind)"
+             style="margin:0 0 4px"><input type="password" v-model="settingsForm.llmProviders[key].api_key"
                   placeholder="api_key" style="width:90%"></p>
           <p style="margin:0"><input v-model="settingsForm.llmProviders[key].extra_body_json"
                   placeholder="附加参数 JSON（可选）" style="width:90%"></p>
