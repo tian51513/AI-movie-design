@@ -24,8 +24,11 @@ def _reg():
 def test_krea_t2i_template_registered():
     t = _reg()["krea_t2i"]
     assert t.type == "t2i"
-    # t2i 尺寸由宽高决定——百万像素不注入（2026-09-14 用户：MP 仅图生图缩放）
-    assert set(t.inject_params) == {"seed", "steps", "width", "height"}
+    # t2i 尺寸由宽高决定——百万像素不注入（2026-09-14 用户：MP 仅图生图缩放）；
+    # krea_style_lib/krea_style=工作台风格槽（2026-09-20 用户实测：文字段推不动
+    # 部分 Krea2 模型，工作台槽才是强杠杆）
+    assert set(t.inject_params) == {"seed", "steps", "width", "height",
+                                    "krea_style_lib", "krea_style"}
     slots = {s.label: s for s in t.models}
     assert slots["unet"].cls == "UNETLoader"
     assert slots["clip"].cls == "CLIPLoader"
