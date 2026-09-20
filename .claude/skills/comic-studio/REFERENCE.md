@@ -142,6 +142,7 @@ Global Metadata 前缀——下拉是保底，✨ LLM 富描述是加强，不�
 ## 11. 开发细则补充
 
 - LLM provider：**服务商动态化（2026-09-17）**——本地/线上均可配 N 个连接（键 `^[a-z][a-z0-9_]*$`，UI 自动命名 local3/online2…，默认各一 local+online）；连接只配地址/密钥/可选默认模型/附加参数，任务路由逐任务直选 `连接名:模型名`（打开设置页自动拉所有有效连接的模型清单）；思考模型烧窗用 extra_body `{"reasoning_effort":"none"}`（Ollama /v1 实测有效）——extra_body 作用于该连接全部调用会打哑部分模型，需要隔离就加一条同地址连接单独配
+- **llama-server 连接（2026-09-20）**：连接卡「引擎」选 llama-server（本机引擎类型自动隐藏 api_key 项）；地址 `http://127.0.0.1:8123`；「获取模型」扫公共模型目录（`llama_server.model_dir`）不需服务在跑；model 字段填 gguf 文件主干名（兼作启动关键字）。**显存全自动**：任务调用前未跑自动拉起、路由换模型自动停旧启新、Comfy 渲染前与其它本机引擎任务前自动停止、llama 起模型前自动请 Ollama 卸载。手动：`E:\AI\llama\server\启动-<模型>.bat` 双击即启 / `停止.bat`（引擎调的通用版=start.bat/stop.bat，bat 内容必须纯 ASCII+CRLF）。tool calling 实测可用（Bonsai）；LLM↔Comfy 之外注意 LM Studio 驻留无 API 管不到（用它的路由去 LM Studio 调短 TTL）
 - Ollama num_ctx=16384：拆分块 1300 字上限的推导依据；截断先查 finish_reason
 - 转写校对遍（P10C 提前落地 2026-09-05）：cleanup_transcription 按段 LLM 清洗（同音错字/纯语气词段丢弃，时间轴保留）→ 重写正文+段落盘+章节；路由键 asr_cleanup 默认 local；正文弹窗「✨ LLM 校对」按钮触发
 - 提示词模式 A-E 契约见 [PROMPTS.md](PROMPTS.md)（默认 E 英文控制式；heal 自愈不耗重试）
