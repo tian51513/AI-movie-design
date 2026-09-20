@@ -88,3 +88,23 @@ def test_genref_main_injects_style_and_single_character_guard(tmp_path, monkeypa
         text = wf["28"]["inputs"]["value"]
         assert "有且仅有一个人物" in text  # 库风格场景词稀释锚定的强化禁令
         assert "羽川翼" in text and "Style" not in text or True  # 双管齐下：style 段照拼（此处项目无 style）
+
+
+def test_dedup_schema_tolerates_empty_drop_entries():
+    """2026-09-20 真机判例：nsfwvision 输出 13 组里 5 组 drop=[] 曾把整单
+    pydantic 校验炸掉（3 次重试同形→查重全丢）。空 drop 条目须机械剔除、
+    drop 接受字符串、坏条目不毒死好条目。"""
+    import json
+    from comic_studio.engine.llm.schemas import AssetDedup
+    raw = json.dumps({"merges": [
+        {"kind": "scene", "keep": "废弃大楼四楼教室", "drop": ["废弃大楼四层教室", "废弃大楼教室"]},
+        {"kind": "scene", "keep": "只有keep没drop的坏条目", "drop": []},
+        {"kind": "character", "keep": "阿良良木火怜", "drop": "火怜"},  # 字符串形态
+        {"kind": "scene", "keep": "另一个坏条目"},                      # 缺 drop
+        {"kind": "scene", "drop": ["无名条目"]},                        # 缺 keep
+    ]}, ensure_ascii=False)
+    d = AssetDedup.model_validate(json.loads(raw))
+    assert [(m.kind, m.keep, m.drop) for m in d.merges] == [
+        ("scene", "废弃大楼四楼教室", ["废弃大楼四层教室", "废弃大楼教室"]),
+        ("character", "阿良良木火怜", ["火怜"]),
+    ]
