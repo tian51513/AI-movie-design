@@ -263,3 +263,33 @@ def test_cross_provider_yield(tmp_path, monkeypatch):
     ran.clear()
     client_for_task(db, "extract_assets")
     assert ran == [("停止.bat", ())]
+
+
+def test_pinned_model_drives_llama_switch(tmp_path, monkeypatch):
+    """路由钉选 连接:模型 时拉起/切换按钉选模型判断（llama-server 忽略请求
+    model 名——按连接默认判断会静默答错模型）。"""
+    from comic_studio.engine.llm.provider import client_for_task
+    from comic_studio.engine.llm.local import ensure_llama_running
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "llm_providers",
+                {"llm": {"base_url": "http://127.0.0.1:8123/v1", "model": "Bonsai",
+                         "kind": "llama"}})
+    set_setting(db, "llm_routing", {"extract_assets": "llm:Qwen3.5-4B-Q4_K_M"})
+    seen = {}
+
+    class T(httpx.BaseTransport):
+        def handle_request(self, request):
+            if request.url.path.endswith("/v1/models"):
+                # 连接默认模型 Bonsai 在跑——钉的是 Qwen3.5，必须触发切换
+                return httpx.Response(200, json={"data": [{"id": "Ternary-Bonsai-2-27B-PQ2_0"}]})
+            return httpx.Response(200)
+
+    ran = []
+    monkeypatch.setattr("comic_studio.engine.llm.local._run_bat",
+                        lambda cfg, bat, *a: ran.append((bat, a)) or
+                        (_ for _ in ()).throw(SystemExit(0)) if False else ran.append((bat, a)))
+    monkeypatch.setattr("comic_studio.engine.llm.local.time.sleep", lambda s: None)
+    monkeypatch.setattr("comic_studio.engine.llm.local.ensure_llama_running",
+                        lambda db, p, name="": seen.update(model=p.get("model")) or True)
+    client_for_task(db, "extract_assets")
+    assert seen["model"] == "Qwen3.5-4B-Q4_K_M"  # 钉选模型生效，不是连接默认

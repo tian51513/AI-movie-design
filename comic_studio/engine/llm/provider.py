@@ -176,7 +176,10 @@ def client_for_task(db: Database, task: str) -> "LLMClient":
     # 失败则经启停器命令拉起（阻塞至就绪/超时）；其余类型直连
     if str(p.get("kind") or "") == "llama":
         from .local import ensure_llama_running
-        if not ensure_llama_running(db, p, name=name):
+        # 钉选模型（provider:model）优先于连接默认——llama-server 忽略请求里的
+        # model 名（加载什么答什么），拉起/切换必须按实际要用的模型判断
+        eff = {**p, "model": model_override or p.get("model") or ""}
+        if not ensure_llama_running(db, eff, name=name):
             raise LLMError(
                 f"连接 {name} 的 llama-server 未能启动（看执行日志的启动超时告警；"
                 f"可手动跑 {r'E:\AI\llama\server'} 启动.bat 排障）")
