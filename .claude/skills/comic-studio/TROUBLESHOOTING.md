@@ -163,3 +163,9 @@ identity_edit LoRA 双图训练上限（scene恒图1/person恒图2，交换劣�
 - 解：PrismML-Eng/llama.cpp fork（prism-b10658+，装于 E:\AI\llama）的 llama-server；`E:\AI\llama\server\启动.bat <模型关键字>` 通用启停（公共模型目录递归匹配+mmproj 自动挂+8123 固定端口）
 - **ollama create 失败后 blobs 有孤儿**（copying 已完成、模型未注册）——手动清 %OLLAMA_MODELS%\blobs 对应 sha256 回收空间；本机 OLLAMA_MODELS=E:\AI\ollama\.ollama
 - llama-server 常驻显存无自动卸载：engine 的 llama 型连接走启停器编排（Comfy 前 停止.bat / 调用前健康失败自动 拉起+等就绪）；让位机制只对 ollama 型有 /api/ps 通道——**llama 型连接必须在设置页把「引擎」选成 llama-server 才享受自动编排**
+
+### cmd 启动器三连坑（2026-09-20 llama-server 部署实测）
+1. **bat 行尾必须 CRLF**——LF 行尾 cmd 解析错乱（'enabledelayedexpansion' 不是命令）
+2. **bat 内容必须纯 ASCII**——中文注释/回显在无控制台调用（WSL interop/引擎 subprocess）下 chcp 65001 失效，GBK 按 UTF-8 碎出命令碎片（双击有控制台时正常=更隐蔽）；中文语义只放文件名，入口 bat 做透传别名（`启动.bat → call start.bat %*`）
+3. **WSL mirrored 网络对无人监听端口答假 503**（Forwarding failure）——判断「服务在不在」不能只看 503，`tasklist` 查进程或看 503 是否带 JSON body
+- 排障法：WSL 侧 `cmd.exe /c <bat>` 可直接测 bat（等价引擎调用路径）；Windows 侧进程显存用 `/mnt/c/Windows/System32/nvidia-smi.exe`（WSL 的 nvidia-smi 看不见 Windows 进程）
