@@ -635,3 +635,27 @@ def test_dedup_kind_alias_and_bigram_guard(tmp_path):
     names = {a["name"] for a in list_project_assets(db, proj["id"])}
     # 街道与「教室」零共享词根 → 护栏拦截保留；教室角落/火怜/斩妖刀 正常并入
     assert names == {"阿良良木火怜", "教室", "妖刀", "黄金周早晨的街道"}
+
+
+def test_orphan_cleanup_clears_job_references(tmp_path):
+    """孤儿清理 FK 判例（2026-09-21 真机）：重分析孤儿角色曾生成过参考图 →
+    jobs.asset_id 引用 → DELETE assets 被 FK 拦（job 653 同款病本路径漏修）。"""
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.assets import persist_assets
+    from comic_studio.engine.jobs import enqueue_job
+    db = _db(tmp_path)
+    proj = create_project(db, tmp_path / "data", "p", "9:16", "新角色登场的故事")
+    persist_assets(db, tmp_path / "data", proj["id"],
+                   NS(characters=[NS(name="旧角色", appearance="x", tags=[])],
+                      scenes=[], props=[]))
+    old = list_project_assets(db, proj["id"])[0]
+    jid = enqueue_job(db, "gen_ref", project_id=proj["id"], asset_id=old["id"],
+                      resource="gpu_comfy", payload={"asset_id": old["id"]})
+    # 重分析产出全新名册（旧角色成孤儿）
+    fake = FakeClient(['{"characters":[{"name":"新角色","appearance":"y"}],'
+                       '"scenes":[],"props":[]}'])
+    analyze_project(db, tmp_path / "data", proj["id"], client_factory=lambda t: fake)
+    names = [a["name"] for a in list_project_assets(db, proj["id"])]
+    assert names == ["新角色"]  # FK 不再拦
+    row = db.connect().execute("SELECT asset_id FROM jobs WHERE id=?", (jid,)).fetchone()
+    assert row["asset_id"] is None  # 任务行保留、引用解除

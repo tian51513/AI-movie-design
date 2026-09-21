@@ -419,6 +419,10 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
         _oids = [a["id"] for a in _orphans]
         ph = ",".join("?" * len(_oids))
         conn.execute(f"DELETE FROM project_assets WHERE asset_id IN ({ph})", _oids)
+        # 先清 jobs.asset_id 引用再删行（FK=ON 下 DELETE 被 jobs 引用必炸——
+        # 2026-08-27 job 653 删镜判例的同款病，本路径漏修；2026-09-21 真机：
+        # 重分析孤儿角色都生成过参考图 → gen_ref job 引用 → IntegrityError）
+        conn.execute(f"UPDATE jobs SET asset_id=NULL WHERE asset_id IN ({ph})", _oids)
         conn.execute(f"DELETE FROM assets WHERE id IN ({ph})", _oids)
         from ..shots import list_shots as _ls
         for sh in _ls(db, project_id):
