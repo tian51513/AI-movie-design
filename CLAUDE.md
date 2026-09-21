@@ -370,8 +370,17 @@
 - **参考音乐导入（标签/ASR 读词曲风）：用户决策暂不做（2026-09-19）**——能力已查证：mutagen 读 ID3/FLAC 标签（未装）+ faster-whisper 听写歌词（Win 侧已装）+ 曲风无分类模型只能标签/人工；将来做「📥 参考导入」入口时用
 - **音频参考续写：生态未支持（2026-09-19 查证，用户决策等生态）**——Music3/YuE2 节点均无音频输入（纯文本 conditioning）；YuE 原版有 song continuation 模式，ComfyUI 封装将来暴露音频输入后音乐库架构直接可接（加参考音频上传位）；拼接式 workaround（样片+caption 匹配续段 concat）已评估不做
 
-## 模块地图（2026-09-20 下午 · llama-server 接入与显存分流）
+## 模块地图（2026-09-21 · Qwen-Image 2.1 接入 + llama 死锁修复）
 
+- **Qwen-Image 2.1 两模板**（`_raw` 4 份官方/改版实测，取改版接入）：`qwen21_t2i`（t2i 候选——主图/关键帧道）+ `qwen21_edit`（comic_page_ref 位选项——char1/char2 双参考槽契约，引擎多传的 scene/canvas 槽静默忽略：2.1 编辑=参考条件化范式无 latent 底，场景走文字锚）。改造：删 ResolutionSelector（宽高直注 EmptyLatent）、SaveImageAdvanced→核心 SaveImage。**cfg=1 蒸馏配方保真**：manifest 不声明 cfg/denoise（zimage 的 3.5/0.9 不经 filler 泄漏）。模型栈 qwen_image_2.1_int8_convrot + qwen3vl_8b_int8 + 2.1 专用 VAE；编码器 `images.image_N` 自增长（**原生 10 参考图上限**——多角色镜扩槽方向）。ComfySwitchNode.switch=False 恒编辑模式、QwenImage21Cache 模型缓存、easy cleanGpuUsed 跑完清显存
+- **判例：2.1 Lightning LoRA 画质不达标**（用户实测加 LoRA 降步数效果不行）——不接加速开关；编辑耗时基线 ~60s/张（25 步无加速），步数走 template_params；生态出好蒸馏版再挂 LoraLoaderModelOnly 链
+- **llama _run_bat 管道死锁修复**（py-spy 抓栈真机判例）：bat 内 start 启动的 llama-server **继承 capture_output 管道句柄**→cmd 退出后读取线程等不到 EOF→subprocess.run 超时收割永久卡 join（分析线程挂死）。修：stdout/stderr/stdin 全 DEVNULL（无管道可继承）+ `LLAMA_NOHANG=1` 让 start.bat 跳过 pause（引擎上下文撞「已在运行」分支等键盘=二重挂起源）+ 超时不上抛由健康轮询裁决
+- **路由 DB 预配**（服务停机直写）：llama[A3B 主干 skip_think]+llamav[nsfwvision 读图] 双连接，八任务全钉；对抗赛定稿 A3B 管线/Heretic 创作（P1 文学质量代差级、P2 JSON 平手、P3 A3B 散文单镜对口 H3）
+
+
+
+
+## 模块地图（2026-09-20 下午 · llama-server 接入与显存分流）
 - **`E:\AI\llama\server\` 通用启停器**（PrismML fork prism-b10709 CUDA13.3 装于 E:\AI\llama，绿色解压无复制）：`启动.bat <模型名关键字>`——在公共模型目录（E:\Comfy-Desktop\...\models\llm，含子目录）递归匹配 `*关键字*.gguf`（跳过 mmproj），有 mmproj 同伴自动挂载，`start /min` 分离启动固定 8123 端口；`停止.bat`=taskkill（未运行无害）；llama-server 自带 WebUI（浏览器开 :8123 即聊天测试）。**注意**：PQ2_0 是 group-128 Prism 方言，官方 llama.cpp/Ollama（至 0.33.2）均不认（`invalid ggml type 142`/`size overflow`）——必须 fork；上游 group-64 迁移完成后可回归官方
 - **服务商类型分流（迁移 44 同日）**：`llm_providers.<连接>.kind`——""（通用）/ollama/lmstudio/**llama**；设置页连接卡「引擎」下拉（本地/线上两组卡都有；api_key 输入按类型隐藏——本机引擎不鉴权）；PUT 白名单校验。`llm/local.py`：`yield_local_llm` 改遍历**全部本机连接**（曾硬编码 local 键——动态化后新连接从不让位的既有缺口；非 127.0.0.1/localhost 不打线上；llama 型跳过）；**`stop_llama_servers`**——llama 型在配置**且健康探测在跑**才执行停止（幂等零开销，供每次调用路径复用；gpu_comfy 前在 `ensure_vram_for_comfy` 内联）；**`ensure_llama_running`**——读 `/v1/models` 已加载身份：正是目标模型（双向包含匹配）直用零命令 / 其它模型在跑→**停旧启新切换** / 未跑→「启动.bat <model 冒号前关键字>」拉起→轮询至就绪（超时 warn+False）；`client_for_task` 对 llama 型连接前置调用（拉起失败 LLMError 显式报错）。启停器路径 settings `llama_server`（dir/start/stop/wait_s/model_dir，默认即 E:\AI\llama\server）
 - **跨服务商显存让位**（多引擎路由不撞车）：`ensure_llama_running` 启动前先 `yield_local_llm`（Ollama keep_alive=0 腾地——两家 7G 同时驻留必撞 12G 卡）；`client_for_task` 对本机 Ollama/LM Studio 型任务前 `stop_llama_servers`（在跑才停；交替路由代价=llama 重拉十几秒）。**LM Studio 自身驻留无卸载 API 管不到**——用它的路由去 LM Studio 里调短 TTL；线上 API 永不干扰本机显存
