@@ -1,0 +1,187 @@
+{
+ "461": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "filename_prefix": "cs/{project}/{asset}",
+   "images": [
+    "478",
+    0
+   ]
+  }
+ },
+ "476": {
+  "inputs": {
+   "image": "sheet (1).png"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "加载图像"
+  }
+ },
+ "477": {
+  "inputs": {
+   "image": "034.jpg"
+  },
+  "class_type": "LoadImage",
+  "_meta": {
+   "title": "加载图像"
+  }
+ },
+ "478": {
+  "inputs": {
+   "anything": [
+    "483",
+    0
+   ]
+  },
+  "class_type": "easy cleanGpuUsed",
+  "_meta": {
+   "title": "清理显存占用"
+  }
+ },
+ "479": {
+  "inputs": {
+   "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+   "weight_dtype": "default"
+  },
+  "class_type": "UNETLoader",
+  "_meta": {
+   "title": "UNet加载器"
+  }
+ },
+ "480": {
+  "inputs": {
+   "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+   "type": "qwen_image",
+   "device": "default"
+  },
+  "class_type": "CLIPLoader",
+  "_meta": {
+   "title": "加载CLIP"
+  }
+ },
+ "481": {
+  "inputs": {
+   "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "加载VAE"
+  }
+ },
+ "482": {
+  "inputs": {
+   "width": 1024,
+   "height": 1536,
+   "batch_size": 1
+  },
+  "class_type": "EmptyLatentImage",
+  "_meta": {
+   "title": "空Latent图像"
+  }
+ },
+ "483": {
+  "inputs": {
+   "samples": [
+    "484",
+    0
+   ],
+   "vae": [
+    "481",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE解码"
+  }
+ },
+ "484": {
+  "inputs": {
+   "seed": 136595284958373,
+   "steps": 25,
+   "cfg": 1,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "denoise": 1,
+   "model": [
+    "486",
+    0
+   ],
+   "positive": [
+    "487",
+    0
+   ],
+   "negative": [
+    "487",
+    1
+   ],
+   "latent_image": [
+    "485",
+    0
+   ]
+  },
+  "class_type": "KSampler",
+  "_meta": {
+   "title": "K采样器"
+  }
+ },
+ "485": {
+  "inputs": {
+   "switch": false,
+   "on_false": [
+    "487",
+    2
+   ],
+   "on_true": [
+    "482",
+    0
+   ]
+  },
+  "class_type": "ComfySwitchNode",
+  "_meta": {
+   "title": "切换"
+  }
+ },
+ "486": {
+  "inputs": {
+   "device": "auto",
+   "dtype": "default",
+   "model": [
+    "479",
+    0
+   ]
+  },
+  "class_type": "QwenImage21Cache",
+  "_meta": {
+   "title": "Qwen Image 2.1 Cache"
+  }
+ },
+ "487": {
+  "inputs": {
+   "prompt": "The image is a vertical photorealistic e-commerce advertising cutout of a young East Asian woman holding a quilted leather handbag, rendered as an RGBA image with a fully transparent background and a clean alpha channel tracing every contour of the subject so she floats on an empty canvas with no visible surface or backdrop. The frame is portrait orientation with the figure centred from the crown of her head to roughly the waist, leaving generous transparent negative space above and along both sides. The woman stands with her torso angled slightly toward the camera and her shoulders relaxed, her face turned to look straight out with a soft neutral expression, dewy fair skin, softly defined brows, and glossy rose-pink lips. Her warm brown hair is gathered back into a loose updo with a few face-framing strands falling at the temples, and a small translucent butterfly hair clip sits pinned on the upper-left side of her head. Around her neck she wears a fine gold chain necklace with a tiny sparkling pendant resting in the hollow of her collarbone. She is dressed in a scoop-neck short-sleeved top in a leopard print of warm tan, ochre and dark brown spots over a pale cream ground, the ribbed knit fabric catching the light across the chest. On the right side of the frame one of her hands grips the bag's top handle, lifting the handbag to roughly mid-chest height so it reads clearly as the hero product. The handbag is a structured black diamond-quilted leather flap bag with a pebbled grain, a single glossy deep-burgundy lizard-textured top handle, a polished gold interlocking double-C turn-lock clasp at the centre of the flap, and a gold chain strap interwoven with a black leather strip that loops down along the lower-left of the bag. The lighting is soft, even studio light coming from the front and slightly above, laying gentle highlights across her forehead, the raised ridges of the quilting and the metallic hardware while keeping the shadows shallow and flattering against the transparent ground. The overall composition is a clean, balanced product-and-model poster cutout, with a warm neutral palette of cream, tan, black and gold set against pure transparency, giving a polished high-end retail advertising mood.",
+   "negative_prompt": "",
+   "resolution": 1024,
+   "clip": [
+    "480",
+    0
+   ],
+   "images.image_1": [
+    "476",
+    0
+   ],
+   "vae": [
+    "481",
+    0
+   ],
+   "images.image_2": [
+    "477",
+    0
+   ]
+  },
+  "class_type": "TextEncodeQwenImage21",
+  "_meta": {
+   "title": "Text Encode Qwen Image 2.1"
+  }
+ }
+}

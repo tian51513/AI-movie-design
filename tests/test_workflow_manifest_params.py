@@ -91,3 +91,28 @@ def test_character_views_multi_lora_stack():
                           model_overrides={"lora2": "Krea2\\new.safetensors"})
     n = wf["36"]["inputs"]
     assert n["LoRA_2"] == "Krea2\\new.safetensors" and n["启用_2"] is True
+
+
+def test_qwen21_templates_registered_and_injectable():
+    """Qwen-Image 2.1 接入（2026-09-21）：t2i + 编辑双模板注册、注入点齐全、
+    编辑槽契约=漫画页参考道（char1/char2）。"""
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.workflows.filler import fill_workflow
+    regs = registry.scan_templates(registry.TEMPLATE_ROOT)
+    t = regs["qwen21_t2i"]
+    assert t.type == "t2i" and set(
+        k for k in t.inject_params) >= {"seed", "steps", "width", "height"}
+    e = regs["qwen21_edit"]
+    slots = {im["slot"] for im in e.inject_images}
+    assert slots == {"char1", "char2"}
+    # 填充冒烟：prompt/seed/images 注入 + 未声明槽（scene/canvas）静默忽略
+    wf, _ = fill_workflow(e, prompt="测试", params={"seed": 7, "steps": 20,
+                                                    "width": 832, "height": 1216},
+                          images=[{"slot": "char1", "path": "/tmp/a.png"},
+                                  {"slot": "scene", "path": "/tmp/s.png"}],
+                          output_ctx={"project": "p", "asset": "a"})
+    assert wf["487"]["inputs"]["prompt"] == "测试"
+    assert wf["484"]["inputs"]["seed"] == 7
+    assert wf["476"]["inputs"]["image"].startswith("cs__p__a__char1")
+    assert "image" not in wf.get("477", {}).get("inputs", {}) or \
+        wf["477"]["inputs"]["image"] == "034.jpg"  # 未提供槽保持模板默认

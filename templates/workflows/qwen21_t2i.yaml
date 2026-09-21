@@ -1,0 +1,27 @@
+id: qwen21_t2i
+type: t2i
+name: Qwen-Image 2.1 文生图（改版·2026-09-21 接入）
+file: qwen21_t2i.api.json
+prompt_format: '{detail}'
+inject:
+  prompt:
+    node: '469'
+    field: prompt
+  params:
+    seed: {node: '474', field: seed}
+    steps: {node: '474', field: steps}
+    width: {node: '472', field: width}
+    height: {node: '472', field: height}
+outputs:
+- node: '461'
+  filename_prefix: cs/{project}/{asset}
+requires: []
+# 来源 _raw/Qwen-image-2.1文生图改版.json（用户 2026-09-21 实测可用）。
+# 改造：删 ResolutionSelector（宽高直注 EmptyLatent）；SaveImageAdvanced→核心
+# SaveImage（免自定义节点依赖）。cfg=1/euler/simple 为 2.1 蒸馏配方勿动。
+# 注意：2.1 的 Lightning LoRA 实测画质不达标（用户判例 2026-09-21）——不加
+# 加速开关，步数走 template_params。
+models:
+- {label: unet, node: '468', field: unet_name, cls: UNETLoader, label_cn: 主模型（Qwen2.1 int8）}
+- {label: clip, node: '470', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器（qwen3vl 8b）}
+- {label: vae, node: '471', field: vae_name, cls: VAELoader, label_cn: VAE}
