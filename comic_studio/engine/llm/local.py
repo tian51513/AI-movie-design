@@ -8,6 +8,7 @@ lmstudio（暂无专用动作）/llama（llama-server 启停器）/空=通用（
 试 /api/ps，不可达无声跳过）。llama 型：常驻显存无自动卸载——Comfy 前跑
 「停止.bat」释放；LLM 调用前健康探测失败则「启动.bat <模型名>」拉起再等就绪
 （E:\AI\llama\server 通用命令，公共模型目录关键字匹配）。"""
+import os
 import subprocess
 import time
 
@@ -65,9 +66,19 @@ def _launcher_cfg(db) -> dict:
 
 
 def _run_bat(cfg: dict, bat: str, *args) -> None:
-    # cmd /c 跑 bat；启动.bat 内部 start /min 分离——命令即刻返回
-    subprocess.run(["cmd", "/c", bat, *args], cwd=cfg["dir"], timeout=60,
-                   capture_output=True)
+    """cmd /c 跑启停 bat。判例（2026-09-21 真机 py-spy 抓栈）：**禁止
+    capture_output**——bat 里 start 启动的 llama-server 会继承管道句柄，cmd
+    退出后读取线程等不到 EOF，subprocess.run 超时收割时永久卡死在 join
+    （分析线程挂死判例）。stdout/stderr 一律 DEVNULL；LLAMA_NOHANG=1 告知
+    bat 跳过 pause（引擎上下文无人按键）；超时只 warn——start 可能已成功，
+    由调用方的健康轮询裁决。"""
+    env = {**os.environ, "LLAMA_NOHANG": "1"}
+    try:
+        subprocess.run(["cmd", "/c", bat, *args], cwd=cfg["dir"], timeout=60,
+                       stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL, env=env)
+    except subprocess.TimeoutExpired:
+        pass  # 不上抛：start.bat 的 start 分离返回本就可能超时，健康轮询定夺
 
 
 def stop_llama_servers(db, cfg=None, transport=None, project_id: int | None = None) -> bool:
