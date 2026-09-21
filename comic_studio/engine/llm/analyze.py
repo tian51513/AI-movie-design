@@ -552,9 +552,10 @@ def dedup_project_assets(db, data_dir, project_id: int, client: LLMClient) -> in
     conn = db.connect()
     # kind 归一（2026-09-20 真机判例：模型输出「角色/Character」等异形 →
     # by_kind 查空 → 在库的 月火/火怜 被误报「清单外」跳过）
-    _KIND_ALIAS = {"character": "character", "角色": "character", "char": "character",
-                   "scene": "scene", "场景": "scene",
-                   "prop": "prop", "道具": "prop", "item": "prop"}
+    _KIND_ALIAS = {"character": "character", "characters": "character",
+                   "角色": "character", "char": "character",
+                   "scene": "scene", "scenes": "scene", "场景": "scene",
+                   "prop": "prop", "props": "prop", "道具": "prop", "item": "prop"}
 
     def _bigrams(s: str) -> set:
         s = "".join(ch for ch in s if not ch.isspace())
