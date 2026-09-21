@@ -53,7 +53,7 @@ def test_multi_chunk_merges(tmp_path):
                           client_factory=lambda t: fake, max_chars=60)
     rows = list_project_assets(db, proj["id"])
     assert len(rows) == 3  # 2角色+1场景
-    assert fake.n == 4  # 两块抽取 + 一次合并 + 一次查重（2 角色 ≥2 触发；回复非法→no-op）
+    assert fake.n == 3  # 两块抽取 + 一次合并（查重预筛无相关名对→零 LLM 调用）
 
 
 def test_llm_calls_logged(tmp_path):
@@ -75,7 +75,7 @@ def test_merge_llm_call_logs_real_usage(tmp_path):
                     client_factory=lambda t: fake, max_chars=60)
     rows = db.connect().execute(
         "SELECT prompt_tokens, completion_tokens FROM llm_calls ORDER BY id").fetchall()
-    assert len(rows) == 4  # 2 extract + 1 merge + 1 dedup（查重不落 merge 语义外的行）
+    assert len(rows) == 3  # 2 extract + 1 merge（查重无对不烧 LLM）
     for r in rows:
         assert r["prompt_tokens"] == 1
         assert r["completion_tokens"] == 2
@@ -576,8 +576,8 @@ def test_analyze_warns_on_mojibake_question_marks(tmp_path):
 
 
 def test_dedup_merges_duplicate_scenes(tmp_path):
-    """LLM 查重（2026-09-20 用户需求：四层/四楼教室）——drop 并入 keep：
-    绑定改指、描述取富、drop 行/目录删除；清单外名称跳过。"""
+    """两级查重（2026-09-21 判断题重设计）：机械预筛出对 → LLM 答 same →
+    keep 确定性取描述富者；绑定改指、drop 行删除。"""
     from comic_studio.engine.assets import persist_assets, list_project_assets
     from comic_studio.engine.llm.analyze import dedup_project_assets
     from comic_studio.engine.shots import persist_shots, get_shot
@@ -595,46 +595,53 @@ def test_dedup_merges_duplicate_scenes(tmp_path):
         workflow_type="ref2va", ledger={}, character_ids=[],
         scene_ids=[rows["废弃大楼四楼教室"]["id"]], prop_ids=[],
         depends_on=None)])[0]
-    reply = ('{"merges":[{"kind":"scene","keep":"废弃大楼四层教室",'
-             '"drop":["废弃大楼四楼教室","清单外的名字"]},'
-             '{"kind":"scene","keep":"不存在的场景","drop":["废弃大楼四层教室"]}]}')
+    reply = ('{"verdicts":[{"a":"废弃大楼四层教室","b":"废弃大楼四楼教室","same":true}]}')
     n = dedup_project_assets(db, tmp_path / "data", proj["id"],
                              FakeClient([reply]))
     assert n == 1
-    left = [a["name"] for a in list_project_assets(db, proj["id"])]
-    assert left == ["废弃大楼四层教室"]  # 清单外指令跳过、drop 删除
     import json as _json
     keep = list_project_assets(db, proj["id"])[0]
-    assert "粉笔痕" in _json.loads(keep["appearance_json"])["detail"]  # 描述取更丰富者
+    # keep 确定性取描述更富者（四楼教室的描述更长）
+    assert keep["name"] == "废弃大楼四楼教室"
+    assert "粉笔痕" in _json.loads(keep["appearance_json"])["detail"]
     led = _json.loads(get_shot(db, sid)["ledger_json"] or "{}")
     assert led["assets"]["scenes"] == [keep["id"]]  # 绑定改指 keep
 
 
-def test_dedup_kind_alias_and_bigram_guard(tmp_path):
-    """kind 异形归一（2026-09-20 二轮真机：「角色」查空 → 在库名被误跳）+
-    共享词根机械护栏（街道并进教室判例拦截；教室角落/教室 放行）。"""
+def test_dedup_prefilter_and_judgment(tmp_path):
+    """预筛召回与拦截（2026-09-21）：相关对进考卷、无关对（街道↔教室）根本
+    不问 LLM；废楼↔废弃大楼 零连续词根但字符重合 → 进考卷（旧护栏误拦补召回）；
+    LLM 判 false 的对保留。"""
     from types import SimpleNamespace as NS
     from comic_studio.engine.assets import persist_assets, list_project_assets
-    from comic_studio.engine.llm.analyze import dedup_project_assets
+    from comic_studio.engine.llm.analyze import _name_related, dedup_project_assets
+    assert _name_related("废楼", "废弃大楼")           # 字符重合 2/2
+    assert _name_related("猫墓", "小猫坟墓")           # 2/2
+    assert _name_related("家中卧室", "兄妹卧室")        # 卧室 2/2
+    assert _name_related("教室", "教室角落")           # 子串
+    assert not _name_related("街道", "教室")           # 无关不进考卷
+    assert not _name_related("妖刀", "心渡")
     db = _db(tmp_path)
     proj = create_project(db, tmp_path / "data", "p", "9:16", "文本")
     persist_assets(db, tmp_path / "data", proj["id"],
                    NS(characters=[NS(name="阿良良木火怜", appearance="x", tags=[]),
                                    NS(name="火怜", appearance="y", tags=[])],
-                      scenes=[NS(name="教室", description="上课教室", tags=[]),
-                              NS(name="教室角落", description="角落", tags=[]),
-                              NS(name="黄金周早晨的街道", description="街道", tags=[])],
+                      scenes=[NS(name="废楼", description="废", tags=[]),
+                              NS(name="废弃大楼", description="废弃的大楼描述更丰富一些", tags=[]),
+                              NS(name="教室", description="上课教室", tags=[]),
+                              NS(name="街道", description="街道", tags=[])],
                       props=[NS(name="妖刀", description="刀", tags=[]),
                               NS(name="斩妖刀", description="刀2", tags=[])]))
-    reply = ('{"merges":['
-             '{"kind":"角色","keep":"阿良良木火怜","drop":["火怜"]},'
-             '{"kind":"scene","keep":"教室","drop":["教室角落","黄金周早晨的街道"]},'
-             '{"kind":"prop","keep":"妖刀","drop":["斩妖刀"]}]}')
+    # 判断题：火怜=同 / 废楼=同 / 教室对街道不相关不会出现在考卷 /
+    # 斩妖刀判 false（考卷有但对不同物）
+    reply = ('{"verdicts":['
+             '{"a":"阿良良木火怜","b":"火怜","same":true},'
+             '{"a":"废楼","b":"废弃大楼","same":true},'
+             '{"a":"妖刀","b":"斩妖刀","same":false}]}')
     n = dedup_project_assets(db, tmp_path / "data", proj["id"], FakeClient([reply]))
-    assert n == 3
+    assert n == 2
     names = {a["name"] for a in list_project_assets(db, proj["id"])}
-    # 街道与「教室」零共享词根 → 护栏拦截保留；教室角落/火怜/斩妖刀 正常并入
-    assert names == {"阿良良木火怜", "教室", "妖刀", "黄金周早晨的街道"}
+    assert names == {"阿良良木火怜", "废弃大楼", "教室", "街道", "妖刀", "斩妖刀"}
 
 
 def test_orphan_cleanup_clears_job_references(tmp_path):

@@ -32,6 +32,43 @@ class AssetsAnalysis(BaseModel):
     props: list[PropAsset]
 
 
+class DedupVerdict(BaseModel):
+    """两级查重的单对判断（2026-09-21：LLM 只答 same/not-same，名称由引擎
+    给定逐字回显——自由列举模式的自造简称/漏提案/抄错名三病根除）。"""
+    a: str = ""
+    b: str = ""
+    same: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def _loosen(cls, data):
+        if isinstance(data, dict):
+            d = dict(data)
+            d["a"] = str(d.get("a") or "").strip()
+            d["b"] = str(d.get("b") or "").strip()
+            s = d.get("same", False)
+            d["same"] = s in (True, "true", "True", "是", 1)
+            return d
+        return data
+
+
+class DedupVerdicts(BaseModel):
+    verdicts: list[DedupVerdict] = []
+
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_empty(cls, data):
+        if isinstance(data, dict):
+            vs = data.get("verdicts")
+            if isinstance(vs, list):
+                data = dict(data)
+                data["verdicts"] = [v for v in vs
+                                    if isinstance(v, dict)
+                                    and str(v.get("a") or "").strip()
+                                    and str(v.get("b") or "").strip()]
+        return data
+
+
 class AssetMerge(BaseModel):
     """LLM 资产查重的单组合并指令（2026-09-20：keep 保留、drop 并入）。
     宽进（2026-09-20 真机判例：nsfwvision 输出 13 组里 5 组 drop=[] 曾把整单

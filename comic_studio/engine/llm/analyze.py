@@ -12,7 +12,7 @@ from ..paths import data_to_abs
 from ..projects import get_project, set_stage
 from ..settings import get_setting
 from .provider import LLMClient, Usage, ask_validated, client_for_task, log_llm_call
-from .schemas import AssetDedup, AssetsAnalysis
+from .schemas import AssetsAnalysis, DedupVerdicts
 from .text import split_chunks
 
 EXTRACT_SYSTEM = """你是小说改编漫剧的资产分析师。从给定的小说文本中提取：
@@ -500,135 +500,123 @@ def analyze_project(db: Database, data_dir: Path, project_id: int,
     return ids
 
 
-DEDUP_SYSTEM = """你是资产库查重员。输入是某小说项目的资产清单（分角色/场景/道具，含名称与描述）。
-找出"同一对象"的重复条目并给出合并方案：
-- 场景：同一地点的不同叫法/楼层写法（「四层教室」=「四楼教室」）/叙述粒度差异
-  （「教室角落」与「教室」若描述同一间教室即同地；但「废弃教室」与「教室」
-  是不同地点，不得合并）；
-- **房间功能不同=不同地点，禁止合并**（卧室/客厅/玄关/厨房/书斋/浴室是不同
-  房间——2026-09-20 真机判例：客厅被并进卧室、玄关被并进书斋）；时段/季节
-  限定词（清晨/黄昏/黄金周/春假）不改变地点本身，可合并，keep 用不带时段
-  词的中性名；
-- 角色：同一人物的不同称谓/别名/真名与形态名（文本明确同一人时，如「阿良良木火怜」与「火怜」）；
-- 道具：同一物品的不同叫法。
-仅合并**确定同一**的条目，拿不准的保持分开——宁可漏合不可错合（错合会把
-两个不同地点/人物永久混为一谈）。keep=保留条目名（取**最具体常用**的——
-楼层/功能写明的优先于笼统名），drop=要并入的重复名**非空**列表。
-**keep 与 drop 必须逐字复制清单中的原文名**（含「/」「-」等符号与全称，
-不得缩写或自造简称——系统按原文精确匹配，自造名整组作废）。
-只准使用清单中存在的名称，不要发明条目。
-输出格式示例（严格照此结构）：
-{"merges":[{"kind":"scene","keep":"废弃大楼四楼教室","drop":["废弃大楼四层教室","废弃大楼教室"]},{"kind":"character","keep":"阿良良木火怜","drop":["火怜"]}]}
-无重复输出 {"merges": []}"""
+DEDUP_JUDGE_SYSTEM = """你是资产库查重员。下面每行是一对**候选重复**的资产（同类型，含名称与描述）。
+逐对判断两者是否为**同一对象**（同一地点/同一人物/同一物品）：
+- 同一地点的不同叫法/楼层写法/叙述粒度（四层教室=四楼教室）→ true
+- 同一人物的不同称谓/别名 → true
+- **房间功能不同（卧室/客厅/玄关/厨房/书斋）→ false；不同地点（废弃教室≠教室）→ false**
+- 拿不准 → false（宁可漏合不可错合——错合会把两个不同对象永久混为一谈）
+只输出一个 JSON：{"verdicts":[{"a":"名称甲","b":"名称乙","same":true},…]}
+a/b 必须逐字复制输入中的名称；输入有几对就答几对，不要遗漏。"""
+
+
+def _name_related(a: str, b: str) -> bool:
+    """机械预筛（2026-09-21 两级查重）：名字相关度——字符集重合占短名 ≥0.5
+    且共享 ≥2 字，或互为（去空格）子串。只把「相关」的对交给 LLM 判断；
+    无关对（街道↔教室）根本不进考卷——替代旧 bigram 护栏且召回更高
+    （废楼↔废弃大楼 零连续词根但字符重合 2/2 ✓；家中卧室/兄妹卧室 共享
+    卧室 2/4 ✓——0.5 阈值的边界对由判断题裁决）。"""
+    A = {ch for ch in a if not ch.isspace()}
+    B = {ch for ch in b if not ch.isspace()}
+    if not A or not B:
+        return False
+    if (a.strip() in b) or (b.strip() in a):
+        return True
+    inter = A & B
+    return len(inter) >= 2 and len(inter) * 2 >= min(len(A), len(B))
 
 
 def dedup_project_assets(db, data_dir, project_id: int, client: LLMClient) -> int:
-    """LLM 资产查重合并（2026-09-20 用户需求：废弃大楼四层教室/四楼教室类重复，
-    机械规则覆盖不了表述差异——LLM 为主机械兜底）。作用于已入库资产：
-    drop 并入 keep（分镜绑定改指 keep、描述取更丰富者、参考图/音色缺失时
-    从 drop 继承、删 drop 行+目录）。返回实际合并组数；任一 kind 不足 2 条
-    直接 0 不烧 LLM。"""
+    """两级资产查重（2026-09-21 重设计，真机判例驱动：自由列举模式下 LLM
+    自造简称（走廊/卧室）、漏提案、抄错名——三个失败模式全源于「让模型自由
+    输出清单名」）。新流程：①机械预筛高相关名对（_name_related）②LLM 只答
+    判断题 same/not-same（名字由引擎给、逐字回显）③keep 确定性选择（描述更
+    富者，平手取更长名）——LLM 不再输出任何名称。无候选对时零 LLM 调用。"""
+    from pathlib import Path as _P
+    from shutil import copytree as _copytree
     from ..assets import delete_asset, list_project_assets
+    from ..paths import data_to_abs as _d2a
     rows = list_project_assets(db, project_id)
     by_kind: dict[str, list] = {}
     for r in rows:
         by_kind.setdefault(r["kind"], []).append(r)
-    if not any(len(v) >= 2 for v in by_kind.values()):
-        return 0
-    lines = []
+    # ① 预筛候选对
+    pairs: list[tuple[str, object, object]] = []
     for kind, items in by_kind.items():
-        lines.append(f"【{ {'character':'角色','scene':'场景','prop':'道具'}[kind] }】")
-        for a in items:
-            detail = json.loads(a["appearance_json"] or "{}").get("detail", "") or ""
-            lines.append(f"{a['name']}：{detail[:80]}")
-    user = "\n".join(lines)
-    result, usage = ask_validated(client, DEDUP_SYSTEM, user, AssetDedup,
+        for i in range(len(items)):
+            for j in range(i + 1, len(items)):
+                if _name_related(items[i]["name"], items[j]["name"]):
+                    pairs.append((kind, items[i], items[j]))
+    if not pairs:
+        return 0
+    # ② 判断题
+    lines = []
+    for n, (kind, a, b) in enumerate(pairs, 1):
+        da = json.loads(a["appearance_json"] or "{}").get("detail", "") or ""
+        db_ = json.loads(b["appearance_json"] or "{}").get("detail", "") or ""
+        lines.append(f"{n}. [{ {'character':'角色','scene':'场景','prop':'道具'}[kind] }] "
+                     f"「{a['name']}」（{da[:50]}） ↔ 「{b['name']}」（{db_[:50]}）")
+    result, usage = ask_validated(client, DEDUP_JUDGE_SYSTEM, "\n".join(lines),
+                                  DedupVerdicts,
                                   on_retry=lambda why: emit_log(
                                       db, "analyze", "warn", f"资产查重输出不合格重试：{why}",
                                       project_id=project_id))
     log_llm_call(db, "dedup_assets", getattr(client, "provider_name", "llm"),
                  client.model, usage, reply=getattr(usage, "last_reply", ""))
-    from pathlib import Path as _P
-    from shutil import copytree as _copytree
+    verdict = {(v.a, v.b): v.same for v in result.verdicts}
+    verdict.update({(v.b, v.a): v.same for v in result.verdicts})  # 双向容错
+    # ③ 应用合并：同对按「描述富者留」确定性选 keep
+    alive = {(kind, r["name"]): r for kind, items in by_kind.items() for r in items}
     applied = 0
     conn = db.connect()
-    # kind 归一（2026-09-20 真机判例：模型输出「角色/Character」等异形 →
-    # by_kind 查空 → 在库的 月火/火怜 被误报「清单外」跳过）
-    _KIND_ALIAS = {"character": "character", "characters": "character",
-                   "角色": "character", "char": "character",
-                   "scene": "scene", "scenes": "scene", "场景": "scene",
-                   "prop": "prop", "props": "prop", "道具": "prop", "item": "prop"}
-
-    def _bigrams(s: str) -> set:
-        s = "".join(ch for ch in s if not ch.isspace())
-        return {s[i:i + 2] for i in range(len(s) - 1)} | {s[i:i + 3] for i in range(len(s) - 2)}
-
-    for m in result.merges:
-        kind = _KIND_ALIAS.get(str(m.kind).strip().lower(), str(m.kind).strip())
-        kind_map = {a["name"]: a for a in by_kind.get(kind, [])}
-        keep = kind_map.get(m.keep.strip())
-        drops = [kind_map[d.strip()] for d in m.drop if d.strip() in kind_map
-                 and d.strip() != m.keep.strip()]
-        drops = [d for d in drops if d["id"] != (keep or {"id": None})["id"]] if keep else []
-        if not keep or not drops:
-            emit_log(db, "analyze", "warn",
-                     f"查重组作废（keep 不在清单"
-                     f"{'' if keep else '（空）'}"
-                     f"{'/keep 在库但其 drop 全为自造名' if keep else ''}）："
-                     f"{kind} keep={m.keep!r}",
-                     project_id=project_id)
+    for kind, a, b in pairs:
+        same = verdict.get((a["name"], b["name"]), False)
+        if not same:
             continue
-        # 机械护栏（2026-09-20 二轮真机判例：街道/学校走廊被 LLM 并进「教室」
-        # ——9B 在长清单下语义把控不住）。keep 与 drop 须共享至少一个二字词根
-        # （教室角落/教室 ✓；街道/教室 ✗）；不共享的 drop 剔除并 warn——
-        # 宁可漏合不可错合，用户可再点一次查重或手动处理
-        _kg = _bigrams(keep["name"])
-        _blocked = [d for d in drops if not (_bigrams(d["name"]) & _kg)]
-        if _blocked:
-            drops = [d for d in drops if d not in _blocked]
-            emit_log(db, "analyze", "warn",
-                     "查重机械护栏拦截（与保留名无共享词根，疑似不同地点）："
-                     + "、".join(d["name"] for d in _blocked)
-                     + f" → 不并入「{keep['name']}」",
-                     project_id=project_id)
-            if not drops:
-                continue
+        ka, kb = alive.get((kind, a["name"])), alive.get((kind, b["name"]))
+        if ka is None or kb is None or ka["id"] == kb["id"]:
+            continue  # 本轮早前合并已消费（传递对下一轮再收敛）
+        da = json.loads(ka["appearance_json"] or "{}").get("detail", "") or ""
+        db_ = json.loads(kb["appearance_json"] or "{}").get("detail", "") or ""
+        if (len(db_), len(kb["name"])) > (len(da), len(ka["name"])):
+            keep, drop = kb, ka
+        else:
+            keep, drop = ka, kb
         keep_detail = json.loads(keep["appearance_json"] or "{}").get("detail", "") or ""
-        from ..paths import data_to_abs as _d2a
         keep_lib = _d2a(Path(data_dir), keep["library_dir"]) if keep["library_dir"] else None
-        for drop in drops:
-            drop_detail = json.loads(drop["appearance_json"] or "{}").get("detail", "") or ""
-            if len(drop_detail) > len(keep_detail):  # 描述取更丰富者
-                keep_detail = drop_detail
-            if drop["library_dir"]:
-                drop_lib = _d2a(Path(data_dir), drop["library_dir"])
-                if keep_lib is not None and drop_lib.exists():
-                    # keep 缺参考图时从 drop 继承（用户可能已手动生成）
-                    for fn in ("main.png",):
-                        if (drop_lib / fn).exists() and not (keep_lib / fn).exists():
-                            (keep_lib / fn).write_bytes((drop_lib / fn).read_bytes())
-                    if (drop_lib / "views").exists() and not (keep_lib / "views" ).exists():
-                        _copytree(drop_lib / "views", keep_lib / "views")
-            if drop["voice"] and not keep["voice"]:  # 音色缺失时继承
-                conn.execute("UPDATE assets SET voice=? WHERE id=?", (drop["voice"], keep["id"]))
-            # 分镜绑定改指 keep（去重列表防重复 id）
-            from ..shots import list_shots as _ls
-            for sh in _ls(db, project_id):
-                led = json.loads(sh["ledger_json"] or "{}")
-                groups = led.get("assets") or {}
-                lst = groups.get(f"{m.kind}s") or []
-                if drop["id"] in lst:
-                    groups[f"{m.kind}s"] = [i for i in lst if i != drop["id"]]
-                    if keep["id"] not in groups[f"{m.kind}s"]:
-                        groups[f"{m.kind}s"].append(keep["id"])
-                    conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
-                                 (json.dumps(led, ensure_ascii=False), sh["id"]))
-            delete_asset(db, data_dir, drop["id"])
+        drop_detail = json.loads(drop["appearance_json"] or "{}").get("detail", "") or ""
+        if len(drop_detail) > len(keep_detail):  # 描述取更丰富者
+            keep_detail = drop_detail
+        if drop["library_dir"]:
+            drop_lib = _d2a(Path(data_dir), drop["library_dir"])
+            if keep_lib is not None and drop_lib.exists():
+                # keep 缺参考图时从 drop 继承（用户可能已手动生成）
+                for fn in ("main.png",):
+                    if (drop_lib / fn).exists() and not (keep_lib / fn).exists():
+                        (keep_lib / fn).write_bytes((drop_lib / fn).read_bytes())
+                if (drop_lib / "views").exists() and not (keep_lib / "views").exists():
+                    _copytree(drop_lib / "views", keep_lib / "views")
+        if drop["voice"] and not keep["voice"]:  # 音色缺失时继承
+            conn.execute("UPDATE assets SET voice=? WHERE id=?", (drop["voice"], keep["id"]))
+        # 分镜绑定改指 keep（去重列表防重复 id）
+        from ..shots import list_shots as _ls
+        for sh in _ls(db, project_id):
+            led = json.loads(sh["ledger_json"] or "{}")
+            groups = led.get("assets") or {}
+            lst = groups.get(f"{kind}s") or []
+            if drop["id"] in lst:
+                groups[f"{kind}s"] = [i for i in lst if i != drop["id"]]
+                if keep["id"] not in groups[f"{kind}s"]:
+                    groups[f"{kind}s"].append(keep["id"])
+                conn.execute("UPDATE shots SET ledger_json=? WHERE id=?",
+                             (json.dumps(led, ensure_ascii=False), sh["id"]))
+        delete_asset(db, data_dir, drop["id"])
+        alive.pop((kind, drop["name"]), None)
         conn.execute("UPDATE assets SET appearance_json=? WHERE id=?",
                      (json.dumps({"detail": keep_detail}, ensure_ascii=False), keep["id"]))
         conn.commit()
         applied += 1
         emit_log(db, "analyze", "info",
-                 f"资产查重合并：「{keep['name']}」← {'、'.join(d['name'] for d in drops)}",
+                 f"资产查重合并：「{keep['name']}」← {drop['name']}",
                  project_id=project_id)
     return applied
