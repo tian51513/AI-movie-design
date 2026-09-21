@@ -514,6 +514,8 @@ DEDUP_SYSTEM = """你是资产库查重员。输入是某小说项目的资产�
 仅合并**确定同一**的条目，拿不准的保持分开——宁可漏合不可错合（错合会把
 两个不同地点/人物永久混为一谈）。keep=保留条目名（取**最具体常用**的——
 楼层/功能写明的优先于笼统名），drop=要并入的重复名**非空**列表。
+**keep 与 drop 必须逐字复制清单中的原文名**（含「/」「-」等符号与全称，
+不得缩写或自造简称——系统按原文精确匹配，自造名整组作废）。
 只准使用清单中存在的名称，不要发明条目。
 输出格式示例（严格照此结构）：
 {"merges":[{"kind":"scene","keep":"废弃大楼四楼教室","drop":["废弃大楼四层教室","废弃大楼教室"]},{"kind":"character","keep":"阿良良木火怜","drop":["火怜"]}]}
@@ -570,7 +572,10 @@ def dedup_project_assets(db, data_dir, project_id: int, client: LLMClient) -> in
         drops = [d for d in drops if d["id"] != (keep or {"id": None})["id"]] if keep else []
         if not keep or not drops:
             emit_log(db, "analyze", "warn",
-                     f"查重指令引用了清单外的名称，跳过：{kind} keep={m.keep!r}",
+                     f"查重组作废（keep 不在清单"
+                     f"{'' if keep else '（空）'}"
+                     f"{'/keep 在库但其 drop 全为自造名' if keep else ''}）："
+                     f"{kind} keep={m.keep!r}",
                      project_id=project_id)
             continue
         # 机械护栏（2026-09-20 二轮真机判例：街道/学校走廊被 LLM 并进「教室」
