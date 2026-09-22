@@ -338,6 +338,8 @@ def handle_gen_ref(db, data_dir, job, comfy):
             if krea2_style and asset["kind"] == "character":
                 main_prompt += ("。画面中有且仅有一个人物，背景不得出现任何"
                                 "其他人物、人形剪影或额外角色")
+            if getattr(main_tmpl, "prompt_expand", False):
+                main_prompt = expand_image_prompt(db, main_prompt)
             _t2i_to_file(db, data_dir, comfy, main_tmpl, main_prompt, main_png, ctx,
                          job, label=f"资产「{asset['name']}」主图", images=main_images,
                          krea_style=krea2_style)
@@ -386,3 +388,29 @@ def handle_gen_ref(db, data_dir, job, comfy):
         emit_log(db, "storyboard", "warn",
                  f"资产「{asset['name']}」参考图已更新：{n} 个引用它的分镜标记为 stale",
                  project_id=job["project_id"], job_id=job["id"])
+
+
+EXPAND_SYSTEM = """你是图像生成提示词扩写器。把用户给的画面提示词扩写为细节丰富的长提示词：
+- **必须逐字保留原提示词中的全部约束与锚定信息**（人物身份/外貌描述、画风段、时代段、
+  场景环境、构图指令、禁止事项）——扩写只能增补，不得改写或丢失任何原有信息
+- 增补维度：光线的方向与质感、材质与纹理、环境细节、空气氛围、色彩倾向、镜头景别感
+- 中文自然语言，长度约为原文的 1.5~2 倍
+- 只输出扩写后的提示词本身，不要任何解释或前缀"""
+
+
+def expand_image_prompt(db, prompt: str, task: str = "optimize_prompt") -> str:
+    """提交前 LLM 扩写（2026-09-22 用户实测判例：Qwen-Image 2.1 短提示出不了
+    好效果）。锚定保全是硬约束（EXPAND_SYSTEM 明令逐字保留）；任何失败回落
+    原文不炸生成——扩写是增强不是门槛。"""
+    if not (prompt or "").strip():
+        return prompt
+    try:
+        from .llm.provider import client_for_task
+        client = client_for_task(db, task)
+        text, _ = client.raw_chat(
+            [{"role": "system", "content": EXPAND_SYSTEM},
+             {"role": "user", "content": prompt}], temperature=0.5)
+        text = (text or "").strip()
+        return text if len(text) >= len(prompt) * 0.6 else prompt  # 过短=丢内容，回落
+    except Exception:
+        return prompt

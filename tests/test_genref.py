@@ -442,3 +442,48 @@ def test_redesign_ignores_old_main_reference(tmp_path, monkeypatch):
         wf2 = m.prompts[0]["prompt"]
         assert "57:27" in wf2 and "萧炎" in wf2["57:27"]["inputs"]["text"]  # zimage_t2i
         assert not any(f"cs__p{pid}" in u for u in m.uploads)
+
+
+def test_expand_image_prompt_fallback_and_flag():
+    """提示词扩写层（2026-09-22 判例：Qwen-Image 2.1 短提示出不了好效果）：
+    LLM 失败/输出过短回落原文（扩写是增强不是门槛）；manifest prompt_expand
+    旗只在 qwen21 族模板声明。"""
+    from comic_studio.engine.genref import expand_image_prompt
+    from comic_studio.engine.workflows import registry
+    import pathlib, tempfile, pytest
+    tmp = pathlib.Path(tempfile.mkdtemp())
+    (tmp / "t.api.json").write_text(json.dumps(API))
+    (tmp / "m.yaml").write_text(MANIFEST)
+    db = Database(tmp / "s.db"); db.migrate()
+    set_setting(db, "template_map", {"t2i": "t_t2i_test"})
+    orig = "角色：羽川翼。黑长直女性。角色主图：单人物全身像"
+    # LLM 不可达 → 回落原文不炸
+    class Dead:
+        model = "x"
+        def raw_chat(self, *a, **k):
+            raise RuntimeError("down")
+    import comic_studio.engine.genref as G
+    from comic_studio.engine.llm.provider import LLMError
+    monkey = __import__("pytest").MonkeyPatch()
+    monkey.setattr("comic_studio.engine.llm.provider.client_for_task", lambda db, t: Dead())
+    assert expand_image_prompt(db, orig) == orig
+    # 输出过短（<0.6×）= 丢内容 → 回落
+    class Short:
+        model = "x"
+        def raw_chat(self, *a, **k):
+            return "太短", None
+    monkey.setattr("comic_studio.engine.llm.provider.client_for_task", lambda db, t: Short())
+    assert expand_image_prompt(db, orig) == orig
+    # 正常扩写通过
+    class Good:
+        model = "x"
+        def raw_chat(self, messages, *a, **k):
+            return orig + "。柔和的顶光从左上方洒落，发丝呈现细腻的高光层次", None
+    monkey.setattr("comic_studio.engine.llm.provider.client_for_task", lambda db, t: Good())
+    out = expand_image_prompt(db, orig)
+    assert "顶光" in out and "羽川翼" in out
+    monkey.undo()
+    regs = registry.scan_templates(registry.TEMPLATE_ROOT)
+    assert regs["qwen21_t2i"].prompt_expand is True
+    assert regs["qwen21_edit"].prompt_expand is True
+    assert regs["zimage_t2i"].prompt_expand is False

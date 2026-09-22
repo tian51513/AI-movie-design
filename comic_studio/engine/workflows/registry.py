@@ -63,6 +63,10 @@ class WorkflowTemplate:
     # ComfyUI API 格式无节点禁用（孤立节点照样执行），旁路分支必须
     # "默认不存在、开时注入"——关着的 RTX 超分不能留在 prompt 里白烧 GPU
     switch_links: dict = field(default_factory=dict)
+    # 提示词扩写（2026-09-22 用户实测判例：Qwen-Image 2.1 短提示出不了好效果，
+    # 需扩写为细节丰富长文）：True → 引擎提交前经 LLM 扩写（保留全部锚定约束，
+    # 只增补画面细节）；扩写失败回落原文不炸生成
+    prompt_expand: bool = False
 
     def api_json(self) -> dict:
         import json
@@ -101,7 +105,8 @@ def load_manifest(path: Path) -> WorkflowTemplate:
         inject_images=list(inj.get("images") or []),
         models=_parse_slots(data.get("models") or []),
         prompt_style=data.get("prompt_style") or "natural_zh",
-        switch_links=dict(data.get("switch_links") or {}))
+        switch_links=dict(data.get("switch_links") or {}),
+        prompt_expand=bool(data.get("prompt_expand") or False))
 
 
 def scan_templates(root: Path) -> dict:

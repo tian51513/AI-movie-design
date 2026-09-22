@@ -3,6 +3,9 @@ type: t2i
 name: Qwen-Image 2.1 文生图（改版·2026-09-21 接入）
 file: qwen21_t2i.api.json
 prompt_format: '{detail}'
+# 提示词扩写（2026-09-22 用户实测：2.1 短提示出不了好效果——提交前经 LLM
+# 扩写为细节丰富长文，锚定约束全保留，失败回落原文）
+prompt_expand: true
 inject:
   prompt:
     node: '469'

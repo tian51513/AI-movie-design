@@ -388,6 +388,12 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
                                 prev_summary=_prev_page_summary(db, shot),
                                 continuity=(shot["continuity"]
                                             if "continuity" in shot.keys() else ""))
+    # 提示词扩写（2026-09-22 用户实测判例：Qwen-Image 2.1 短提示出不了好效果；
+    # manifest prompt_expand 旗驱动——qwen21 族模板声明才扩，其余模板零影响。
+    # 扩写路由 optimize_prompt——钉到 PE 专用强化模型即为专业扩写引擎）
+    if getattr(tmpl, "prompt_expand", False):
+        from .genref import expand_image_prompt
+        prompt = expand_image_prompt(db, prompt)
     comfy_cfg = get_setting(db, "comfy") or {}
     # v1.4：Lightning 默认关（4 步蒸馏画面糊·真机判例）——质量档步数 + cfg 3.5
     # （v4 锐利基线）；设 1.0 走 4 步草稿加速档（cfg 建议 2.5）
