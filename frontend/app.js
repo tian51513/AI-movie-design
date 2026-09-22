@@ -305,8 +305,10 @@ const methods = {
     try { this.themesManage = await (await fetch('/api/themes')).json(); }
     catch (e) { /* 忽略 */ }
   },
-  rocketTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); },
-  rocketBottom() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); },
+  rocketTop() { (document.scrollingElement || document.documentElement)
+      .scrollTo({ top: 0, behavior: 'smooth' }); },
+  rocketBottom() { (document.scrollingElement || document.documentElement)
+      .scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }); },
   scrollToShot(seq) {    this.activeShotSeq = seq;
     const strip = document.getElementById('shotStrip');
     if (!strip) return;
