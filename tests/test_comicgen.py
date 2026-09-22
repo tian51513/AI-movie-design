@@ -137,8 +137,9 @@ def test_comic_split_fills_prompt(tmp_path, monkeypatch):
 
 
 def test_comic_autopilot_skips_video_prompts(tmp_path, monkeypatch):
-    """拆解完成后（assets_ready，镜已落库）autopilot 决策不进 gen_prompts，
-    直落 gate2——漫画页分支从 storyboard_ready 接手。"""
+    """拆解完成后（镜已落库）autopilot 决策不进 gen_prompts——漫画链拆完
+    直接 storyboard_ready（2026-09-22 判例：过 gate2 转阶段是视频链设计，
+    漫画镜提示词已预填门2 纯仪式），漫画页分支即刻接手。"""
     from comic_studio.engine.autopilot import next_action
     from comic_studio.engine.llm.storyboard import split_storyboards
     from comic_studio.engine.projects import set_stage
@@ -149,7 +150,7 @@ def test_comic_autopilot_skips_video_prompts(tmp_path, monkeypatch):
                         lambda db_: _split_fake({}, _COMIC_REPLY))
     split_storyboards(db, tmp_path / "data", pid)
     act = next_action(db, tmp_path / "data", pid)
-    assert act["action"] == "gate2"  # 缺口修复前是 gen_prompts
+    assert act["action"] == "gen_comic_pages"  # 旧链是 gen_prompts→gate2；拆完直接就绪
 
 
 def test_gen_prompt_comic_short_circuit(tmp_path, monkeypatch):

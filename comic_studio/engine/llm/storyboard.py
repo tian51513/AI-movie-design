@@ -624,6 +624,17 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
                  project_id=project_id)
     emit_log(db, "storyboard", "info", f"分镜落库 {len(ids)} 镜（已替换旧分镜）",
              project_id=project_id)
+    # 漫画链拆完直接就绪（2026-09-22 真机判例：storyboard_ready 由门2 设置是
+    # 视频链设计——漫画镜提示词拆解时已预填、门2 天然成立，却成了手动用户的
+    # 隐形路障：714 镜拆完停在 assets_ready，用户以为拆解没生效）；视频链
+    # 语义不变（门2 仍为提示词就绪的显式确认点）
+    _cm = conn.execute("SELECT comic_mode FROM projects WHERE id=?",
+                       (project_id,)).fetchone()
+    if _cm and _cm["comic_mode"] == "comic_output":
+        from ..projects import set_stage
+        set_stage(db, project_id, "storyboard_ready")
+        emit_log(db, "storyboard", "info", "阶段流转 assets_ready → storyboard_ready"
+                 "（漫画链：提示词已随拆解预填）", project_id=project_id)
     # P7-G 拆解后机械审计（时长守恒/换挡/台词字数）：只告警不拦截
     from ..storyboard_checks import audit_storyboard
     for w in audit_storyboard(db, project_id):

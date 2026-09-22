@@ -16,3 +16,31 @@ def test_collapse_repetition():
     mixed = "她开始低声念诵。" + "去死吧、" * 50 + "念诵声停了。"
     out2 = collapse_repetition(mixed)
     assert "重复约 50 次" in out2 and out2.startswith("她开始低声念诵。") and out2.endswith("念诵声停了。")
+
+
+def test_comic_split_sets_storyboard_ready(tmp_path, monkeypatch):
+    """漫画链拆完直接就绪（2026-09-22 判例：714 镜拆完停在 assets_ready——
+    storyboard_ready 由门2 设置是视频链设计，漫画镜提示词已预填门2 纯仪式）。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.projects import create_project, get_project
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+
+    class FakeClient(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "fake")
+            self.n = 0
+
+        def raw_chat(self, messages, temperature=0.3):
+            self.n += 1
+            return ('{"shots":[{"text_span":"他推门","description":"推门进房"}]}', Usage(1, 1))
+
+    db = Database(tmp_path / "s.db"); db.migrate()
+    proj = create_project(db, tmp_path / "data", "p", "9:16",
+                          "他推开门走进房间。", comic_mode="comic_output")
+    conn = db.connect()
+    conn.execute("UPDATE projects SET stage='assets_ready' WHERE id=?", (proj["id"],))
+    conn.commit()
+    split_storyboards(db, tmp_path / "data", proj["id"],
+                      client_factory=lambda t: FakeClient())
+    assert get_project(db, proj["id"])["stage"] == "storyboard_ready"
