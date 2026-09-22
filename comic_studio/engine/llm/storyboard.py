@@ -325,6 +325,36 @@ _CACHE_VER = 1     # 指纹成分：提示词/缓存结构演进时 +1 作废旧
 _MIN_HALF = 300    # 对半降级下限（字）：更小已无段落边界可切
 
 
+_REP_TOKEN = re.compile(r"[^、。！？!?\n]+[、。！？!?\n]?")
+
+
+def collapse_repetition(text: str, min_run: int = 10) -> str:
+    """机械压缩复读段（2026-09-22 真机判例：猫物语块 104=1300 个连续「去死吧、」
+    ——输入即复读把模型诱导进复读机模式，输出灌满上限 finish_reason=length，
+    对半降级到 25 字仍炸）。按句读单元切 token，连续相同 ≥min_run → 保留首 3
+    尾 1 + 标注重复次数；正常文本零改动。发送前处理——断点缓存指纹用原文，
+    既有 103 块缓存不受影响。"""
+    toks = _REP_TOKEN.findall(text)
+    out, run, cnt = [], None, 0
+
+    def flush():
+        if run is None or cnt < min_run:
+            out.extend([run] * cnt if run else [])
+            return
+        out.append("".join([run] * 3))
+        out.append(f"……（「{run.rstrip('、。！？!?\n')}」重复约 {cnt} 次）……")
+        out.append(run)
+
+    for t in toks:
+        if t == run:
+            cnt += 1
+        else:
+            flush()
+            run, cnt = t, 1
+    flush()
+    return "".join(out)
+
+
 def _ask_block(db, project_id, client, system, chunk, assets, quota, target_count,
                dur_hint):
     """单块拆解 LLM 调用（2026-09-17 job 43228 事故）：kind=length 截断时按段落
@@ -333,6 +363,7 @@ def _ask_block(db, project_id, client, system, chunk, assets, quota, target_coun
     quota：本块配额（None=自动拆分）；对半后按半块字数占比再分摊。"""
     quota_line = (f"【数量约束】全文目标 {target_count} 个分镜，本块目标拆出约 {quota} 个分镜"
                   f"（按篇幅分配，允许 ±1 浮动）") if quota else None
+    chunk = collapse_repetition(chunk)
     t0 = time.monotonic()
     try:
         result, usage = ask_validated(
