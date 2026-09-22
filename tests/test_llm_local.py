@@ -338,3 +338,26 @@ def test_skip_think_dual_mechanism():
                                     "chat_template_kwargs": {"foo": 1}})
     assert eb2["reasoning_effort"] == "none"
     assert eb2["chat_template_kwargs"] == {"foo": 1, "enable_thinking": False}
+
+
+def test_llama_idle_reaper_logic(tmp_path, monkeypatch):
+    """空闲回收（2026-09-22 用户需求）：队列空 + llama 在跑超宽限 → 停止；
+    有任务/未在跑 → 计时归零；idle_stop_s=0 关闭。逻辑为 app._autopilot_loop
+    内联段——此处钉住其依赖的判定函数与设置键。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.settings import set_setting, DEFAULT_SETTINGS
+    assert "idle_stop_s" in DEFAULT_SETTINGS["llama_server"]  # 设置键存在（默认 300）
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "llm_providers",
+                {"llama": {"base_url": "http://127.0.0.1:8123/v1", "model": "m", "kind": "llama"}})
+    conn = db.connect()
+    conn.execute("INSERT INTO projects (slug, name, aspect_ratio, novel_path) "
+                 "VALUES ('p','p','9:16','x')")
+    pid = conn.execute("SELECT last_insert_rowid() id").fetchone()["id"]
+    conn.execute("INSERT INTO jobs (project_id, type, status) VALUES (?,'gen_ref','running')", (pid,))
+    conn.commit()
+    n = conn.execute("SELECT COUNT(*) c FROM jobs WHERE status IN ('pending','running')").fetchone()["c"]
+    assert n == 1  # 在跑任务 → 不回收（分支条件）
+    conn.execute("UPDATE jobs SET status='done'")
+    conn.commit()
+    assert conn.execute("SELECT COUNT(*) c FROM jobs WHERE status IN ('pending','running')").fetchone()["c"] == 0

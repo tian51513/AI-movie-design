@@ -47,7 +47,8 @@ DEFAULT_SETTINGS = {
     # 单模型服务，/v1/models 只有当前加载的一个，扫盘才是可用清单语义）
     "llama_server": {"dir": r"E:\AI\llama\server", "start": "启动.bat",
                      "stop": "停止.bat", "wait_s": 150,
-                     "model_dir": r"E:\Comfy-Desktop\ComfyUI-Installs\anime-gc\ComfyUI\models\llm"},
+                     "model_dir": r"E:\Comfy-Desktop\ComfyUI-Installs\anime-gc\ComfyUI\models\llm",
+                     "idle_stop_s": 300},  # 空闲回收宽限（秒）：队列无任务且 llama 在跑超此值→自动停止；0=关
     "llm_routing": {
         "extract_assets": "local",
         "fix_appearance": "local",

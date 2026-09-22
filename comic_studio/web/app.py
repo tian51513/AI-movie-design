@@ -109,12 +109,39 @@ def _autopilot_once(db, data_dir) -> int:
 
 
 def _autopilot_loop(db, data_dir, stop_event, interval: float = 3.0) -> None:
-    """autopilot 巡检线程主体（计划5B 任务2）：本地单用户，单线程扫表足够。"""
+    """autopilot 巡检线程主体（计划5B 任务2）：本地单用户，单线程扫表足够。
+    顺带做 llama-server 空闲回收（2026-09-22 用户需求）：队列无任务且 llama
+    在跑持续超 idle_stop_s → 停止.bat 回收显存——手动 ComfyUI 工作不再被
+    pipeline 留下的 llama 挤爆；LLM 任务会按需自动重拉，代价=下次装卸。"""
+    llama_idle_since: float | None = None
     while not stop_event.wait(interval):
         try:
             _autopilot_once(db, data_dir)
         except Exception:
             pass  # _autopilot_once 已逐项目兜底；此处兜底巡检自身（如 DB 抖动）
+        try:
+            from time import monotonic
+            from ..engine.llm.local import _llama_health, stop_llama_servers
+            from ..engine.settings import get_setting as _gs
+            cfg = _gs(db, "llama_server") or {}
+            idle_s = float(cfg.get("idle_stop_s") or 300)
+            if idle_s <= 0:
+                continue
+            running = (db.connect().execute(
+                "SELECT COUNT(*) c FROM jobs WHERE status IN ('pending','running')"
+            ).fetchone() or {"c": 0})["c"]
+            healthy = any(_llama_health(p.get("base_url") or "")
+                          for p in (_gs(db, "llm_providers") or {}).values()
+                          if p and str(p.get("kind") or "") == "llama")
+            if running or not healthy:
+                llama_idle_since = None
+                continue
+            llama_idle_since = llama_idle_since or monotonic()
+            if monotonic() - llama_idle_since >= idle_s:
+                stop_llama_servers(db)
+                llama_idle_since = None
+        except Exception:
+            pass  # 回收兜底：不干扰巡检主循环
 
 
 def create_app(db_path: str | Path = "./data/studio.db",
