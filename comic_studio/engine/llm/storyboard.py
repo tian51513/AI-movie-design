@@ -86,6 +86,10 @@ EMOTIONS = ("平静", "温柔", "开心", "轻笑", "严肃", "愤怒", "激动"
             "悲伤", "冷漠", "惊讶", "紧张", "低语", "嘶吼", "淡然")
 CONTINUITY_MODES = ("全程继承", "微变延续", "焦点跟随", "缓慢推镜", "缓慢拉镜", "场景断点")
 
+# 漫画页数耦合的块上限（页数硬约束下每块输出 1~2 页，上下文大头是输入——
+# 3000 字 ≈ 2.5k tok，留足 system+名册+超额输出余量；截断另有对半降级兜底）
+_COMIC_CHUNK_CAP = 3000
+
 
 # 漫画输出模式（2026-09-12 小说转漫画）：追加在 SPLIT_SYSTEM 之后的分支规则——
 # 分镜=漫画页单格：场景+人物+对白；无运镜/机位/声音/时长概念（静态画面媒介）。
@@ -116,12 +120,17 @@ COMIC_SPLIT_RULES = """
 
 
 def comic_split_system(target_pages: int = 0) -> str:
-    """comic_output 项目的拆解 system 提示词：SPLIT_SYSTEM + 漫画页分支规则
-    （target_pages>0 时注入全文页数指引，2026-09-12 Task 2）。"""
+    """comic_output 项目的拆解 system 提示词：SPLIT_SYSTEM + 漫画页分支规则。
+    target_pages>0 注入页数硬约束与压缩语义（2026-09-23 真机事故：旧版只给
+    「全文目标约 N 页」的全局指引，逐块调用看不见全文，密度不降反升
+    714→1015——配额已逐块下发（quota_line），system 侧给压缩授权）。"""
     rules = COMIC_SPLIT_RULES
     if target_pages and target_pages > 0:
-        rules += (f"\n7. 全文目标约 {target_pages} 个漫画页（即约 {target_pages} 个分镜），"
-                  "按各段剧情密度分配，允许 ±20% 浮动")
+        rules += (f"\n7. 页数配额（硬约束）：全文目标约 {target_pages} 个漫画页"
+                  f"（即约 {target_pages} 个分镜）；本块配额以用户消息【数量约束】"
+                  "行为准，宁并格不超配——同场景相邻小拍点并成一格、对白只保留最有"
+                  "代表性的 1~3 句逐字照录、纯过场/重复寒暄/不影响主线的次要内容"
+                  "直接舍弃；也禁止为凑页数把一个完整拍点反向拆成多格")
     return SPLIT_SYSTEM + rules
 
 
@@ -412,7 +421,22 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     if chapter_range:
         text = slice_chapters(text, parse_chapters(text), tuple(chapter_range))
     # _content_guard(text)
-    chunks = split_chunks(text, max_chars=max_chars)
+    # 漫画页数路由（2026-09-23 真机事故 714→1015：target_pages 只进 system
+    # 「全文目标约 N 页」全局指引，逐块调用看不见全文，密度反升）——
+    # comic_output 的 target_pages 路由进逐块配额机制；手动 target_count
+    # （拆分弹窗输入）优先
+    _comic = proj["comic_mode"] == "comic_output"
+    if _comic and not target_count:
+        target_count = int(proj["target_pages"] or 0) or None
+    _eff_max = max_chars
+    if _comic and target_count and len(text) > _eff_max:
+        # 块数≈页数：配额每块下限 1 镜——不放大分块则页数下限=块数
+        # （117 块×1=117 页，target 60 永远不可达）；配额下输出小，块上限
+        # 放宽到 _COMIC_CHUNK_CAP（截断有对半降级+块缓存兜底）
+        _eff = min(_COMIC_CHUNK_CAP, -(-len(text) // max(1, target_count)))
+        if _eff > _eff_max:
+            _eff_max = _eff
+    chunks = split_chunks(text, max_chars=_eff_max)
     # 配额分配：按字数占比 round，最后一块兜底补齐/削减到总数
     quotas = None
     if target_count:
@@ -429,9 +453,10 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     # 段时长基准（2026-09-05）：进拆解上下文；0=LLM 动态估时（无对白镜也自估）
     _dur = float(proj["default_shot_duration"] or 0.0)
     # 漫画输出模式（2026-09-12 Task 2）：comic_output → system 走漫画页分支
-    # （场景+人物+对白，无运镜/声音/时长）；dur_hint 不注入（静态页无时长概念）
-    _comic = proj["comic_mode"] == "comic_output"
-    _sys = comic_split_system(int(proj["target_pages"] or 0)) if _comic else SPLIT_SYSTEM
+    # （场景+人物+对白，无运镜/声音/时长）；dur_hint 不注入（静态页无时长概念）；
+    # _comic/页数路由已在分块前判定（见 chunks 段），此处只组 system——
+    # 压缩规则跟随生效页数（手动 target_count 覆盖后按覆盖值注入）
+    _sys = comic_split_system(int(target_count or 0)) if _comic else SPLIT_SYSTEM
     # 有声书对白规则（2026-09-05 真机：转写无引号 → LLM 不识台词 → dialogue
     # 空 → 提示词无对白）：音频项目注入「全篇皆对白」规则+说话人推断+主题
     _audio_rules = ""
@@ -458,7 +483,7 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     # 版本演进）自动作废全量重跑。缓存处理后的 staging 行：续跑 seeds 冻结为首遍值
     cache_path = data_to_abs(data_dir, f"projects/{proj['slug']}/split_cache.json")
     _fp = hashlib.sha1(json.dumps({
-        "v": _CACHE_VER, "max_chars": max_chars, "target_count": target_count,
+        "v": _CACHE_VER, "max_chars": _eff_max, "target_count": target_count,
         "chapter_range": list(chapter_range) if chapter_range else None,
         "dur": _dur, "text": text, "sys": _sys + _audio_rules,
         # 拆解模型入指纹（2026-09-17 真机：nsfwvision 跑到 99/111 换 14B——

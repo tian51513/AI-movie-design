@@ -169,3 +169,9 @@ identity_edit LoRA 双图训练上限（scene恒图1/person恒图2，交换劣�
 2. **bat 内容必须纯 ASCII**——中文注释/回显在无控制台调用（WSL interop/引擎 subprocess）下 chcp 65001 失效，GBK 按 UTF-8 碎出命令碎片（双击有控制台时正常=更隐蔽）；中文语义只放文件名，入口 bat 做透传别名（`启动.bat → call start.bat %*`）
 3. **WSL mirrored 网络对无人监听端口答假 503**（Forwarding failure）——判断「服务在不在」不能只看 503，`tasklist` 查进程或看 503 是否带 JSON body
 - 排障法：WSL 侧 `cmd.exe /c <bat>` 可直接测 bat（等价引擎调用路径）；Windows 侧进程显存用 `/mnt/c/Windows/System32/nvidia-smi.exe`（WSL 的 nvidia-smi 看不见 Windows 进程）
+
+### 漫画页数设 60 反而拆出 1015 页（2026-09-23 猫物语）
+- **症状**：target_pages=60 重拆，714 镜变 1015 镜——数量旋钮反向
+- **根因三层**：①页数目标只写进 system「全文目标约 N 页」，拆解是逐块调用（117 块×1300 字），每块 LLM 看不见全文，指引无法构成向下约束、实测反把每块密度拉高（6.1→8.7 镜/块）；②视频链现成的 target_count 逐块配额机制（字数占比分摊+quota_line）从未被 comic 链路接上；③配额每块下限 1 镜——117 块最少 117 页，**不放大分块尺寸页数下限=块数**，60 永远不可达
+- **修**：target_pages 路由进逐块配额（手动 target_count 优先）+ 页数约束下分块放大（块数≈页数，上限 3000 字）+ system 规则 7 改压缩语义授权（并拍点/留代表对白/舍弃过场——不松口则「逐字照录+拍点覆盖」规则压不过配额照样超）
+- **判例：全局数量目标不能只写 system**——分块调用必须逐块量化下发（quota_line）；**目标数 < 块数时先耦合块尺寸再谈配额**。排查同类问题先看 jobs.payload_json 有没有把目标带下去、llm 每块日志的「N 镜」分布

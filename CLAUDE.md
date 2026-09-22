@@ -257,7 +257,7 @@
 ## 模块地图（小说转漫画 comic_output 2026-09-12~13）
 
 - **第五种项目类型「📖 小说转漫画」**——正文→LLM 分析/资产（沿用小说前半链）→拆解（每镜=一页）→逐页 t2i 单格漫画+对白后处理→PDF/长图导出；**页面即交付物：无视频渲染/门3/合成，`comic_ready` 是 comic_output 专属终态**（autopilot done 分支自动关开关）；设计 docs/superpowers/specs/2026-09-12-novel-to-comic-design.md（/grill-me 11 决策）、计划 docs/superpowers/plans/2026-09-12-novel-to-comic.md（T1~T7 全完成，e131208→a031e2a）
-- **迁移 36 四列**：projects.`dialogue_mode`（bubble 气泡/footer 底部字幕条/none）/`target_pages`（0=按剧情密度自动，>0 注入拆解页数指引 ±20%）/`image_size`（SIZE_PRESETS 四预设 1024x1536/832x1216/1024x1024/1536x1024）/`quality_tier`（QUALITY_STEPS fast8/standard12/high20 步）；create_project 尾四参，`_PUBLIC_COLUMNS` 已暴露
+- **迁移 36 四列**：projects.`dialogue_mode`（bubble 气泡/footer 底部字幕条/none）/`target_pages`（0=按剧情密度自动；>0=页数硬约束：路由进逐块配额+分块按页数放大+压缩语义，2026-09-23 重做——见文末「漫画页数拆解三修」）/`image_size`（SIZE_PRESETS 四预设 1024x1536/832x1216/1024x1024/1536x1024）/`quality_tier`（QUALITY_STEPS fast8/standard12/high20 步）；create_project 尾四参，`_PUBLIC_COLUMNS` 已暴露
 - **拆解模式分支**（llm/storyboard）：comic_output → `comic_split_system`（COMIC_SPLIT_RULES：场景+人物+对白、**明确禁运镜/声音/时长**）；dur_hint 不注入（静态页无时长）；**workflow_type 机械固定 'comic'**（staging 覆写，排在 render_mode 覆写之后保证 comic 优先——LLM 的 fl2v/ref2va 建议一律作废）；有声书「全篇皆对白」规则照常生效
 - **气泡渲染（2026-09-13 二期①，Pillow 后处理画真气泡）**——提示词层反转：对白一律不进 t2i 提示词（模型画中文=乱码），bubble 模式注入「上方留白+不要画任何文字/气泡/字幕」禁字指令，文字全部后处理；`_draw_bubbles`（白底圆角矩形+近黑 4px 描边+底边中央三角尾，透明度**只作用底色**——100%=背景全透明只剩描边+文字，字永远清晰）；`_bubble_layout` 纯函数（宽度随内容自适应上限 40% 页宽、**左右双列 y 游标**——同列间距=气泡高+间隙+尾巴 14px 不受对侧挤压；最多 4 气泡防爆）；字号 0=clamp(页宽÷36,16,34)；`_FOOTER_FONT_CANDIDATES` 补 `/mnt/c/Windows/Fonts/msyh.ttc`（WSL 挂 Windows 盘与生产同字形）+ 文泉驿正黑——**VLM 视检曾误报豆腐块（低分辨率），以像素哈希验证为准**（两不同汉字渲染位图不同=字体生效）
 - **迁移 37 bubble_style**（projects JSON 列，空=默认 {opacity:85,font_color:#222222,font_size:0}）：from-comic-novel/from-comic-audio 透传（`_validate_bubble_style` 422：坏 JSON/opacity 0~100/font_size≥0）；PATCH 漫画参数段（dialogue_mode/target_pages/image_size/quality_tier/bubble_style——仅 comic_output，改完删对应页→「生成缺失页」重出）；前端创建弹窗 bubble 选中展开三字段（透明度/color picker/字号）+ 详情参数面板同款（patchComicParam/patchBubbleStyle）
@@ -400,3 +400,10 @@
 - **场景/道具参与渲染现状**（用户问询核实）：视频提示词文字✅（名称+描述入词）· ref2va 参考图⚠️角色优先占槽（九路升级后有空槽即上）· 关键帧双槽场景✅ · 漫画页 Krea2 场景槽✅ · 道具基本只走文字
 - **Krea2 工作台风格槽（2026-09-20 用户实测判例闭环）**：提示词文字段对部分 Krea2 模型推不动画风（手动同词实测每张差异大但风格不变；z_image_turbo cfg=1 文本话语权弱是同类），工作台「风格库+风格」槽才是强杠杆——迁移 44 `projects.krea2_style`（"lib|style"，空=不套）；`krea_t2i`/`comic_page_krea2` manifest 加 `krea_style_lib`/`krea_style` 注入参数（node 2000 风格库/风格，未提供=none 零回归）；genref 主图/单段 + comicgen 漫画页透传（**双管齐下**=用户决策：文字段照拼+库风格强注入）；**角色主图在库风格激活时追加「有且仅有一个人物」强化禁令**（库风格场景词稀释单人物锚定、背景冒多人判例；漫画页合法多人物不加）；API：create 四入口 Form 透传 + PATCH（坏格式 422、空串清除）；前端：Krea2 选择器确认即记 lib|name（创建流+画风面板）、面板显示当前库风格 pill+✕清除、`krea2StyleZh()` 显示中文名（methods 判例）；`stylepresets.parse/format_krea2_style` 纯函数。注意：三视图（character_views）无工作台节点不适用；风格槽值需与 ComfyUI 已装风格库文件一致（dropdown 枚举）
 - 注意：**改完代码必须重启服务**（start-prod 无热重载）；资产删除/改名/查重/九路参考/Krea2 风格槽全部需重启后生效
+
+## 模块地图（漫画页数拆解三修 2026-09-23）
+
+- **事故（猫物语 154k 字/117 块）**：target_pages=60 重拆 → 714 镜涨到 **1015 镜**——旋钮反向。根因三层：①`target_pages` 只进 system「全文目标约 N 页」全局指引，**逐块调用看不见全文**（每块只见自己 1300 字），密度不降反升（6.1→8.7 镜/块）；②同文件视频链的 `target_count` 逐块配额机制（字数占比分摊+quota_line 注 user 词）从未被 comic 链路使用——job payload 无 target_count，target_pages 也没路由进去；③结构性下限：配额每块最少 1 镜，117 块×1=117 页——**不放大分块页数下限=块数**，target 60 永远不可达
+- **三修（llm/storyboard.py）**：①comic_output 且无手动 target_count → `target_count = proj.target_pages`（手动输入优先）；②页数约束下分块耦合放大 `_eff_max = min(_COMIC_CHUNK_CAP 3000, ⌈len/页数⌉)`（配额下每块输出 1~2 页很小、上下文大头是输入——3000 字块安全，截断有对半降级+块缓存兜底）；块数≈页数后配额 1~2/块可真正命中目标；③`comic_split_system` 规则 7 重写为**页数硬约束+压缩语义授权**（同场景相邻小拍点并成一格/对白只留最有代表性 1~3 句逐字照录/纯过场重复寒暄舍弃/禁反向多拆）——旧「逐字照录+拍点覆盖」规则不松口则模型优先覆盖、照样超配额
+- 指纹入 `_eff_max`（原 max_chars）——改页数/改规则自动作废旧块缓存全量重跑；quota_line 复用视频链现成机制零改动
+- 判例：**全局数量目标不能只写进 system**——分块调用里 LLM 没有「全文」视野，目标必须逐块量化下发（quota_line）；**目标数 < 块数时先耦合块尺寸再谈配额**（每块下限 1 是硬地板）

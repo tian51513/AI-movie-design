@@ -110,6 +110,86 @@ def test_comic_split_prompt_scoping(tmp_path, monkeypatch):
     assert "漫画页" not in seen_v["system"]  # 视频项目提示词不受漫画分支污染
 
 
+def _split_fake_multi(seen, reply):
+    """逐块记录 system+user 的假 LLM（配额/分块断言用）。"""
+    import json as _json
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+
+    class FakeSplit(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "m")
+
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            seen.setdefault("systems", []).append(messages[0]["content"])
+            seen.setdefault("users", []).append(messages[1]["content"])
+            return _json.dumps(reply, ensure_ascii=False), Usage(10, 20)
+
+    return lambda task: FakeSplit()
+
+
+def _write_novel(db, data_dir, pid, text):
+    from comic_studio.engine.paths import data_to_abs
+    from comic_studio.engine.projects import get_project
+    data_to_abs(data_dir, get_project(db, pid)["novel_path"]).write_text(
+        text, encoding="utf-8")
+
+
+def test_comic_target_pages_routes_quota(tmp_path, monkeypatch):
+    """target_pages>0 路由进逐块配额 + 压缩语义（2026-09-23 真机事故：
+    target_pages 只进 system「全文目标约 N 页」全局指引，逐块调用看不见全文
+    → 密度不降反升 714 镜→1015 镜）。手动 target_count 优先于项目页数。"""
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    from comic_studio.engine.projects import set_stage
+
+    seen = {}
+    monkeypatch.setattr("comic_studio.engine.llm.storyboard.make_split_factory",
+                        lambda db_: _split_fake_multi(seen, _COMIC_REPLY))
+    db, pid = _comic_project(tmp_path, target_pages=12)
+    set_stage(db, pid, "assets_ready")
+    split_storyboards(db, tmp_path / "data", pid)
+    assert "【数量约束】" in seen["users"][0]
+    assert "全文目标 12 个分镜" in seen["users"][0]
+    assert "本块目标拆出约" in seen["users"][0]
+    assert "并成" in seen["systems"][0]  # 压缩语义授权（并格/舍弃次要对白）
+
+    seen2 = {}
+    monkeypatch.setattr("comic_studio.engine.llm.storyboard.make_split_factory",
+                        lambda db_: _split_fake_multi(seen2, _COMIC_REPLY))
+    db2, pid2 = _comic_project(tmp_path / "o", target_pages=12)
+    set_stage(db2, pid2, "assets_ready")
+    split_storyboards(db2, tmp_path / "o" / "data", pid2, target_count=5)
+    assert "全文目标 5 个分镜" in seen2["users"][0]  # 手动值覆盖项目页数
+
+
+def test_comic_target_pages_chunk_coupling(tmp_path, monkeypatch):
+    """页数约束下分块按页数放大（块数≈页数）：配额每块下限 1 镜——不耦合
+    块尺寸则页数下限=块数（117 块×1=117 页，永远到不了 60）。target=0
+    照旧默认 1300 字分块、无配额行。"""
+    from comic_studio.engine.llm.storyboard import split_storyboards
+    from comic_studio.engine.projects import set_stage
+
+    text = "\n\n".join("语" * 1000 for _ in range(12))  # 12000 字
+    seen = {}
+    monkeypatch.setattr("comic_studio.engine.llm.storyboard.make_split_factory",
+                        lambda db_: _split_fake_multi(seen, _COMIC_REPLY))
+    db, pid = _comic_project(tmp_path, target_pages=4)
+    set_stage(db, pid, "assets_ready")
+    _write_novel(db, tmp_path / "data", pid, text)
+    split_storyboards(db, tmp_path / "data", pid)
+    assert 4 <= len(seen["users"]) <= 4 + 2  # 块数≈页数（段落边界允许少量超出）
+
+    seen0 = {}
+    monkeypatch.setattr("comic_studio.engine.llm.storyboard.make_split_factory",
+                        lambda db_: _split_fake_multi(seen0, _COMIC_REPLY))
+    db0, pid0 = _comic_project(tmp_path / "z", target_pages=0)
+    set_stage(db0, pid0, "assets_ready")
+    _write_novel(db0, tmp_path / "z" / "data", pid0, text)
+    split_storyboards(db0, tmp_path / "z" / "data", pid0)
+    assert len(seen0["users"]) >= 9  # 自动模式照旧 1300 字细块（12 段→12 块）
+    assert all("【数量约束】" not in u for u in seen0["users"])
+    assert all("并成" not in s for s in seen0["systems"])  # 无配额不注入压缩语义
+
+
 def test_comic_split_fills_prompt(tmp_path, monkeypatch):
     """漫画镜拆解即填 prompt（=description）——gate2「全部镜有提示词」对
     comic 项目天然成立；视频项目照旧留空等 gen_prompts（2026-09-13 计划
