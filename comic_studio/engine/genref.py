@@ -401,7 +401,10 @@ EXPAND_SYSTEM = """你是图像生成提示词扩写器。把用户给的画面�
 def expand_image_prompt(db, prompt: str, task: str = "optimize_prompt") -> str:
     """提交前 LLM 扩写（2026-09-22 用户实测判例：Qwen-Image 2.1 短提示出不了
     好效果）。锚定保全是硬约束（EXPAND_SYSTEM 明令逐字保留）；任何失败回落
-    原文不炸生成——扩写是增强不是门槛。"""
+    原文不炸生成——扩写是增强不是门槛。
+    **即用即停**（OOM 判例预防）：扩写发生在 gpu_comfy 任务内部（如
+    gen_comic_page），任务开始时的让位检查已过——扩写拉起的 llama 若不关，
+    随后 ComfyUI 加载 Qwen2.1（~9G）+ llama（5.6~10.9G）必爆 12G 卡。"""
     if not (prompt or "").strip():
         return prompt
     try:
@@ -414,3 +417,9 @@ def expand_image_prompt(db, prompt: str, task: str = "optimize_prompt") -> str:
         return text if len(text) >= len(prompt) * 0.6 else prompt  # 过短=丢内容，回落
     except Exception:
         return prompt
+    finally:
+        try:
+            from .llm.local import stop_llama_servers
+            stop_llama_servers(db)  # 幂等：没在跑零开销
+        except Exception:
+            pass
