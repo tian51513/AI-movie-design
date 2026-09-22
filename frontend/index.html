@@ -2117,5 +2117,13 @@
   </div>
 </div>
 <script src="/static/app.js?v=20260912b"></script>
+    <!-- 小火箭：快速上移/下移（2026-09-22 用户需求；移动端抬升避开底部操作栏） -->
+    <div style="position:fixed;right:14px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:90;
+                display:flex;flex-direction:column;gap:6px" v-if="project">
+      <button class="btn" @click="rocketTop" title="回到顶部"
+              style="width:38px;height:38px;padding:0;font-size:16px;border-radius:50%">🚀</button>
+      <button class="btn" @click="rocketBottom" title="跳到底部"
+              style="width:38px;height:38px;padding:0;font-size:16px;border-radius:50%">⬇️</button>
+    </div>
 </body>
 </html>
