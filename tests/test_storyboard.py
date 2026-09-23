@@ -44,3 +44,42 @@ def test_comic_split_sets_storyboard_ready(tmp_path, monkeypatch):
     split_storyboards(db, tmp_path / "data", proj["id"],
                       client_factory=lambda t: FakeClient())
     assert get_project(db, proj["id"])["stage"] == "storyboard_ready"
+
+
+def test_split_clears_old_shots_at_start(tmp_path, monkeypatch):
+    """点拆解分镜即清旧镜（2026-09-23 用户需求）：旧镜此前要到拆解尾部
+    persist_shots 才被替换——拆解跑的整段时间（小时级）autopilot/前端都
+    看得见旧镜。handler 启动即删；失败留空由块缓存续跑（重拆=推翻重来）。"""
+    import pytest
+    from comic_studio.engine import jobs
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.pipeline_jobs import handle_split
+    from comic_studio.engine.projects import create_project
+
+    db = Database(tmp_path / "s.db"); db.migrate()
+    proj = create_project(db, tmp_path / "data", "p", "9:16",
+                          "他推开门走进房间。")
+    conn = db.connect()
+    conn.execute("INSERT INTO shots (project_id, seq, text_span, description) "
+                 "VALUES (?,?,?,?)", (proj["id"], 1, "旧", "旧镜"))
+    conn.commit()
+
+    seen = {}
+
+    def fake_split(db_, data_dir, pid, **kw):
+        seen["shots_at_split_start"] = db_.connect().execute(
+            "SELECT COUNT(*) c FROM shots WHERE project_id=?",
+            (pid,)).fetchone()["c"]
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("comic_studio.engine.llm.storyboard.split_storyboards",
+                        fake_split)
+    jobs.enqueue_job(db, "split_storyboards", project_id=proj["id"],
+                     payload={"project_id": proj["id"]})
+    job = jobs.claim_next_job(db, ("split_storyboards",))
+    with pytest.raises(RuntimeError):
+        handle_split(db, tmp_path / "data", job, None)
+    assert seen["shots_at_split_start"] == 0   # 拆解启动前旧镜已清
+    n = conn.execute("SELECT COUNT(*) c FROM shots WHERE project_id=?",
+                     (proj["id"],)).fetchone()["c"]
+    assert n == 0

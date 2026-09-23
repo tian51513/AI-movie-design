@@ -267,11 +267,14 @@ def _novel_flow(db, data_dir, project_id, proj) -> dict:
             return {"action": "wait", "detail": "无生效分镜（全部无效）"}
         return {"action": "gate2", "detail": "提示词齐全，过门2"}
     if stage == "storyboard_ready":
+        # 重拆在飞守卫前置（2026-09-23 猫物语真机）：旧镜要到拆解尾部才被
+        # 替换/清除——拆解跑的整段时间旧镜仍在库里，只看 total==0 才等的话
+        # autopilot 会拿旧镜去生成提示词/渲染/画漫画页
+        if _has_active_job(db, project_id, "split_storyboards"):
+            return {"action": "wait", "detail": "分镜拆解中"}
         total = db.connect().execute("SELECT COUNT(*) c FROM shots WHERE project_id=?",
                                      (project_id,)).fetchone()["c"]
         if total == 0:
-            if _has_active_job(db, project_id, "split_storyboards"):
-                return {"action": "wait", "detail": "分镜拆解中"}
             if _latest_failed(db, project_id, "split_storyboards"):
                 return {"action": "wait", "detail": "上次分镜拆解失败，重试请手动发起"}
             return {"action": "split", "detail": "无分镜，先拆解"}

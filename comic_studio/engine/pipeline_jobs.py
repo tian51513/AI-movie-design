@@ -32,8 +32,17 @@ def handle_analyze(db, data_dir, job, comfy):
 @register("split_storyboards")
 def handle_split(db, data_dir, job, comfy):
     from .llm.storyboard import split_storyboards
+    from .shots import clear_project_shots
     payload = json.loads(job["payload_json"] or "{}")
-    ids = split_storyboards(db, data_dir, payload.get("project_id", job["project_id"]),
+    pid = payload.get("project_id", job["project_id"])
+    # 启动即清旧镜（2026-09-23 用户需求+竞态根治）：旧镜此前要到拆解尾部
+    # persist_shots 才被替换——小时级拆解期间 autopilot/前端都看得见旧镜
+    # （拿旧镜画漫画页/生成提示词）。重拆=推翻重来，失败留空由块缓存续跑
+    cleared = clear_project_shots(db, pid)
+    if cleared:
+        emit_log(db, "storyboard", "info", f"重拆：清除旧分镜 {cleared} 条",
+                 project_id=job["project_id"], job_id=job["id"])
+    ids = split_storyboards(db, data_dir, pid,
                             target_count=payload.get("target_count"),
                             chapter_range=payload.get("chapter_range"))
     emit_log(db, "storyboard", "info", f"分镜拆解完成：{len(ids)} 镜",

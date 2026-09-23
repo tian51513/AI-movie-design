@@ -185,6 +185,33 @@ def test_wait_after_failed_split(tmp_path):
     assert act["action"] == "wait" and "失败" in act["detail"]
 
 
+def test_storyboard_ready_waits_for_resplit_with_old_shots(tmp_path):
+    """重拆在飞守卫前置（2026-09-23 猫物语真机）：旧镜要到拆解尾部 persist 才
+    被替换——拆解跑的整段时间旧镜仍在库里。storyboard_ready 若只在 total==0
+    时才等拆解，autopilot 会拿旧镜去生成提示词/渲染。"""
+    db, pid = _proj(tmp_path)
+    set_stage(db, pid, "storyboard_ready")
+    persist_shots(db, pid, [_shot()])
+    jobs.enqueue_job(db, "split_storyboards", project_id=pid,
+                     payload={"project_id": pid})
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "分镜拆解中" in act["detail"]
+
+
+def test_comic_storyboard_ready_waits_for_resplit(tmp_path):
+    """漫画成品项目同款竞态（用户撞到的行为）：拆解在飞 + 旧 1015 镜在库
+    → wait，不得拿旧镜去画漫画页。"""
+    db = Database(tmp_path / "c.db"); db.migrate()
+    pid = create_project(db, tmp_path / "data", "漫画书", "16:9", "正文",
+                         comic_mode="comic_output", target_pages=8)["id"]
+    set_stage(db, pid, "storyboard_ready")
+    persist_shots(db, pid, [_shot()])
+    jobs.enqueue_job(db, "split_storyboards", project_id=pid,
+                     payload={"project_id": pid})
+    act = next_action(db, tmp_path / "data", pid)
+    assert act["action"] == "wait" and "分镜拆解中" in act["detail"]
+
+
 def test_wait_after_failed_describe_shots(tmp_path):
     """漫画读图失败守卫：describe_shots failed → wait 不自动重烧 VLM。"""
     db = Database(tmp_path / "c.db"); db.migrate()

@@ -8,14 +8,24 @@ from .db import Database
 _CAMERA_FIELDS = ("景别", "机位", "运镜", "转场")
 
 
-def persist_shots(db: Database, project_id: int, drafts: list) -> list[int]:
+def clear_project_shots(db: Database, project_id: int, *, commit: bool = True) -> int:
+    """清空项目全部分镜（含旧拆解清理/重拆启动，2026-09-23）：先清
+    jobs.shot_id 引用再删（jobs.shot_id 外键 REFERENCES shots(id)，FK=ON 下
+    直接 DELETE 被 IntegrityError 拦下——2026-08-27 真机 job 653；任务行保留
+    作审计，只解除引用）。commit=False 供 persist_shots 并入其单事务
+    （删+插原子，插入中途失败可回滚）。返回删除条数。"""
     conn = db.connect()
-    # 先清 jobs.shot_id 引用再删旧镜（jobs.shot_id 外键 REFERENCES shots(id)，
-    # FK=ON 下直接 DELETE 被 IntegrityError 拦下——2026-08-27 真机 job 653；
-    # 任务行保留作审计，只解除引用）
     conn.execute("UPDATE jobs SET shot_id=NULL WHERE project_id=? AND shot_id IS NOT NULL",
                  (project_id,))
-    conn.execute("DELETE FROM shots WHERE project_id=?", (project_id,))
+    cur = conn.execute("DELETE FROM shots WHERE project_id=?", (project_id,))
+    if commit:
+        conn.commit()
+    return cur.rowcount
+
+
+def persist_shots(db: Database, project_id: int, drafts: list) -> list[int]:
+    conn = db.connect()
+    clear_project_shots(db, project_id, commit=False)
     ids = []
     seq_to_id = {}
     seq = 0
