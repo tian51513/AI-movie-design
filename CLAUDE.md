@@ -408,3 +408,9 @@
 - 指纹入 `_eff_max`（原 max_chars）——改页数/改规则自动作废旧块缓存全量重跑；quota_line 复用视频链现成机制零改动
 - **重拆两道防护（同日续）**：①`autopilot` storyboard_ready 分支「拆解在飞→wait」守卫前置到镜数判断之前（旧镜要到拆解尾部 persist 才被替换——拆解跑的整段时间旧镜仍在库，只看 total==0 才等 = autopilot 拿旧镜去画漫画页/生成提示词，猫物语真机「点一键出片直接绘制漫画」根因；视频链同修）；②`handle_split` 启动即 `clear_project_shots`（用户需求「点拆解先清旧镜」+竞态根治；shots.py 抽出复用函数，persist_shots 并入其单事务 commit=False）——重拆失败留空由块缓存续跑，语义=重拆即推翻重来
 - 判例：**全局数量目标不能只写进 system**——分块调用里 LLM 没有「全文」视野，目标必须逐块量化下发（quota_line）；**目标数 < 块数时先耦合块尺寸再谈配额**（每块下限 1 是硬地板）；**长任务的旧产物在任务尾部才替换=全程竞态窗口**——要么入口先清、要么消费方感知在飞
+
+## 模块地图（漫画页 400 三连日修 2026-09-23 下午）
+
+- **Krea2 风格槽前缀事故（猫物语漫画页全批 400）**：`gen_comic_page` 全灭于 ComfyUI `/prompt` 400——`LazyKreaWorkbench.风格库` 是 **COMBO 枚举=风格库文件原始 stem（带 `krea2_` 前缀）**，而 `stylepresets.list_style_libs` 为显示剥了前缀，前端选择器存的、引擎原样注入的都是**无前缀显示名** → `value_not_in_list`。既有测试用**手造带前缀值**把「选择器→存库→注入」真实链路掩盖了（判例：端到端参数链要有从 UI 数据形态出发的测试，手造值不算数）
+- **修**：`stylepresets.resolve_style_lib`（显示名→原始 stem：本地库补前缀能对上即返 stem，已带前缀/lazy_styles 等非本库/自定义值原样透传）——comicgen + genref 两注入点统一走它；存量项目存的无前缀值**零迁移**自动纠正（注入时解析）
+- 验证法判例：提交类 400 先拿 `/object_info/<节点>` 读 COMBO 枚举与注入值比对（零副作用）；或审计快照重放 `/prompt` 读 `node_errors`（快照缺失时可用引擎函数离线重建工作流实跑）

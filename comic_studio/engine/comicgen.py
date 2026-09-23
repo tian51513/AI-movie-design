@@ -270,10 +270,11 @@ def handle_gen_comic_page(db, data_dir, job, comfy):
     # 模型的画风，工作台槽才是强杠杆）——漫画页合法多人物，不加单人物禁令
     _kstyle = ((proj["krea2_style"] if "krea2_style" in proj.keys() else "") or "").strip()
     if _kstyle:
-        from .stylepresets import parse_krea2_style
+        from .stylepresets import parse_krea2_style, resolve_style_lib
         _lib, _name = parse_krea2_style(_kstyle)
         if _lib:
-            params["krea_style_lib"] = _lib
+            # 槽值=原始 stem（ComfyUI 枚举带 krea2_ 前缀；存库值是剥前缀显示名）
+            params["krea_style_lib"] = resolve_style_lib(_lib)
             params["krea_style"] = _name
     images = []
     # 二期参考注入分流（2026-09-13）：绑定角色 ≤2 且有 main.png → 人物场景化

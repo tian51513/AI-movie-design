@@ -25,6 +25,7 @@ def format_krea2_style(lib: str, style: str) -> str:
     return f"{lib}|{style}" if lib and style else ""
 
 _CACHE: dict | None = None   # 进程内缓存（文件不热更）
+_STEMS: dict = {}            # {显示库名: 原始文件 stem}——槽注入值（ComfyUI 枚举）
 
 
 def list_style_libs(repo_root: Path | None = None) -> dict:
@@ -68,5 +69,19 @@ def list_style_libs(repo_root: Path | None = None) -> dict:
                 styles.append(entry)
             if styles:
                 out[lib] = styles
+                _STEMS[lib] = f.stem
     _CACHE = out
     return out
+
+
+def resolve_style_lib(lib: str) -> str:
+    """存库库名（=扫描器显示名，已剥 krea2_ 前缀）→ 工作台槽注入值。
+    ComfyUI 风格库下拉枚举=风格库文件**原始 stem**（带 krea2_ 前缀，object_info
+    实证）——直注剥前缀的显示名会 value_not_in_list 400（2026-09-23 猫物语
+    真机：漫画页全批 400 全灭）。本地库补前缀能对上即返 stem；已带前缀/未知
+    值（lazy_styles 等非本库、用户手填）原样透传。"""
+    lib = (lib or "").strip()
+    if not lib:
+        return ""
+    list_style_libs()          # 惰性暖缓存（_STEMS 随扫描填充）
+    return _STEMS.get(lib) or _STEMS.get("krea2_" + lib) or lib

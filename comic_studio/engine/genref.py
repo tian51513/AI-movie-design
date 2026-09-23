@@ -231,10 +231,12 @@ def _t2i_to_file(db, data_dir, comfy, tmpl, prompt, dest, ctx, job, label,
     # 0/缺省=模板内置——t2i 步数对耗时影响大（Krea2 文生图等）
     params = {"seed": random.randint(0, 2**31 - 1)}
     if krea_style:
-        from .stylepresets import parse_krea2_style
+        from .stylepresets import parse_krea2_style, resolve_style_lib
         _lib, _name = parse_krea2_style(krea_style)
         if _lib:
-            params["krea_style_lib"] = _lib
+            # 槽值=原始 stem（ComfyUI 枚举带 krea2_ 前缀；存库值是剥前缀显示名
+            # ——2026-09-23 猫物语真机：直注显示名 value_not_in_list 400）
+            params["krea_style_lib"] = resolve_style_lib(_lib)
             params["krea_style"] = _name
     _steps = int(((get_setting(db, "template_params") or {}).get(tmpl.id) or {})
                  .get("steps") or 0)

@@ -41,6 +41,19 @@ def test_filler_injects_workbench_style_slots():
     assert wf2["2000"]["inputs"]["风格库"] == "none"
 
 
+def test_resolve_style_lib_adds_stem_prefix():
+    """存库库名（选择器=扫描器显示名，已剥 krea2_ 前缀）→ 注入槽值必须是
+    ComfyUI 枚举的原始 stem（带前缀）——2026-09-23 猫物语真机：直注无前缀
+    值 value_not_in_list，gen_comic_page 全批 400。已带前缀/未知值原样透传。"""
+    from comic_studio.engine.stylepresets import resolve_style_lib
+    short = "Anime-Cel_Illustration-1_动漫-赛璐璐与插画"
+    assert resolve_style_lib(short) == "krea2_" + short     # 选择器存的显示名 → stem
+    assert resolve_style_lib("krea2_" + short) == "krea2_" + short  # 手填 stem 原样
+    assert resolve_style_lib("lazy_styles") == "lazy_styles"       # 非本库（ComfyUI 自带）透传
+    assert resolve_style_lib("自定义不存在") == "自定义不存在"        # 自定义值自负
+    assert resolve_style_lib("") == ""
+
+
 def _client(tmp_path):
     return TestClient(create_app(db_path=tmp_path / "t.db", data_dir=tmp_path / "data",
                                  start_workers=False))
@@ -88,6 +101,37 @@ def test_genref_main_injects_style_and_single_character_guard(tmp_path, monkeypa
         text = wf["28"]["inputs"]["value"]
         assert "有且仅有一个人物" in text  # 库风格场景词稀释锚定的强化禁令
         assert "羽川翼" in text and "Style" not in text or True  # 双管齐下：style 段照拼（此处项目无 style）
+
+
+def test_genref_injects_stem_for_picker_value(tmp_path, monkeypatch):
+    """端到端：选择器存的是剥前缀显示名（list_style_libs 键）——注入必须解析
+    回原始 stem，否则 ComfyUI 枚举校验 400（2026-09-23 漫画页全灭真机）。"""
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from comic_studio.engine.db import Database
+    from comic_studio.engine.jobs import enqueue_job, get_job
+    from comic_studio.engine.projects import create_project
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "template_map", {"t2i": "krea_t2i", "character_views": ""})
+    picker_ks = f"Anime-Cel_Illustration-1_动漫-赛璐璐与插画|Anime Cel Illustration"
+    pid = create_project(db, tmp_path / "data", "p", "9:16", "文本",
+                         krea2_style=picker_ks)["id"]
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="羽川翼", appearance="性别：女", tags=[])],
+                      scenes=[], props=[]))
+    asset = list_project_assets(db, pid)[0]
+    jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                      resource="gpu_comfy", payload={"asset_id": asset["id"]})
+    import sys
+    sys.path.insert(0, "tests")
+    from comfy_mock import comfy_server
+    with comfy_server("ok") as m:
+        from comic_studio.engine.comfy.client import ComfyClient
+        from comic_studio.engine.genref import handle_gen_ref
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+        assert m.prompts[0]["prompt"]["2000"]["inputs"]["风格库"] == KS_LIB
 
 
 def test_dedup_schema_tolerates_empty_drop_entries():

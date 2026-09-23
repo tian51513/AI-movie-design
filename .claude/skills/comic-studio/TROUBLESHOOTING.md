@@ -181,3 +181,10 @@ identity_edit LoRA 双图训练上限（scene恒图1/person恒图2，交换劣�
 - **根因**：旧镜要到拆解尾部 persist_shots 才被替换——拆解全程旧镜在库；storyboard_ready 分支的「分镜拆解中→wait」守卫只在 total==0 时生效，有旧镜就漏过去
 - **修两道**：守卫前置到镜数判断前（pending+running 都算在飞）；`handle_split` 启动即 `clear_project_shots` 清旧镜（用户需求「点拆解先清旧」）——竞态窗口与 UI 旧计数一起消失；重拆失败留空由块缓存续跑
 - **判例：长任务的旧产物尾部才替换=全程竞态窗口**——要么入口先清、要么消费方感知在飞
+
+### 漫画页全批 400（2026-09-23 猫物语：Krea2 风格槽前缀）
+- **症状**：gen_comic_page 逐页 `400 Bad Request /prompt`，零页落盘；模板 comic_page_krea2
+- **根因**：工作台 `风格库` 槽是 COMBO 枚举=风格库文件**原始 stem**（带 `krea2_` 前缀）；stylepresets 扫描器为显示剥了前缀 → 选择器存无前缀显示名 → 引擎原样注入 → `value_not_in_list`
+- **修**：`resolve_style_lib` 注入时把显示名解析回原始 stem（本地库补前缀对得上即返；非本库/自定义透传）——comicgen/genref 统一走它，存量值零迁移
+- **排查法**：`curl /object_info/LazyKreaWorkbench` 看 `风格库` 枚举与注入值比对（零副作用首选）；快照缺失时用引擎函数离线重建工作流实跑验证
+- **判例**：测试里手造的参数值会把「UI 真实数据形态」掩盖掉——端到端参数链的测试要从 UI 存出来的值出发
