@@ -341,7 +341,8 @@ def handle_gen_ref(db, data_dir, job, comfy):
                 main_prompt += ("。画面中有且仅有一个人物，背景不得出现任何"
                                 "其他人物、人形剪影或额外角色")
             if getattr(main_tmpl, "prompt_expand", False):
-                main_prompt = expand_image_prompt(db, main_prompt)
+                main_prompt = expand_image_prompt(db, main_prompt,
+                                                  mode=main_tmpl.prompt_expand)
             _t2i_to_file(db, data_dir, comfy, main_tmpl, main_prompt, main_png, ctx,
                          job, label=f"资产「{asset['name']}」主图", images=main_images,
                          krea_style=krea2_style)

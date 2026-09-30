@@ -2021,6 +2021,66 @@ def test_comic_page_continuity_prompt_and_seed(tmp_path, monkeypatch):
         assert si.get("种子", si.get("seed")) == 114  # 字段名随模板方言
 
 
+def test_gen_page_prompt_expand_mode(tmp_path, monkeypatch):
+    """扩写模式接线（官方扩写规范接入）：模板 manifest prompt_expand 值
+    透传 expand_image_prompt——t2i 模板走 EXPAND_T2I_ZH、edit 模板走
+    EXPAND_EDIT_ZH。FakeClient 捕获 system 断言路由，不触网。"""
+    from pathlib import Path
+    from comic_studio.engine.settings import set_setting
+    from comic_studio.engine.workflows import registry
+    from tests.comfy_mock import comfy_server
+    from comic_studio.engine.comfy.client import ComfyClient
+    from comic_studio.engine.comicgen import handle_gen_comic_page
+    from comic_studio.engine.genref import EXPAND_T2I_ZH, EXPAND_EDIT_ZH
+
+    api = {"6": {"class_type": "CLIPTextEncode", "inputs": {"text": ""}},
+           "57:3": {"class_type": "KSampler", "inputs": {"seed": 1}},
+           "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "x"}}}
+    (tmp_path / "pe.api.json").write_text(json.dumps(api))
+
+    def _run(mode):
+        from comic_studio.engine.jobs import enqueue_job
+        (tmp_path / "pe.yaml").write_text(f"""
+id: pe_page_{mode}
+type: t2i
+name: 测试扩写
+file: pe.api.json
+prompt_format: "{{{{detail}}}}"
+prompt_expand: {mode}
+inject:
+  prompt: {{node: "6", field: text}}
+  params:
+    seed: {{node: "57:3", field: seed}}
+outputs:
+  - {{node: "9", filename_prefix: "cs/{{project}}/{{asset}}"}}
+requires: []
+""")
+        monkeypatch.setattr(registry, "TEMPLATE_ROOT", tmp_path)
+        db, pid = _comic_project(tmp_path)
+        set_setting(db, "template_map", {"comic_page": f"pe_page_{mode}"})
+        (sid,) = _comic_shot_ids(db, pid)
+        jid = enqueue_job(db, "gen_comic_page", project_id=pid, shot_id=sid,
+                          resource="gpu_comfy", payload={"shot_id": sid})
+        job = db.connect().execute("SELECT * FROM jobs WHERE id=?",
+                                   (jid,)).fetchone()
+        seen = {}
+
+        class Cap:
+            model = "x"
+            def raw_chat(self, messages, *a, **k):
+                seen["system"] = messages[0]["content"]
+                return messages[1]["content"] + "。左上角窗外暮色渐沉，柔光铺满桌面", None
+        monkeypatch.setattr("comic_studio.engine.llm.provider.client_for_task",
+                            lambda db, t: Cap())
+        with comfy_server("ok") as m:
+            set_setting(db, "comfy", {"base_url": m.base_url})
+            handle_gen_comic_page(db, tmp_path / "data", job, ComfyClient(m.base_url))
+        return seen.get("system")
+
+    assert _run("t2i") == EXPAND_T2I_ZH
+    assert _run("edit") == EXPAND_EDIT_ZH
+
+
 # ---- 干净副本 + 对白重排（2026-09-13 用户建议：无气泡备份页） ----
 
 def test_gen_page_saves_clean_copy(tmp_path, monkeypatch):

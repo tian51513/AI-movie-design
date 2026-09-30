@@ -444,6 +444,43 @@ def test_redesign_ignores_old_main_reference(tmp_path, monkeypatch):
         assert not any(f"cs__p{pid}" in u for u in m.uploads)
 
 
+def test_gen_ref_main_expand_mode(tmp_path, monkeypatch):
+    """主图扩写模式接线：template_map.t2i 指到声明 prompt_expand: edit 的
+    模板 → 主图扩写走 EXPAND_EDIT_ZH（FakeClient 捕获 system 断言）。"""
+    from comic_studio.engine.assets import persist_assets, list_project_assets
+    from types import SimpleNamespace as NS
+    from comic_studio.engine.genref import handle_gen_ref, EXPAND_EDIT_ZH
+    (tmp_path / "t.api.json").write_text(json.dumps(API))
+    (tmp_path / "m.yaml").write_text(
+        MANIFEST + "\nprompt_expand: edit\n")
+    (tmp_path / "cv.yaml").write_text(MANIFEST.replace("t_t2i_test", "t_cv_test"))
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", tmp_path)
+    db = Database(tmp_path / "s.db"); db.migrate()
+    set_setting(db, "template_map", {"t2i": "t_t2i_test",
+                                     "character_views": "t_cv_test"})
+    pid = create_project(db, tmp_path / "data", "p", "9:16", "t")["id"]
+    persist_assets(db, tmp_path / "data", pid,
+                   NS(characters=[NS(name="萧炎", appearance="黑发少年", tags=[])],
+                      scenes=[], props=[]))
+    asset = list_project_assets(db, pid)[0]
+    jid = enqueue_job(db, "gen_ref", project_id=pid, asset_id=asset["id"],
+                      resource="gpu_comfy",
+                      payload={"asset_id": asset["id"], "stage": "main"})
+    seen = {}
+
+    class Cap:
+        model = "x"
+        def raw_chat(self, messages, *a, **k):
+            seen["system"] = messages[0]["content"]
+            return messages[1]["content"] + "。柔光自左上铺落", None
+    monkeypatch.setattr("comic_studio.engine.llm.provider.client_for_task",
+                        lambda db, t: Cap())
+    with comfy_server("ok") as m:
+        from comic_studio.engine.comfy.client import ComfyClient
+        handle_gen_ref(db, tmp_path / "data", get_job(db, jid), ComfyClient(m.base_url))
+    assert seen.get("system") == EXPAND_EDIT_ZH
+
+
 def test_heal_image_prompt():
     """机械 heal（官方 validate_prompt.py 移植，仿 heal_h3_prompt 判例）：
     换行折叠单段、官方禁词剥离（中英）、引号不平衡判废（None=调用方回落）、
