@@ -444,6 +444,41 @@ def test_redesign_ignores_old_main_reference(tmp_path, monkeypatch):
         assert not any(f"cs__p{pid}" in u for u in m.uploads)
 
 
+def test_expand_image_prompt_modes(tmp_path, monkeypatch):
+    """官方扩写规范接入：mode 路由三套系统词（t2i-zh 默认 / t2i-en 随设置
+    comfy.prompt_expand_lang / edit 恒中文不受语言旋钮影响）。FakeClient
+    捕获 system 词断言路由正确。"""
+    import pathlib, tempfile
+    from comic_studio.engine.genref import (
+        expand_image_prompt, EXPAND_T2I_ZH, EXPAND_T2I_EN, EXPAND_EDIT_ZH)
+    tmp = pathlib.Path(tempfile.mkdtemp())
+    db = Database(tmp / "s.db"); db.migrate()
+    orig = "角色：羽川翼。黑长直女性。画面：教室窗边"
+
+    class Cap:
+        model = "x"
+        last_system = None
+        def raw_chat(self, messages, *a, **k):
+            Cap.last_system = messages[0]["content"]
+            return orig + "。柔光从左上洒落，整体构图沉稳平衡", None
+    monkeypatch.setattr("comic_studio.engine.llm.provider.client_for_task",
+                        lambda db, t: Cap())
+    # t2i 默认中文（用户定调：效果一致优先中文）
+    assert expand_image_prompt(db, orig, mode="t2i") != orig
+    assert Cap.last_system == EXPAND_T2I_ZH
+    # t2i + 语言旋钮 en → 英文系统词
+    set_setting(db, "comfy", {"prompt_expand_lang": "en"})
+    expand_image_prompt(db, orig, mode="t2i")
+    assert Cap.last_system == EXPAND_T2I_EN
+    # edit 恒中文（官方规则：正文随用户语言），语言旋钮不影响
+    expand_image_prompt(db, orig, mode="edit")
+    assert Cap.last_system == EXPAND_EDIT_ZH
+    # 非法语言值当 zh 处理
+    set_setting(db, "comfy", {"prompt_expand_lang": "jp"})
+    expand_image_prompt(db, orig, mode="t2i")
+    assert Cap.last_system == EXPAND_T2I_ZH
+
+
 def test_expand_image_prompt_fallback_and_flag():
     """提示词扩写层（2026-09-22 判例：Qwen-Image 2.1 短提示出不了好效果）：
     LLM 失败/输出过短回落原文（扩写是增强不是门槛）；manifest prompt_expand

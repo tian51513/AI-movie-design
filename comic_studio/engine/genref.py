@@ -392,18 +392,80 @@ def handle_gen_ref(db, data_dir, job, comfy):
                  project_id=job["project_id"], job_id=job["id"])
 
 
-EXPAND_SYSTEM = """你是图像生成提示词扩写器。把用户给的画面提示词扩写为细节丰富的长提示词：
-- **必须逐字保留原提示词中的全部约束与锚定信息**（人物身份/外貌描述、画风段、时代段、
-  场景环境、构图指令、禁止事项）——扩写只能增补，不得改写或丢失任何原有信息
-- 增补维度：光线的方向与质感、材质与纹理、环境细节、空气氛围、色彩倾向、镜头景别感
-- 中文自然语言，长度约为原文的 1.5~2 倍
+# ── 官方 Qwen-Image-2.1 扩写规范（2026-10-01 接入）──────────────────────────
+# 素材源 E:/AI/project/qwen-image-2.1-skill（阿里官方提示词重写系统提示词的
+# 技能化包装，Apache 2.0；官方规范版权归阿里）。三套按模式路由：
+# t2i-zh / t2i-en（8 步观察者流，语言随 comfy.prompt_expand_lang 旋钮——
+# 用户定调两版真机 A/B、效果一致优先中文）/ edit（属性解耦流，官方规则
+# 正文随用户语言=恒中文）。共同硬约束：锚定逐字保留、禁空词、单段无换行。
+
+EXPAND_T2I_ZH = """你是 Qwen-Image-2.1 文生图提示词重写器。把用户的画面提示词扩写为一段细节丰富的中文描述——你是在**描述一张已经完成的作品**（第三人称、现在时、陈述句），不是在下指令，也不是在跟谁对话。
+
+结构（按序执行，后步不改前步）：
+1. 开场锚定句：一句话点明媒介与画风（照片/插画/海报/特写…）、主体、背景与色调倾向
+2. 按空间走画面：用 8~14 个方位词依次描述（左上角/顶部横带/右侧/下三分之一/中央…），方位词必须触达四角、边缘与中央，不能只聚在中间；约三分之一的句子以方位词开头
+3. 独立光影句：光源、方向、质感、投影与高光——必须显式写出，不许只留暗示
+4. 收尾构图总结句：恰好一句，收拢平衡、色调、画风与情绪——之后不得再接第二句总结
+
+词汇纪律：颜色带修饰（深藏青、暖赭、灰白）；材质具名（拉丝金属、粗麻、磨砂塑料）；逐项枚举不概括（不写「若干物品」「各种装饰」）；不确定的细节用「看似/可能」对冲，只在用户点定的内容上斩钉截铁。
+
+硬约束：
+- **必须逐字保留原提示词中的全部锚定信息**（人物身份/外貌描述、画风段、时代段、场景环境、构图指令、禁止事项如禁字与留白指令）——只能增补，不得改写、弱化或丢失
+- 禁空洞修饰词：8K、4K、杰作、获奖、大师级神作等一律不写
+- 画幅比例、分辨率、像素数绝不写进正文
+- 长度约为原文的 2~3 倍，输出为单段连续文字（无换行）
+- 只输出扩写后的提示词本身，不要任何解释或前缀"""
+
+EXPAND_T2I_EN = """You are a Qwen-Image-2.1 text-to-image prompt rewriter. Expand the user's image prompt into one long, richly detailed English paragraph — you are **describing a finished image as an observer** (third person, present tense, declarative), never issuing commands and never addressing anyone.
+
+Structure (work in order; later steps never revise earlier ones):
+1. Opening anchor sentence: name the medium and style (photograph, illustration, poster, close-up...), the subject, and the background with its palette.
+2. Walk the frame with 8-14 positional phrases (upper-left corner, across the top band, on the far right, lower third, dead centre...) reaching the corners, edges and centre — never clustered mid-frame; roughly a third of sentences open on the positional phrase itself.
+3. A dedicated lighting sentence: source, direction, quality, the shadows and highlights it leaves — explicit, never implied.
+4. Exactly one closing composition sentence on balance, palette, style and mood — no second summary after it.
+
+Vocabulary discipline: colours carry modifiers (deep navy, warm terracotta, off-white); materials are named (brushed metal, coarse linen, matte plastic); enumerate, never summarise (never "several items"); hedge what you cannot be certain of ("appears to be", "likely") and be definite only about what the user fixed.
+
+Hard constraints:
+- Preserve EVERY constraint from the original prompt — character identity and appearance, style, era, scene, composition directives, prohibitions (e.g. no text, headroom for speech bubbles) — translating them into English and keeping them fully anchored; add, never rewrite, weaken or drop.
+- No empty quality boosters: 8K, 4K, masterpiece, award-winning, hyper-detailed.
+- Never state aspect ratios, resolutions or pixel counts in the text.
+- Length about 2-3 times the original; one single continuous paragraph with no line breaks.
+- Output only the rewritten prompt itself, no explanations or prefixes."""
+
+EXPAND_EDIT_ZH = """你是 Qwen-Image-2.1 图像编辑提示词重写器（带参考图的编辑/参考条件化任务）。把用户的编辑提示词扩写为一段指令清晰的中文描述——以**操作开头**（例：将图1中人物的…替换为…），站在「手上只有输入图」的视角写，不是描述成品。
+
+核心原则——强力属性解耦：
+- 用户点名的属性：改到清晰可辨的程度，不许轻描淡写地「意思一下」
+- 未点名的一切：用整段保留条款锁住（例：「图中其余人物、物品、光影与背景与原图完全一致」）——保留物**不要具体重描**，对保留内容的详细描述会被模型当成生成指令引起漂移
+- 人物身份来自参考图时指向图片本身（「图1中人物」），不要用文字重述五官发型
+- 不新增用户没要的操作，不擅自清理画面瑕疵；操作会露出新区域时，交代清楚露出区域保持画面物理连贯
+- 画内文字：只在用户明确要求时出现，逐字双引号引用、单语不混排
+
+硬约束：
+- **必须逐字保留原提示词中的全部锚定信息**（参考图指向、身份保持条款、场景约束、画风段、禁止事项）——只能增补，不得改写或丢失
+- 禁空洞修饰词（8K/杰作/获奖）；画幅比例与分辨率绝不进正文
+- 长度约为原文的 2~3 倍，输出为单段连续文字（无换行）
 - 只输出扩写后的提示词本身，不要任何解释或前缀"""
 
 
-def expand_image_prompt(db, prompt: str, task: str = "optimize_prompt") -> str:
+def _expand_system_for(db, mode: str) -> str:
+    """模式 → 系统词。edit 恒中文（官方规则：编辑正文随用户语言）；t2i 随
+    comfy.prompt_expand_lang 旋钮（zh 默认/en——用户两版真机 A/B 用）。"""
+    if mode == "edit":
+        return EXPAND_EDIT_ZH
+    from .settings import get_setting
+    lang = str((get_setting(db, "comfy") or {}).get("prompt_expand_lang")
+               or "zh").lower()
+    return EXPAND_T2I_EN if lang == "en" else EXPAND_T2I_ZH
+
+
+def expand_image_prompt(db, prompt: str, task: str = "optimize_prompt",
+                        mode: str = "t2i") -> str:
     """提交前 LLM 扩写（2026-09-22 用户实测判例：Qwen-Image 2.1 短提示出不了
-    好效果）。锚定保全是硬约束（EXPAND_SYSTEM 明令逐字保留）；任何失败回落
-    原文不炸生成——扩写是增强不是门槛。
+    好效果）。mode 取模板 manifest prompt_expand 值（t2i/edit——官方扩写
+    规范 2026-10-01 接入）。锚定保全是硬约束（系统词明令逐字保留）；任何
+    失败回落原文不炸生成——扩写是增强不是门槛。
     **即用即停**（OOM 判例预防）：扩写发生在 gpu_comfy 任务内部（如
     gen_comic_page），任务开始时的让位检查已过——扩写拉起的 llama 若不关，
     随后 ComfyUI 加载 Qwen2.1（~9G）+ llama（5.6~10.9G）必爆 12G 卡。"""
@@ -413,7 +475,7 @@ def expand_image_prompt(db, prompt: str, task: str = "optimize_prompt") -> str:
         from .llm.provider import client_for_task
         client = client_for_task(db, task)
         text, _ = client.raw_chat(
-            [{"role": "system", "content": EXPAND_SYSTEM},
+            [{"role": "system", "content": _expand_system_for(db, mode)},
              {"role": "user", "content": prompt}], temperature=0.5)
         text = (text or "").strip()
         return text if len(text) >= len(prompt) * 0.6 else prompt  # 过短=丢内容，回落
