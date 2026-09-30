@@ -414,3 +414,12 @@
 - **Krea2 风格槽前缀事故（猫物语漫画页全批 400）**：`gen_comic_page` 全灭于 ComfyUI `/prompt` 400——`LazyKreaWorkbench.风格库` 是 **COMBO 枚举=风格库文件原始 stem（带 `krea2_` 前缀）**，而 `stylepresets.list_style_libs` 为显示剥了前缀，前端选择器存的、引擎原样注入的都是**无前缀显示名** → `value_not_in_list`。既有测试用**手造带前缀值**把「选择器→存库→注入」真实链路掩盖了（判例：端到端参数链要有从 UI 数据形态出发的测试，手造值不算数）
 - **修**：`stylepresets.resolve_style_lib`（显示名→原始 stem：本地库补前缀能对上即返 stem，已带前缀/lazy_styles 等非本库/自定义值原样透传）——comicgen + genref 两注入点统一走它；存量项目存的无前缀值**零迁移**自动纠正（注入时解析）
 - 验证法判例：提交类 400 先拿 `/object_info/<节点>` 读 COMBO 枚举与注入值比对（零副作用）；或审计快照重放 `/prompt` 读 `node_errors`（快照缺失时可用引擎函数离线重建工作流实跑）
+
+## 模块地图（Qwen-Image-2.1 官方扩写规范接入 2026-10-01）
+
+- **素材源** `E:/AI/project/qwen-image-2.1-skill`（阿里官方提示词重写系统提示词的技能化包装，Apache 2.0）——t2i_rules 8 步观察者流 / edit_rules 属性解耦流 / validate_prompt.py 机械校验，三资产**浓缩进 engine 非逐字复制**（注释注明出处）
+- **manifest `prompt_expand` 模式化**：str 白名单 `t2i`（qwen21_t2i）/`edit`（qwen21_edit）；bool true 兼容映射 t2i、非法值 ManifestError 防 typo；消费点（genref 主图两段式路径 + comicgen 漫画页）透传 mode 进 `expand_image_prompt(db, prompt, mode=)`
+- **`genref.py` 三套系统词**：`EXPAND_T2I_ZH`（默认）/`EXPAND_T2I_EN`（官方 8 步观察者流：开场锚定句→8~14 方位词走画面触达四角边缘→独立光影句→恰好一句构图收尾；禁空词/枚举不概括/颜色带修饰/材质具名/比例绝不进正文）/`EXPAND_EDIT_ZH`（**恒中文**——官方规则编辑正文随用户语言：指令式开头、点名属性改满、未点名整段保留条款**不重描**、身份指向参考图不文字重述）；语言旋钮 settings `comfy.prompt_expand_lang`（zh 默认/en，**只影响 t2i**——用户定调两版真机 A/B、效果一致优先中文）；长度约原文 2~3 倍（不追官方 400-500 词全量——本机编码器长文编码耗时有判例）
+- **`heal_image_prompt`**（官方 validate_prompt.py 移植，仿 heal_h3_prompt）：代码围栏剥离→换行折叠单段→禁空词剥离（8K/4K/masterpiece/award-winning/杰作/获奖作品；**英文边界用环视**——`\b` 在中文相邻处不生效，「画质4K细腻」漏匹配）→空白收敛；引号不平衡返 None 调用方回落原文；expand 输出必过
+- 前端：设置页 Comfy 区「Qwen2.1 扩写语言」下拉（中文/English）；`ComfyConfig` extra=allow 新键免改路由透传（page_ref_cfg 同款模式，引擎侧 junk 值落 zh 兜底）
+- 注意：场景/道具主图走 genref **单段路径无扩写**（2026-09-22 既有范围，未扩）；关键帧扩写刻意不做（首尾帧成对约束词独立扩写会破坏同 seed 构图一致性——待语言定案后单独议）
