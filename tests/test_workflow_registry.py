@@ -43,6 +43,25 @@ def test_duplicate_id_rejected(tmp_path):
         scan_templates(tmp_path)
 
 
+def test_prompt_expand_mode_parsing(tmp_path):
+    """prompt_expand 模式化（Qwen-Image 2.1 官方扩写规范接入）：str 模式
+    （t2i=官方 8 步观察者流 / edit=官方属性解耦流）；bool true 兼容映射
+    t2i；缺省/False 关闭；非法值防 typo 报 ManifestError。"""
+    def _load_with(val):
+        extra = "" if val is None else f"prompt_expand: {val}\n"
+        (tmp_path / "pe.api.json").write_text('{}')
+        (tmp_path / "pe.yaml").write_text(MANIFEST.replace(
+            "requires: []", f"requires: []\n{extra}").replace("t_test", "pe_x"))
+        return load_manifest(tmp_path / "pe.yaml")
+    assert _load_with(None).prompt_expand == ""
+    assert _load_with("false").prompt_expand == ""
+    assert _load_with("true").prompt_expand == "t2i"      # 旧布尔真值兼容
+    assert _load_with("t2i").prompt_expand == "t2i"
+    assert _load_with("edit").prompt_expand == "edit"
+    with pytest.raises(ManifestError):
+        _load_with("chat")   # 非法模式防 typo
+
+
 def test_resolve_via_settings(tmp_path, monkeypatch):
     from comic_studio.engine.db import Database
     from comic_studio.engine.workflows import registry

@@ -64,9 +64,10 @@ class WorkflowTemplate:
     # "默认不存在、开时注入"——关着的 RTX 超分不能留在 prompt 里白烧 GPU
     switch_links: dict = field(default_factory=dict)
     # 提示词扩写（2026-09-22 用户实测判例：Qwen-Image 2.1 短提示出不了好效果，
-    # 需扩写为细节丰富长文）：True → 引擎提交前经 LLM 扩写（保留全部锚定约束，
-    # 只增补画面细节）；扩写失败回落原文不炸生成
-    prompt_expand: bool = False
+    # 需扩写为细节丰富长文）。模式化（官方扩写规范接入 2026-10-01）：
+    # "t2i" = 官方 8 步观察者流（纯文生图）；"edit" = 官方属性解耦流（带参考图
+    # 的编辑/参考条件化）；"" = 关。旧布尔 true 兼容映射 t2i
+    prompt_expand: str = ""
 
     def api_json(self) -> dict:
         import json
@@ -106,7 +107,19 @@ def load_manifest(path: Path) -> WorkflowTemplate:
         models=_parse_slots(data.get("models") or []),
         prompt_style=data.get("prompt_style") or "natural_zh",
         switch_links=dict(data.get("switch_links") or {}),
-        prompt_expand=bool(data.get("prompt_expand") or False))
+        prompt_expand=_parse_prompt_expand(data.get("prompt_expand"), path.name))
+
+
+def _parse_prompt_expand(val, name: str) -> str:
+    """prompt_expand 值归一：bool → t2i/""（旧 yaml 兼容）；str 白名单
+    t2i/edit；非法值防 typo 直接 ManifestError。"""
+    if val is None or val is False or val == "" or val == "false":
+        return ""
+    if val is True or val == "true":
+        return "t2i"
+    if val in ("t2i", "edit"):
+        return val
+    raise ManifestError(f"{name}: prompt_expand 非法值 {val!r}（合法：t2i/edit）")
 
 
 def scan_templates(root: Path) -> dict:

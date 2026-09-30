@@ -484,6 +484,6 @@ def test_expand_image_prompt_fallback_and_flag():
     assert "顶光" in out and "羽川翼" in out
     monkey.undo()
     regs = registry.scan_templates(registry.TEMPLATE_ROOT)
-    assert regs["qwen21_t2i"].prompt_expand is True
-    assert regs["qwen21_edit"].prompt_expand is True
-    assert regs["zimage_t2i"].prompt_expand is False
+    assert regs["qwen21_t2i"].prompt_expand == "t2i"
+    assert regs["qwen21_edit"].prompt_expand == "edit"
+    assert regs["zimage_t2i"].prompt_expand == ""

@@ -4,8 +4,10 @@ name: Qwen-Image 2.1 图片编辑（改版·双参考）
 file: qwen21_edit.api.json
 prompt_format: '{detail}'
 # 提示词扩写（2026-09-22 用户实测：2.1 短提示出不了好效果——提交前经 LLM
-# 扩写为细节丰富长文，锚定约束全保留，失败回落原文）
-prompt_expand: true
+# 扩写为细节丰富长文，锚定约束全保留，失败回落原文）。模式 edit = 官方
+# Qwen-Image-2.1 编辑规范流（属性解耦+整段保留条款；官方规则正文随用户
+# 语言=恒中文）
+prompt_expand: edit
 inject:
   prompt:
     node: '487'
