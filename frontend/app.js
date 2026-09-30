@@ -860,7 +860,7 @@ const methods = {
       routing: { ...s.llm_routing },
       asr: { engine: s.asr?.engine || 'faster_whisper',
              chunk_seconds: s.asr?.chunk_seconds || 300 },
-      comfy: { ...s.comfy },
+      comfy: { ...s.comfy, prompt_expand_lang: s.comfy?.prompt_expand_lang || 'zh' },
       speakerBlacklist: s.speaker_blacklist || '',
       t2i_tm: s.template_map?.t2i || '',
       cvTm: s.template_map?.character_views || '',
