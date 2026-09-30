@@ -449,12 +449,36 @@ EXPAND_EDIT_ZH = """你是 Qwen-Image-2.1 图像编辑提示词重写器（带�
 - 只输出扩写后的提示词本身，不要任何解释或前缀"""
 
 
+# 官方 validate_prompt.py 禁词表移植（英文边界用环视——中文相邻处 \b 不生效）
+_BOOSTER_RE = re.compile(
+    r"(?<![A-Za-z0-9])(?:8[kK]|4[kK]|masterpiece|award-winning)"
+    r"(?![A-Za-z0-9])|杰作|获奖作品|获奖大作")
+
+
+def heal_image_prompt(text: str):
+    """图像提示词机械 heal（官方 validate_prompt.py 移植，2026-10-01）：
+    代码围栏剥离 → 换行折叠单段 → 禁词剥离 → 空白收敛；引号不平衡返回
+    None（调用方回落原文——官方校验同款判废）。纯函数零 LLM。"""
+    if not (text or "").strip():
+        return text
+    t = text.strip()
+    # 代码围栏（小模型常见毛病）：```...``` 整壳剥掉留内核
+    if t.startswith("```"):
+        t = re.sub(r"^```[^\n]*\n?", "", t)
+        t = re.sub(r"\n?```\s*$", "", t)
+    t = re.sub(r"[\r\n]+", " ", t)          # 单段连续（官方规范）
+    t = _BOOSTER_RE.sub("", t)               # 禁空词
+    t = re.sub(r"[ \t]+", " ", t).strip()
+    if t.count('"') % 2 != 0:                # 引号不平衡=画内文字协议已破
+        return None
+    return t
+
+
 def _expand_system_for(db, mode: str) -> str:
     """模式 → 系统词。edit 恒中文（官方规则：编辑正文随用户语言）；t2i 随
     comfy.prompt_expand_lang 旋钮（zh 默认/en——用户两版真机 A/B 用）。"""
     if mode == "edit":
         return EXPAND_EDIT_ZH
-    from .settings import get_setting
     lang = str((get_setting(db, "comfy") or {}).get("prompt_expand_lang")
                or "zh").lower()
     return EXPAND_T2I_EN if lang == "en" else EXPAND_T2I_ZH
@@ -477,7 +501,9 @@ def expand_image_prompt(db, prompt: str, task: str = "optimize_prompt",
         text, _ = client.raw_chat(
             [{"role": "system", "content": _expand_system_for(db, mode)},
              {"role": "user", "content": prompt}], temperature=0.5)
-        text = (text or "").strip()
+        text = heal_image_prompt((text or "").strip())
+        if text is None:
+            return prompt                     # 引号不平衡=扩写输出判废，回落
         return text if len(text) >= len(prompt) * 0.6 else prompt  # 过短=丢内容，回落
     except Exception:
         return prompt

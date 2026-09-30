@@ -444,6 +444,28 @@ def test_redesign_ignores_old_main_reference(tmp_path, monkeypatch):
         assert not any(f"cs__p{pid}" in u for u in m.uploads)
 
 
+def test_heal_image_prompt():
+    """机械 heal（官方 validate_prompt.py 移植，仿 heal_h3_prompt 判例）：
+    换行折叠单段、官方禁词剥离（中英）、引号不平衡判废（None=调用方回落）、
+    代码围栏剥离。纯函数零 LLM。"""
+    from comic_studio.engine.genref import heal_image_prompt
+    # 换行折叠为单段（官方规范：单段连续无换行）
+    assert heal_image_prompt("第一段。\n第二段。\r\n第三段。") == "第一段。 第二段。 第三段。"
+    # 禁词剥离：英文边界匹配 + 中文相邻可命中（画质4K细腻）+ 中文禁词
+    out = heal_image_prompt("a masterpiece photo in 8K, 画质4K细腻，旷世杰作")
+    for bad in ("masterpiece", "8K", "4K", "杰作"):
+        assert bad not in out
+    assert "photo" in out and "画质" in out and "细腻" in out
+    # 引号不平衡 → None（扩写输出判废，调用方回落原文）
+    assert heal_image_prompt('他说"你好') is None
+    # 引号平衡不受影响
+    assert heal_image_prompt('招牌"开业大酬宾"醒目') == '招牌"开业大酬宾"醒目'
+    # 代码围栏剥离（小模型常见毛病，gen.py _strip_code_blocks 同款）
+    assert heal_image_prompt("```\n提示词正文\n```") == "提示词正文"
+    # 多余空白收敛
+    assert heal_image_prompt("词  词   词") == "词 词 词"
+
+
 def test_expand_image_prompt_modes(tmp_path, monkeypatch):
     """官方扩写规范接入：mode 路由三套系统词（t2i-zh 默认 / t2i-en 随设置
     comfy.prompt_expand_lang / edit 恒中文不受语言旋钮影响）。FakeClient
