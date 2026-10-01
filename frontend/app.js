@@ -2104,6 +2104,27 @@ const methods = {
     }, 4000);
   },
   musicRandomSeed() { this.musicForm.seed = Math.floor(Math.random() * 2147483646) + 1; },
+  tmplOpts(list, emptyLabel) {  // ComboBox 选项适配：模板列表（search=id+名 供过滤）
+    const opts = (list || []).map(t => ({
+      value: t.id, label: t.name || t.id, title: t.id,
+      search: `${t.id} ${t.name || ''}`.toLowerCase() }));
+    return emptyLabel ? [{ value: '', label: emptyLabel }, ...opts] : opts;
+  },
+  slotOpts(slot) {  // 模型槽位选项：开关槽首项「（关闭）」（既有语义原样保留）
+    const files = (slot.choices || []).map(f => ({ value: f, label: f }));
+    return slot.switchable ? [{ value: '', label: '（关闭）' }, ...files] : files;
+  },
+  routingOpts() {  // 任务路由选项：连接默认 + 各连接钉选模型（与原 select 同结构）
+    const out = [];
+    for (const key of (this.allConns || [])) {
+      const pm = this.settingsForm.llmProviders[key]?.model;
+      out.push({ value: key, label: `${key} · 默认${pm ? '（' + pm + '）' : '（未设默认模型）'}` });
+      for (const m of (this.dispModels ? this.dispModels(key) : []))
+        out.push({ value: `${key}:${m}`, label: `${m.toLowerCase().includes('think') ? '🧠 ' : ''}${m}（${key}）`,
+                   search: `${key}:${m}`.toLowerCase() });
+    }
+    return out;
+  },
   musicLoadParams(s) {  // staging 追溯（2026-10-01）：生成参数回填表单——改 seed/微调后生成变体
     const p = s.params || {};
     this.musicForm.caption = p.caption || '';
@@ -2383,6 +2404,51 @@ const methods = {
 
 /* ===== 可复用组件 ===== */
 // 提示词优化输入框：textarea 右上角 ✨ → 弹窗（预填当前值）→ LLM 优化 → 确认覆盖
+// 搜索下拉（2026-10-01 用户需求：长列表模糊搜索，selectpicker 同款核心体验；
+// 自研零依赖替代 jQuery 生态——vendor 只有一只 vue，引 select2/selectpicker
+// 要拖 200KB 且与 v-model 双向同步易漂移）。点开展开→输入即过滤（label+title
+// 不区分大小写子串）→点选即定；Esc/点外关闭；列表超高滚动。
+const ComboBox = {
+  props: {
+    modelValue: { type: [String, Number], default: '' },
+    options: { type: Array, default: () => [] },   // [{value,label,title?,search?}]
+    placeholder: { type: String, default: '—' },
+  },
+  emits: ['update:modelValue'],
+  data: () => ({ open: false, q: '' }),
+  computed: {
+    label() {
+      const o = this.options.find(o => String(o.value) === String(this.modelValue));
+      return o ? o.label : String(this.modelValue ?? '');
+    },
+    filtered() {
+      const q = (this.q || '').toLowerCase().trim();
+      if (!q) return this.options;
+      return this.options.filter(o =>
+        ((o.search || '') + ' ' + (o.label || '')).toLowerCase().includes(q));
+    },
+  },
+  template: `
+  <div class="combo" @focusout="onBlur">
+    <div class="combo-btn" :title="label" @click="open = !open">{{ label || placeholder }}</div>
+    <div v-if="open" class="combo-menu">
+      <input v-model="q" ref="qbox" placeholder="输入过滤…" @keydown.esc="open = false">
+      <div class="combo-list">
+        <div v-for="o in filtered" :key="o.value" :class="{ sel: String(o.value) === String(modelValue) }"
+             :title="o.title || o.label" @mousedown.prevent="pick(o)">{{ o.label }}</div>
+        <div v-if="!filtered.length" class="muted" style="padding:6px 10px;font-size:12px">无匹配</div>
+      </div>
+    </div>
+  </div>`,
+  methods: {
+    pick(o) { this.$emit('update:modelValue', o.value); this.open = false; this.q = ''; },
+    onBlur(e) { if (!this.$el.contains(e.relatedTarget)) { this.open = false; this.q = ''; } },
+  },
+  watch: {
+    open(v) { if (v) this.$nextTick(() => { if (this.$refs.qbox) this.$refs.qbox.focus(); }); },
+  },
+};
+
 const PromptBox = {
   props: {
     modelValue: { type: String, default: '' },
@@ -2436,7 +2502,7 @@ const PromptBox = {
   },
 };
 
-createApp({ components: { PromptBox }, data, computed, methods,
+createApp({ components: { PromptBox, ComboBox }, data, computed, methods,
   watch: {
     // 决策 9：勾重绘=要按新画风重绘出新画面 → 漫画字幕默认开（漫画 tab 的字幕复选就是 newSubtitles）
     comicRedraw(v) { if (v && this.comicMode === 'motion_comic') this.newSubtitles = true; },
