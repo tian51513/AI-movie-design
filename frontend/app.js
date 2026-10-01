@@ -64,6 +64,7 @@ function data() {
     newStyleKey: '', newStyleText: '', kreaLibs: {}, kreaLib: '', kreaName: '',
     styleOpen: false, styleEditStyle: '', styleEditVis: '', styleSaving: false, styleEditKrea2: '',
     stylePickerOpen: false, spLib: '', spSel: '', spSearch: '', spCtx: 'create',
+    musicStyleOpen: false, msFamily: '', msFamilies: [], msCards: [], msSearch: '',
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { llmProviders: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
       comfy: {}, t2i_tm: '', speakerBlacklist: '',
@@ -80,7 +81,8 @@ function data() {
     editAssetVoice: '',
     // 音乐库（2026-09-19 BGM spec Task 7）：设置页 tab + 项目配乐选择
     musicLib: [], musicStaging: [], musicBusy: '',
-    musicForm: { caption: '', lyrics: '', seed: 0, duration: 120, genre: '', voice: '' },
+    musicForm: { caption: '', lyrics: '', seed: 0, duration: 120, genre: '', voice: '',
+                 styleRef: '', styleName: '' },
     musicGenres: ['流行','民谣','摇滚','国风','二次元','电子','说唱','爵士','R&B','金属','乡村','蓝调','古典','轻音乐','影视配乐','氛围','实验'],
     musicVoiceParts: ['女声','男声','男女对唱','童声','合唱'],
     musicSaveName: {}, musicJobId: null, musicPollTimer: null,
@@ -155,6 +157,13 @@ const computed = {
     return (this.project?.directing_effective || [])
       .map(id => ((this.project?.directing_skills || [])
         .find(s => s.id === id) || {}).label || id).join('+');
+  },
+  msFiltered() {  // 音乐风格库卡过滤（风格名/节奏/情绪/声部/palette 全文搜）
+    const q = (this.msSearch || '').toLowerCase();
+    if (!q) return this.msCards;
+    return this.msCards.filter(c =>
+      (c.style + ' ' + c.tempo + ' ' + c.mood + ' ' + c.vocal + ' ' + c.palette)
+        .toLowerCase().includes(q));
   },
   projTotalPages() { return Math.max(1, Math.ceil(this.projects.length / this.projPageSize)); },
   spFiltered() {  // 风格选择弹窗：当前库 + 名字过滤（中英文都搜，2026-09-13 zh=name_cn）
@@ -2095,6 +2104,37 @@ const methods = {
     }, 4000);
   },
   musicRandomSeed() { this.musicForm.seed = Math.floor(Math.random() * 2147483646) + 1; },
+  async openMusicStyles() {  // 音乐风格库（2026-10-01 官方 skill vendor）：惰性拉族清单
+    this.musicStyleOpen = true;
+    if (!this.msFamilies.length) {
+      try { this.msFamilies = await (await fetch('/api/settings/music-styles')).json(); }
+      catch (e) { this.msFamilies = []; }
+      if (this.msFamilies.length && !this.msFamily) {
+        this.msFamily = this.msFamilies[0].id;
+        await this.msPickFamily();
+      }
+    }
+  },
+  async msPickFamily() {  // 换族拉卡表
+    if (!this.msFamily) return;
+    this.msSearch = '';
+    try { this.msCards = await (await fetch(
+      `/api/settings/music-styles?family=${encodeURIComponent(this.msFamily)}`)).json(); }
+    catch (e) { this.msCards = []; }
+  },
+  async msChoose(card) {  // 点卡即选：拉全文回填 caption + 记骨架（LLM 建议以它改写）
+    try {
+      const r = await fetch(`/api/settings/music-styles?family=${encodeURIComponent(this.msFamily)}`
+        + `&card=${encodeURIComponent(card.file)}`);
+      const { text } = await r.json();
+      if (text) {
+        this.musicForm.caption = text;
+        this.musicForm.styleRef = text;
+        this.musicForm.styleName = card.style;
+        this.musicStyleOpen = false;
+      }
+    } catch (e) { alert('读取风格卡失败：' + e); }
+  },
   async musicSuggestCaption() {
     this.musicBusy = '✨ 曲风建议中…';
     try {
@@ -2103,7 +2143,8 @@ const methods = {
         body: JSON.stringify({ hint: this.musicForm.caption || '',
                                genre: this.musicForm.genre || '',
                                voice: this.musicForm.voice || '',
-                               lyrics: this.musicForm.lyrics || '' }) });
+                               lyrics: this.musicForm.lyrics || '',
+                               style_ref: this.musicForm.styleRef || '' }) });
       if (!r.ok) { alert(`曲风建议失败：${(await r.json()).detail || r.status}`); return; }
       const t = (await r.json()).text || '';
       if (t.trim()) this.musicForm.caption = t;  // 空结果不清原文本（同 PromptBox 判例）

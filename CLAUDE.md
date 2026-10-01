@@ -437,3 +437,12 @@
 - **两注入点**：`llm/storyboard.split_storyboards`（跨镜动作接力是分镜层约束）+ `prompts/gen.generate_video_prompt`（动作可读性；**新参 data_dir**——无它按 style/era 库字段匹配，pipeline_jobs 传入）；命中注入、未命中零注入
 - **API**：PATCH `directing_override`（API 层严校验 422 防 typo，与引擎宽容互补）；详情/PATCH 载荷带 `directing_effective`+`directing_skills`（`_directing_payload` 共用）；前端参数面板「执导」下拉（自动(命中标签)/关闭/单选技能）
 - 注意：**改执导后重拆分镜或重生提示词才生效**（拆解与 gen_prompt 时读取）；多选覆写（'drama,pov'）仅 API 可设，前端单选形态
+
+## 模块地图（音乐库风格库 2026-10-01 官方 Music3 skill vendor）
+
+- **`templates/music_styles/`** — 官方 `music-caption-rewriter` skill vendor（MiniMax-AI/MiniMax-Music3@91410fb，经 T8 包冻结副本取，NOTICE.md 记来源）：genre-router + 18 族索引（references/index-*.md 卡表）+ **1000 张完整结构化 caption 卡**（templates/*.txt——Global Metadata/Vocal Details/Arrangement 三段，Music3TextEncode 直接消费格式）
+- **`engine/musicstyles.py`**（仿 stylepresets）：`list_families`（18 族 id/name/count）/ `list_cards`（索引表行解析出 id/style/tempo/mood/vocal/palette/file——选择器文本预览代替缩略图）/ `get_card`（全文；**文件名白名单=族索引内卡**，路径穿越拦死）；行解析正则 `_ROW_RE` 对官方表格式
+- **API** `GET /api/settings/music-styles`（无参=族 / ?family=卡表 / +&card=全文；非法 422）；`POST suggest-caption` 增 `style_ref` 透传
+- **`musiclib.suggest_caption(style_ref=)`**：选中卡时系统词切 `_STYLE_REF_SYSTEM`（官方三段结构规范，卡作骨架——保持曲风/BPM/声部/编排，替换主题场景，输出英文）；未选卡保持旧两行中文建议零回归
+- 前端：音乐库 tab「📚 风格库」弹窗（族下拉+全文过滤+点卡即选）——选中回填 caption（可改）+ 记 styleRef（「骨架：<名> ✕」pill 可清）；✨建议带 style_ref 走骨架改写
+- 注意：骨架 pill 只影响 ✨建议与回填，生成吃的是 caption 文本本身——手动清空 styleRef 不影响已回填内容

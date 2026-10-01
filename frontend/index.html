@@ -494,9 +494,16 @@
             <span class="muted" style="font-size:11px">选了会拼进 caption 并联动写词</span>
           </span>
           <span style="display:block">曲风描述 caption
+            <button @click="openMusicStyles" :disabled="!!musicBusy"
+                    title="官方 Music3 风格库（18 族 1000 卡）——选中卡回填结构化 caption（可改），并作为 LLM 建议的改写骨架"
+                    style="font-size:11px;padding:2px 8px;margin-left:6px">📚 风格库</button>
             <button @click="musicSuggestCaption" :disabled="!!musicBusy"
-                    title="LLM 按当前描述起草/改写 Music3 caption"
-                    style="font-size:11px;padding:2px 8px;margin-left:6px">✨ LLM 建议</button></span>
+                    title="LLM 按当前描述起草/改写 Music3 caption（选了风格卡时以卡为骨架改写）"
+                    style="font-size:11px;padding:2px 8px">✨ LLM 建议</button>
+            <span v-if="musicForm.styleName" class="muted" style="font-size:11px">
+              骨架：{{ musicForm.styleName }}
+              <a href="#" @click.prevent="musicForm.styleRef=''; musicForm.styleName=''"
+                 style="color:#f87171">✕</a></span></span>
           <textarea v-model="musicForm.caption" rows="3"
                     placeholder="如：Global Metadata: Cinematic, 90 BPM, C minor. 中文描述情绪与配器…"
                     style="width:100%"></textarea>
@@ -1686,6 +1693,35 @@
 
   <!-- Krea2 风格选择弹窗（2026-09-12 预览面板）：创建/详情两处共用。
        性能：库内风格 ≤~10 张/次渲染 + loading=lazy（不一次铺 3946 图） -->
+  <div v-if="musicStyleOpen" @click.self="musicStyleOpen=false"
+       style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:120;display:flex;align-items:center;justify-content:center">
+    <div class="card" style="width:min(880px,94vw);max-height:88vh;display:flex;flex-direction:column;padding:16px">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <b>🎼 音乐风格库</b>
+        <select v-model="msFamily" @change="msPickFamily" style="max-width:300px">
+          <option v-if="!msFamilies.length" value="">加载中…</option>
+          <option v-for="f in msFamilies" :key="f.id" :value="f.id">{{ f.name }}（{{ f.count }}）</option>
+        </select>
+        <input v-model="msSearch" placeholder="过滤风格/节奏/情绪/声部…" style="width:190px">
+        <span class="muted" style="font-size:12px">官方 Music3 skill · 点卡即选（回填 caption + 改写骨架）</span>
+        <span style="flex:1"></span>
+        <button class="btn" @click="musicStyleOpen=false">关闭</button>
+      </div>
+      <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:4px">
+        <div v-for="c in msFiltered" :key="c.id" @click="msChoose(c)"
+             style="border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer"
+             :title="c.palette">
+          <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
+            <b style="font-size:13px">{{ c.style }}</b>
+            <span class="muted" style="font-size:11px">{{ c.tempo }}</span>
+            <span class="muted" style="font-size:11px">{{ c.vocal }}</span>
+          </div>
+          <div class="muted" style="font-size:11px;margin-top:2px;line-height:1.35">{{ c.mood }}</div>
+        </div>
+        <div v-if="msFamily && !msFiltered.length" class="muted" style="padding:12px">无匹配卡</div>
+      </div>
+    </div>
+  </div>
   <div v-if="stylePickerOpen" @click.self="stylePickerOpen=false"
        style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:120;display:flex;align-items:center;justify-content:center">
     <div class="card" style="width:min(860px,94vw);max-height:88vh;display:flex;flex-direction:column;padding:16px">
