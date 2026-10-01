@@ -1700,7 +1700,8 @@
         <b>🎼 音乐风格库</b>
         <select v-model="msFamily" @change="msPickFamily" style="max-width:300px">
           <option v-if="!msFamilies.length" value="">加载中…</option>
-          <option v-for="f in msFamilies" :key="f.id" :value="f.id">{{ f.name }}（{{ f.count }}）</option>
+          <option v-for="f in msFamilies" :key="f.id" :value="f.id"
+                  :title="f.name">{{ f.name_zh || f.name }}（{{ f.count }}）</option>
         </select>
         <input v-model="msSearch" placeholder="过滤风格/节奏/情绪/声部…" style="width:190px">
         <span class="muted" style="font-size:12px">官方 Music3 skill · 点卡即选（回填 caption + 改写骨架）</span>
@@ -1712,7 +1713,8 @@
              style="border:1px solid #334155;border-radius:8px;padding:8px 10px;cursor:pointer"
              :title="c.palette">
           <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">
-            <b style="font-size:13px">{{ c.style }}</b>
+            <b style="font-size:13px">{{ c.style_zh || c.style }}</b>
+            <span class="muted" style="font-size:10px" v-if="c.style_zh">{{ c.style }}</span>
             <span class="muted" style="font-size:11px">{{ c.tempo }}</span>
             <span class="muted" style="font-size:11px">{{ c.vocal }}</span>
           </div>

@@ -162,8 +162,8 @@ const computed = {
     const q = (this.msSearch || '').toLowerCase();
     if (!q) return this.msCards;
     return this.msCards.filter(c =>
-      (c.style + ' ' + c.tempo + ' ' + c.mood + ' ' + c.vocal + ' ' + c.palette)
-        .toLowerCase().includes(q));
+      (c.style_zh + ' ' + c.style + ' ' + c.tempo + ' ' + c.mood + ' ' + c.vocal
+       + ' ' + c.palette).toLowerCase().includes(q));
   },
   projTotalPages() { return Math.max(1, Math.ceil(this.projects.length / this.projPageSize)); },
   spFiltered() {  // 风格选择弹窗：当前库 + 名字过滤（中英文都搜，2026-09-13 zh=name_cn）

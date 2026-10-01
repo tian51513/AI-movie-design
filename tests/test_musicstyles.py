@@ -33,3 +33,20 @@ def test_path_safety_and_bad_family():
         MS.list_cards("no-such-family")
     with pytest.raises(ValueError):
         MS.get_card("no-such-family", "x.txt")
+
+
+def test_chinese_layer():
+    """中文化（2026-10-01 用户需求）：18 族名静态中文；卡风格名词表机械合成
+    （'/'→'·'、短语词典优先）；未收录词保留英文不硬翻。"""
+    from comic_studio.engine import musicstyles as MS
+    fams = {f["id"]: f for f in MS.list_families()}
+    assert len([f for f in fams.values() if f.get("name_zh")]) == 18
+    assert fams["cinematic-orchestral-epic"]["name_zh"] == "电影感管弦史诗"
+    cards = {c["id"]: c for c in MS.list_cards("cinematic-pop-ballad")}
+    assert cards["cinematic-ballad-ambient-pop_0001"]["style_zh"] \
+        == "电影感抒情曲 · 氛围流行"
+    # 短语词典优先（Hip Hop→嘻哈 不成「嘻哈哈」）
+    assert "嘻哈" in MS.zh_style("East Asian Hip Hop") \
+        and "哈" * 3 not in MS.zh_style("East Asian Hip Hop")
+    # 未收录词保留英文原词
+    assert "Zorblax" in MS.zh_style("Zorblax Pop")
