@@ -65,6 +65,7 @@ function data() {
     styleOpen: false, styleEditStyle: '', styleEditVis: '', styleSaving: false, styleEditKrea2: '',
     stylePickerOpen: false, spLib: '', spSel: '', spSearch: '', spCtx: 'create',
     musicStyleOpen: false, msFamily: '', msFamilies: [], msCards: [], msSearch: '',
+    vRecState: '', vRecUrl: '',
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { llmProviders: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
       comfy: {}, t2i_tm: '', speakerBlacklist: '',
@@ -142,6 +143,10 @@ const computed = {
     const tp = this.settingsForm.templateParams;
     if (!tp[this.moTemplate]) tp[this.moTemplate] = {};
     return tp[this.moTemplate];
+  },
+  micAvailable() {  // 🎙 录音克隆前置：getUserMedia 需安全上下文（localhost/HTTPS）——LAN http 禁用
+    return !!(typeof navigator !== 'undefined' && navigator.mediaDevices
+              && navigator.mediaDevices.getUserMedia && window.isSecureContext);
   },
   moHasSteps() {  // 当前模板是否声明 steps 注入点（决定「步数」输入框显隐）
     const t = (this.settingsForm.model_templates || [])
@@ -1956,6 +1961,34 @@ const methods = {
       this.voicesBusy = '';
       await this.loadVoices(this.project && this.project.id);
     }
+  },
+  async voiceRecToggle() {  // 🎙 录音克隆（2026-10-01）：MediaRecorder 采样→blob 当上传文件（服务端转 wav 再克隆）
+    if (this.vRecState === 'rec') {
+      if (this._vRec && this._vRec.state === 'recording') this._vRec.stop();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this._vRec = new MediaRecorder(stream);
+      const chunks = [];
+      this._vRec.ondataavailable = e => e.data.size && chunks.push(e.data);
+      this._vRec.onstop = () => {
+        const type = this._vRec.mimeType || 'audio/webm';
+        const ext = type.includes('mp4') ? 'mp4' : 'webm';   // iOS Safari=mp4/aac
+        this.vUp.file = new File([new Blob(chunks, { type })], `rec.${ext}`, { type });
+        this.vRecUrl = URL.createObjectURL(this.vUp.file);
+        this.vRecState = 'done';
+        stream.getTracks().forEach(t => t.stop());
+      };
+      this._vRec.start();
+      this.vRecState = 'rec';
+    } catch (e) {
+      this.vUpErr = '录音失败：' + e + '（浏览器权限或安全上下文限制——LAN http 访问请用文件上传）';
+    }
+  },
+  onVoiceFilePick(e) {  // 手选文件覆盖录音样本时清掉录音预览
+    this.vUp.file = e.target.files[0];
+    if (this.vRecUrl) { URL.revokeObjectURL(this.vRecUrl); this.vRecUrl = ''; this.vRecState = ''; }
   },
   async submitVoiceUpload(scope) {
     const f = scope === 'project' ? this.pUp : this.vUp;

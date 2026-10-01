@@ -155,6 +155,26 @@ def promote_to_global(data_dir, project: str, name: str, new_name: str | None = 
     return dest
 
 
+def ensure_supported_audio(path: Path) -> Path:
+    """录音格式转码（2026-10-01 用户需求：浏览器录音→克隆音色）：
+    MediaRecorder 产 webm/opus（Chrome/Android）或 mp4/aac（iOS），均不在
+    _AUDIO_EXTS/ComfyUI LoadAudio 支持内——经 ffmpeg 转 wav（-vn 剥可能的
+    视频轨）；已支持格式直通原路径。转码产物是**新临时文件**，调用方负责
+    连原文件一起清理。"""
+    if path.suffix.lower() in _AUDIO_EXTS:
+        return path
+    if path.suffix.lower() not in (".webm", ".mp4"):
+        raise ValueError(f"不支持的音频格式: {path.suffix}")
+    import subprocess as sp
+    from .merge import ffmpeg_bin
+    out = path.with_suffix(".wav")
+    r = sp.run([ffmpeg_bin(), "-y", "-i", str(path), "-vn", str(out)],
+               capture_output=True, timeout=120)
+    if r.returncode != 0 or not out.exists():
+        raise ValueError(f"录音转码失败: {(r.stderr or b'')[-300:]!r}")
+    return out
+
+
 def process_upload(comfy, data_dir, audio_path: Path, *, name: str,
                    start: float, dur: float, db=None) -> Path:
     """上传音色处理（VoiceClone 模板）：裁剪起止 + 默认句克隆 → **staging 暂存**

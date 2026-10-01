@@ -472,8 +472,16 @@
       <div class="card" style="flex:1;min-width:300px">
         <h3>自定义音色（全局）</h3>
         <p style="font-size:13px;display:flex;flex-direction:column;gap:6px">
-          <label>音频文件<input type="file" accept=".mp3,.wav,.flac,.ogg,.m4a"
-                 @change="e => vUp.file = e.target.files[0]" style="width:100%"></label>
+          <span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button @click="voiceRecToggle" :disabled="vUpBusy || (!micAvailable && vRecState!=='rec')"
+                    :style="{background: vRecState==='rec' ? '#dc2626' : ''}"
+                    :title="micAvailable ? '浏览器录音作克隆样本（建议 5~15 秒清晰独白）' : '录音需 localhost 或 HTTPS 访问'">
+              🎙 {{ vRecState==='rec' ? '⏹ 停止录音' : (vRecState==='done' ? '↺ 重新录音' : '录音克隆') }}</button>
+            <audio v-if="vRecUrl" :src="vRecUrl" controls style="height:28px"></audio>
+            <span v-if="!micAvailable" class="muted" style="font-size:11px">此页面浏览器禁用麦克风（需 localhost/HTTPS）——手机 LAN 访问请用下方文件上传</span>
+          </span>
+          <label>音频文件<input type="file" accept=".mp3,.wav,.flac,.ogg,.m4a,.webm,.mp4"
+                 @change="onVoiceFilePick" style="width:100%"></label>
           <label style="display:flex;gap:8px;align-items:center">名称
             <input v-model="vUp.name" placeholder="如：御姐专属" style="flex:1"></label>
           <label style="display:flex;gap:8px;align-items:center">裁剪起始(秒)

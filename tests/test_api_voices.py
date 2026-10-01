@@ -188,3 +188,40 @@ def test_preset_generate_requires_comfy_url(tmp_path):
                    json={"name": "元气少女"})
         assert r.status_code == 422
         assert "ComfyUI" in r.text
+
+
+def test_upload_voice_recording_webm(tmp_path, monkeypatch):
+    """录音克隆（2026-10-01）：webm/mp4 上传经 ensure_supported_audio 转 wav
+    再进克隆链——转码产物与原临时文件都清理。假 ffmpeg 产 wav。"""
+    import subprocess as sp
+    seen = {}
+
+    def fake_upload(comfy, data_dir, audio_path, *, name, start, dur, db=None):
+        seen['src_suffix'] = Path(audio_path).suffix
+        out = Path(data_dir) / "voices" / "_staging" / f"{name}.flac"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(b"fLaC")
+        return out
+    monkeypatch.setattr("comic_studio.web.routes_voices.voicelib.process_upload",
+                        fake_upload)
+
+    def fake_run(argv, **kw):
+        wav = [a for a in argv if a.endswith('.wav')][-1]
+        Path(wav).write_bytes(b"RIFF")
+        seen['tc_argv'] = argv
+        class R: returncode = 0; stderr = b""; stdout = b""
+        return R()
+    monkeypatch.setattr("comic_studio.engine.merge.ffmpeg_bin", lambda: "FFMPEG")
+    monkeypatch.setattr(sp, "run", fake_run)
+    with _client(tmp_path) as c:
+        r = c.post("/api/voices/upload",
+                   data={"name": "录音试音", "scope": "global", "start": 0, "dur": 30},
+                   files={"file": ("rec.webm", io.BytesIO(b"webm"), "audio/webm")})
+        assert r.status_code == 200, r.text
+        assert seen['src_suffix'] == ".wav"            # 转码后才进克隆链
+        assert "-vn" in seen['tc_argv']
+        # 未支持且未转码的格式仍 422
+        r2 = c.post("/api/voices/upload",
+                    data={"name": "x", "scope": "global"},
+                    files={"file": ("a.xyz", io.BytesIO(b"?"), "application/x")})
+        assert r2.status_code == 422

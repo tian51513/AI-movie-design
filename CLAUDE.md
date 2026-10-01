@@ -459,3 +459,10 @@
 - **图手术**：两模板插 `LazyKreaLoraStack`（槽位数 8、LoRA_1..8 默认 none 全空=原味）——t2i `468 UNETLoader→475 栈→474 KSampler`；edit `479→478 栈→486 QwenImage21Cache`（LoRA 挂底模、cache 缓存挂好的——character_views「UNet→栈→Patch」同构）；manifest 补 lora1..8 开关槽（switch: 启用_N）+ requires ComfyUI_Lazybuxuexi
 - **前端零改动**：模型切换区 registry 驱动自动出 8 槽（选文件自动开/「（关闭）」只关开关）
 - 边界：栈只挂 **UNet 链**（qwen3vl 编码器不走 LoRA，双塔 LoRA 需 ComfyUI 手动扩）；2.1 Lightning 画质判例仍成立（默认不加速）；**步数语义**——设置页步数框写 template_params.{模板id}.steps 只管 genref 主图/参考图与 Krea2 快道，漫画页纯 t2i/参考注入道走项目质量档（2026-09-14 既有设计）
+
+## 模块地图（音色库录音克隆源 2026-10-01）
+
+- **`voicelib.ensure_supported_audio`**：MediaRecorder 产 webm/opus（Chrome/Android）或 mp4/aac（iOS）不在 `_AUDIO_EXTS`/LoadAudio 支持内——ffmpeg（merge.ffmpeg_bin）`-y -i -vn` 转 wav（剥视频轨）；已支持格式直通；**转码产物是独立临时文件，调用方连原文件一起清理**；失败 ValueError 带 stderr 尾
+- **routes_voices 上传端点**：接受后缀扩 `.webm/.mp4` → 落盘后转码再进 `process_upload`（克隆/staging/confirm 全链零改动）；ValueError→502 录音转码文案
+- **前端**：音色库 tab 自定义卡「🎙 录音克隆」——MediaRecorder 录→blob 预览试听→`vUp.file=File(rec.webm)` 走既有上传表单（名称/裁剪起止同用）；`micAvailable` computed（`mediaDevices+isSecureContext`）不可用时按钮禁用+提示「需 localhost/HTTPS，手机 LAN 用文件上传」；手选文件清录音预览
+- **硬约束**：getUserMedia 需安全上下文——**LAN IP + http 的手机访问录音不可用**（浏览器层禁死，非代码可解；桌面 localhost ✓）；建议录 5~15s 清晰独白

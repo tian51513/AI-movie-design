@@ -58,20 +58,28 @@ def upload_voice(request: Request, file: UploadFile, name: str = Form(...),
     if scope == "project" and not project_id:
         raise HTTPException(422, "项目级音色必须带 project_id")
     suffix = Path(file.filename or "").suffix.lower()
-    if suffix not in (".mp3", ".wav", ".flac", ".ogg", ".m4a"):
+    if suffix not in (".mp3", ".wav", ".flac", ".ogg", ".m4a", ".webm", ".mp4"):
         raise HTTPException(422, f"不支持的音频格式: {suffix or '(无后缀)'}")
     _slug(request, project_id)  # 校验项目存在（staging 阶段不需要 slug）
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(file.file.read())
         tmp_path = Path(tmp.name)
+    tc_path = tmp_path
     try:
+        # 录音格式（2026-10-01 浏览器 MediaRecorder）转 wav 再进克隆链；
+        # 转码产物是独立临时文件，与原文件一起清理
+        tc_path = voicelib.ensure_supported_audio(tmp_path)
         out = voicelib.process_upload(_comfy(request), request.app.state.data_dir,
-                                      tmp_path, name=name, start=start, dur=dur,
+                                      tc_path, name=name, start=start, dur=dur,
                                       db=request.app.state.db)
+    except ValueError as e:
+        raise HTTPException(502, f"音色处理失败（录音转码）: {e}")
     except Exception as e:
         raise HTTPException(502, f"音色处理失败（ComfyUI TTS）: {e}")
     finally:
         tmp_path.unlink(missing_ok=True)
+        if tc_path != tmp_path:
+            tc_path.unlink(missing_ok=True)
     rel = out.relative_to(request.app.state.data_dir).as_posix()
     return {"name": name, "scope": scope, "staged": rel, "url": f"/media/{rel}"}
 

@@ -165,3 +165,38 @@ def test_voicelib_promote_to_global(tmp_path):
         voicelib.promote_to_global(tmp_path, "p1", "林战")  # 全局已同名
     renamed = voicelib.promote_to_global(tmp_path, "p1", "林战", new_name="林战·全局")
     assert renamed.name == "林战·全局.flac"
+
+
+def test_ensure_supported_audio(tmp_path, monkeypatch):
+    """录音格式转码（2026-10-01 用户需求：浏览器录音→克隆音色）：
+    已支持格式直通；webm/mp4 经 ffmpeg 转 wav（-vn 剥可能的视频轨）；
+    转码失败 ValueError 带原因。假 ffmpeg 记 argv 断言命令形态。"""
+    import subprocess as sp
+    from comic_studio.engine import voicelib
+    mp3 = tmp_path / "a.mp3"; mp3.write_bytes(b"id3")
+    assert voicelib.ensure_supported_audio(mp3) == mp3        # 直通
+    webm = tmp_path / "rec.webm"; webm.write_bytes(b"webm-bytes")
+    calls = []
+
+    def fake_run(argv, **kw):
+        calls.append(argv)
+        assert argv[0] == "FFMPEG"
+        out = argv[argv.index(str(webm)) + 1]                 # -i 的下一个不是输出——
+        # 找输出 wav：最后一个 .wav 参数
+        wav = [a for a in argv if a.endswith('.wav')][-1]
+        Path(wav).write_bytes(b"RIFF wav")
+        class R: returncode = 0; stderr = ""; stdout = ""
+        return R()
+    monkeypatch.setattr("comic_studio.engine.merge.ffmpeg_bin", lambda: "FFMPEG")
+    monkeypatch.setattr(sp, "run", fake_run)
+    out = voicelib.ensure_supported_audio(webm)
+    assert out != webm and out.suffix == ".wav" and out.exists()
+    assert calls and "-vn" in calls[0]
+    # 失败上抛带 stderr
+    def bad_run(argv, **kw):
+        class R: returncode = 1; stderr = "boom"; stdout = ""
+        return R()
+    monkeypatch.setattr(sp, "run", bad_run)
+    import pytest
+    with pytest.raises(ValueError, match="boom"):
+        voicelib.ensure_supported_audio(tmp_path / "x.mp4")
