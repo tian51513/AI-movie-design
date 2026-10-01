@@ -1263,7 +1263,7 @@
         {{ k==='全部' ? '全部' : kindName(k) }}（{{ k==='全部' ? assets.length : assets.filter(a=>a.kind===k).length }}）</button>
       <span class="muted">每行
         <select v-model.number="perRow" style="width:52px">
-          <option :value="2">2</option><option :value="3">3</option><option :value="4">4</option>
+          <option v-for="n in 7" :key="n" :value="n + 1">{{ n + 1 }}</option>
         </select> 个</span>
     </p>
     <div class="assets-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(0,1fr));gap:12px"
