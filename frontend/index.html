@@ -781,6 +781,14 @@
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
        </select></div>
      </div>
+     <div class="wf-row wf-full" style="padding-top:2px">
+       <label class="muted" style="font-size:12px"
+              title="Qwen-Image 2.1 模板（qwen21_t2i/qwen21_edit）提交前 LLM 扩写的语言。仅 t2i 模式生效：中文=默认（两版效果一致优先中文），英文=官方训练分布原味——切换后重出图对比。edit 模式官方规则恒中文不受此旋钮影响">Qwen2.1 扩写语言
+         <select v-model="settingsForm.comfy.prompt_expand_lang" style="width:76px">
+           <option value="zh">中文</option>
+           <option value="en">English</option>
+         </select></label>
+     </div>
     </div>
     <div class="wf-group">
      <div class="wf-gh">🎬 视频渲染 <span class="muted">分镜 → 视频</span></div>
@@ -847,12 +855,6 @@
        <label class="muted" style="font-size:12px"
               title="RTX Video Super Resolution：N 卡驱动级视频超分（2× ULTRA）。仅 Spectrum 加速道模板生效——开启后输出前经 RTX 超分再落盘，耗时增加"><input
               type="checkbox" v-model="settingsForm.comfy.rtx_vsr_enabled"> RTX 视频超分</label>
-       <label class="muted" style="font-size:12px"
-              title="Qwen-Image 2.1 模板（qwen21_t2i/qwen21_edit）提交前 LLM 扩写的语言。仅 t2i 模式生效：中文=默认（两版效果一致优先中文），英文=官方训练分布原味——切换后重出图对比。edit 模式官方规则恒中文不受此旋钮影响">Qwen2.1 扩写语言
-         <select v-model="settingsForm.comfy.prompt_expand_lang" style="width:76px">
-           <option value="zh">中文</option>
-           <option value="en">English</option>
-         </select></label>
      </div>
     </div>
     <div class="wf-group">
