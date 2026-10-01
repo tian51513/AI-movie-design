@@ -120,7 +120,7 @@ Global Metadata 前缀——下拉是保底，✨ LLM 富描述是加强，不�
 行数×5s) 钳 30~360 + natural ending 指令（治戛然而止）。试听→入库→项目
 「配乐」选曲+音量→重新合成 amix 混入（normalize=0 人声不减半）。（engine/musiclib.py，2026-09-19）
 
-- **入口**：设置页「🎵 音乐库」tab——生成（曲风 caption ✨LLM 建议/手填、歌词 手填/✨LLM/空=纯音乐、时长 15~360s、🎲seed）→ staging 试听 → 保存入库（`data/music/custom` + music_library 表）；API `/api/music`（generate/suggest/list/save/discard/delete）
+- **入口**：设置页「🎵 音乐库」tab——生成（**📚 风格库**：官方 18 族 1000 卡中文名主显，点卡回填三段结构化 caption 可改、✨建议按卡骨架改写（style_ref）；或曲风 17 档 ✨建议/手填、歌词 手填/✨LLM/空=纯音乐、时长 15~360s、🎲seed）→ staging 试听 → 保存入库（`data/music/custom` + music_library 表）；**「↺ 载入参数」追溯**——staging 从 jobs.payload_json、库存从行记档回填表单，改 seed/微调出变体；API `/api/music`（generate/suggest/list/save/discard/delete）+ `GET /api/settings/music-styles`
 - **应用**：项目参数面板选曲 + 音量滑条（`bgm_music_id`/`bgm_volume`，音量钳 0~0.5）→ **重新合成生效**——`merge._mix_bgm` amix 混入（normalize=0 防人声减半 / BGM 循环随片长截断 / 视频流 copy 零重编码），空引用或文件缺原样降级；快车道同构（挂 director_mix 开关之外，失败不炸成片）
 
 ## 9. 合成链（engine/merge.py）
