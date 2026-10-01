@@ -29,6 +29,7 @@ outputs:
   filename_prefix: cs/{project}/{asset}
 requires:
 - ComfyUI-Easy-Use
+- ComfyUI_Lazybuxuexi   # LazyKreaLoraStack 8 LoRA 槽（2026-10-01 用户需求）
 # 来源 _raw/Qwen-image-2.1图像编辑改版.json（用户 2026-09-21 实测可用）。
 # ComfySwitchNode.switch=False 恒编辑模式；QwenImage21Cache 模型缓存；
 # easy cleanGpuUsed 跑完清显存。改造同 t2i（删 ResolutionSelector/核心 Save）。
@@ -37,3 +38,14 @@ models:
 - {label: unet, node: '479', field: unet_name, cls: UNETLoader, label_cn: 主模型（Qwen2.1 int8）}
 - {label: clip, node: '480', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器（qwen3vl 8b）}
 - {label: vae, node: '481', field: vae_name, cls: VAELoader, label_cn: VAE}
+
+# 8 LoRA 开关槽（2026-10-01，同 qwen21_t2i）：串在 UNETLoader 与
+# QwenImage21Cache 之间（LoRA 挂底模、cache 缓存挂好的模型）
+- {label: lora1, node: '478', field: LoRA_1, cls: LazyKreaLoraStack, switch: 启用_1, label_cn: LoRA 1}
+- {label: lora2, node: '478', field: LoRA_2, cls: LazyKreaLoraStack, switch: 启用_2, label_cn: LoRA 2}
+- {label: lora3, node: '478', field: LoRA_3, cls: LazyKreaLoraStack, switch: 启用_3, label_cn: LoRA 3}
+- {label: lora4, node: '478', field: LoRA_4, cls: LazyKreaLoraStack, switch: 启用_4, label_cn: LoRA 4}
+- {label: lora5, node: '478', field: LoRA_5, cls: LazyKreaLoraStack, switch: 启用_5, label_cn: LoRA 5}
+- {label: lora6, node: '478', field: LoRA_6, cls: LazyKreaLoraStack, switch: 启用_6, label_cn: LoRA 6}
+- {label: lora7, node: '478', field: LoRA_7, cls: LazyKreaLoraStack, switch: 启用_7, label_cn: LoRA 7}
+- {label: lora8, node: '478', field: LoRA_8, cls: LazyKreaLoraStack, switch: 启用_8, label_cn: LoRA 8}

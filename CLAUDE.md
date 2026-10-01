@@ -453,3 +453,9 @@
 - **GET /api/music staging 条目带 `params`**（用户需求「试听/库存追溯生成参数」）：从 `jobs.payload_json` 原样透出 caption/lyrics/genre/voice/seed/duration——staging 试听未入库也可回溯；**库存零后端改动**（music_library 行本就存 caption/lyrics/seed/duration，list_music 全列返回）
 - 前端：staging 条目「↺ 载入参数」（六项全回填）+ 库存行「↺ 载入」（四项；曲风/声部当初已 compose 进 caption 不单存）——回填清骨架 pill（styleRef 只影响建议改写不随参数走）；改 seed=新变体/微调 caption 后再生成
 - 注意：staging「保存入库」记档取**保存时表单值**（既有语义）——先 ↺ 载入再保存即可保证档与音频一致
+
+## 模块地图（qwen21 双模板 8 LoRA 槽 2026-10-01）
+
+- **图手术**：两模板插 `LazyKreaLoraStack`（槽位数 8、LoRA_1..8 默认 none 全空=原味）——t2i `468 UNETLoader→475 栈→474 KSampler`；edit `479→478 栈→486 QwenImage21Cache`（LoRA 挂底模、cache 缓存挂好的——character_views「UNet→栈→Patch」同构）；manifest 补 lora1..8 开关槽（switch: 启用_N）+ requires ComfyUI_Lazybuxuexi
+- **前端零改动**：模型切换区 registry 驱动自动出 8 槽（选文件自动开/「（关闭）」只关开关）
+- 边界：栈只挂 **UNet 链**（qwen3vl 编码器不走 LoRA，双塔 LoRA 需 ComfyUI 手动扩）；2.1 Lightning 画质判例仍成立（默认不加速）；**步数语义**——设置页步数框写 template_params.{模板id}.steps 只管 genref 主图/参考图与 Krea2 快道，漫画页纯 t2i/参考注入道走项目质量档（2026-09-14 既有设计）

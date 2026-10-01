@@ -75,3 +75,25 @@ def test_resolve_via_settings(tmp_path, monkeypatch):
     set_setting(db, "template_map", {"t2i": "missing_id"})
     with pytest.raises(ManifestError):
         resolve_template(db, "t2i")
+
+
+def test_qwen21_lora_stack_wiring():
+    """qwen21 双模板 8 LoRA 槽（2026-10-01 用户需求：同 character_views 可配）：
+    manifest 声明 lora1..8 开关槽；api.json 里 LazyKreaLoraStack 串在
+    UNETLoader 之后、采样器/模型缓存之前；槽默认全 none（不加 LoRA=原味）。"""
+    from comic_studio.engine.workflows import registry
+    regs = registry.scan_templates(registry.TEMPLATE_ROOT)
+    for tid, unet, consumer in (("qwen21_t2i", "468", "474"),
+                                ("qwen21_edit", "479", "486")):
+        t = regs[tid]
+        loras = [s for s in t.models if s.label.startswith("lora")]
+        assert len(loras) == 8, tid
+        assert all(s.switch_field for s in loras), tid   # 开关语义（（关闭）选项）
+        assert "ComfyUI_Lazybuxuexi" in t.requires, tid
+        wf = t.api_json()
+        nid = next(k for k, v in wf.items()
+                   if v["class_type"] == "LazyKreaLoraStack")
+        stack = wf[nid]["inputs"]
+        assert stack["模型"] == [unet, 0], tid
+        assert wf[consumer]["inputs"]["model"] == [nid, 0], tid
+        assert all(stack[f"LoRA_{i}"] == "none" for i in range(1, 9)), tid

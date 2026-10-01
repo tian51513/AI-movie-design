@@ -20,7 +20,8 @@ inject:
 outputs:
 - node: '461'
   filename_prefix: cs/{project}/{asset}
-requires: []
+requires:
+- ComfyUI_Lazybuxuexi   # LazyKreaLoraStack 8 LoRA 槽（2026-10-01 用户需求）
 # 来源 _raw/Qwen-image-2.1文生图改版.json（用户 2026-09-21 实测可用）。
 # 改造：删 ResolutionSelector（宽高直注 EmptyLatent）；SaveImageAdvanced→核心
 # SaveImage（免自定义节点依赖）。cfg=1/euler/simple 为 2.1 蒸馏配方勿动。
@@ -30,3 +31,15 @@ models:
 - {label: unet, node: '468', field: unet_name, cls: UNETLoader, label_cn: 主模型（Qwen2.1 int8）}
 - {label: clip, node: '470', field: clip_name, cls: CLIPLoader, label_cn: 文本编码器（qwen3vl 8b）}
 - {label: vae, node: '471', field: vae_name, cls: VAELoader, label_cn: VAE}
+
+# 8 LoRA 开关槽（2026-10-01）：槽默认 none 全空=原味不加 LoRA——设置页模型
+# 切换区选文件自动开；「（关闭）」=只关开关。注意：栈只挂 UNet 链，qwen3vl
+# 编码器不走 LoRA；2.1 Lightning 画质判例仍成立（默认不加速）
+- {label: lora1, node: '475', field: LoRA_1, cls: LazyKreaLoraStack, switch: 启用_1, label_cn: LoRA 1}
+- {label: lora2, node: '475', field: LoRA_2, cls: LazyKreaLoraStack, switch: 启用_2, label_cn: LoRA 2}
+- {label: lora3, node: '475', field: LoRA_3, cls: LazyKreaLoraStack, switch: 启用_3, label_cn: LoRA 3}
+- {label: lora4, node: '475', field: LoRA_4, cls: LazyKreaLoraStack, switch: 启用_4, label_cn: LoRA 4}
+- {label: lora5, node: '475', field: LoRA_5, cls: LazyKreaLoraStack, switch: 启用_5, label_cn: LoRA 5}
+- {label: lora6, node: '475', field: LoRA_6, cls: LazyKreaLoraStack, switch: 启用_6, label_cn: LoRA 6}
+- {label: lora7, node: '475', field: LoRA_7, cls: LazyKreaLoraStack, switch: 启用_7, label_cn: LoRA 7}
+- {label: lora8, node: '475', field: LoRA_8, cls: LazyKreaLoraStack, switch: 启用_8, label_cn: LoRA 8}
