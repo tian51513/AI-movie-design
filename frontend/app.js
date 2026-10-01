@@ -2104,6 +2104,24 @@ const methods = {
     }, 4000);
   },
   musicRandomSeed() { this.musicForm.seed = Math.floor(Math.random() * 2147483646) + 1; },
+  musicLoadParams(s) {  // staging 追溯（2026-10-01）：生成参数回填表单——改 seed/微调后生成变体
+    const p = s.params || {};
+    this.musicForm.caption = p.caption || '';
+    this.musicForm.lyrics = p.lyrics || '';
+    this.musicForm.seed = p.seed || 0;
+    this.musicForm.genre = p.genre || '';
+    this.musicForm.voice = p.voice || '';
+    if (p.duration) this.musicForm.duration = p.duration;
+    this.musicForm.styleRef = ''; this.musicForm.styleName = '';  // 骨架只影响建议，不随参数走
+  },
+  musicLoadFromLib(m) {  // 库存追溯：入库记档的参数回填（曲风/声部已合成进 caption 不单存）
+    this.musicForm.caption = m.caption || '';
+    this.musicForm.lyrics = m.lyrics || '';
+    this.musicForm.seed = m.seed || 0;
+    if (m.duration) this.musicForm.duration = m.duration;
+    this.musicForm.genre = ''; this.musicForm.voice = '';
+    this.musicForm.styleRef = ''; this.musicForm.styleName = '';
+  },
   async openMusicStyles() {  // 音乐风格库（2026-10-01 官方 skill vendor）：惰性拉族清单
     this.musicStyleOpen = true;
     if (!this.msFamilies.length) {

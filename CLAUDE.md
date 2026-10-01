@@ -447,3 +447,9 @@
 - 前端：音乐库 tab「📚 风格库」弹窗（族下拉+全文过滤+点卡即选）——选中回填 caption（可改）+ 记 styleRef（「骨架：<名> ✕」pill 可清）；✨建议带 style_ref 走骨架改写
 - 注意：骨架 pill 只影响 ✨建议与回填，生成吃的是 caption 文本本身——手动清空 styleRef 不影响已回填内容
 - **中文化（同日用户需求）**：`_FAMILY_ZH` 18 族名静态表 + `_TERM_ZH` 236 词曲风词典 + `_PHRASES` 短语优先（防 Hip+Hop→「嘻哈哈」碎词）→ `zh_style()` 机械合成 `style_zh`（'/'→'·'，未收录词保留英文）；前端中文主显+英文副显（Krea2 zh 判例沿用），过滤中英文都命中；mood/palette 长句保留英文（词表翻长句会烂）
+
+## 模块地图（音乐库参数追溯 2026-10-01）
+
+- **GET /api/music staging 条目带 `params`**（用户需求「试听/库存追溯生成参数」）：从 `jobs.payload_json` 原样透出 caption/lyrics/genre/voice/seed/duration——staging 试听未入库也可回溯；**库存零后端改动**（music_library 行本就存 caption/lyrics/seed/duration，list_music 全列返回）
+- 前端：staging 条目「↺ 载入参数」（六项全回填）+ 库存行「↺ 载入」（四项；曲风/声部当初已 compose 进 caption 不单存）——回填清骨架 pill（styleRef 只影响建议改写不随参数走）；改 seed=新变体/微调 caption 后再生成
+- 注意：staging「保存入库」记档取**保存时表单值**（既有语义）——先 ↺ 载入再保存即可保证档与音频一致

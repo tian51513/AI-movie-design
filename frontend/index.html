@@ -544,6 +544,9 @@
                    style="flex:1;min-width:140px">
             <button style="background:#16a34a;font-size:12px;padding:3px 10px" :disabled="!!musicBusy"
                     @click="musicSave(s)">✓ 保存入库</button>
+            <button style="font-size:12px;padding:3px 10px" :disabled="!!musicBusy"
+                    title="把生成这首时的参数回填到左侧表单——改 seed/微调后可生成变体"
+                    @click="musicLoadParams(s)">↺ 载入参数</button>
             <button style="background:#dc2626;font-size:12px;padding:3px 10px" :disabled="!!musicBusy"
                     @click="musicDiscard(s)">✕ 放弃</button>
           </span>
@@ -562,6 +565,8 @@
         <span class="muted" style="font-size:11px;max-width:280px;overflow-wrap:anywhere"
               :title="m.caption">{{ (m.caption || '').slice(0, 60) }}</span>
         <span v-if="m.duration" class="muted" style="font-size:11px">{{ Math.round(m.duration) }}s</span>
+        <button @click="musicLoadFromLib(m)" title="把入库时记档的曲风/歌词/seed/时长回填表单——改后生成变体"
+                style="font-size:11px;padding:2px 8px">↺ 载入</button>
         <button @click="musicDelete(m)" title="删除该曲（文件一并删；引用它的项目需改选配乐）"
                 style="background:#dc2626;font-size:11px;padding:2px 8px">🗑</button>
       </div>

@@ -264,9 +264,12 @@ def test_music_api_matrix(tmp_path, monkeypatch):
         attach_snapshot(db, jid, prompt="Global Metadata: lo-fi.",
                         workflow={"staging": str(st.relative_to(tmp_path / "data"))})
         r = c.get("/api/music")
+        # staging 条目带 params（2026-10-01 追溯需求）：生成时的参数可回填表单
         assert r.json()["staging"] == [
             {"job_id": jid, "status": "pending",
-             "path": str(st.relative_to(tmp_path / "data"))}]
+             "path": str(st.relative_to(tmp_path / "data")),
+             "params": {"caption": "Global Metadata: lo-fi.", "lyrics": "",
+                        "genre": "", "voice": "", "seed": 3, "duration": 60}}]
 
         # save：穿越名 → 422（引擎白名单→路由映射）
         r = c.post("/api/music/save", json={"job_id": jid, "name": "../evil",

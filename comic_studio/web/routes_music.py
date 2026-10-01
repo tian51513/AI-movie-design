@@ -83,8 +83,8 @@ def list_all(request: Request):
     data_dir = Path(request.app.state.data_dir)
     staging = []
     rows = db.connect().execute(
-        "SELECT id, status, snapshot_json FROM jobs WHERE type='gen_music' "
-        "ORDER BY id DESC LIMIT 5").fetchall()
+        "SELECT id, status, snapshot_json, payload_json FROM jobs "
+        "WHERE type='gen_music' ORDER BY id DESC LIMIT 5").fetchall()
     for r in rows:
         try:
             snap = json.loads(r["snapshot_json"] or "{}")
@@ -92,8 +92,18 @@ def list_all(request: Request):
             continue
         rel = str((snap.get("workflow") or {}).get("staging") or "")
         if rel and data_to_abs(data_dir, rel).is_file():
+            # params（2026-10-01 追溯需求）：生成时的参数原样透出——
+            # 前端「↺ 载入参数」回填表单可改后生成变体
+            try:
+                pl = json.loads(r["payload_json"] or "{}")
+            except ValueError:
+                pl = {}
+            params = {k: str(pl.get(k) or "") for k in ("caption", "lyrics",
+                                                        "genre", "voice")}
+            params["seed"] = int(pl.get("seed") or 0)
+            params["duration"] = pl.get("duration")
             staging.append({"job_id": r["id"], "status": r["status"],
-                            "path": rel})
+                            "path": rel, "params": params})
     return {"music": musiclib.list_music(db), "staging": staging}
 
 
