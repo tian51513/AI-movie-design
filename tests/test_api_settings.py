@@ -231,3 +231,51 @@ def test_delete_provider_and_reroute_in_same_put(tmp_path):
         prov = c.get("/api/settings").json()["llm_providers"]
         assert "local3" not in prov
         assert c.get("/api/settings").json()["llm_routing"]["extract_assets"] == "local"
+
+
+def test_model_templates_expose_effective_models(tmp_path):
+    """映射区模型可见性（2026-10-01 用户需求：不知道漫画页主模型是什么）：
+    GET model_templates 每项带 models 槽位与当前生效值——覆盖
+    （model_overrides）> api.json 默认，开关槽内置关=空值；离线计算不碰
+    ComfyUI（/models/choices 才是在线枚举）。"""
+    from comic_studio.engine.workflows import registry
+    with _client(tmp_path) as c:
+        body = c.get("/api/settings").json()
+        krea = next(t for t in body["model_templates"]
+                    if t["id"] == "comic_page_krea2")
+        slots = {m["label"]: m for m in krea["models"]}
+        wf = registry.load_manifest(
+            registry.TEMPLATE_ROOT / "comic_page_krea2.yaml").api_json()
+        # 默认值=api.json 节点现值；label_cn 带中文说明
+        assert slots["unet"]["value"] == wf["90"]["inputs"]["unet_name"]
+        assert slots["unet"]["label_cn"] == "主模型（Krea2）"
+        assert slots["unet"]["overridden"] is False
+        # 开关槽内置关（lora3~8 默认关）→ 生效值空=「（关闭）」
+        assert slots["lora5"]["value"] == ""
+        # 覆盖后生效值翻转 + 标记
+        r = c.put("/api/settings", json={"model_overrides": {
+            "comic_page_krea2": {"unet": "my_model.safetensors"}}})
+        assert r.status_code == 200, r.text
+        body = c.get("/api/settings").json()
+        slots = {m["label"]: m for m in next(
+            t for t in body["model_templates"]
+            if t["id"] == "comic_page_krea2")["models"]}
+        assert slots["unet"]["value"] == "my_model.safetensors"
+        assert slots["unet"]["overridden"] is True
+
+
+def test_effective_models_tolerates_broken_manifest(tmp_path):
+    """容错护栏：api.json 读不出的模板（file 字段笔误等）→ 空清单，
+    不把整个设置页 GET 炸黑（2026-10-01 audio_to_text.json 判例）。"""
+    from comic_studio.engine.workflows.registry import ModelSlot
+    from comic_studio.web.routes_settings import _effective_models
+
+    class Broken:
+        id = "broken"
+        models = [ModelSlot(label="unet", node="1", field="unet_name",
+                            cls="UNETLoader", label_cn="主模型")]
+
+        def api_json(self):
+            raise FileNotFoundError("nope")
+
+    assert _effective_models(Broken(), {}) == []

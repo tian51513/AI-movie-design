@@ -1,7 +1,7 @@
 id: asr_qwen3
 type: asr
 name: Qwen3-ASR 音频转文本（ComfyUI）
-file: audio_to_text.json
+file: audio_to_text.api.json
 prompt_format: '{kind_label}：{name}。{detail}'
 inject:
   params:

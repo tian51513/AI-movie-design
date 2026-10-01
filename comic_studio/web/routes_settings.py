@@ -93,19 +93,47 @@ def _filter_model_overrides(db, treg) -> dict:
             for tid, slots in stored.items() if tid in treg}
 
 
+def _effective_models(t, overrides: dict) -> list:
+    """模板模型槽位的当前生效值（2026-10-01 映射区可见性）：覆盖
+    （model_overrides，filler 同款语义——开关槽空串=关、非开关槽空值忽略）
+    > api.json 默认（开关槽内置关=""）。离线纯读，不碰 ComfyUI。
+    api.json 读不出（如 file 字段笔误指向不存在的文件）→ 空清单——一个
+    坏 manifest 不能把整个设置页 GET 炸黑（2026-10-01 audio_to_text 判例）。"""
+    try:
+        wf = t.api_json()
+    except Exception:
+        return []
+    out = []
+    for slot in t.models:
+        inputs = (wf.get(str(slot.node), {}).get("inputs") or {})
+        default = str(inputs.get(slot.field, "") or "")
+        if slot.switch_field and not inputs.get(slot.switch_field):
+            default = ""
+        value, overridden = default, False
+        ov = (overrides or {}).get(t.id, {}).get(slot.label)
+        if ov is not None and (slot.switch_field or ov):
+            value, overridden = str(ov), str(ov) != default
+        out.append({"label": slot.label, "label_cn": slot.label_cn or slot.label,
+                    "value": value, "overridden": overridden})
+    return out
+
+
 @router.get("")
 def read(request: Request):
     from ..engine.workflows import registry
     try:
         treg = registry.scan_templates(registry.TEMPLATE_ROOT)
+        overrides = _filter_model_overrides(request.app.state.db, treg)
         templates = [{"id": t.id, "name": t.name, "type": t.type,
                       # params/image_slots：前端按此出「步数」输入框、
-                      # 过滤快道槽位（2026-09-14）
+                      # 过滤快道槽位（2026-09-14）；models：映射区显示
+                      # 当前生效主模型（2026-10-01）
                       "params": sorted(t.inject_params),
-                      "image_slots": [im["slot"] for im in t.inject_images]}
+                      "image_slots": [im["slot"] for im in t.inject_images],
+                      "models": _effective_models(t, overrides)}
                      for t in treg.values()]
     except registry.ManifestError:
-        treg, templates = {}, []
+        treg, templates, overrides = {}, [], {}
     return {
         "llm_providers": get_setting(request.app.state.db, "llm_providers"),
         "llm_routing": get_setting(request.app.state.db, "llm_routing"),
@@ -113,7 +141,7 @@ def read(request: Request):
         "asr": get_setting(request.app.state.db, "asr"),
         "speaker_blacklist": get_setting(request.app.state.db, "speaker_blacklist"),
         "template_map": get_setting(request.app.state.db, "template_map"),
-        "model_overrides": _filter_model_overrides(request.app.state.db, treg),
+        "model_overrides": overrides,
         "template_params": get_setting(request.app.state.db, "template_params") or {},
         "model_templates": templates,
     }
