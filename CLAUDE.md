@@ -423,3 +423,10 @@
 - **`heal_image_prompt`**（官方 validate_prompt.py 移植，仿 heal_h3_prompt）：代码围栏剥离→换行折叠单段→禁空词剥离（8K/4K/masterpiece/award-winning/杰作/获奖作品；**英文边界用环视**——`\b` 在中文相邻处不生效，「画质4K细腻」漏匹配）→空白收敛；引号不平衡返 None 调用方回落原文；expand 输出必过
 - 前端：设置页 Comfy 区「Qwen2.1 扩写语言」下拉（中文/English）；`ComfyConfig` extra=allow 新键免改路由透传（page_ref_cfg 同款模式，引擎侧 junk 值落 zh 兜底）
 - 注意：场景/道具主图走 genref **单段路径无扩写**（2026-09-22 既有范围，未扩）；关键帧扩写刻意不做（首尾帧成对约束词独立扩写会破坏同 seed 构图一致性——待语言定案后单独议）
+
+## 模块地图（映射区模型可见性 2026-10-01 下午）
+
+- **GET /api/settings `model_templates[].models`**（用户需求「不知道漫画页主模型是什么」）：`[{label,label_cn,value,overridden}]` 当前生效值——model_overrides 覆盖（filler 同款语义：开关槽空串=关、非开关槽空值忽略）> api.json 默认（开关槽内置关=""）；**离线纯读不碰 ComfyUI**（/models/choices 仍是在线枚举，两者并存）；api.json 读不出 → 空清单容错（一个坏 manifest 不炸整页 GET——audio_to_text 判例）
+- 前端：映射区 11 行下拉下 🏷 主模型小字行（label=='unet' 或 label_cn 含「主模型」的槽，文件名超长省略号）；其余**在用**槽位进 title 悬浮；`tmplModelLine` 助手进 **methods**（2026-09-12 判例沿用）；未映射/无模型槽 v-if 隐藏；漫画页快道行说明补优先链（快道→参考注入→纯文生图）
+- **顺手修**：`audio_to_text.yaml` `file:` 字段 typo（audio_to_text.json → audio_to_text.api.json）——休眠 bug（asr_qwen3 从未用过），本次 GET 读 api_json 才暴露成全线 500
+- 注意：Qwen2.1 扩写语言下拉在 🖼 图像生成组尾部（曾误放 🎬 视频渲染组旋钮行不可见——放旋钮先看分组归属）
