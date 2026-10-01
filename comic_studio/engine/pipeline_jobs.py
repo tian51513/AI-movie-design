@@ -77,7 +77,7 @@ def handle_gen_prompt(db, data_dir, job, comfy):
     client = client_for_task(db, "gen_video_prompt")
     t0 = time.monotonic()
     text = generate_video_prompt(db, payload["shot_id"], client, backend=backend,
-                                 mode=mode)
+                                 mode=mode, data_dir=data_dir)
     update_shot(db, payload["shot_id"], {"prompt": text, "status": "ready"})
     emit_log(db, "llm", "info",
              f"镜头 {shot['seq']} 提示词就绪（{backend}，{len(text)} 字，"

@@ -375,3 +375,24 @@ def test_patch_bgm_endpoint(tmp_path):
         assert r.status_code == 200 and r.json()["music_id"] is None
         # 项目不存在 → 404
         assert c.patch("/api/projects/999/bgm", json={"music_id": mid}).status_code == 404
+
+
+def test_patch_directing_override(tmp_path):
+    """定向执导覆写（迁移 45）：''=自动 / 'off' / 'a,b'=强制（非法 id 422）；
+    详情载荷带 directing_effective + 技能目录。"""
+    with _client(tmp_path) as c:
+        pid = _upload(c, name="武侠片", text="少年踏入江湖，门派比武过招。").json()["id"]
+        d = c.get(f"/api/projects/{pid}").json()
+        assert d["directing_effective"] == ["wushu"]          # 自动匹配
+        assert any(s["id"] == "wushu" for s in d["directing_skills"])
+        r = c.patch(f"/api/projects/{pid}", json={"directing_override": "off"})
+        assert r.status_code == 200
+        assert c.get(f"/api/projects/{pid}").json()["directing_effective"] == []
+        r = c.patch(f"/api/projects/{pid}", json={"directing_override": "drama,pov"})
+        assert r.status_code == 200
+        assert c.get(f"/api/projects/{pid}").json()["directing_effective"] == ["drama", "pov"]
+        r = c.patch(f"/api/projects/{pid}", json={"directing_override": "bogus"})
+        assert r.status_code == 422
+        r = c.patch(f"/api/projects/{pid}", json={"directing_override": ""})
+        assert r.status_code == 200
+        assert c.get(f"/api/projects/{pid}").json()["directing_effective"] == ["wushu"]

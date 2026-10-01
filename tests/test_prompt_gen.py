@@ -471,3 +471,36 @@ def test_heal_fills_subject_placeholder_with_bound_name():
     # 无名兜底：去尖括号留「人物」
     h2, _ = heal_h3_prompt(bad, shot, max_pics=2)
     assert "保持人物的" in h2 and "<人物>" not in h2
+
+
+def test_generate_prompt_injects_directing(tmp_path):
+    """定向执导注入提示词 system（2026-10-01 T8 借鉴）：武侠项目带武术
+    方法论块；data_dir 可选（无它也能按 style 命中）；无关项目零注入。"""
+    db = Database(tmp_path / "s.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d", "武侠片", "9:16",
+                         "少年踏入江湖比武。", style="武侠水墨")["id"]
+    sid = persist_shots(db, pid, [NS(text_span="", description="过招",
+        shot_type="", camera={}, duration=5.0, workflow_type="ref2va",
+        ledger={}, character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
+    seen = {}
+
+    class Cap:
+        model = "fake"
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            seen["system"] = messages[0]["content"]
+            return "林晨在庭院中推开木门，晨光洒入，镜头缓慢推进，写实画面。", Usage(10, 20)
+
+    generate_video_prompt(db, sid, Cap(), backend="h3", mode="A",
+                          data_dir=tmp_path / "d")
+    assert "【定向执导】" in seen["system"] and "武术打斗执导" in seen["system"]
+    seen.clear()
+    generate_video_prompt(db, sid, Cap(), backend="h3", mode="A")  # 无 data_dir 也命中（style）
+    assert "武术打斗执导" in seen["system"]
+    pid2 = create_project(db, tmp_path / "d", "野餐", "9:16", "公园野餐。")["id"]
+    sid2 = persist_shots(db, pid2, [NS(text_span="", description="铺餐布",
+        shot_type="", camera={}, duration=5.0, workflow_type="ref2va",
+        ledger={}, character_ids=[], scene_ids=[], prop_ids=[], depends_on=None)])[0]
+    seen.clear()
+    generate_video_prompt(db, sid2, Cap(), backend="h3", mode="A",
+                          data_dir=tmp_path / "d")
+    assert "【定向执导】" not in seen["system"]

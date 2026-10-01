@@ -146,6 +146,16 @@ const computed = {
       .find(x => x.id === this.moTemplate);
     return !!(t && (t.params || []).includes('steps'));
   },
+  directingSel() {  // 执导覆写下拉当前值：''/off/单技能 id（多选覆写不属单选形态→回落显示自动）
+    const ov = this.project?.directing_override || '';
+    if (ov === '' || ov === 'off') return ov;
+    return (this.project?.directing_skills || []).some(s => s.id === ov) ? ov : '';
+  },
+  directingLabel() {  // 当前生效技能中文名（自动/覆写通用——auto 选项尾巴展示）
+    return (this.project?.directing_effective || [])
+      .map(id => ((this.project?.directing_skills || [])
+        .find(s => s.id === id) || {}).label || id).join('+');
+  },
   projTotalPages() { return Math.max(1, Math.ceil(this.projects.length / this.projPageSize)); },
   spFiltered() {  // 风格选择弹窗：当前库 + 名字过滤（中英文都搜，2026-09-13 zh=name_cn）
     const styles = this.kreaLibs[this.spLib] || [];
@@ -1838,6 +1848,9 @@ const methods = {
       body: JSON.stringify({[key]: value})});
     if (r.ok) { Object.assign(this.project, await r.json()); }  // 回写 UI——否则输入框被旧值顶回，形同没保存
     else { alert(await r.text()); await this.loadDetail(); }
+  },
+  async patchDirecting(val) {  // 定向执导覆写（2026-10-01）：复用主 PATCH——返回带新 effective/skills 回写 UI
+    await this.patchVideoParam('directing_override', val);
   },
   toggleParams() {  // 参数面板开合（2026-09-19：打开时惰性拉音乐库——配乐下拉数据源）
     this.paramsOpen = !this.paramsOpen;

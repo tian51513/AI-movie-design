@@ -457,6 +457,12 @@ def split_storyboards(db, data_dir, project_id, client_factory=None, max_chars=1
     # _comic/页数路由已在分块前判定（见 chunks 段），此处只组 system——
     # 压缩规则跟随生效页数（手动 target_count 覆盖后按覆盖值注入）
     _sys = comic_split_system(int(target_count or 0)) if _comic else SPLIT_SYSTEM
+    # 定向执导（2026-10-01 T8 借鉴）：题材命中注入方法论块——跨镜动作接力/
+    # 文戏信息反应等是分镜层约束；未命中零注入
+    from ..directing import directing_block as _directing_block
+    _dblk = _directing_block(db, proj, data_dir)
+    if _dblk:
+        _sys = _sys + "\n\n" + _dblk
     # 有声书对白规则（2026-09-05 真机：转写无引号 → LLM 不识台词 → dialogue
     # 空 → 提示词无对白）：音频项目注入「全篇皆对白」规则+说话人推断+主题
     _audio_rules = ""

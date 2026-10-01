@@ -361,3 +361,28 @@ def test_split_cache_invalidated_on_model_change(tmp_path):
     split_storyboards(db, tmp_path / "data", pid,
                       client_factory=lambda t: f2, max_chars=150)
     assert f2.n == 5
+
+
+def test_split_injects_directing_block(tmp_path):
+    """定向执导注入拆解（2026-10-01 T8 借鉴）：武侠题材项目 system 带武术
+    方法论块；无关项目零注入。"""
+    db = Database(tmp_path / "s2.db"); db.migrate()
+    pid = create_project(db, tmp_path / "d2", "武侠片", "9:16",
+                         "少年踏入江湖，门派比武与师兄过招。")["id"]
+    seen = {}
+
+    class Cap(FakeLLM):
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            seen["system"] = messages[0]["content"]
+            return super().raw_chat(messages, temperature, max_tokens)
+
+    split_storyboards(db, tmp_path / "d2", pid,
+                      client_factory=lambda t: Cap([CHUNK.format(desc="比武", cid=1)]))
+    assert "【定向执导】" in seen["system"] and "武术打斗执导" in seen["system"]
+
+    pid2 = create_project(db, tmp_path / "d2", "野餐", "9:16",
+                          "公园野餐日记，风和日丽。")["id"]
+    seen.clear()
+    split_storyboards(db, tmp_path / "d2", pid2,
+                      client_factory=lambda t: Cap([CHUNK.format(desc="野餐", cid=1)]))
+    assert "【定向执导】" not in seen["system"]

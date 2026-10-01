@@ -1133,6 +1133,13 @@
       <label>LoRA
         <input type="number" min="0" max="1" step="0.05" :value="project.lora_realism"
                @change="patchVideoParam('lora_realism', Number($event.target.value))" style="width:56px"></label>
+      <label title="定向执导（按题材自动匹配的方法论，注入拆解与提示词）：武侠→武术打斗、悬疑都市→戏剧场面、第一人称→POV；手动可关/指定。改后重拆分镜或重生提示词生效">执导
+        <select :value="directingSel" @change="patchDirecting($event.target.value)" style="max-width:150px">
+          <option value="">自动{{ directingLabel ? '（' + directingLabel + '）' : '（未命中）' }}</option>
+          <option value="off">关闭</option>
+          <option v-for="s in project.directing_skills || []" :key="s.id"
+                  :value="s.id">{{ s.label }}</option>
+        </select></label>
       <label title="项目配乐（设置页音乐库生成入库）——合成成片时低音量混入，对白优先">配乐
         <select v-model="bgmSel" @change="patchBgmMusic()" style="max-width:170px">
           <option value="">无配乐</option>

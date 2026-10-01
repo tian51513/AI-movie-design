@@ -353,7 +353,7 @@ def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = No
 
 def generate_video_prompt(db, shot_id, client, backend: str = "h3",
                           mode: str | None = None,
-                          max_attempts: int = 3) -> str:
+                          max_attempts: int = 3, data_dir=None) -> str:
     from .modes import PROMPT_MODES, mode_spec
     shot = get_shot(db, shot_id)
     proj = get_project(db, shot["project_id"])
@@ -374,7 +374,12 @@ def generate_video_prompt(db, shot_id, client, backend: str = "h3",
         "SELECT * FROM shots WHERE project_id=? AND seq=?",
         (shot["project_id"], shot["seq"] - 1)).fetchone()
     ctx = build_shot_context(shot, assets_by_id, proj, prev_shot=prev_shot)
+    # 定向执导（2026-10-01 T8 借鉴）：题材命中注入方法论块（data_dir 可选——
+    # 无它按 style/era 库字段匹配）；未命中零注入
+    from ..directing import directing_block
+    _dblk = directing_block(db, proj, data_dir)
     system = (build_h3_system() + "\n\n---\n\n" + mode_spec(mode)
+              + ("\n\n---\n\n" + _dblk if _dblk else "")
               if backend == "h3" else LTX_SYSTEM)
     messages = [{"role": "system", "content": system},
                 {"role": "user", "content": ctx}]

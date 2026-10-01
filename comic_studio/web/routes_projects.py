@@ -40,7 +40,7 @@ WORD_COUNT_RANGE = (300, 20000)
 _PUBLIC_COLUMNS = ("id", "slug", "name", "aspect_ratio", "stage", "created_at", "style", "style_vis", "era", "comic_mode", "subtitles",
                     "video_megapixels", "video_multiple", "video_speed", "default_shot_duration",
                     "prompt_mode", "lora_realism", "target_duration", "autopilot",
-                    "redraw_characters", "redraw_done",
+                    "redraw_characters", "redraw_done", "directing_override",
                     # 迁移 36（2026-09-12 小说转漫画）：前端详情页消费
                     "dialogue_mode", "target_pages", "image_size", "quality_tier",
                     # 迁移 37（2026-09-13 气泡渲染）：样式三参数 JSON
@@ -997,12 +997,22 @@ def listing(request: Request):
     return out
 
 
+def _directing_payload(db, row, data_dir) -> dict:
+    """定向执导（2026-10-01）：详情/PATCH 载荷共用的生效结果与技能目录。"""
+    from ..engine.directing import DIRECTING_SKILLS, effective_directing
+    return {"directing_effective": effective_directing(db, row, data_dir),
+            "directing_skills": [{"id": sid, "label": s["label"]}
+                                 for sid, s in DIRECTING_SKILLS.items()]}
+
+
 @router.get("/{project_id}")
 def detail(request: Request, project_id: int):
     row = get_project(request.app.state.db, project_id)
     if row is None:
         raise HTTPException(404, "项目不存在")
     out = _public(row)
+    out.update(_directing_payload(request.app.state.db, row,
+                                  request.app.state.data_dir))
     if row["autopilot"]:
         from ..engine.autopilot import next_action
         out["autopilot_action"] = next_action(
@@ -1046,6 +1056,23 @@ def patch_style(request: Request, project_id: int, body: dict):
         conn = db.connect()
         conn.execute("UPDATE projects SET redraw_characters=? WHERE id=?",
                      (1 if body["redraw_characters"] else 0, project_id))
+        conn.commit()
+
+    # 定向执导覆写（迁移 45，2026-10-01 T8 借鉴）：''=自动 / 'off'=全关 /
+    # 'a,b'=强制指定（API 层严校验防 typo；引擎层宽容忽略未知值）
+    if "directing_override" in body:
+        from ..engine.directing import DIRECTING_SKILLS
+        val = str(body["directing_override"] or "").strip()
+        if val and val != "off":
+            bad = sorted({x.strip() for x in val.split(",")
+                          if x.strip() and x.strip() not in DIRECTING_SKILLS})
+            if bad:
+                raise HTTPException(
+                    422, f"未知执导技能: {bad}——合法值：空(自动)/off/"
+                         f"{','.join(DIRECTING_SKILLS)}（逗号分隔可多选）")
+        conn = db.connect()
+        conn.execute("UPDATE projects SET directing_override=? WHERE id=?",
+                     (val, project_id))
         conn.commit()
 
     # Handle autopilot switch (一键出片)
@@ -1164,7 +1191,10 @@ def patch_style(request: Request, project_id: int, body: dict):
         except ValueError as e:
             raise HTTPException(422, str(e))
 
-    return _public(get_project(db, project_id))
+    out = _public(get_project(db, project_id))
+    out.update(_directing_payload(db, get_project(db, project_id),
+                                  request.app.state.data_dir))
+    return out
 
 
 @router.patch("/{project_id}/bgm")

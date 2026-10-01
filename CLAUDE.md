@@ -430,3 +430,10 @@
 - 前端：映射区 11 行下拉下 🏷 主模型小字行（label=='unet' 或 label_cn 含「主模型」的槽，文件名超长省略号）；其余**在用**槽位进 title 悬浮；`tmplModelLine` 助手进 **methods**（2026-09-12 判例沿用）；未映射/无模型槽 v-if 隐藏；漫画页快道行说明补优先链（快道→参考注入→纯文生图）
 - **顺手修**：`audio_to_text.yaml` `file:` 字段 typo（audio_to_text.json → audio_to_text.api.json）——休眠 bug（asr_qwen3 从未用过），本次 GET 读 api_json 才暴露成全线 500
 - 注意：Qwen2.1 扩写语言下拉在 🖼 图像生成组尾部（曾误放 🎬 视频渲染组旋钮行不可见——放旋钮先看分组归属）
+
+## 模块地图（定向执导技能 2026-10-01 T8 借鉴）
+
+- **`engine/directing.py`** — 四技能自写中文方法论（武术打斗=发力支撑/避线接触/跨镜接力/受力分级；戏剧场面=信息与听者反应；POV=第一人称组织；文武双全=文武混合执导，无关键词仅手动指定）：`match_directing_skills`（机械关键词扫 name/style/style_vis/era+正文头 3k——题材分类低难度任务关键词够用，不上 LLM）→ `effective_directing`（`projects.directing_override` 覆写优先：''=自动/'off'=全关/'a,b'=强制，引擎宽容忽略未知 id）→ `directing_block` 注入块。方法论思路借鉴 T8 directional-skills（**本体 ARR 不逐字搬**，浓缩自写）
+- **两注入点**：`llm/storyboard.split_storyboards`（跨镜动作接力是分镜层约束）+ `prompts/gen.generate_video_prompt`（动作可读性；**新参 data_dir**——无它按 style/era 库字段匹配，pipeline_jobs 传入）；命中注入、未命中零注入
+- **API**：PATCH `directing_override`（API 层严校验 422 防 typo，与引擎宽容互补）；详情/PATCH 载荷带 `directing_effective`+`directing_skills`（`_directing_payload` 共用）；前端参数面板「执导」下拉（自动(命中标签)/关闭/单选技能）
+- 注意：**改执导后重拆分镜或重生提示词才生效**（拆解与 gen_prompt 时读取）；多选覆写（'drama,pov'）仅 API 可设，前端单选形态
