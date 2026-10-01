@@ -446,3 +446,4 @@
 - **`musiclib.suggest_caption(style_ref=)`**：选中卡时系统词切 `_STYLE_REF_SYSTEM`（官方三段结构规范，卡作骨架——保持曲风/BPM/声部/编排，替换主题场景，输出英文）；未选卡保持旧两行中文建议零回归
 - 前端：音乐库 tab「📚 风格库」弹窗（族下拉+全文过滤+点卡即选）——选中回填 caption（可改）+ 记 styleRef（「骨架：<名> ✕」pill 可清）；✨建议带 style_ref 走骨架改写
 - 注意：骨架 pill 只影响 ✨建议与回填，生成吃的是 caption 文本本身——手动清空 styleRef 不影响已回填内容
+- **中文化（同日用户需求）**：`_FAMILY_ZH` 18 族名静态表 + `_TERM_ZH` 236 词曲风词典 + `_PHRASES` 短语优先（防 Hip+Hop→「嘻哈哈」碎词）→ `zh_style()` 机械合成 `style_zh`（'/'→'·'，未收录词保留英文）；前端中文主显+英文副显（Krea2 zh 判例沿用），过滤中英文都命中；mood/palette 长句保留英文（词表翻长句会烂）
