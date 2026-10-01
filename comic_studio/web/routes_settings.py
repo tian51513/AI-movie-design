@@ -82,6 +82,21 @@ def style_presets():
     return list_style_libs()
 
 
+@router.get("/music-styles")
+def music_styles(family: str = "", card: str = ""):
+    """音乐风格库（2026-10-01 官方 Music3 skill vendor）：无参=族清单 /
+    ?family=族内卡表 / ?family&card=卡全文（结构化 caption）。"""
+    from ..engine import musicstyles
+    try:
+        if not family:
+            return musicstyles.list_families()
+        if not card:
+            return musicstyles.list_cards(family)
+        return {"text": musicstyles.get_card(family, card)}
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
 def _filter_model_overrides(db, treg) -> dict:
     """存量覆盖按当前 manifest 过滤（2026-09-17 真机：character_views 刷新后
     lora_quadview 成死键，表单全量回传撞 PUT 校验整单 422）——死键不进载荷；

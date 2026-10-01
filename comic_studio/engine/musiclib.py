@@ -115,12 +115,29 @@ def planned_duration(target, lyrics: str) -> float:
     return min(360.0, max(30.0, planned))
 
 
+_STYLE_REF_SYSTEM = (
+    "你是 MiniMax Music3 的结构化 caption 改写器。参考卡（用户消息给出）是一份"
+    "完整的三段式 caption 骨架（Global Metadata / Vocal Details / Arrangement）。"
+    "以它为骨架改写出新的 caption：保持其曲风/BPM/调性/声部/配器编排结构与段落"
+    "推进，把应用场景与情绪主题替换为用户语境相关的内容。输出英文，遵循骨架的"
+    "三段结构（Global Metadata → Vocal Details → Arrangement），只输出 caption "
+    "本身，不要解释。")
+
+
 def suggest_caption(db, hint: str = "", genre: str = "", voice: str = "",
-                    lyrics: str = "") -> str:
-    system = ("你是音乐曲风描述写手，为 MiniMax Music3 生成 caption。输出格式："
-              "第一行 'Global Metadata: <风格>, <BPM>, <调性>.'，第二行起中文描述"
-              "情绪走向与配器（2~3 句）。只输出正文，不要解释。")
-    user = f"作品语境：{hint or '通用背景音乐'}"
+                    lyrics: str = "", style_ref: str = "") -> str:
+    """style_ref（2026-10-01 官方 skill vendor）：音乐风格库选中卡全文 → 系统
+    词切官方三段结构规范、卡作骨架参考（保持曲风/编排，替换主题）；未选卡
+    保持旧两行式中文建议。"""
+    if style_ref.strip():
+        system = _STYLE_REF_SYSTEM
+        user = (f"参考卡（骨架）：\n{style_ref.strip()}\n\n"
+                f"用户语境：{hint or '通用背景音乐'}")
+    else:
+        system = ("你是音乐曲风描述写手，为 MiniMax Music3 生成 caption。输出格式："
+                  "第一行 'Global Metadata: <风格>, <BPM>, <调性>.'，第二行起中文描述"
+                  "情绪走向与配器（2~3 句）。只输出正文，不要解释。")
+        user = f"作品语境：{hint or '通用背景音乐'}"
     if genre or voice:
         user += f"；曲风：{genre or '未定'}（{voice or '未定'}）"
     if lyrics.strip():   # 曲风↔歌词联动：已有歌词则摘录进上下文定气质

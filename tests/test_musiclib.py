@@ -409,3 +409,24 @@ def test_suggest_caption_genre_voice_link(tmp_path, monkeypatch):
     user = calls[-1][-1]["content"]
     assert "民谣" in user and "女声" in user
     assert "蝉声落进六月的走廊" in user  # 歌词摘录联动曲风气质
+
+
+def test_suggest_caption_with_style_ref(tmp_path, monkeypatch):
+    """风格卡参考（2026-10-01 官方 skill vendor）：style_ref=卡全文时系统词切
+    官方结构化 caption 规范、卡内容进上下文当骨架；无 style_ref 保持旧系统词。"""
+    from comic_studio.engine.db import Database
+    from comic_studio.engine import musiclib
+    db = Database(tmp_path / "s.db"); db.migrate()
+    card = "Global Metadata\nBasic Attributes: bpm is 70. Cinematic Ballad."
+    fake = FakeLLM("Global Metadata\nBasic Attributes: bpm is 70. 骨架改写结果。")
+    monkeypatch.setattr(musiclib, "client_for_task", lambda db, task: fake)
+    musiclib.suggest_caption(db, "月下独白", style_ref=card)
+    sys_word = fake.calls[0][0]["content"]
+    user_word = fake.calls[0][1]["content"]
+    assert "Vocal Details" in sys_word and "Arrangement" in sys_word   # 官方三段结构
+    assert card in user_word                                           # 卡全文作骨架
+    # 无 style_ref：旧系统词（无 Vocal Details 段要求）
+    fake2 = FakeLLM("Global Metadata: Cinematic lo-fi, 72 BPM, A minor.\n情绪：静。")
+    monkeypatch.setattr(musiclib, "client_for_task", lambda db, task: fake2)
+    musiclib.suggest_caption(db, "雨夜")
+    assert "Vocal Details" not in fake2.calls[0][0]["content"]

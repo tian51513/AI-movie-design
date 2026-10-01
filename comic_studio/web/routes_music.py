@@ -149,7 +149,8 @@ def suggest_caption(request: Request, body: dict | None = Body(default=None)):
                                         str(_b.get("hint") or ""),
                                         genre=str(_b.get("genre") or ""),
                                         voice=str(_b.get("voice") or ""),
-                                        lyrics=str(_b.get("lyrics") or ""))
+                                        lyrics=str(_b.get("lyrics") or ""),
+                                        style_ref=str(_b.get("style_ref") or ""))
     except Exception as e:
         raise HTTPException(502, f"曲风建议失败：{e}")
     return {"text": text}

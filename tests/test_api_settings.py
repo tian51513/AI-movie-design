@@ -279,3 +279,20 @@ def test_effective_models_tolerates_broken_manifest(tmp_path):
             raise FileNotFoundError("nope")
 
     assert _effective_models(Broken(), {}) == []
+
+
+def test_music_styles_api(tmp_path):
+    """音乐风格库端点（2026-10-01 官方 Music3 skill vendor）：
+    无参=18 族 / ?family==族内卡表 / ?family&card=卡全文；非法族 422。"""
+    with _client(tmp_path) as c:
+        fams = c.get("/api/settings/music-styles").json()
+        assert len(fams) == 18
+        cards = c.get("/api/settings/music-styles",
+                      params={"family": "cinematic-pop-ballad"}).json()
+        assert len(cards) == 54 and cards[0]["id"]
+        card = c.get("/api/settings/music-styles",
+                     params={"family": "cinematic-pop-ballad",
+                             "card": "cinematic-ballad-ambient-pop_0001.txt"}).json()
+        assert card["text"].startswith("Global Metadata")
+        assert c.get("/api/settings/music-styles",
+                     params={"family": "bogus"}).status_code == 422
