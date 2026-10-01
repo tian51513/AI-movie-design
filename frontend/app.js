@@ -2170,6 +2170,10 @@ const methods = {
         this.musicForm.caption = text;
         this.musicForm.styleRef = text;
         this.musicForm.styleName = card.style;
+        // 卡=完整曲风+声部声明（Vocal Details 段自带）——下拉残留旧值只会
+        // 拼进首行混信号（曲风）或无效（声部），选卡即清空（2026-10-01 用户两次撞上）
+        this.musicForm.genre = '';
+        this.musicForm.voice = '';
         this.musicStyleOpen = false;
       }
     } catch (e) { alert('读取风格卡失败：' + e); }
