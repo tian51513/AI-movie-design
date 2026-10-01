@@ -737,6 +737,7 @@
          <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
        </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.t2i_tm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.t2i_tm).title">{{tmplModelLine(settingsForm.t2i_tm).line}}</div>
        <button @click="testWorkflow(settingsForm.t2i_tm)" style="font-size:12px;padding:3px 8px"
                title="下载当前主图模板 JSON → 打开 ComfyUI 拖入测试">🧪</button></div>
      </div>
@@ -747,7 +748,8 @@
          <option value="">（不映射——回退单段）</option>
          <option v-for="t in templatesOfType('character_views')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
-       </select></div>
+       </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.cvTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.cvTm).title">{{tmplModelLine(settingsForm.cvTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>关键帧（首尾帧补生成）</b>
@@ -755,15 +757,17 @@
       <div class="wf-ctl"><select v-model="settingsForm.kfTm">
          <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
-       </select></div>
+       </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.kfTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.kfTm).title">{{tmplModelLine(settingsForm.kfTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>漫画页 · Krea2 快道</b>
-        <span class="muted">小说转漫画逐页主力道——有角色参考的页走这里（图1=场景 / 图2=人物双槽，20-30s/页）</span></div>
+        <span class="muted">小说转漫画逐页主力道（优先级：本行 → 参考注入 → 纯文生图，前者缺失逐级回落）——有角色参考的页走这里（图1=场景 / 图2=人物双槽，20-30s/页）</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.comicKreaTm">
          <option v-for="t in kreaLaneTemplates()" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
-       </select></div>
+       </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.comicKreaTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.comicKreaTm).title">{{tmplModelLine(settingsForm.comicKreaTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>漫画页 · 参考注入（回落）</b>
@@ -771,7 +775,8 @@
       <div class="wf-ctl"><select v-model="settingsForm.comicRefTm">
          <option v-for="t in refLaneTemplates()" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
-       </select></div>
+       </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.comicRefTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.comicRefTm).title">{{tmplModelLine(settingsForm.comicRefTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>漫画页 · 纯文生图</b>
@@ -779,7 +784,8 @@
       <div class="wf-ctl"><select v-model="settingsForm.comicTm">
          <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
-       </select></div>
+       </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.comicTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.comicTm).title">{{tmplModelLine(settingsForm.comicTm).line}}</div></div>
      </div>
      <div class="wf-row wf-full" style="padding-top:2px">
        <label class="muted" style="font-size:12px"
@@ -798,7 +804,8 @@
       <div class="wf-ctl"><select v-model="settingsForm.r2vaTm">
          <option v-for="t in templatesOfType('ref2va')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
-       </select></div>
+       </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.r2vaTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.r2vaTm).title">{{tmplModelLine(settingsForm.r2vaTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>首尾帧插值</b>
@@ -806,7 +813,8 @@
       <div class="wf-ctl"><select v-model="settingsForm.fl2vTm">
          <option v-for="t in templatesOfType('fl2v')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
-       </select></div>
+       </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.fl2vTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.fl2vTm).title">{{tmplModelLine(settingsForm.fl2vTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>文生视频</b>
@@ -814,7 +822,8 @@
       <div class="wf-ctl"><select v-model="settingsForm.t2vTm">
          <option v-for="t in templatesOfType('t2v')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
-       </select></div>
+       </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.t2vTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.t2vTm).title">{{tmplModelLine(settingsForm.t2vTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>导演台快车道</b>
@@ -822,7 +831,8 @@
       <div class="wf-ctl"><select v-model="settingsForm.dirTm">
          <option v-for="t in templatesOfType('director')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
-       </select></div>
+       </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.dirTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.dirTm).title">{{tmplModelLine(settingsForm.dirTm).line}}</div></div>
      </div>
      <div class="wf-row wf-full" style="padding-top:2px">
        <label class="muted" style="font-size:12px"
@@ -865,7 +875,8 @@
       <div class="wf-ctl"><select v-model="settingsForm.prTm">
          <option v-for="t in templatesOfType('i2i').concat(templatesOfType('t2i'), templatesOfType('ref2va'))" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
-       </select></div>
+       </select>
+       <div class="muted" v-if="tmplModelLine(settingsForm.prTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.prTm).title">{{tmplModelLine(settingsForm.prTm).line}}</div></div>
      </div>
     </div>
     <h3>工作流导入</h3>

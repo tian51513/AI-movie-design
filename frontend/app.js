@@ -301,6 +301,23 @@ const methods = {
   refLaneTemplates() {
     return this.templatesOfType('t2i').filter(t => (t.image_slots || []).length > 0);
   },
+  // 映射区主模型可见性（2026-10-01 用户：不知道漫画页用的什么主模型）：
+  // 🏷 主模型行 + 其余在用槽位进 title；value=后端算好的生效值（覆盖>默认，
+  // 开关槽关=「（关闭）」）。无模型槽/未映射返回 null（v-if 隐藏）
+  tmplModelLine(id) {
+    const t = (this.settingsForm.model_templates || []).find(x => x.id === id);
+    if (!t || !(t.models || []).length) return null;
+    const main = t.models.find(m => m.label === 'unet'
+                                   || (m.label_cn || '').includes('主模型'))
+                 || t.models[0];
+    const rest = t.models.filter(m => m !== main && m.value)
+                         .map(m => `${m.label_cn}：${m.value}`).join('；');
+    return {
+      line: `🏷 ${main.label_cn}：${main.value || '（关闭）'}`
+            + (main.overridden ? '（已覆盖）' : ''),
+      title: rest ? `其余在用槽位——${rest}` : '（无其它在用槽位）',
+    };
+  },
   async loadThemesManage() {
     try { this.themesManage = await (await fetch('/api/themes')).json(); }
     catch (e) { /* 忽略 */ }
