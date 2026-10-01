@@ -2415,7 +2415,7 @@ const ComboBox = {
     placeholder: { type: String, default: '—' },
   },
   emits: ['update:modelValue'],
-  data: () => ({ open: false, q: '' }),
+  data: () => ({ open: false, q: '', flip: false }),
   computed: {
     label() {
       const o = this.options.find(o => String(o.value) === String(this.modelValue));
@@ -2431,7 +2431,7 @@ const ComboBox = {
   template: `
   <div class="combo" @focusout="onBlur">
     <div class="combo-btn" :title="label" @click="open = !open">{{ label || placeholder }}</div>
-    <div v-if="open" class="combo-menu">
+    <div v-if="open" class="combo-menu" :class="{ flip }">
       <input v-model="q" ref="qbox" placeholder="输入过滤…" @keydown.esc="open = false">
       <div class="combo-list">
         <div v-for="o in filtered" :key="o.value" :class="{ sel: String(o.value) === String(modelValue) }"
@@ -2445,7 +2445,20 @@ const ComboBox = {
     onBlur(e) { if (!this.$el.contains(e.relatedTarget)) { this.open = false; this.q = ''; } },
   },
   watch: {
-    open(v) { if (v) this.$nextTick(() => { if (this.$refs.qbox) this.$refs.qbox.focus(); }); },
+    open(v) {
+      if (!v) return;
+      this.$nextTick(() => {
+        // 右缘翻转（2026-10-01 用户反馈：边部下拉把页面撑开）——菜单默认
+        // 锚 left:0 向右展开，映射区下拉在页面右列必溢出。展开时量按钮位置，
+        // 越过右缘改锚 right:0 向左展开
+        const menu = this.$el.querySelector('.combo-menu');
+        if (menu) {
+          const r = this.$el.getBoundingClientRect();
+          this.flip = r.left + menu.offsetWidth > window.innerWidth - 8;
+        }
+        if (this.$refs.qbox) this.$refs.qbox.focus();
+      });
+    },
   },
 };
 

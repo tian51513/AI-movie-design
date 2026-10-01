@@ -25,8 +25,10 @@
     color: #e2e8f0; padding: 3px 8px; cursor: pointer; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; max-width: 100%; text-align: left; }
   .combo-menu { position: absolute; z-index: 60; top: calc(100% + 2px); left: 0; min-width: 220px;
+    max-width: calc(100vw - 16px);          /* 视口封顶——绝不撑出横向滚动 */
     background: #131a23; border: 1px solid #2c3540; border-radius: 6px;
     box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  .combo-menu.flip { left: auto; right: 0; }  /* 右缘下拉向左展开 */
   .combo-menu input { width: calc(100% - 12px); margin: 6px; padding: 3px 6px;
     border: 1px solid #2c3540; border-radius: 4px; background: #0f172a; color: #e2e8f0; }
   .combo-list { max-height: 260px; overflow-y: auto; padding-bottom: 4px; }
