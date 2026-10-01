@@ -250,6 +250,10 @@ MIGRATIONS: list[str] = [
     # Krea2 模型推不动画风，工作台「风格库+风格」槽才是强杠杆——手动指定
     # 库风格可出漫画风）。值="库文件名|风格名"，空=不套（走提示词文字段）
     """ALTER TABLE projects ADD COLUMN krea2_style TEXT NOT NULL DEFAULT '';""",
+    # 45 定向执导覆写（2026-10-01 T8 包借鉴）：''=自动关键词匹配（题材→
+    # 执导方法论注入拆解与提示词 system）/ 'off'=全关 / 'a,b'=强制指定
+    # （合法 id 见 engine/directing.py DIRECTING_SKILLS）
+    """ALTER TABLE projects ADD COLUMN directing_override TEXT NOT NULL DEFAULT '';""",
 ]
 
 
