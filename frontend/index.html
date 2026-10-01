@@ -732,7 +732,7 @@
      <div class="wf-gh">🖼 图像生成 <span class="muted">资产图 / 漫画页</span></div>
      <div class="wf-row">
       <div class="wf-use"><b>主图 / 参考图</b>
-        <span class="muted">角色主图与场景/道具参考图——门1 前自动生成、资产卡「主图」按钮；文+图类模板在有主图时自动重绘</span></div>
+        <span class="muted">角色的身份锚（main.png）+ 场景/道具参考图——门1 前自动出、资产卡「主图」手动重生；视频关键帧与漫画页参考注入都吃它。选带图槽模板且有旧主图=文+图重绘，🎨重设计=纯文生图</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.t2i_tm">
          <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
@@ -743,7 +743,7 @@
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>三视图</b>
-        <span class="muted">角色三视图 sheet——主图作种子派生多角度；不映射则角色回退单段生成</span></div>
+        <span class="muted">从主图派生多角度 sheet——视频渲染（ref2va）的角色参考就是这张 sheet（漫改/转化项目的角色一致性来源）。不映射=角色用主图模板一段直出</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.cvTm">
          <option value="">（不映射——回退单段）</option>
          <option v-for="t in templatesOfType('character_views')" :key="t.id" :value="t.id"
@@ -753,7 +753,7 @@
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>关键帧（首尾帧补生成）</b>
-        <span class="muted">fl2v 渲染缺 kf_start/kf_end 时自动生成首尾对——选图生图类模板（需图片输入槽）</span></div>
+        <span class="muted">fl2v 视频渲染缺首尾帧时的自动补图道——首帧参考上镜尾帧/角色主图（人设接力）、尾帧贴首帧构图，同 seed 保成对一致。选图生图类模板（需图片输入槽）</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.kfTm">
          <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
@@ -762,7 +762,7 @@
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>漫画页 · Krea2 快道</b>
-        <span class="muted">小说转漫画逐页主力道（优先级：本行 → 参考注入 → 纯文生图，前者缺失逐级回落）——有角色参考的页走这里（图1=场景 / 图2=人物双槽，20-30s/页）</span></div>
+        <span class="muted">📖小说转漫画项目逐页生成的主力道——绑定角色且有主图的页走这里；图1=场景 / 图2=人物双槽+画风LoRA栈，20-30s/页。优先级：本行→参考注入→纯文生图，前者缺失逐级回落</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.comicKreaTm">
          <option v-for="t in kreaLaneTemplates()" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
@@ -771,7 +771,7 @@
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>漫画页 · 参考注入（回落）</b>
-        <span class="muted">快道模板缺失/不可用时回落——Edit-2511 多图人物场景化</span></div>
+        <span class="muted">快道缺失时的回落道——Edit-2511 多图人物场景化（char1/char2/scene 三参考+空白画布底，幅度 comfy.page_ref_denoise 可调）；同样仅小说转漫画项目</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.comicRefTm">
          <option v-for="t in refLaneTemplates()" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
@@ -780,7 +780,7 @@
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>漫画页 · 纯文生图</b>
-        <span class="muted">无角色参考的页；输出尺寸=项目尺寸档 × 画幅</span></div>
+        <span class="muted">兜底道——无绑定角色/无主图的页纯文字出图；尺寸=项目尺寸档 × 画幅</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.comicTm">
          <option v-for="t in templatesOfType('t2i')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
@@ -800,7 +800,7 @@
      <div class="wf-gh">🎬 视频渲染 <span class="muted">分镜 → 视频</span></div>
      <div class="wf-row">
       <div class="wf-use"><b>多参生视频</b>
-        <span class="muted">角色参考图+音色样本生视频——漫改/漫画转化项目的主力渲染</span></div>
+        <span class="muted">漫改/漫画转视频项目的主力渲染道——绑定角色的三视图 sheet 进参考槽保人设一致；绑音色的镜再进音色样本（保 H3 原声口型）</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.r2vaTm">
          <option v-for="t in templatesOfType('ref2va')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
@@ -809,7 +809,7 @@
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>首尾帧插值</b>
-        <span class="muted">同场景连续动作镜（fl2v）——首帧→尾帧翻页连贯</span></div>
+        <span class="muted">动态漫翻页链/同场景连续动作镜——前帧=首、后帧=尾插值连贯；缺关键帧时自动走上面「关键帧」行补图</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.fl2vTm">
          <option v-for="t in templatesOfType('fl2v')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
@@ -818,7 +818,7 @@
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>文生视频</b>
-        <span class="muted">无参考的全新画面（t2v）</span></div>
+        <span class="muted">无角色绑定/无参考镜的降级道——纯提示词生成全新画面</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.t2vTm">
          <option v-for="t in templatesOfType('t2v')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
@@ -827,7 +827,7 @@
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>导演台快车道</b>
-        <span class="muted">🚄 一次提交整片（段间 latent 连贯；画布按项目兆像素档）</span></div>
+        <span class="muted">「🚄 整段快车道」按钮专用——storyboard_ready 后一次提交整片（512 帧分批、批间 latent 连贯+可选首帧接力、段级音色参考），单一整片文件直达合成；与逐镜链并存按需选</span></div>
       <div class="wf-ctl"><select v-model="settingsForm.dirTm">
          <option v-for="t in templatesOfType('director')" :key="t.id" :value="t.id"
                  :title="`${t.name}（${t.id}）`">{{ t.name }}</option>
