@@ -29,6 +29,7 @@
     background: #131a23; border: 1px solid #2c3540; border-radius: 6px;
     box-shadow: 0 8px 24px rgba(0,0,0,.5); }
   .combo-menu.flip { left: auto; right: 0; }  /* 右缘下拉向左展开 */
+  .combo-menu.up { top: auto; bottom: calc(100% + 2px); }  /* 近页底向上展开 */
   .combo-menu input { width: calc(100% - 12px); margin: 6px; padding: 3px 6px;
     border: 1px solid #2c3540; border-radius: 4px; background: #0f172a; color: #e2e8f0; }
   .combo-list { max-height: 260px; overflow-y: auto; padding-bottom: 4px; }
@@ -137,8 +138,12 @@
                     padding-top: 8px; }
   .wf-use b { display: block; font-size: 13px; }
   .wf-use .muted { display: block; margin-top: 1px; }
-  .wf-ctl { display: flex; gap: 6px; align-items: center; min-width: 0; }
+  .wf-ctl { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
   .wf-ctl select { width: 100%; min-width: 0; }
+  /* combo/模型行各独占一行（2026-10-01：flex 单行把 🏷 主模型提示挤成
+     86px 尾巴=「看不到」根因）；🧪 按钮自然换行跟随 */
+  .wf-ctl .combo { flex: 1 1 100%; }
+  .wf-ctl .muted { flex: 1 1 100%; }
   @media (max-width: 768px) { .wf-row { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -763,7 +768,7 @@
       <div class="wf-use"><b>主图 / 参考图</b>
         <span class="muted">角色的身份锚（main.png）+ 场景/道具参考图——门1 前自动出、资产卡「主图」手动重生；视频关键帧与漫画页参考注入都吃它。选带图槽模板且有旧主图=文+图重绘，🎨重设计=纯文生图</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.t2i_tm" :options="tmplOpts(templatesOfType('t2i'))" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.t2i_tm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.t2i_tm).title">{{tmplModelLine(settingsForm.t2i_tm).line}}</div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.t2i_tm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.t2i_tm).title">{{tmplModelLine(settingsForm.t2i_tm).line}}</div>
        <button @click="testWorkflow(settingsForm.t2i_tm)" style="font-size:12px;padding:3px 8px"
                title="下载当前主图模板 JSON → 打开 ComfyUI 拖入测试">🧪</button></div>
      </div>
@@ -771,31 +776,31 @@
       <div class="wf-use"><b>三视图</b>
         <span class="muted">从主图派生多角度 sheet——视频渲染（ref2va）的角色参考就是这张 sheet（漫改/转化项目的角色一致性来源）。不映射=角色用主图模板一段直出</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.cvTm" :options="tmplOpts(templatesOfType('character_views'), '（不映射——回退单段）')" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.cvTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.cvTm).title">{{tmplModelLine(settingsForm.cvTm).line}}</div></div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.cvTm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.cvTm).title">{{tmplModelLine(settingsForm.cvTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>关键帧（首尾帧补生成）</b>
         <span class="muted">fl2v 视频渲染缺首尾帧时的自动补图道——首帧参考上镜尾帧/角色主图（人设接力）、尾帧贴首帧构图，同 seed 保成对一致。选图生图类模板（需图片输入槽）</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.kfTm" :options="tmplOpts(templatesOfType('t2i'))" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.kfTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.kfTm).title">{{tmplModelLine(settingsForm.kfTm).line}}</div></div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.kfTm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.kfTm).title">{{tmplModelLine(settingsForm.kfTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>漫画页 · Krea2 快道</b>
         <span class="muted">📖小说转漫画项目逐页生成的主力道——绑定角色且有主图的页走这里；图1=场景 / 图2=人物双槽+画风LoRA栈，20-30s/页。优先级：本行→参考注入→纯文生图，前者缺失逐级回落</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.comicKreaTm" :options="tmplOpts(kreaLaneTemplates())" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.comicKreaTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.comicKreaTm).title">{{tmplModelLine(settingsForm.comicKreaTm).line}}</div></div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.comicKreaTm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.comicKreaTm).title">{{tmplModelLine(settingsForm.comicKreaTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>漫画页 · 参考注入（回落）</b>
         <span class="muted">快道缺失时的回落道——Edit-2511 多图人物场景化（char1/char2/scene 三参考+空白画布底，幅度 comfy.page_ref_denoise 可调）；同样仅小说转漫画项目</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.comicRefTm" :options="tmplOpts(refLaneTemplates())" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.comicRefTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.comicRefTm).title">{{tmplModelLine(settingsForm.comicRefTm).line}}</div></div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.comicRefTm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.comicRefTm).title">{{tmplModelLine(settingsForm.comicRefTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>漫画页 · 纯文生图</b>
         <span class="muted">兜底道——无绑定角色/无主图的页纯文字出图；尺寸=项目尺寸档 × 画幅</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.comicTm" :options="tmplOpts(templatesOfType('t2i'))" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.comicTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.comicTm).title">{{tmplModelLine(settingsForm.comicTm).line}}</div></div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.comicTm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.comicTm).title">{{tmplModelLine(settingsForm.comicTm).line}}</div></div>
      </div>
      <div class="wf-row wf-full" style="padding-top:2px">
        <label class="muted" style="font-size:12px"
@@ -812,25 +817,25 @@
       <div class="wf-use"><b>多参生视频</b>
         <span class="muted">漫改/漫画转视频项目的主力渲染道——绑定角色的三视图 sheet 进参考槽保人设一致；绑音色的镜再进音色样本（保 H3 原声口型）</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.r2vaTm" :options="tmplOpts(templatesOfType('ref2va'))" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.r2vaTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.r2vaTm).title">{{tmplModelLine(settingsForm.r2vaTm).line}}</div></div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.r2vaTm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.r2vaTm).title">{{tmplModelLine(settingsForm.r2vaTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>首尾帧插值</b>
         <span class="muted">动态漫翻页链/同场景连续动作镜——前帧=首、后帧=尾插值连贯；缺关键帧时自动走上面「关键帧」行补图</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.fl2vTm" :options="tmplOpts(templatesOfType('fl2v'))" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.fl2vTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.fl2vTm).title">{{tmplModelLine(settingsForm.fl2vTm).line}}</div></div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.fl2vTm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.fl2vTm).title">{{tmplModelLine(settingsForm.fl2vTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>文生视频</b>
         <span class="muted">无角色绑定/无参考镜的降级道——纯提示词生成全新画面</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.t2vTm" :options="tmplOpts(templatesOfType('t2v'))" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.t2vTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.t2vTm).title">{{tmplModelLine(settingsForm.t2vTm).line}}</div></div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.t2vTm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.t2vTm).title">{{tmplModelLine(settingsForm.t2vTm).line}}</div></div>
      </div>
      <div class="wf-row">
       <div class="wf-use"><b>导演台快车道</b>
         <span class="muted">「🚄 整段快车道」按钮专用——storyboard_ready 后一次提交整片（512 帧分批、批间 latent 连贯+可选首帧接力、段级音色参考），单一整片文件直达合成；与逐镜链并存按需选</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.dirTm" :options="tmplOpts(templatesOfType('director'))" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.dirTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.dirTm).title">{{tmplModelLine(settingsForm.dirTm).line}}</div></div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.dirTm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.dirTm).title">{{tmplModelLine(settingsForm.dirTm).line}}</div></div>
      </div>
      <div class="wf-row wf-full" style="padding-top:2px">
        <label class="muted" style="font-size:12px"
@@ -871,7 +876,7 @@
       <div class="wf-use"><b>整页重绘</b>
         <span class="muted">动态漫「🖌 批量重绘分镜」逐页换角色/画风（base=漫画原页图；重绘幅度在 ComfyUI 区「page_redraw_denoise」）</span></div>
       <div class="wf-ctl"><combo-box v-model="settingsForm.prTm" :options="tmplOpts(templatesOfType('i2i').concat(templatesOfType('t2i'), templatesOfType('ref2va')))" style="width:100%"></combo-box>
-       <div class="muted" v-if="tmplModelLine(settingsForm.prTm)" style="font-size:11px;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="tmplModelLine(settingsForm.prTm).title">{{tmplModelLine(settingsForm.prTm).line}}</div></div>
+       <div class="muted" v-if="tmplModelLine(settingsForm.prTm)" style="font-size:11px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px" :title="tmplModelLine(settingsForm.prTm).title">{{tmplModelLine(settingsForm.prTm).line}}</div></div>
      </div>
     </div>
     <h3>工作流导入</h3>
