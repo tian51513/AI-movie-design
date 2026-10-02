@@ -227,6 +227,13 @@ def describe_shots(db, data_dir, project_id, client, shot_id=None,
             "non_diegetic_music:\nN/A\n\n"
             "结尾固定句（逐字照抄）：No subtitles, no logos, no watermarks, no text overlays.\n"
             + _voices_tail(db, data_dir, project_id))
+    # 定向执导补接读图链（2026-10-02 用户需求）：动态漫/漫改在此生成视频
+    # 提示词——动作跨页接力/文戏反应对读图同样成立（此前只注入拆解与
+    # gen_prompts，漫画导入两形式吃不到）；命中/指定才注入，未命中零注入
+    from .directing import directing_block as _dblk
+    _d = _dblk(db, proj, data_dir)
+    if _d:
+        system = system + "\n\n" + _d
     n = 0
     voices_meta: dict = {}   # 说话人 → {gender, age, voice}（VOICES 尾行聚合）
     touched: list = []       # (shot_id, dialogue) 本次生成提示词的镜（智能估时用）

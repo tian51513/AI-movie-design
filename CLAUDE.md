@@ -466,3 +466,9 @@
 - **routes_voices 上传端点**：接受后缀扩 `.webm/.mp4` → 落盘后转码再进 `process_upload`（克隆/staging/confirm 全链零改动）；ValueError→502 录音转码文案
 - **前端**：音色库 tab 自定义卡「🎙 录音克隆」——MediaRecorder 录→blob 预览试听→`vUp.file=File(rec.webm)` 走既有上传表单（名称/裁剪起止同用）；`micAvailable` computed（`mediaDevices+isSecureContext`）不可用时按钮禁用+提示「需 localhost/HTTPS，手机 LAN 用文件上传」；手选文件清录音预览
 - **硬约束**：getUserMedia 需安全上下文——**LAN IP + http 的手机访问录音不可用**（浏览器层禁死，非代码可解；桌面 localhost ✓）；建议录 5~15s 清晰独白
+
+## 模块地图（定向执导补接读图链 + 命中提示 2026-10-02）
+
+- **`comic.describe_shots` 注入**（用户需求：动态漫/漫改吃执导）：两分支（动态漫 FL2VA/漫改六段）system 尾统一拼 `directing_block`——动作跨页接力/文戏反应对读图同样成立；命中/指定才注入。**生效时机**：读图前设置好；读图后改需「🔄 强制重读」重生提示词；渲染只吃提示词文本（渲染阶段改无效）
+- **命中提示**（用户需求：生效前可维护信息命中）：`_directing_payload` 透出 `keywords`；前端「执导」label tooltip（`directingHint` computed）列各技能命中词+信号源（项目名/画风/时代/正文头 3k）+「未命中把题材词写进画风/项目名即可命中，或手动指定」——用户可自维护命中
+- **全项目形式执导覆盖审计**：小说/主题/有声书（拆解+gen_prompts 全吃）· 小说转漫画（拆解吃——页描述生成受影响；页渲染不走执导）· 漫画转化后视频（gen_prompts 吃）· 动态漫/漫改导入（describe_shots 补接后吃）——六形式全覆盖

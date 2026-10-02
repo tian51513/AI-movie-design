@@ -163,6 +163,15 @@ const computed = {
       .map(id => ((this.project?.directing_skills || [])
         .find(s => s.id === id) || {}).label || id).join('+');
   },
+  directingHint() {  // 命中提示（2026-10-02 用户需求：生效前可维护信息命中）
+    const kws = (this.project?.directing_skills || [])
+      .filter(s => (s.keywords || []).length)
+      .map(s => `${s.label}：${s.keywords.join('、')}`).join('\n');
+    return (kws + '\n\n命中信号源：项目名 / 画风 / 时代 / 正文开头 3000 字'
+          + '\n未命中时把题材词（如「武侠」）写进画风或项目名即可命中；'
+          + '或在此手动指定。改动在读图/拆解/生成提示词前生效——已生成的'
+          + '提示词需「🔄 强制重读」重生才吃到。');
+  },
   msFiltered() {  // 音乐风格库卡过滤（风格名/节奏/情绪/声部/palette 全文搜）
     const q = (this.msSearch || '').toLowerCase();
     if (!q) return this.msCards;

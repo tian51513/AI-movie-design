@@ -998,10 +998,13 @@ def listing(request: Request):
 
 
 def _directing_payload(db, row, data_dir) -> dict:
-    """定向执导（2026-10-01）：详情/PATCH 载荷共用的生效结果与技能目录。"""
+    """定向执导（2026-10-01）：详情/PATCH 载荷共用的生效结果与技能目录。
+    keywords 一并透出（2026-10-02 用户需求：生效前页面提示命中词，用户可
+    把题材词写进画风/项目名以命中）。"""
     from ..engine.directing import DIRECTING_SKILLS, effective_directing
     return {"directing_effective": effective_directing(db, row, data_dir),
-            "directing_skills": [{"id": sid, "label": s["label"]}
+            "directing_skills": [{"id": sid, "label": s["label"],
+                                  "keywords": list(s["keywords"])}
                                  for sid, s in DIRECTING_SKILLS.items()]}
 
 

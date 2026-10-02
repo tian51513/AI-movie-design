@@ -1048,3 +1048,29 @@ def test_extract_dialogue_official_d_format():
     # 旧格式兜底（漫改/存量）
     out2 = _extract_dialogue("summary:x\n小明：「你好」")
     assert out2 == [{"speaker": "小明", "line": "你好"}]
+
+
+def test_describe_shots_injects_directing(tmp_path):
+    """定向执导补接读图链（2026-10-02 用户需求）：动态漫/漫改读图 system
+    注入方法论块（命中/指定才注入；未命中零注入）。动态漫无正文——信号源
+    =项目名/画风/时代。"""
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    db = Database(tmp_path / "s.db"); db.migrate()
+    seen = {}
+
+    class FakeVision(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            seen["system"] = messages[0]["content"]
+            return "少年推开门，画面延续。", Usage(1, 2)
+
+    pid = import_comic(db, tmp_path / "data", "武侠漫画", "9:16",
+                       [("p1.png", PNG)])["id"]
+    describe_shots(db, tmp_path / "data", pid, FakeVision())
+    assert "【定向执导】" in seen["system"] and "武术打斗执导" in seen["system"]
+    pid2 = import_comic(db, tmp_path / "data", "校园日常", "9:16",
+                        [("q1.png", PNG)])["id"]
+    describe_shots(db, tmp_path / "data", pid2, FakeVision())
+    assert "【定向执导】" not in seen["system"]
