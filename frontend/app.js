@@ -222,6 +222,10 @@ const computed = {
   isVideoChain() {  // 视频链（小说/主题/有声书/漫画导入）——按钮门控用
     return (this.project?.comic_mode || '') !== 'comic_output';
   },
+  isNativeComic() {  // 原生漫画导入（动态漫/漫改，2026-10-02）：快车道隐藏用——
+    // Director 不吃首尾帧，动态漫的原页锚定会全丢、且零主图 refs 无锚（防误点）
+    return ['motion_comic', 'film_adaptation'].includes(this.project?.comic_mode || '');
+  },
   comicPageShots() {  // 漫画页 = comic 类型镜（seq 即页号，pages/page_NNN.png）
     return this.shots.filter(s => s.workflow_type === 'comic');
   },

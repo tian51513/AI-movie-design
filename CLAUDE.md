@@ -493,3 +493,4 @@
 - **删侧根治**：`delete_project` 镜链删除从叶子序循环（O(N²)、事务内逐条删、持写锁数秒~数十秒）改**先断链再一条删**（`UPDATE depends_on=NULL` + 单条 DELETE）——事务持有塌缩到毫秒级，自引用 FK 无逐行检查问题（既有链删除 6 测试全过）
 - **创建侧护栏**：`projects._exec_locked_retry`——INSERT 遇 locked 退避重试×3（1.5s/3s），非 locked 直抛；create_project 主 INSERT 接入
 - 注意：rmtree 本就在 commit 后（09-14 设计正确）；锁窗口全在链式删除事务
+- **快车道按钮对原生漫画导入隐藏（2026-10-02 用户 OK）**：`isNativeComic` computed（motion_comic/film_adaptation）门控「🚄 整段快车道」——Director 不吃首尾帧，动态漫原页锚定会全丢+零主图 refs 无锚；漫画转化后项目（有资产主图）不受影响照常显示
