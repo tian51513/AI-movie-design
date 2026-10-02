@@ -1098,3 +1098,32 @@ def test_describe_shots_motion_framing_rule(tmp_path):
     assert "构图保真" in seen["system"]
     assert "禁止任何形式的收窄" in seen["system"]
     assert "full-body" in seen["system"]
+
+
+def test_describe_shots_strips_rule_echo(tmp_path):
+    """反抄判例（2026-10-02 真机：VLM 把系统词「构图保真」规则整块抄进输出，
+    紧邻「对白：」行被 H3 当台词念出）：落库前机械剥离规则回声——含完整
+    【构图保真…】块与碎片行，无论新旧格式。"""
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    db = Database(tmp_path / "s.db"); db.migrate()
+
+    class Echo(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            return ("integrated_multimodal_description:\n[Shot 1] woman drinks.\n"
+                    "【构图保真（硬约束，2026-10-02 真机判例）】第一格与第二格的构图是权威——"
+                    "描述中禁止任何形式的收窄、推近至半身或特写结尾（页面本身是特写除外）；"
+                    "运镜只能写 subtle camera drift。\n"
+                    "对白：No dialogue, no humming, no speech.\n"
+                    "overall_soundscape:\nquiet\n\nnon_diegetic_music:\nN/A\n\n"
+                    "No subtitles, no logos, no watermarks, no text overlays."), Usage(1, 2)
+
+    pid = import_comic(db, tmp_path / "data", "反抄剧", "9:16",
+                       [("p1.png", PNG)])["id"]
+    describe_shots(db, tmp_path / "data", pid, Echo())
+    from comic_studio.engine.shots import list_shots
+    pr = list_shots(db, pid)[0]["prompt"]
+    assert "构图保真" not in pr and "构图是权威" not in pr
+    assert "woman drinks" in pr and "对白：No dialogue" in pr

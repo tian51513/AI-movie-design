@@ -243,6 +243,21 @@ _PROTOCOL_ANCHOR_RE = _re.compile(
     r"|overall_soundscape|non_diegetic_music|\[Shot \d+\]|\[镜\d+\]")
 
 
+# 系统词规则回声剥离（2026-10-02 真机判例：读图 VLM 把「构图保真」规则整块
+# 抄进输出、紧邻「对白：」行被 H3 当台词念出——同 2026-09-02 SKILL.md 代码块
+# 被抄判例族）。含完整【构图保真…】块与碎片行，全链（describe/gen）落库前过。
+_RULE_ECHO_RE = _re.compile(r"【构图保真[^】]*】[^\n]*|^[^\n]*构图是权威[^\n]*$", _re.M)
+
+
+def strip_rule_echo(text: str) -> str:
+    """剥系统词规则回声（确定性机械层——系统词再怎么加反抄令，模型抄不抄
+    是概率的，剥离是必定的）。"""
+    if "构图保真" not in text and "构图是权威" not in text:
+        return text
+    out = _RULE_ECHO_RE.sub("", text)
+    return _re.sub(r"\n{3,}", "\n\n", out)
+
+
 def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = None,
                    char_names=()):
     """P7-C 提示词 token 自愈（借鉴 Director reinforce 思想）：机械可修的问题
@@ -252,10 +267,12 @@ def heal_h3_prompt(text: str, shot_row, max_pics: int = 2, mode: str | None = No
     ⑥结尾后缀协议（「无字幕，无背景音乐」固定收尾，抑制自动配乐字幕）
     ⑦音频协议兜底（2026-08-30）：缺 overall_soundscape / non_diegetic_music 机械补
     （H3 不约束则自由发挥配乐与杂音；music 缺省补 N/A，已有配乐不覆盖）。
+    ⑨系统词规则回声剥离（2026-10-02）：VLM 抄进输出的「构图保真」规则块。
     返回 (healed, fixes)。"""
     fixes = []
     t = text or ""
     # ⑧ 输出卫生（2026-09-02 事故）：模型混入代码围栏——内含协议正文
+    t = strip_rule_echo(t)   # ⑨ 系统词规则回声（2026-10-02 构图保真抄录判例）
     #（subject_definitions/summary/[Shot…）→ 只拆围栏保留内容；纯工具代码
     # → 整块删除。协议提示词里永远不该出现围栏。
     if "```" in t:

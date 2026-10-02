@@ -692,3 +692,25 @@ def test_fit_to_aspect_letterbox(tmp_path):
     ok = tmp_path / "wide.png"
     Image.new("RGB", (1600, 900), (1, 2, 3)).save(ok)
     assert _fit_to_aspect(tmp_path, ok, "16:9") == ok
+
+
+def test_render_strips_rule_echo(tmp_path, monkeypatch):
+    """存量救（2026-10-02 反抄判例）：已落库提示词带「构图保真」规则回声的镜
+    （真机镜3 实证——紧邻「对白：」被 H3 当台词念出）——渲染提交前机械剥离。"""
+    from comic_studio.engine.workflows import registry
+    from comic_studio.engine.shots import update_shot
+    monkeypatch.setattr(registry, "TEMPLATE_ROOT", Path("templates/workflows"))
+    db, pid, sid = _mk_kf_shot(tmp_path)
+    update_shot(db, sid, {"prompt":
+        "integrated_multimodal_description: [Shot 1] woman drinks.\n"
+        "【构图保真（硬约束）】第一格与第二格的构图是权威——禁止收窄。\n"
+        "对白：No dialogue."})
+    kd = tmp_path / "data" / "projects" / "渲染剧" / "shots" / "1"
+    kd.mkdir(parents=True)
+    (kd / "kf_start.png").write_bytes(b"x"); (kd / "kf_end.png").write_bytes(b"x")
+    with comfy_server("ok", video=True) as m:
+        out = render_shot(db, tmp_path / "data", sid, ComfyClient(m.base_url))
+        assert out.exists()
+        sent = m.prompts[0]["prompt"]["64"]["inputs"]["prompt"]
+        assert "构图保真" not in sent and "构图是权威" not in sent
+        assert "woman drinks" in sent

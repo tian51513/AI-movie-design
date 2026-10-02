@@ -506,6 +506,10 @@ def render_shot(db, data_dir, shot_id, comfy, job_id=None,
     prompt = shot["prompt"]
     if not prompt:
         raise ValueError("shot prompt 为空")
+    # 系统词规则回声剥离（2026-10-02 反抄判例，存量救）：已落库提示词带
+    # 「构图保真」规则块的镜——提交前机械剥掉（新读图已在 heal ⑨ 清）
+    from .prompts.gen import strip_rule_echo
+    prompt = strip_rule_echo(prompt)
     if tmpl_type == "fl2v":
         # 官方 FL2VA 对齐头（2026-09-11 借鉴 MiniMax-H3-skills base 指南 §2.1
         # 原句——训练分布内的句式；此前自拟 EXACT 句为猜测近似）+ 镜内禁切约束
