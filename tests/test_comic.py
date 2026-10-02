@@ -1074,3 +1074,27 @@ def test_describe_shots_injects_directing(tmp_path):
                         [("q1.png", PNG)])["id"]
     describe_shots(db, tmp_path / "data", pid2, FakeVision())
     assert "【定向执导】" not in seen["system"]
+
+
+def test_describe_shots_motion_framing_rule(tmp_path):
+    """读图系统词构图保真规则（2026-10-02 真机判例：VLM 每镜写「最终收窄/
+    特写」文字锚，fl2v 尾帧被盖过只剩半身）：动态漫 system 明令禁收窄结尾、
+    运镜限 drift/pan、尾格构图收尾。"""
+    from comic_studio.engine.comic import import_comic, describe_shots
+    from comic_studio.engine.llm.provider import LLMClient, Usage
+    db = Database(tmp_path / "s.db"); db.migrate()
+    seen = {}
+
+    class FakeVision(LLMClient):
+        def __init__(self):
+            super().__init__("http://x", "k", "v")
+        def raw_chat(self, messages, temperature=0.3, max_tokens=None):
+            seen["system"] = messages[0]["content"]
+            return "少年推开门。", Usage(1, 2)
+
+    pid = import_comic(db, tmp_path / "data", "构图剧", "9:16",
+                       [("p1.png", PNG)])["id"]
+    describe_shots(db, tmp_path / "data", pid, FakeVision())
+    assert "构图保真" in seen["system"]
+    assert "禁止任何形式的收窄" in seen["system"]
+    assert "full-body" in seen["system"]

@@ -396,3 +396,14 @@ def test_patch_directing_override(tmp_path):
         r = c.patch(f"/api/projects/{pid}", json={"directing_override": ""})
         assert r.status_code == 200
         assert c.get(f"/api/projects/{pid}").json()["directing_effective"] == ["wushu"]
+
+
+def test_directing_skills_endpoint(tmp_path):
+    """执导目录端点（2026-10-02 导引页关键词配置展示）：引擎数据驱动。"""
+    with _client(tmp_path) as c:
+        r = c.get("/api/projects/directing/skills")
+        assert r.status_code == 200
+        skills = {s["id"]: s for s in r.json()}
+        assert len(skills) == 4
+        assert "武侠" in skills["wushu"]["keywords"]
+        assert skills["wenwu"]["label"] == "文武双全"

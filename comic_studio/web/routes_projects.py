@@ -1003,9 +1003,20 @@ def _directing_payload(db, row, data_dir) -> dict:
     把题材词写进画风/项目名以命中）。"""
     from ..engine.directing import DIRECTING_SKILLS, effective_directing
     return {"directing_effective": effective_directing(db, row, data_dir),
-            "directing_skills": [{"id": sid, "label": s["label"],
-                                  "keywords": list(s["keywords"])}
-                                 for sid, s in DIRECTING_SKILLS.items()]}
+            "directing_skills": _directing_skills()}
+
+
+def _directing_skills() -> list:
+    from ..engine.directing import DIRECTING_SKILLS
+    return [{"id": sid, "label": s["label"], "keywords": list(s["keywords"])}
+            for sid, s in DIRECTING_SKILLS.items()]
+
+
+@router.get("/directing/skills")
+def directing_skills():
+    """执导技能目录+命中词（2026-10-02 用户需求：导引页展示关键词配置）——
+    引擎数据驱动，改 DIRECTING_SKILLS 词表自动跟随。"""
+    return _directing_skills()
 
 
 @router.get("/{project_id}")

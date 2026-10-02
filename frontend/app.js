@@ -65,6 +65,7 @@ function data() {
     styleOpen: false, styleEditStyle: '', styleEditVis: '', styleSaving: false, styleEditKrea2: '',
     stylePickerOpen: false, spLib: '', spSel: '', spSearch: '', spCtx: 'create',
     musicStyleOpen: false, msFamily: '', msFamilies: [], msCards: [], msSearch: '',
+    directingGuide: [],   // 导引页执导关键词表（2026-10-02，引擎数据驱动）
     vRecState: '', vRecUrl: '',
     analyzeState: { status: '', error: null }, pollTimer: null,
     settingsForm: { llmProviders: {}, routing: {}, asr: {engine: 'faster_whisper', chunk_seconds: 300},
@@ -2571,6 +2572,9 @@ createApp({ components: { PromptBox, ComboBox }, data, computed, methods,
     fetch('/api/settings/style-presets').then(r => r.json())
       .then(d => { this.kreaLibs = d; })
       .catch(() => {});   // 预设拉不到不阻塞创建
+    fetch('/api/projects/directing/skills').then(r => r.json())
+      .then(d => { this.directingGuide = d; })
+      .catch(() => {});   // 导引页执导关键词表（拉不到不阻塞）
     await this.refresh();
     setInterval(async () => {  // 项目列表轮询：autopilot 角标/成片状态实时化
       if (this.view === 'projects' && !this.creating) {

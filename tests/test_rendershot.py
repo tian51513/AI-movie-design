@@ -328,6 +328,7 @@ def test_fl2v_render_appends_no_cut_constraint(tmp_path, monkeypatch):
         assert out.exists()
         sent = m.prompts[0]["prompt"]["64"]["inputs"]["prompt"]
         assert "single continuous" in sent and "no cuts" in sent
+        assert "shot scale" in sent          # 构图锁句（2026-10-02）随 KF_NO_CUT 附带
 
 
 def test_ref2va_prev_tail_frame_takes_ref0(tmp_path, monkeypatch):
@@ -657,3 +658,37 @@ def test_prune_ref_slots_drops_unprovided_chains():
         for v in (n.get("inputs") or {}).values():
             if isinstance(v, list):
                 assert str(v[0]) in wf, f"悬空引用 {nid} -> {v}"
+
+
+
+def test_fl2v_render_framing_lock():
+    """构图锁句（2026-10-02 真机判例：首帧贴全身页~90%、尾帧只剩半身——
+    VLM 提示词「最终收窄/特写」文字锚在结尾盖过尾帧图锚）：fl2v 渲染头
+    机械追加景别锁定句（渲染时拼装，存量提示词也吃到）。"""
+    from comic_studio.engine.rendershot import KF_FRAMING_LOCK
+    assert "shot scale" in KF_FRAMING_LOCK            # 全程同景别
+    assert "upper body or close-up" in KF_FRAMING_LOCK  # 禁推近半身/特写
+    assert "must closely match Picture 2" in KF_FRAMING_LOCK  # 尾帧构图权威
+
+
+def test_fit_to_aspect_letterbox(tmp_path):
+    """关键帧画幅适配（2026-10-02 用户需求：画幅与漫画不符→以项目画幅为主，
+    不裁内容、留白补齐）：竖版页进 16:9 → 输出画幅=16:9、内容等比完整
+    （白边 letterbox）；比例已符（容差内）原样直通。"""
+    from PIL import Image
+    from comic_studio.engine.rendershot import _fit_to_aspect
+    src = tmp_path / "page.png"
+    Image.new("RGB", (800, 1200), (200, 30, 40)).save(src)   # 2:3 竖版红页
+    out = _fit_to_aspect(tmp_path, src, "16:9")
+    assert out != src and out.exists()
+    im = Image.open(out)
+    r = im.width / im.height
+    assert abs(r - 16 / 9) < 0.02, (im.width, im.height)
+    # 内容完整：中心仍是红（未裁掉主体），角落是白边（留白不裁切）
+    cx, cy = im.width // 2, im.height // 2
+    assert im.getpixel((cx, cy)) == (200, 30, 40)
+    assert im.getpixel((2, 2)) == (255, 255, 255)
+    # 比例已符 → 直通原文件
+    ok = tmp_path / "wide.png"
+    Image.new("RGB", (1600, 900), (1, 2, 3)).save(ok)
+    assert _fit_to_aspect(tmp_path, ok, "16:9") == ok
