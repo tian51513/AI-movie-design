@@ -21,6 +21,21 @@ def slugify(name: str) -> str:
 ASPECT_RATIOS = ("9:16", "16:9", "3:4", "4:3", "1:1")  # 五档画幅（2026-08-30；DB CHECK/各校验点同步）
 
 
+def _exec_locked_retry(conn, sql, params, attempts: int = 3):
+    """写操作遇 database is locked 退避重试（2026-10-02 判例：删大项目事务
+    未收尾时立刻建同名项目，INSERT 等 busy_timeout 超时——锁是瞬时的，
+    重试即过）。非 locked 错误直抛。"""
+    import time as _t
+    for i in range(attempts):
+        try:
+            return conn.execute(sql, params)
+        except sqlite3.OperationalError as e:
+            if "locked" in str(e).lower() and i < attempts - 1:
+                _t.sleep(1.5 * (i + 1))
+                continue
+            raise
+
+
 def create_project(db: Database, data_dir: Path, name: str,
                    aspect_ratio: str, novel_text: str, style: str = "",
                    style_vis: str = "", comic_mode: str = "",
@@ -49,7 +64,8 @@ def create_project(db: Database, data_dir: Path, name: str,
     novel_path.write_text(novel_text, encoding="utf-8")
     from .chapters import parse_chapters
     chapters_json = json.dumps(parse_chapters(novel_text), ensure_ascii=False)
-    conn.execute(
+    _exec_locked_retry(
+        conn,
         "INSERT INTO projects (slug, name, aspect_ratio, novel_path, style, style_vis, chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration, subtitles, render_mode, redraw_characters, dialogue_mode, target_pages, image_size, quality_tier, bubble_style, krea2_style) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (slug, name.strip(), aspect_ratio, rel_to_data(data_dir, novel_path), style.strip(), style_vis.strip(), chapters_json, comic_mode, video_megapixels, video_multiple, video_speed, default_shot_duration, prompt_mode, lora_realism, target_duration, subtitles, render_mode, int(redraw_characters), dialogue_mode, int(target_pages), image_size, quality_tier, bubble_style, krea2_style.strip()))
     conn.commit()

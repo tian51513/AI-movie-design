@@ -118,3 +118,32 @@ def test_prompt_mode_and_lora_columns(tmp_path):
         update_video_params(db, row["id"], lora_realism=1.5)
     upd = update_video_params(db, row["id"], prompt_mode="A", lora_realism=0)
     assert upd["prompt_mode"] == "A" and upd["lora_realism"] == 0
+
+
+def test_exec_locked_retry(tmp_path):
+    """创建侧锁重试护栏（2026-10-02 判例：删大项目事务未收尾时立刻建同名
+    项目，INSERT 等超时 database is locked——瞬时锁退避重试即过）：locked
+    两次后成功；非 locked 直抛不吞。"""
+    import sqlite3
+    from comic_studio.engine.projects import _exec_locked_retry
+
+    class FakeConn:
+        def __init__(self, fails, err="database is locked"):
+            self.n, self.fails, self.err = 0, fails, err
+        def execute(self, sql, params):
+            self.n += 1
+            if self.n <= self.fails:
+                raise sqlite3.OperationalError(self.err)
+            return ("ok",)
+
+    import comic_studio.engine.projects as P
+    orig_sleep = P._t_sleep if hasattr(P, "_t_sleep") else None
+    c1 = FakeConn(2)
+    assert _exec_locked_retry(c1, "INSERT ?", (1,)) == ("ok",)
+    assert c1.n == 3
+    c2 = FakeConn(1, err="no such table: x")
+    try:
+        _exec_locked_retry(c2, "INSERT ?", (1,))
+        assert False, "非 locked 应直抛"
+    except sqlite3.OperationalError:
+        pass

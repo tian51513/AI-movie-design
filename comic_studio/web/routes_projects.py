@@ -97,18 +97,16 @@ def delete_project(request: Request, project_id: int):
     conn = db.connect()
     try:
         # 删除顺序按外键依赖：logs(job_id→jobs) 先于 jobs；
-        # jobs(shot_id→shots) 先于 shots；shots 自引用链按叶子序（见下）
+        # jobs(shot_id→shots) 先于 shots
         conn.execute("DELETE FROM logs WHERE project_id=?", (project_id,))
         conn.execute("DELETE FROM jobs WHERE project_id=?", (project_id,))
-        # 镜间接力链：先删叶子（无人 depends_on 它的镜）再循环——单条 DELETE 会被
-        # 自引用 FK 逐行检查卡住（真机 2026-08-25 Internal Server Error）
-        for _ in range(1000):
-            cur = conn.execute(
-                "DELETE FROM shots WHERE project_id=? AND id NOT IN ("
-                "SELECT depends_on FROM shots WHERE project_id=? AND depends_on IS NOT NULL)",
-                (project_id, project_id))
-            if cur.rowcount == 0:
-                break
+        # 镜间接力链：先断链再一条删（2026-10-02 重构——旧版叶子序循环 O(N²)
+        # 且事务内逐条删，大项目持写锁数秒~数十秒；真机判例：删后立刻建同名
+        # 项目 INSERT 等 busy_timeout 超时 database is locked。断链后单条
+        # DELETE 无自引用 FK 检查问题，事务持有时间塌缩到毫秒级）
+        conn.execute("UPDATE shots SET depends_on=NULL WHERE project_id=?",
+                     (project_id,))
+        conn.execute("DELETE FROM shots WHERE project_id=?", (project_id,))
         # 全局资产保留（library 跨项目复用），仅清来源引用
         conn.execute("UPDATE assets SET source_project=NULL WHERE source_project=?",
                      (project_id,))
